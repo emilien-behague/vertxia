@@ -88,9 +88,9 @@ export default function LoomPreview() {
               LOOM
             </h1>
             <p className="text-xs text-white/60 max-w-xs drop-shadow-lg">
-              Site 3D généré à partir d&apos;une URL Shopify.
+              Premier test du pipeline IA Vertxia.
               <br />
-              Sans agence. En 30 minutes. 99€/mois.
+              Bientôt : ton site complet en 30 minutes, pour 99€/mois.
             </p>
           </div>
         ) : (
@@ -102,9 +102,9 @@ export default function LoomPreview() {
               LOOM
             </h1>
             <p className="text-sm md:text-base text-white/50 max-w-md">
-              Site 3D généré automatiquement à partir d&apos;une URL Shopify.
+              Premier test du pipeline IA Vertxia.
               <br />
-              Sans agence. En 30 minutes. Pour 99€/mois.
+              Bientôt : ton site complet en 30 minutes, pour 99€/mois.
             </p>
           </div>
         )}
