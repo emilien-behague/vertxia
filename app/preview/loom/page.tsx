@@ -213,9 +213,32 @@ export default function LoomImmersive() {
       {/* ═══ PHASE 1 : SCROLL VERTICAL NORMAL ═══ */}
 
       {/* HERO */}
-      <section className="relative z-10 h-screen flex flex-col items-start justify-center md:justify-end p-6 md:p-16">
-        <div>
-          <span className="hero-meta font-mono text-xs tracking-[0.4em] text-white/40 block mb-3 md:mb-6">
+      <section className="relative z-10 h-screen flex flex-col items-start justify-end p-6 md:p-16 overflow-hidden">
+        {/* Gradient overlay mobile : assure lisibilité texte au-dessus du 3D */}
+        <div className="absolute top-0 inset-x-0 h-[55vh] z-0 pointer-events-none md:hidden bg-gradient-to-b from-black/70 via-black/30 to-transparent" />
+
+        {/* MOBILE : texte en haut sous la nav */}
+        <div className="md:hidden absolute top-20 left-6 right-6 z-10">
+          <span className="hero-meta font-mono text-[10px] tracking-[0.4em] text-white/50 block mb-3">
+            GENERATED FROM · LOOM.FR
+          </span>
+          <h1 className="text-6xl font-light leading-[0.85] tracking-tighter text-white drop-shadow-2xl">
+            {"LOOM".split("").map((letter, i) => (
+              <span key={i} className="hero-brand-letter inline-block">
+                {letter}
+              </span>
+            ))}
+          </h1>
+          <p className="hero-meta text-xs text-white/70 max-w-xs mt-4 drop-shadow-lg">
+            Les derbies femme.
+            <br />
+            Site immersif généré en 30 min.
+          </p>
+        </div>
+
+        {/* DESKTOP : texte en bas gauche, layout cinéma */}
+        <div className="hidden md:block">
+          <span className="hero-meta font-mono text-xs tracking-[0.4em] text-white/40 block mb-6">
             GENERATED FROM · LOOM.FR
           </span>
           <h1 className="text-[clamp(4rem,16vw,14rem)] font-light leading-[0.85] tracking-tighter text-white max-w-[80vw] overflow-hidden">
@@ -225,12 +248,13 @@ export default function LoomImmersive() {
               </span>
             ))}
           </h1>
-          <p className="hero-meta text-sm md:text-base text-white/50 max-w-md mt-4 md:mt-6">
+          <p className="hero-meta text-base text-white/50 max-w-md mt-6">
             Les derbies femme.
             <br />
             Site immersif généré en 30 min.
           </p>
         </div>
+
         <div className="hero-meta absolute bottom-8 left-1/2 -translate-x-1/2 text-white/30 text-[10px] font-mono tracking-[0.3em] flex flex-col items-center gap-3">
           <span>SCROLL</span>
           <span className="text-base animate-bounce">↓</span>
