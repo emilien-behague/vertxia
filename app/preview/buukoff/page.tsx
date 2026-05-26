@@ -84,7 +84,7 @@ function Scene({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
 
       <Sparkles count={120} size={2.5} speed={0.3} scale={[14, 16, 14]} opacity={0.55} color="#ffd700" />
 
-      <Environment files="/hdri/studio_small_03_4k.hdr" environmentIntensity={0.6} background={false} />
+      <Environment files="/hdri/studio_small_03_2k.hdr" environmentIntensity={0.6} background={false} />
 
       {/* Cinematic post-processing : ACES tone mapping + bloom subtle + vignette + saturation */}
       <CinematicEffects bloom={0.35} vignette={0.35} saturation={0.08} contrast={0.04} />
