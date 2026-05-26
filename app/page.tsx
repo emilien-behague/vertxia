@@ -108,7 +108,7 @@ export default function VertxiaPage() {
         {/* Spacer for nav */}
         <div className="relative z-10 h-20" />
 
-        <div className="relative z-10 flex-1 flex flex-col justify-end px-6 md:px-12 pb-12 max-w-5xl">
+        <div className="relative z-10 flex-1 flex flex-col justify-center md:justify-end px-6 md:px-12 pb-12 max-w-5xl">
           <p
             className="text-[11px] tracking-[0.25em] text-black/40 uppercase mb-6"
             style={{
