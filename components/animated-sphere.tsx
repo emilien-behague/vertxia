@@ -70,7 +70,10 @@ export function AnimatedSphere() {
       points.sort((a, b) => a.z - b.z);
 
       points.forEach((point) => {
-        const alpha = 0.2 + (point.z + 1) * 0.4;
+        // Alpha basé sur |z| : les points au bord visuel (z proche de 0) deviennent
+        // transparents → plus de contour circulaire visible. Les pôles avant/arrière
+        // restent visibles, la rotation 3D reste perceptible.
+        const alpha = Math.pow(Math.abs(point.z), 1.5) * 0.85 + 0.04;
         ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
         ctx.fillText(point.char, point.x, point.y);
       });

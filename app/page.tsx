@@ -95,11 +95,11 @@ export default function VertxiaPage() {
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section className="relative min-h-screen overflow-hidden flex flex-col">
-        {/* Animated sphere — derrière le texte, à droite, alignée hauteur "URL Shopify" */}
+        {/* Animated sphere — derrière le texte, à droite ; bordures fadées dans le rendu canvas */}
         <div
           className="absolute right-[-120px] md:right-[-80px] top-1/2 -translate-y-1/2 w-[500px] h-[500px] md:w-[700px] md:h-[700px] lg:w-[850px] lg:h-[850px] pointer-events-none z-0"
           style={{
-            opacity: heroReady ? 0.4 : 0,
+            opacity: heroReady ? 0.75 : 0,
             transition: "opacity 1.4s cubic-bezier(0.16,1,0.3,1) 400ms",
           }}
           aria-hidden="true"
