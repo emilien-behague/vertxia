@@ -6,6 +6,7 @@ const NAV_LINKS = [
   { label: "Pipeline", href: "#pipeline" },
   { label: "Templates", href: "#templates" },
   { label: "Stack", href: "#stack" },
+  { label: "Vitrine", href: "#demos" },
   { label: "Preview", href: "#live" },
   { label: "Pricing", href: "#pricing" },
 ];
@@ -32,7 +33,7 @@ export function StickyNav() {
           <span className="font-mono text-xs tracking-[0.25em] text-black/70 font-bold">VERTXIA</span>
 
           <div
-            className="hidden md:flex items-center gap-7"
+            className="hidden md:flex items-center gap-6"
             style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
           >
             {NAV_LINKS.map((l) => (

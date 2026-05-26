@@ -778,6 +778,7 @@ export default function VertxiaPage() {
               { label: "Pipeline", href: "#pipeline" },
               { label: "Templates", href: "#templates" },
               { label: "Stack", href: "#stack" },
+              { label: "Vitrine", href: "#demos" },
               { label: "Preview", href: "#live" },
               { label: "Pricing", href: "#pricing" },
             ].map((l) => (
