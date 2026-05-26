@@ -368,6 +368,14 @@ export default function VertxiaPage() {
                 tag: "Hero 3D",
                 tagColor: "#facc15",
               },
+              {
+                brand: "JIRAYA",
+                href: "/preview/jiraya",
+                source: "buu-koff-2.myshopify.com",
+                product: "Naruto Ichiban Kuji Sage",
+                tag: "AI upscale",
+                tagColor: "#dc2626",
+              },
             ].map((demo) => (
               <a
                 key={demo.brand}
