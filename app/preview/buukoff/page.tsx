@@ -15,7 +15,6 @@ import Lenis from "lenis";
 
 const MODEL_PATH = "/3d/dbz-trunks_uhq.glb";
 
-// Images Buu'Koff — combo set Trunks (5 photos lifestyle/pack)
 const LIFESTYLE_IMG_1 =
   "https://cdn.shopify.com/s/files/1/0995/9597/7051/files/D53B95AC-8C83-4DA4-BA15-83DEF8143C8E.jpg?v=1779126491";
 const LIFESTYLE_IMG_2 =
@@ -25,7 +24,7 @@ const LIFESTYLE_IMG_2 =
 function Scene({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
   const { scene } = useGLTF(MODEL_PATH);
   const groupRef = useRef<THREE.Group>(null);
-  const bgColor = useRef(new THREE.Color("#0a0a0a"));
+  const bgColor = useRef(new THREE.Color("#0a0612"));
   const rimRef = useRef<THREE.PointLight>(null);
   const auraRef = useRef<THREE.PointLight>(null);
 
@@ -33,12 +32,11 @@ function Scene({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
     if (groupRef.current) {
       groupRef.current.rotation.y = state.clock.elapsedTime * 0.4;
     }
-    // Background cycle violet profond → magenta (reste dans la palette anime sombre)
+    // Background cycle violet profond → magenta (palette anime dark cohérente)
     const p = Math.min(Math.max(scrollRef.current, 0), 1);
     bgColor.current.setHSL(0.74 + p * 0.12, 0.5, 0.05 + Math.sin(p * Math.PI) * 0.025);
     state.scene.background = bgColor.current;
 
-    // Aura Trunks : rim violet pulse léger
     if (rimRef.current) {
       rimRef.current.intensity = 1.4 + Math.sin(state.clock.elapsedTime * 1.5) * 0.25;
     }
@@ -52,7 +50,6 @@ function Scene({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
       <fog attach="fog" args={["#0a0612", 8, 22]} />
       <ambientLight intensity={0.25} />
 
-      {/* Key light — chaud (or saiyan) */}
       <directionalLight
         position={[5, 8, 5]}
         intensity={1.1}
@@ -62,7 +59,6 @@ function Scene({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
         shadow-mapSize-height={2048}
       />
 
-      {/* Rim light violet — dramatique anime */}
       <pointLight
         ref={rimRef}
         position={[-4, 3, -4]}
@@ -71,7 +67,6 @@ function Scene({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
         distance={15}
       />
 
-      {/* Aura back-light cyan — second rim */}
       <pointLight
         ref={auraRef}
         position={[4, 5, -3]}
@@ -80,14 +75,12 @@ function Scene({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
         distance={12}
       />
 
-      {/* Fill subtil orange */}
       <pointLight position={[3, -1, 4]} intensity={0.25} color="#fb923c" />
 
       <group ref={groupRef} scale={1.5} position={[0, -0.9, 0]}>
         <primitive object={scene} />
       </group>
 
-      {/* Particules dorées flottantes — keyframe anime */}
       <Sparkles count={120} size={2.5} speed={0.3} scale={[14, 16, 14]} opacity={0.55} color="#ffd700" />
 
       <Environment preset="night" environmentIntensity={0.55} />
@@ -105,12 +98,10 @@ function Loader() {
   );
 }
 
-// ─── Page : vertical normal → break horizontal ───────────────────
+// ─── Page : 100% vertical scroll ────────────────────────────────────
 export default function BuuKoffImmersive() {
   const scrollRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  const horizontalWrapperRef = useRef<HTMLDivElement>(null);
-  const horizontalTrackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -144,35 +135,10 @@ export default function BuuKoffImmersive() {
   }, []);
 
   useEffect(() => {
-    if (
-      typeof window === "undefined" ||
-      !horizontalTrackRef.current ||
-      !horizontalWrapperRef.current
-    )
-      return;
+    if (typeof window === "undefined") return;
     gsap.registerPlugin(ScrollTrigger);
 
     const ctx = gsap.context(() => {
-      const getMaxX = () =>
-        horizontalTrackRef.current!.offsetWidth - window.innerWidth;
-
-      gsap.to(horizontalTrackRef.current, {
-        x: () => -getMaxX(),
-        ease: "none",
-        scrollTrigger: {
-          trigger: horizontalWrapperRef.current,
-          pin: true,
-          scrub: 0.5,
-          snap: {
-            snapTo: 1 / 2,
-            duration: { min: 0.15, max: 0.4 },
-            ease: "power2.inOut",
-          },
-          end: () => "+=" + getMaxX(),
-          invalidateOnRefresh: true,
-        },
-      });
-
       // Hero : lettres apparaissent au mount
       gsap.fromTo(
         ".hero-brand-letter",
@@ -194,7 +160,7 @@ export default function BuuKoffImmersive() {
         { opacity: 1, y: 0, duration: 1.5, delay: 1.2, ease: "power3.out" }
       );
 
-      // Texte sections verticales fade-in au scroll
+      // Texte sections fade-in au scroll
       gsap.utils.toArray<HTMLElement>(".v-fade > *").forEach((el) => {
         gsap.fromTo(
           el,
@@ -244,8 +210,6 @@ export default function BuuKoffImmersive() {
         </span>
       </div>
 
-      {/* ═══ PHASE 1 : SCROLL VERTICAL ═══ */}
-
       {/* HERO */}
       <section className="relative z-10 h-screen flex flex-col items-start justify-end p-6 md:p-16 overflow-hidden">
         <div className="absolute top-0 inset-x-0 h-[55vh] z-0 pointer-events-none md:hidden bg-gradient-to-b from-black/70 via-black/30 to-transparent" />
@@ -256,9 +220,9 @@ export default function BuuKoffImmersive() {
             GENERATED FROM · BUU-KOFF
           </span>
           <h1 className="text-5xl font-light leading-[0.85] tracking-tighter text-white drop-shadow-2xl">
-            {"BUU'KOFF".split("").map((letter, i) => (
+            {"BUU’KOFF".split("").map((letter, i) => (
               <span key={i} className="hero-brand-letter inline-block">
-                {letter === "'" ? "’" : letter}
+                {letter}
               </span>
             ))}
           </h1>
@@ -314,7 +278,7 @@ export default function BuuKoffImmersive() {
         </div>
       </section>
 
-      {/* STORY 1 — DBZ manifesto */}
+      {/* STORY 1 — DBZ lore */}
       <section className="v-fade relative z-10 h-screen flex items-center justify-center overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -334,114 +298,97 @@ export default function BuuKoffImmersive() {
             — DRAGON BALL Z LORE
           </p>
         </div>
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/40 text-[10px] font-mono tracking-[0.3em] flex items-center gap-3">
-          <span>CONTINUE</span>
-          <span className="text-base animate-bounce">↓</span>
+      </section>
+
+      {/* CHAPITRE 02 — Solid Edge Works detail */}
+      <section className="v-fade relative z-10 h-screen flex items-center justify-start p-6 md:p-16">
+        <div className="max-w-md text-white space-y-4">
+          <span className="font-mono text-xs tracking-[0.4em] text-white/40 block">
+            CHAPITRE 02
+          </span>
+          <h2 className="text-3xl md:text-6xl font-light leading-[0.95] tracking-tight">
+            Solid Edge Works.
+            <br />
+            <span className="text-white/60">Arêtes vives.</span>
+          </h2>
+          <p className="text-base md:text-lg text-white/60 leading-relaxed pt-2">
+            Ligne Banpresto au design polygonal tranché.
+            <br />
+            Hommage manga aux planches d&apos;Akira Toriyama.
+          </p>
+          <div className="pt-6 grid grid-cols-3 gap-4 text-center">
+            <div>
+              <div className="font-mono text-3xl md:text-4xl text-white">25</div>
+              <div className="text-[10px] tracking-widest text-white/40 mt-1">
+                € PRIX
+              </div>
+            </div>
+            <div>
+              <div className="font-mono text-3xl md:text-4xl text-white">22cm</div>
+              <div className="text-[10px] tracking-widest text-white/40 mt-1">
+                HAUTEUR
+              </div>
+            </div>
+            <div>
+              <div className="font-mono text-3xl md:text-4xl text-white">PVC</div>
+              <div className="text-[10px] tracking-widest text-white/40 mt-1">
+                MATÉRIAU
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ═══ PHASE 2 : BREAK HORIZONTAL ═══ */}
-
-      <div ref={horizontalWrapperRef} className="relative h-screen overflow-hidden">
+      {/* STORY 2 — Collection */}
+      <section className="v-fade relative z-10 h-screen flex items-center justify-center overflow-hidden">
         <div
-          ref={horizontalTrackRef}
-          className="flex h-full w-fit will-change-transform"
-        >
-          {/* H-SECTION 1 — DETAIL Solid Edge Works */}
-          <section className="horizontal-section relative w-screen h-screen flex-shrink-0 flex items-center justify-start p-6 md:p-16">
-            <div className="max-w-md text-white space-y-4">
-              <span className="font-mono text-xs tracking-[0.4em] text-white/40 block">
-                CHAPITRE 02
-              </span>
-              <h2 className="text-3xl md:text-6xl font-light leading-[0.95] tracking-tight">
-                Solid Edge Works.
-                <br />
-                <span className="text-white/60">Arêtes vives.</span>
-              </h2>
-              <p className="text-base md:text-lg text-white/60 leading-relaxed pt-2">
-                Ligne Banpresto au design polygonal tranché.
-                <br />
-                Hommage manga aux planches d&apos;Akira Toriyama.
-              </p>
-              <div className="pt-6 grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="font-mono text-3xl md:text-4xl text-white">25</div>
-                  <div className="text-[10px] tracking-widest text-white/40 mt-1">
-                    € PRIX
-                  </div>
-                </div>
-                <div>
-                  <div className="font-mono text-3xl md:text-4xl text-white">22cm</div>
-                  <div className="text-[10px] tracking-widest text-white/40 mt-1">
-                    HAUTEUR
-                  </div>
-                </div>
-                <div>
-                  <div className="font-mono text-3xl md:text-4xl text-white">PVC</div>
-                  <div className="text-[10px] tracking-widest text-white/40 mt-1">
-                    MATÉRIAU
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="absolute bottom-8 right-8 text-white/40 text-[10px] font-mono tracking-[0.3em] flex items-center gap-3">
-              <span>EXPLORE</span>
-              <span className="text-base animate-pulse">→</span>
-            </div>
-          </section>
-
-          {/* H-SECTION 2 — STORY 2 collection */}
-          <section className="horizontal-section relative w-screen h-screen flex-shrink-0 flex items-center justify-center overflow-hidden">
-            <div
-              className="absolute inset-y-0 -left-[50vw] -right-[50vw] bg-cover bg-center"
-              style={{
-                backgroundImage: `url(${LIFESTYLE_IMG_2})`,
-                filter: "brightness(0.35) saturate(1.05)",
-              }}
-            />
-            <div className="absolute inset-y-0 -left-[50vw] -right-[50vw] bg-gradient-to-t from-black/80 via-purple-950/20 to-black/40" />
-            <div className="relative z-10 text-center text-white max-w-[85vw] md:max-w-3xl px-6">
-              <p className="text-3xl md:text-7xl font-light leading-[1] tracking-tight">
-                Une pièce de collection.
-              </p>
-              <p className="text-lg md:text-4xl font-light text-white/50 mt-3 italic">
-                Pas un produit dérivé.
-              </p>
-            </div>
-          </section>
-
-          {/* H-SECTION 3 — CTA */}
-          <section className="horizontal-section relative w-screen h-screen flex-shrink-0 flex flex-col items-center justify-center p-6 md:p-16 text-center">
-            <div>
-              <span className="font-mono text-xs tracking-[0.4em] text-white/40 block mb-6">
-                DÉCOUVRIR
-              </span>
-              <h2 className="text-5xl md:text-9xl font-light text-white tracking-tighter leading-none">
-                buu-koff
-              </h2>
-              <a
-                href="https://buu-koff-2.myshopify.com/products/dragon-ball-z-trunks-solid-edge-works-1"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block mt-10 px-8 py-3 border border-white/20 text-white hover:bg-white hover:text-black transition-colors duration-300 pointer-events-auto font-mono text-xs md:text-sm tracking-[0.3em]"
-              >
-                VOIR LA FIGURINE
-              </a>
-              <div className="mt-16 flex flex-col items-center gap-2">
-                <span className="font-mono text-[10px] text-white/30 tracking-[0.3em]">
-                  GÉNÉRÉ EN 30 MIN PAR
-                </span>
-                <a
-                  href="https://vertxia.com"
-                  className="font-mono text-sm text-white/60 hover:text-white transition pointer-events-auto"
-                >
-                  vertxia.com
-                </a>
-              </div>
-            </div>
-          </section>
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: `url(${LIFESTYLE_IMG_2})`,
+            filter: "brightness(0.35) saturate(1.05)",
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-purple-950/20 to-black/40" />
+        <div className="relative z-10 text-center text-white max-w-[85vw] md:max-w-3xl px-6">
+          <p className="text-3xl md:text-7xl font-light leading-[1] tracking-tight">
+            Une pièce de collection.
+          </p>
+          <p className="text-lg md:text-4xl font-light text-white/50 mt-3 italic">
+            Pas un produit dérivé.
+          </p>
         </div>
-      </div>
+      </section>
+
+      {/* CTA */}
+      <section className="v-fade relative z-10 h-screen flex flex-col items-center justify-center p-6 md:p-16 text-center">
+        <div>
+          <span className="font-mono text-xs tracking-[0.4em] text-white/40 block mb-6">
+            DÉCOUVRIR
+          </span>
+          <h2 className="text-5xl md:text-9xl font-light text-white tracking-tighter leading-none">
+            buu-koff
+          </h2>
+          <a
+            href="https://buu-koff-2.myshopify.com/products/dragon-ball-z-trunks-solid-edge-works-1"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block mt-10 px-8 py-3 border border-white/20 text-white hover:bg-white hover:text-black transition-colors duration-300 pointer-events-auto font-mono text-xs md:text-sm tracking-[0.3em]"
+          >
+            VOIR LA FIGURINE
+          </a>
+          <div className="mt-16 flex flex-col items-center gap-2">
+            <span className="font-mono text-[10px] text-white/30 tracking-[0.3em]">
+              GÉNÉRÉ EN 30 MIN PAR
+            </span>
+            <a
+              href="https://vertxia.com"
+              className="font-mono text-sm text-white/60 hover:text-white transition pointer-events-auto"
+            >
+              vertxia.com
+            </a>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
