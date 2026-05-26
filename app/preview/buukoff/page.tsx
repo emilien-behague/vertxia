@@ -14,7 +14,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { CinematicEffects } from "@/components/cinematic-effects";
 
-const MODEL_PATH = "/3d/dbz-trunks_uhq.glb";
+const MODEL_PATH = "/3d/dbz-trunks_m6.glb";
 
 const LIFESTYLE_IMG_1 =
   "https://cdn.shopify.com/s/files/1/0995/9597/7051/files/D53B95AC-8C83-4DA4-BA15-83DEF8143C8E.jpg?v=1779126491";
