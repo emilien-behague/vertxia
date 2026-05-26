@@ -88,9 +88,9 @@ export default function AllbirdsPreview() {
               ALLBIRDS
             </h1>
             <p className="text-xs text-white/60 max-w-xs drop-shadow-lg">
-              Premier test du pipeline IA Vertxia.
+              Page 3D générée en 3 min depuis la fiche produit.
               <br />
-              Bientôt : ton site complet en 30 minutes, pour 99€/mois.
+              Bientôt : ton site complet, pour 99€/mois.
             </p>
           </div>
         ) : (
@@ -102,9 +102,9 @@ export default function AllbirdsPreview() {
               ALLBIRDS
             </h1>
             <p className="text-sm md:text-base text-white/50 max-w-md">
-              Premier test du pipeline IA Vertxia.
+              Page 3D générée en 3 min depuis la fiche produit.
               <br />
-              Bientôt : ton site complet en 30 minutes, pour 99€/mois.
+              Bientôt : ton site complet, pour 99€/mois.
             </p>
           </div>
         )}

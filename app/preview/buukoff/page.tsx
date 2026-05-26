@@ -229,7 +229,7 @@ export default function BuuKoffImmersive() {
           <p className="hero-meta text-xs text-white/70 max-w-xs mt-4 drop-shadow-lg">
             DBZ — Trunks Solid Edge Works.
             <br />
-            Figurine collector. Site immersif 30 min.
+            Figurine collector. Page 3D générée en 3 min.
           </p>
         </div>
 
@@ -248,7 +248,7 @@ export default function BuuKoffImmersive() {
           <p className="hero-meta text-base text-white/50 max-w-md mt-6">
             DBZ — Trunks Solid Edge Works.
             <br />
-            Figurine collector. Site immersif 30 min.
+            Figurine collector. Page 3D générée en 3 min.
           </p>
         </div>
 
@@ -378,7 +378,7 @@ export default function BuuKoffImmersive() {
           </a>
           <div className="mt-16 flex flex-col items-center gap-2">
             <span className="font-mono text-[10px] text-white/30 tracking-[0.3em]">
-              GÉNÉRÉ EN 30 MIN PAR
+              GÉNÉRÉ EN 3 MIN PAR
             </span>
             <a
               href="https://vertxia.com"
