@@ -74,7 +74,7 @@ export default function LoomPreview() {
             VERTXIA · PREVIEW
           </span>
           <span className="font-mono text-[10px] md:text-xs tracking-[0.3em] text-white/50">
-            DAY 2
+            DAY 1
           </span>
         </div>
 
