@@ -14,7 +14,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { CinematicEffects } from "@/components/cinematic-effects";
 
-const MODEL_PATH = "/3d/les-derbies-femme_packshot_idx4.glb";
+const MODEL_PATH = "/3d/les-derbies-femme_m6.glb";
 
 const LIFESTYLE_IMG_1 =
   "https://cdn.shopify.com/s/files/1/1355/7899/files/SLIDESHOWIMAGE3_af538f97-1a4e-4451-bb64-011995d3a4c3.jpg?v=1775717876";
