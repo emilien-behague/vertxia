@@ -163,7 +163,7 @@ export default function AllbirdsPreview() {
             far={3}
           />
 
-          <Environment preset="studio" environmentIntensity={1.0} />
+          <Environment files="/hdri/photo_studio_01_4k.hdr" environmentIntensity={0.85} background={false} />
 
           {/* Cinematic post-processing : ACES tone mapping + bloom + vignette */}
           <CinematicEffects bloom={0.2} vignette={0.3} saturation={0.05} contrast={0.04} />
