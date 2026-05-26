@@ -55,7 +55,7 @@ function Loader() {
 }
 
 // ─── Scène ────────────────────────────────────────────────────────────────────
-export default function LoomPreview() {
+export default function AllbirdsPreview() {
   const isMobile = useIsMobile();
 
   // Paramètres adaptés selon viewport
@@ -82,10 +82,10 @@ export default function LoomPreview() {
         {isMobile ? (
           <div className="absolute top-20 left-6 right-6 flex flex-col gap-2">
             <span className="font-mono text-[9px] tracking-[0.4em] text-white/40 uppercase">
-              Generated from URL · loom.fr
+              Generated from URL · allbirds.com
             </span>
             <h1 className="text-6xl font-light leading-none tracking-tighter text-white drop-shadow-2xl">
-              LOOM
+              ALLBIRDS
             </h1>
             <p className="text-xs text-white/60 max-w-xs drop-shadow-lg">
               Premier test du pipeline IA Vertxia.
@@ -96,10 +96,10 @@ export default function LoomPreview() {
         ) : (
           <div className="flex flex-col items-start gap-4">
             <span className="font-mono text-[10px] tracking-[0.4em] text-white/30 uppercase">
-              Generated from URL · loom.fr
+              Generated from URL · allbirds.com
             </span>
-            <h1 className="text-[clamp(4rem,15vw,12rem)] font-light leading-none tracking-tighter text-white">
-              LOOM
+            <h1 className="text-[clamp(3rem,9vw,8rem)] font-light leading-none tracking-tighter text-white max-w-[55vw]">
+              ALLBIRDS
             </h1>
             <p className="text-sm md:text-base text-white/50 max-w-md">
               Premier test du pipeline IA Vertxia.
