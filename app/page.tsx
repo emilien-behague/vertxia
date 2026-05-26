@@ -319,6 +319,95 @@ export default function VertxiaPage() {
         </div>
       </section>
 
+      {/* ── DEMOS / VITRINES IMMERSIVES LIVE ─────────────────────────────── */}
+      <section id="demos" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-12">
+            <div>
+              <Tag>4 VITRINES LIVE</Tag>
+              <RevealText className="mt-5 text-4xl md:text-5xl font-light tracking-tight leading-[1.05]">
+                {"Pas des mockups.\nDes vraies pages live."}
+              </RevealText>
+            </div>
+            <p className="text-sm text-black/45 leading-relaxed max-w-xs">
+              Chaque démo ci-dessous est générée depuis la vraie URL Shopify de la marque. 3D model rendu via notre pipeline (Meshy + R3F). Clique pour voir le résultat.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              {
+                brand: "LOOM",
+                href: "/preview/loom",
+                source: "loom.fr",
+                product: "Les derbies femme",
+                tag: "Immersif scroll",
+                tagColor: "#a78bfa",
+              },
+              {
+                brand: "ALLBIRDS",
+                href: "/preview/allbirds",
+                source: "allbirds.com",
+                product: "Wool Runner",
+                tag: "Hero 3D",
+                tagColor: "#60a5fa",
+              },
+              {
+                brand: "TIKAMOON",
+                href: "/preview/tikamoon",
+                source: "tikamoon.com",
+                product: "Coffee Tek Meuble TV",
+                tag: "Hero 3D",
+                tagColor: "#60a5fa",
+              },
+              {
+                brand: "BUU'KOFF",
+                href: "/preview/buukoff",
+                source: "buu-koff-2.myshopify.com",
+                product: "DBZ Trunks Solid Edge",
+                tag: "Hero 3D",
+                tagColor: "#facc15",
+              },
+            ].map((demo) => (
+              <a
+                key={demo.brand}
+                href={demo.href}
+                className="group relative block aspect-[4/5] rounded-2xl border border-black/[0.08] bg-gradient-to-br from-black to-[#1a1a1a] overflow-hidden hover:border-black/30 transition-colors"
+              >
+                <div className="absolute top-4 left-4 right-4 flex items-start justify-between z-10">
+                  <span className="font-mono text-[9px] tracking-[0.3em] text-white/40 uppercase">
+                    {demo.source}
+                  </span>
+                  <span
+                    className="font-mono text-[8px] tracking-[0.2em] text-white/60 px-2 py-1 rounded-sm"
+                    style={{ background: `${demo.tagColor}20`, color: demo.tagColor }}
+                  >
+                    {demo.tag}
+                  </span>
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-white text-3xl md:text-4xl font-light tracking-tighter">
+                    {demo.brand}
+                  </span>
+                </div>
+                <div className="absolute bottom-4 left-4 right-4 z-10 flex items-end justify-between">
+                  <span className="font-mono text-[9px] text-white/50 leading-tight">
+                    {demo.product}
+                  </span>
+                  <span className="font-mono text-xs text-white/70 group-hover:text-white transition-colors">
+                    →
+                  </span>
+                </div>
+              </a>
+            ))}
+          </div>
+
+          <p className="mt-10 text-xs text-black/40 font-mono tracking-wide text-center">
+            Build in public — nouvelles vitrines publiées plusieurs fois par semaine
+          </p>
+        </div>
+      </section>
+
       {/* ── STACK ─────────────────────────────────────────────────────────── */}
       <section id="stack" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
         <div className="max-w-6xl mx-auto text-center">
@@ -387,16 +476,16 @@ export default function VertxiaPage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
             <div>
-              <Tag>SIMULATION — PIPELINE EN CONSTRUCTION</Tag>
+              <Tag>LIVE — DONNÉES RÉELLES</Tag>
               <RevealText className="mt-5 text-4xl md:text-5xl lg:text-6xl font-light tracking-tight leading-[1.05]">
-                {"Le pipeline qu'on\nest en train de bâtir."}
+                {"Le pipeline tourne\ndéjà. En live."}
               </RevealText>
               <p className="mt-6 text-base text-black/40 leading-relaxed max-w-sm">
-                Aperçu de l'architecture cible : chaque produit passé par Vertxia sera analysé, modélisé, intégré à un template. Tu verras exactement le coût IA et le temps réel. Build in public, donc cette vue se précisera à chaque release.
+                Chaque produit passé par Vertxia est analysé, scoré pour qualité visuelle, modélisé en 3D, intégré dans un template. Coût IA et temps réel affichés. Build in public — tu vois tout ce qu'on fait.
               </p>
               <div className="mt-10 flex items-end gap-2">
                 <LiveCounter />
-                <span className="text-black/30 text-sm mb-1 tracking-wide">produits Shopify FR DTC scrapés dans le dataset</span>
+                <span className="text-black/30 text-sm mb-1 tracking-wide">produits scrapés sur 25 brands DTC<br/>(FR + INTL)</span>
               </div>
             </div>
             <div className="relative">

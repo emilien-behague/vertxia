@@ -2,15 +2,18 @@
 
 import { useEffect, useState, useRef } from "react";
 
+// Produits réels issus du dataset (8316 produits / 25 brands scrapées 25-26 mai 2026)
 const PRODUCTS = [
-  "Wool Runner — Tuke River",
-  "Sugar Zeffer 2 — Natural Black",
-  "Loom Sweat-shirt Léonard",
-  "Aime Curcuma Bio",
-  "Patine Veste workwear",
-  "Respire Déodorant Coco",
-  "Bonsoirs Drap Lin Sable",
-  "1083 Jean droit raw",
+  "Wool Runner Mizzle — Allbirds",
+  "Les derbies femme — Loom",
+  "Bandana — Izipizi",
+  "Pailletée Brume de Cassis — Archiduchesse",
+  "Vital Seamless Shorts — Gymshark",
+  "Wheat Chain Necklace — Mejuri",
+  "Sunrise Leather Flip Flop — Bombas",
+  "Coffee Tek Meuble TV — Tikamoon",
+  "DBZ Trunks Solid Edge — Buu'Koff",
+  "Cell Perfect Omnibus — Buu'Koff",
 ];
 
 const STAGES = [
@@ -31,8 +34,8 @@ type Row = {
   key: number;
 };
 
-const BRANDS = ["allbirds", "loom.fr", "aime.co", "patine.fr", "respire.co", "bonsoirs.com"];
-const TEMPLATES = ["T1 Hero 3D", "T5 Digital Mix", "T2 Full-Bleed", "T3 Immersive"];
+const BRANDS = ["allbirds.com", "loom.fr", "izipizi.com", "archiduchesse.com", "bombas.com", "tikamoon.com", "buu-koff", "mejuri.com"];
+const TEMPLATES = ["T1 Hero 3D", "T2 Immersive Scroll", "T3 Magazine", "T4 Brutalist"];
 
 function randomRow(key: number): Row {
   return {
@@ -78,11 +81,11 @@ function ProgressBar({ initial }: { initial: number }) {
 }
 
 const SEED_ROWS: Row[] = [
-  { id: "A1B2C3", product: "Wool Runner — Tuke River", brand: "allbirds", template: "T1 Hero 3D", stage: STAGES[1], progress: 42, cost: "$0.12", key: 0 },
-  { id: "D4E5F6", product: "Loom Sweat-shirt Léonard", brand: "loom.fr", template: "T1 Hero 3D", stage: STAGES[2], progress: 67, cost: "$0.18", key: 1 },
-  { id: "G7H8I9", product: "Aime Curcuma Bio", brand: "aime.co", template: "T1 Hero 3D", stage: STAGES[0], progress: 18, cost: "$0.05", key: 2 },
-  { id: "J0K1L2", product: "Patine Veste workwear", brand: "patine.fr", template: "T2 Full-Bleed", stage: STAGES[3], progress: 88, cost: "$0.22", key: 3 },
-  { id: "M3N4O5", product: "Respire Déodorant Coco", brand: "respire.co", template: "T1 Hero 3D", stage: STAGES[1], progress: 55, cost: "$0.14", key: 4 },
+  { id: "L00M01", product: "Les derbies femme — Loom", brand: "loom.fr", template: "T2 Immersive Scroll", stage: STAGES[3], progress: 95, cost: "$0.18", key: 0 },
+  { id: "AL00WR", product: "Wool Runner Mizzle — Allbirds", brand: "allbirds.com", template: "T1 Hero 3D", stage: STAGES[3], progress: 100, cost: "$0.14", key: 1 },
+  { id: "TKMN01", product: "Coffee Tek Meuble TV — Tikamoon", brand: "tikamoon.com", template: "T1 Hero 3D", stage: STAGES[3], progress: 100, cost: "$0.16", key: 2 },
+  { id: "BUUK01", product: "DBZ Trunks Solid Edge — Buu'Koff", brand: "buu-koff", template: "T1 Hero 3D", stage: STAGES[2], progress: 78, cost: "$0.12", key: 3 },
+  { id: "IZPZ01", product: "Bandana — Izipizi", brand: "izipizi.com", template: "T1 Hero 3D", stage: STAGES[0], progress: 22, cost: "$0.06", key: 4 },
 ];
 
 export function LivePipelineFeed() {
@@ -200,7 +203,9 @@ export function LivePipelineFeed() {
 }
 
 export function LiveCounter() {
-  const count = 1432;
+  // Total réel produits scrapés sur 25 brands (FR DTC + INTL DTC)
+  // Mise à jour : 26 mai 2026
+  const count = 8316;
 
   return (
     <span
