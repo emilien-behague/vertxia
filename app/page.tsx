@@ -95,13 +95,11 @@ export default function VertxiaPage() {
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section className="relative min-h-screen overflow-hidden flex flex-col">
-        {/* Animated sphere — derrière le texte, à droite ; bordures fadées dans le rendu canvas */}
+        {/* Animated sphere — discrète sur mobile, visible sur desktop ; bordures fadées dans le rendu canvas */}
         <div
-          className="absolute right-[-120px] md:right-[-80px] top-1/2 -translate-y-1/2 w-[500px] h-[500px] md:w-[700px] md:h-[700px] lg:w-[850px] lg:h-[850px] pointer-events-none z-0"
-          style={{
-            opacity: heroReady ? 0.75 : 0,
-            transition: "opacity 1.4s cubic-bezier(0.16,1,0.3,1) 400ms",
-          }}
+          className={`absolute right-[-80px] md:right-[-80px] top-1/2 -translate-y-1/2 w-[320px] h-[320px] md:w-[700px] md:h-[700px] lg:w-[850px] lg:h-[850px] pointer-events-none z-0 transition-opacity duration-[1400ms] ease-out delay-[400ms] ${
+            heroReady ? "opacity-20 md:opacity-75" : "opacity-0"
+          }`}
           aria-hidden="true"
         >
           <AnimatedSphere />
@@ -152,7 +150,7 @@ export default function VertxiaPage() {
             {[
               { value: "30min", label: "Génération site" },
               { value: "0.10€", label: "Coût IA / produit" },
-              { value: "50× -", label: "vs agence 50K€" },
+              { value: "50×", label: "Moins cher" },
             ].map((stat, i) => (
               <div
                 key={i}
