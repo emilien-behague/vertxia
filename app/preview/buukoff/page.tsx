@@ -86,8 +86,17 @@ function Scene({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
 
       <Environment files="/hdri/studio_small_03_2k.hdr" environmentIntensity={0.6} background={false} />
 
-      {/* Cinematic post-processing : ACES tone mapping + bloom subtle + vignette + saturation */}
-      <CinematicEffects bloom={0.35} vignette={0.35} saturation={0.08} contrast={0.04} />
+      {/* Cinematic post-processing : ACES + N8AO ombres de contact + DOF macro photo */}
+      <CinematicEffects
+        bloom={0.35}
+        vignette={0.35}
+        saturation={0.08}
+        contrast={0.04}
+        ao={3.0}
+        aoRadius={0.8}
+        dof={1.5}
+        dofFocusDistance={0.018}
+      />
     </>
   );
 }
