@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useRef } from "react";
+import { Suspense, useRef, useEffect, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import {
   Environment,
@@ -13,8 +13,20 @@ import * as THREE from "three";
 
 const MODEL_PATH = "/3d/wool-runner.glb";
 
+// ─── Hook responsive ─────────────────────────────────────────────────────────
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isMobile;
+}
+
 // ─── Modèle 3D ────────────────────────────────────────────────────────────────
-function Product3D() {
+function Product3D({ scale, posY }: { scale: number; posY: number }) {
   const ref = useRef<THREE.Group>(null);
   const { scene } = useGLTF(MODEL_PATH);
 
@@ -26,7 +38,7 @@ function Product3D() {
 
   return (
     <group ref={ref}>
-      <primitive object={scene} scale={1.3} position={[0, -0.3, 0]} />
+      <primitive object={scene} scale={scale} position={[0, posY, 0]} />
     </group>
   );
 }
@@ -44,49 +56,84 @@ function Loader() {
 
 // ─── Scène ────────────────────────────────────────────────────────────────────
 export default function LoomPreview() {
+  const isMobile = useIsMobile();
+
+  // Paramètres adaptés selon viewport
+  const cameraPos: [number, number, number] = isMobile ? [2, 1.2, 9] : [3, 1, 6];
+  const cameraFov = isMobile ? 32 : 28;
+  const modelScale = isMobile ? 0.9 : 1.3;
+  const modelPosY = isMobile ? -0.2 : -0.3;
+
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden">
-      {/* Overlay branding */}
-      <div className="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between p-8 md:p-16">
+      {/* Overlay branding — z-30 pour passer devant tout */}
+      <div className="absolute inset-0 z-30 pointer-events-none flex flex-col justify-between p-6 md:p-16">
         {/* Top: Vertxia tag */}
         <div className="flex justify-between items-start">
-          <span className="font-mono text-xs tracking-[0.3em] text-white/40">
+          <span className="font-mono text-[10px] md:text-xs tracking-[0.3em] text-white/50">
             VERTXIA · PREVIEW
           </span>
-          <span className="font-mono text-xs tracking-[0.3em] text-white/40">
+          <span className="font-mono text-[10px] md:text-xs tracking-[0.3em] text-white/50">
             DAY 2
           </span>
         </div>
 
-        {/* Center: Brand name overlay */}
-        <div className="flex flex-col items-start gap-4">
-          <span className="font-mono text-[10px] tracking-[0.4em] text-white/30 uppercase">
-            Generated from URL · loom.fr
-          </span>
-          <h1 className="text-[clamp(4rem,15vw,12rem)] font-light leading-none tracking-tighter text-white">
-            LOOM
-          </h1>
-          <p className="text-sm md:text-base text-white/50 max-w-md">
-            Site 3D généré automatiquement à partir d&apos;une URL Shopify.
-            <br />
-            Sans agence. En 30 minutes. Pour 99€/mois.
-          </p>
-        </div>
+        {/* Mobile: texte en haut sous la nav | Desktop: centre */}
+        {isMobile ? (
+          <div className="absolute top-20 left-6 right-6 flex flex-col gap-2">
+            <span className="font-mono text-[9px] tracking-[0.4em] text-white/40 uppercase">
+              Generated from URL · loom.fr
+            </span>
+            <h1 className="text-6xl font-light leading-none tracking-tighter text-white drop-shadow-2xl">
+              LOOM
+            </h1>
+            <p className="text-xs text-white/60 max-w-xs drop-shadow-lg">
+              Site 3D généré à partir d&apos;une URL Shopify.
+              <br />
+              Sans agence. En 30 minutes. 99€/mois.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-start gap-4">
+            <span className="font-mono text-[10px] tracking-[0.4em] text-white/30 uppercase">
+              Generated from URL · loom.fr
+            </span>
+            <h1 className="text-[clamp(4rem,15vw,12rem)] font-light leading-none tracking-tighter text-white">
+              LOOM
+            </h1>
+            <p className="text-sm md:text-base text-white/50 max-w-md">
+              Site 3D généré automatiquement à partir d&apos;une URL Shopify.
+              <br />
+              Sans agence. En 30 minutes. Pour 99€/mois.
+            </p>
+          </div>
+        )}
 
         {/* Bottom: footer */}
         <div className="flex justify-between items-end">
-          <span className="font-mono text-xs tracking-[0.2em] text-white/30">
+          <span className="font-mono text-[10px] md:text-xs tracking-[0.2em] text-white/40">
             vertxia.com
           </span>
-          <span className="font-mono text-xs tracking-[0.2em] text-white/30 hidden md:block">
+          <span className="font-mono text-[10px] md:text-xs tracking-[0.2em] text-white/40 hidden md:block">
             drag · rotate
           </span>
         </div>
       </div>
 
+      {/* Gradient overlay derrière le texte mobile pour lisibilité */}
+      {isMobile && (
+        <div
+          className="absolute top-0 left-0 right-0 h-[40vh] z-20 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0) 100%)",
+          }}
+        />
+      )}
+
       {/* Scène 3D */}
       <Canvas
-        camera={{ position: [3, 1, 6], fov: 28 }}
+        camera={{ position: cameraPos, fov: cameraFov }}
         gl={{ antialias: true, alpha: false }}
         shadows
         dpr={[1, 2]}
@@ -105,7 +152,7 @@ export default function LoomPreview() {
         <pointLight position={[-5, 3, -5]} intensity={0.3} color="#ffa56b" />
 
         <Suspense fallback={<Loader />}>
-          <Product3D />
+          <Product3D scale={modelScale} posY={modelPosY} />
 
           <ContactShadows
             position={[0, -1.0, 0]}
@@ -115,7 +162,6 @@ export default function LoomPreview() {
             far={3}
           />
 
-          {/* Environment apporte la majorité du lighting réaliste */}
           <Environment preset="studio" environmentIntensity={1.0} />
         </Suspense>
 
@@ -126,7 +172,7 @@ export default function LoomPreview() {
           minPolarAngle={Math.PI / 4}
           maxPolarAngle={Math.PI / 2.2}
           minDistance={3}
-          maxDistance={10}
+          maxDistance={12}
         />
       </Canvas>
     </div>
