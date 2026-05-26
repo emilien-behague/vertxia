@@ -6,6 +6,7 @@ import { RevealText } from "@/components/reveal-text";
 import { StickyNav } from "@/components/sticky-nav";
 import { StackingTemplateCards } from "@/components/stacking-template-cards";
 import { LivePipelineFeed, LiveCounter } from "@/components/live-pipeline-feed";
+import { AnimatedSphere } from "@/components/animated-sphere";
 
 // ─── Intersection Observer hook ───────────────────────────────────────────────
 function useInView(threshold = 0.15) {
@@ -94,10 +95,22 @@ export default function VertxiaPage() {
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section className="relative min-h-screen overflow-hidden flex flex-col">
-        {/* Spacer for nav */}
-        <div className="h-20" />
+        {/* Animated sphere — derrière le texte, à droite, alignée hauteur "URL Shopify" */}
+        <div
+          className="absolute right-[-120px] md:right-[-80px] top-1/2 -translate-y-1/2 w-[500px] h-[500px] md:w-[700px] md:h-[700px] lg:w-[850px] lg:h-[850px] pointer-events-none z-0"
+          style={{
+            opacity: heroReady ? 0.4 : 0,
+            transition: "opacity 1.4s cubic-bezier(0.16,1,0.3,1) 400ms",
+          }}
+          aria-hidden="true"
+        >
+          <AnimatedSphere />
+        </div>
 
-        <div className="flex-1 flex flex-col justify-end px-6 md:px-12 pb-12 max-w-5xl">
+        {/* Spacer for nav */}
+        <div className="relative z-10 h-20" />
+
+        <div className="relative z-10 flex-1 flex flex-col justify-end px-6 md:px-12 pb-12 max-w-5xl">
           <p
             className="text-[11px] tracking-[0.25em] text-black/40 uppercase mb-6"
             style={{
