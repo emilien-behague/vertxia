@@ -33,9 +33,9 @@ function Scene({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
     if (groupRef.current) {
       groupRef.current.rotation.y = state.clock.elapsedTime * 0.4;
     }
-    // Background cycle saiyan : violet profond → magenta → orange aura selon scroll
+    // Background cycle violet profond → magenta (reste dans la palette anime sombre)
     const p = Math.min(Math.max(scrollRef.current, 0), 1);
-    bgColor.current.setHSL(0.72 - p * 0.65, 0.55, 0.04 + Math.sin(p * Math.PI) * 0.05);
+    bgColor.current.setHSL(0.74 + p * 0.12, 0.5, 0.05 + Math.sin(p * Math.PI) * 0.025);
     state.scene.background = bgColor.current;
 
     // Aura Trunks : rim violet pulse léger
@@ -158,11 +158,16 @@ export default function BuuKoffImmersive() {
 
       gsap.to(horizontalTrackRef.current, {
         x: () => -getMaxX(),
-        ease: "power2.inOut",
+        ease: "none",
         scrollTrigger: {
           trigger: horizontalWrapperRef.current,
           pin: true,
           scrub: 0.5,
+          snap: {
+            snapTo: 1 / 2,
+            duration: { min: 0.15, max: 0.4 },
+            ease: "power2.inOut",
+          },
           end: () => "+=" + getMaxX(),
           invalidateOnRefresh: true,
         },
@@ -319,7 +324,7 @@ export default function BuuKoffImmersive() {
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-purple-950/30 to-black/80" />
-        <div className="relative z-10 text-center text-white max-w-3xl px-6">
+        <div className="relative z-10 text-center text-white max-w-[85vw] md:max-w-3xl px-6">
           <p className="text-3xl md:text-7xl font-light leading-[1] tracking-tight">
             « Le fils de Vegeta
             <br />
@@ -388,18 +393,18 @@ export default function BuuKoffImmersive() {
           {/* H-SECTION 2 — STORY 2 collection */}
           <section className="horizontal-section relative w-screen h-screen flex-shrink-0 flex items-center justify-center overflow-hidden">
             <div
-              className="absolute inset-0 bg-cover bg-center"
+              className="absolute inset-y-0 -left-[50vw] -right-[50vw] bg-cover bg-center"
               style={{
                 backgroundImage: `url(${LIFESTYLE_IMG_2})`,
                 filter: "brightness(0.35) saturate(1.05)",
               }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-purple-950/20 to-black/40" />
-            <div className="relative z-10 text-center text-white max-w-3xl px-6">
+            <div className="absolute inset-y-0 -left-[50vw] -right-[50vw] bg-gradient-to-t from-black/80 via-purple-950/20 to-black/40" />
+            <div className="relative z-10 text-center text-white max-w-[85vw] md:max-w-3xl px-6">
               <p className="text-3xl md:text-7xl font-light leading-[1] tracking-tight">
                 Une pièce de collection.
               </p>
-              <p className="text-xl md:text-4xl font-light text-white/50 mt-3 italic">
+              <p className="text-lg md:text-4xl font-light text-white/50 mt-3 italic">
                 Pas un produit dérivé.
               </p>
             </div>
