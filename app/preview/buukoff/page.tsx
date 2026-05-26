@@ -12,6 +12,7 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import { CinematicEffects } from "@/components/cinematic-effects";
 
 const MODEL_PATH = "/3d/dbz-trunks_uhq.glb";
 
@@ -84,6 +85,9 @@ function Scene({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
       <Sparkles count={120} size={2.5} speed={0.3} scale={[14, 16, 14]} opacity={0.55} color="#ffd700" />
 
       <Environment preset="night" environmentIntensity={0.55} />
+
+      {/* Cinematic post-processing : ACES tone mapping + bloom subtle + vignette + saturation */}
+      <CinematicEffects bloom={0.35} vignette={0.35} saturation={0.08} contrast={0.04} />
     </>
   );
 }

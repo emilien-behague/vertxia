@@ -12,6 +12,7 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import { CinematicEffects } from "@/components/cinematic-effects";
 
 const MODEL_PATH = "/3d/les-derbies-femme_packshot_idx4.glb";
 
@@ -56,6 +57,9 @@ function Scene({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
 
       <Sparkles count={80} size={2} speed={0.4} scale={[18, 10, 18]} opacity={0.4} />
       <Environment preset="studio" environmentIntensity={0.9} />
+
+      {/* Cinematic post-processing : ACES tone mapping + bloom léger + vignette */}
+      <CinematicEffects bloom={0.2} vignette={0.32} saturation={0.04} contrast={0.04} />
     </>
   );
 }

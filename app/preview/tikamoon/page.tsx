@@ -10,6 +10,7 @@ import {
   Html,
 } from "@react-three/drei";
 import * as THREE from "three";
+import { CinematicEffects } from "@/components/cinematic-effects";
 
 const MODEL_PATH = "/3d/coffee-tek-meuble-tv-180_clean.glb";
 
@@ -156,6 +157,9 @@ export default function TikamoonPreview() {
           />
 
           <Environment preset="studio" environmentIntensity={1.0} />
+
+          {/* Cinematic post-processing : ACES tone mapping + bloom + vignette */}
+          <CinematicEffects bloom={0.2} vignette={0.3} saturation={0.05} contrast={0.04} />
         </Suspense>
 
         <OrbitControls
