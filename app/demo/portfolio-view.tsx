@@ -465,16 +465,13 @@ function LabInner() {
             Premiers 30 testeurs · emilien@vertxia.com
           </p>
           <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-4 pt-2">
-            <MagneticButton href="/try" variant="solid">
-              ESSAYER MA BOUTIQUE →
-            </MagneticButton>
             <MagneticButton
               href="https://instagram.com/vertxia.fr"
-              variant="ghost"
+              variant="solid"
               target="_blank"
               rel="noopener"
             >
-              @VERTXIA.FR
+              @VERTXIA.FR →
             </MagneticButton>
           </div>
         </Section>
