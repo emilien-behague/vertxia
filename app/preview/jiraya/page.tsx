@@ -17,6 +17,7 @@ import { SceneLoader } from "@/components/scene-loader";
 import { AudioProvider } from "@/components/audio/audio-provider";
 import { AudioToggle } from "@/components/audio/audio-toggle";
 import { SoundEngine } from "@/components/audio/sound-engine";
+import { CustomCursor } from "@/components/custom-cursor";
 
 // Les types officiels de @activetheory/split-text annoncent chars/words/lines
 // comme string[] alors qu'au runtime ce sont des HTMLElement[] (cf. source :
@@ -303,6 +304,7 @@ export default function JirayaImmersive() {
 
   return (
     <AudioProvider enableDrone={true}>
+    <CustomCursor />
     <div ref={containerRef} className="relative bg-black overflow-x-hidden">
       {/* Skeleton loader overlay (couvre le Canvas pendant le download GLB/textures) */}
       <SceneLoader />
@@ -491,6 +493,7 @@ export default function JirayaImmersive() {
             href="https://buu-koff-2.myshopify.com/products/naruto-shippuden-ichiban-kuji-the-bridge-of-peace-and-the-lament-of-reincarnation-figurine-jiraya-sage-mode-lot-e"
             target="_blank"
             rel="noopener noreferrer"
+            data-cursor="magnetic"
             onMouseEnter={() => SoundEngine.hover()}
             onClick={() => SoundEngine.click()}
             className="inline-block mt-10 px-8 py-3 border border-white/20 text-white hover:bg-white hover:text-black transition-colors duration-300 pointer-events-auto font-mono text-xs md:text-sm tracking-[0.3em]"
