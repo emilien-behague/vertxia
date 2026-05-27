@@ -21,7 +21,7 @@
  */
 
 import { Suspense, useEffect, useRef } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
 import { PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
 import { CinematicEffects } from "@/components/cinematic-effects";
@@ -57,6 +57,24 @@ const CHAMBERS = [
 // traversé "TON TOUR" à Z=-120).
 const TOTAL_DEPTH = 165;
 const SCROLL_HEIGHT_VH = 600; // 6 sections × 100vh
+
+/**
+ * MobileScale — wrappe un sous-arbre 3D pour le rétrécir sur écran portrait.
+ * Le FOV horizontal d'une caméra perspective est étroit en aspect 9:16, donc
+ * les mots particules débordent sans cette correction. 55% en portrait laisse
+ * VERTXIA / TON TOUR cadrés avec respiration latérale.
+ */
+function MobileScale({
+  children,
+  portraitScale = 0.55,
+}: {
+  children: React.ReactNode;
+  portraitScale?: number;
+}) {
+  const { size } = useThree();
+  const isPortrait = size.width < size.height;
+  return <group scale={isPortrait ? portraitScale : 1}>{children}</group>;
+}
 
 function LabInner() {
   const scrollRef = useRef(0);
@@ -121,13 +139,16 @@ function LabInner() {
           <directionalLight position={[4, 3, 6]} intensity={1.4} color="#FFC58A" />
 
           <Suspense fallback={null}>
-            {/* Chambre 0 : Hero — VERTXIA en particules face à l'entrée */}
+            {/* Chambre 0 : Hero — VERTXIA en particules face à l'entrée.
+                MobileScale rétrécit le mot en portrait (sinon il déborde du FOV). */}
             <group position={[0, 0, CHAMBERS[0].z]}>
-              <WordParticles
-                words={["VERTXIA"]}
-                activeIndex={0}
-                pointSize={0.9}
-              />
+              <MobileScale>
+                <WordParticles
+                  words={["VERTXIA"]}
+                  activeIndex={0}
+                  pointSize={0.9}
+                />
+              </MobileScale>
             </group>
 
             {/* Chambre 1 : Tunnel — paroi de particules autour du chemin Z */}
@@ -282,11 +303,13 @@ function LabInner() {
             {/* Chambre 4 : TON TOUR — mur de particules qu'on TRAVERSE.
                 Caméra continue ensuite vers la chambre FIN au-delà. */}
             <group position={[0, 0, CHAMBERS[4].z]}>
-              <WordParticles
-                words={["TON TOUR"]}
-                activeIndex={0}
-                pointSize={0.9}
-              />
+              <MobileScale>
+                <WordParticles
+                  words={["TON TOUR"]}
+                  activeIndex={0}
+                  pointSize={0.9}
+                />
+              </MobileScale>
             </group>
 
             {/* Chambre 5 : FIN — espace calme post-mur, lumière warm en bout de
