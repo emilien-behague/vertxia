@@ -1,38 +1,40 @@
 @import "tailwindcss";
 
 /**
- * Vertxia palette — design system ui-ux-pro-max v1 (dark warm + gold accent).
+ * Vertxia design tokens — 3 couches générées par le skill `design-system`
+ * à partir de design-system/vertxia/tokens.json
  *
- * Philosophie : "premium dark cinema" type Active Theory / Magic Window — pas
- * de pur #000 (OLED smear), tonalité chaude (stone) plutôt que froide (slate),
- * accent gold #A16207 luxueux et restreint (1 seul accent CTA).
+ * Source de vérité unique. Pour changer la palette/typo/spacing :
+ *   1. édite design-system/vertxia/tokens.json
+ *   2. node ~/.claude/skills/design-system/scripts/generate-tokens.cjs \
+ *        --config design-system/vertxia/tokens.json \
+ *        --output design-system/vertxia/tokens.css --format css
+ *
+ * Direction visuelle : Premium Dark Cinema (warm stone-900 #1C1917 + gold #A16207
+ * accent, Magic Window-inspired). Calistoga display + Inter body + JetBrains Mono.
  */
-:root {
-  --background: #1C1917;         /* stone-900 warm — fond cinéma chaud */
-  --foreground: #FAFAF9;         /* stone-50 — texte cream */
-  --surface: #292524;            /* stone-800 — cartes / panels */
-  --surface-glass: rgba(28, 25, 23, 0.55); /* fond glassmorphism */
-  --secondary: #44403C;          /* stone-700 — texte secondaire */
-  --muted: #78716C;              /* stone-500 — text tertiary, captions */
-  --border: #44403C;             /* stone-700 — borders subtils */
-  --border-strong: #57534E;      /* stone-600 — borders accentués */
-  --accent: #A16207;             /* yellow-700 gold — CTA + highlights */
-  --accent-hover: #B45309;       /* yellow-700 → 800 hover */
-  --accent-soft: rgba(161, 98, 7, 0.12); /* gold tint pour bg highlights */
-  --destructive: #DC2626;        /* red-600 — erreurs only */
-}
+@import "../design-system/vertxia/tokens.css";
 
+/* Tailwind v4 @theme inline : expose les tokens sémantiques en utilities Tailwind.
+   `bg-background`, `text-foreground`, `bg-accent`, etc. utilisables partout. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-surface: var(--surface);
-  --color-secondary: var(--secondary);
-  --color-muted: var(--muted);
-  --color-border: var(--border);
-  --color-border-strong: var(--border-strong);
-  --color-accent: var(--accent);
-  --color-accent-hover: var(--accent-hover);
-  --color-destructive: var(--destructive);
+  --color-background: var(--color-background);
+  --color-foreground: var(--color-foreground);
+  --color-surface: var(--color-surface);
+  --color-surface-glass: var(--color-surface-glass);
+  --color-secondary: var(--color-secondary);
+  --color-muted: var(--color-muted);
+  --color-muted-foreground: var(--color-muted-foreground);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-foreground: var(--color-accent-foreground);
+  --color-destructive: var(--color-destructive);
+  --color-destructive-foreground: var(--color-destructive-foreground);
+  --color-ring: var(--color-ring);
+
+  /* Fonts : variables Next.js injectées via layout.tsx */
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
@@ -40,8 +42,8 @@
 
 html,
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-background);
+  color: var(--color-foreground);
   font-family: var(--font-sans), "Inter", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -51,7 +53,15 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Marquee animations */
+/* Sélection : tint gold subtil */
+::selection {
+  background-color: rgba(161, 98, 7, 0.3); /* accent @ 30% */
+  color: var(--color-foreground);
+}
+
+/* ─── Animations partagées ───────────────────────────────────────────────── */
+
+/* Marquee (live feed dans /try) */
 @keyframes marqueeLeft {
   from { transform: translateX(0); }
   to   { transform: translateX(-33.333%); }
@@ -61,13 +71,13 @@ html {
   to   { transform: translateX(0); }
 }
 
-/* Fade in up */
+/* Fade in up — révélations doux */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Row slide in (for live feed) */
+/* Row slide in (live feed) */
 @keyframes rowSlideIn {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -79,16 +89,15 @@ html {
   50% { opacity: 0.4; }
 }
 
-/* Ambient light blob — signature "Modern Dark Cinema" du design system.
-   Tache de lumière colorée qui flotte lentement en arrière-plan, donne
-   l'atmosphère cinéma. À utiliser ponctuellement, jamais 3+ par viewport. */
+/* Ambient light blob — signature Modern Dark Cinema.
+   Tache de lumière qui flotte lentement, atmosphère cinéma. */
 @keyframes ambientFloat {
   0%, 100% { transform: translate(0, 0) scale(1); }
   33%      { transform: translate(40px, -30px) scale(1.05); }
   66%      { transform: translate(-30px, 40px) scale(0.95); }
 }
 
-/* Hover lift subtil pour cards / boutons — 150-300ms ease-out (norme MD) */
+/* Hover lift subtil — 200ms ease-out (Material Design norme micro-interactions) */
 .lift-on-hover {
   transition: transform 200ms ease-out, box-shadow 200ms ease-out;
 }

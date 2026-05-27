@@ -1,0 +1,133 @@
+/* Design Tokens - Auto-generated */
+/* Do not edit directly - modify tokens.json instead */
+
+/* === PRIMITIVES === */
+:root {
+  --primitive-color-stone-50: #FAFAF9;
+  --primitive-color-stone-100: #F5F5F4;
+  --primitive-color-stone-200: #E7E5E4;
+  --primitive-color-stone-300: #D6D3D1;
+  --primitive-color-stone-400: #A8A29E;
+  --primitive-color-stone-500: #78716C;
+  --primitive-color-stone-600: #57534E;
+  --primitive-color-stone-700: #44403C;
+  --primitive-color-stone-800: #292524;
+  --primitive-color-stone-900: #1C1917;
+  --primitive-color-stone-950: #0C0A09;
+  --primitive-color-yellow-500: #EAB308;
+  --primitive-color-yellow-600: #CA8A04;
+  --primitive-color-yellow-700: #A16207;
+  --primitive-color-yellow-800: #854D0E;
+  --primitive-color-red-500: #EF4444;
+  --primitive-color-red-600: #DC2626;
+  --primitive-color-white: #FFFFFF;
+  --primitive-color-black: #000000;
+  --primitive-spacing-0: 0;
+  --primitive-spacing-1: 0.25rem;
+  --primitive-spacing-2: 0.5rem;
+  --primitive-spacing-3: 0.75rem;
+  --primitive-spacing-4: 1rem;
+  --primitive-spacing-5: 1.25rem;
+  --primitive-spacing-6: 1.5rem;
+  --primitive-spacing-8: 2rem;
+  --primitive-spacing-10: 2.5rem;
+  --primitive-spacing-12: 3rem;
+  --primitive-spacing-16: 4rem;
+  --primitive-spacing-20: 5rem;
+  --primitive-spacing-24: 6rem;
+  --primitive-spacing-32: 8rem;
+  --primitive-fontSize-xs: 0.75rem;
+  --primitive-fontSize-sm: 0.875rem;
+  --primitive-fontSize-base: 1rem;
+  --primitive-fontSize-lg: 1.125rem;
+  --primitive-fontSize-xl: 1.25rem;
+  --primitive-fontSize-2xl: 1.5rem;
+  --primitive-fontSize-3xl: 1.875rem;
+  --primitive-fontSize-4xl: 2.25rem;
+  --primitive-fontSize-5xl: 3rem;
+  --primitive-fontSize-6xl: 3.75rem;
+  --primitive-fontSize-7xl: 4.5rem;
+  --primitive-fontSize-8xl: 6rem;
+  --primitive-fontSize-9xl: 8rem;
+  --primitive-fontFamily-sans: var(--font-sans), 'Inter', system-ui, sans-serif;
+  --primitive-fontFamily-display: var(--font-display), 'Calistoga', Georgia, serif;
+  --primitive-fontFamily-mono: var(--font-mono), 'JetBrains Mono', ui-monospace, monospace;
+  --primitive-radius-none: 0;
+  --primitive-radius-sm: 0.125rem;
+  --primitive-radius-default: 0.25rem;
+  --primitive-radius-md: 0.375rem;
+  --primitive-radius-lg: 0.5rem;
+  --primitive-radius-xl: 0.75rem;
+  --primitive-radius-2xl: 1rem;
+  --primitive-radius-full: 9999px;
+  --primitive-shadow-none: none;
+  --primitive-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --primitive-shadow-default: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --primitive-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --primitive-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --primitive-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --primitive-shadow-glow-gold: 0 0 24px rgba(161, 98, 7, 0.35);
+  --primitive-duration-fast: 150ms;
+  --primitive-duration-normal: 200ms;
+  --primitive-duration-slow: 300ms;
+  --primitive-duration-scene: 500ms;
+  --primitive-blur-none: 0;
+  --primitive-blur-sm: 4px;
+  --primitive-blur-md: 12px;
+  --primitive-blur-lg: 24px;
+}
+
+/* === SEMANTIC === */
+:root {
+  --color-background: #1C1917;
+  --color-foreground: #FAFAF9;
+  --color-surface: #292524;
+  --color-surface-glass: rgba(28, 25, 23, 0.55);
+  --color-secondary: #44403C;
+  --color-muted: #78716C;
+  --color-muted-foreground: #A8A29E;
+  --color-border: #44403C;
+  --color-border-strong: #57534E;
+  --color-accent: #A16207;
+  --color-accent-hover: #854D0E;
+  --color-accent-foreground: #FAFAF9;
+  --color-destructive: #DC2626;
+  --color-destructive-foreground: #FAFAF9;
+  --color-ring: #A16207;
+  --spacing-tight: 0.5rem;
+  --spacing-component: 1rem;
+  --spacing-card: 1.5rem;
+  --spacing-section: 4rem;
+  --spacing-hero: 6rem;
+}
+
+/* === COMPONENTS === */
+:root {
+  --button-primary-bg: #A16207;
+  --button-primary-fg: #FAFAF9;
+  --button-primary-hover-bg: #854D0E;
+  --button-ghost-bg: transparent;
+  --button-ghost-fg: #FAFAF9;
+  --button-ghost-border: rgba(250, 250, 249, 0.15);
+  --button-padding-x: 1.5rem;
+  --button-padding-y: 0.75rem;
+  --button-radius: 0.375rem;
+  --button-font-size: 0.875rem;
+  --button-duration: 200ms;
+  --card-bg: #292524;
+  --card-fg: #FAFAF9;
+  --card-border: #44403C;
+  --card-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --card-padding: 1.5rem;
+  --card-radius: 0.75rem;
+  --input-bg: #292524;
+  --input-fg: #FAFAF9;
+  --input-border: #44403C;
+  --input-focus-ring: #A16207;
+  --input-padding-x: 1rem;
+  --input-padding-y: 0.75rem;
+  --input-radius: 0.375rem;
+  --nav-bg: rgba(28, 25, 23, 0.55);
+  --nav-border: rgba(250, 250, 249, 0.08);
+  --nav-padding: 1.25rem;
+}
