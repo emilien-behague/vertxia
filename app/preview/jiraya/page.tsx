@@ -11,13 +11,14 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
-import SplitText, { isFontReady } from "@activetheory/split-text";
+import SplitText from "@activetheory/split-text";
 import { CinematicEffects } from "@/components/cinematic-effects";
 import { SceneLoader } from "@/components/scene-loader";
 import { AudioProvider } from "@/components/audio/audio-provider";
 import { AudioToggle } from "@/components/audio/audio-toggle";
 import { SoundEngine } from "@/components/audio/sound-engine";
 import { CustomCursor } from "@/components/custom-cursor";
+import { MagneticButton } from "@/components/magnetic-button";
 
 // Les types officiels de @activetheory/split-text annoncent chars/words/lines
 // comme string[] alors qu'au runtime ce sont des HTMLElement[] (cf. source :
@@ -166,8 +167,11 @@ export default function JirayaImmersive() {
 
     // On attend que les fonts soient chargées avant de splitter sinon
     // split-text mesure les line-breaks sur la mauvaise police et casse le layout.
+    // (Inline de isFontReady() de la lib — pas exporte dans les types TS)
     const init = async () => {
-      await isFontReady();
+      if (typeof document !== "undefined" && "fonts" in document) {
+        await document.fonts.ready;
+      }
 
       const ctx = gsap.context(() => {
         // ─── Hero : "JIRAYA" char-by-char ─────────────────────────────────
@@ -489,17 +493,16 @@ export default function JirayaImmersive() {
           <h2 className="chapter-title text-5xl md:text-9xl font-light text-white tracking-tighter leading-none">
             buu-koff
           </h2>
-          <a
-            href="https://buu-koff-2.myshopify.com/products/naruto-shippuden-ichiban-kuji-the-bridge-of-peace-and-the-lament-of-reincarnation-figurine-jiraya-sage-mode-lot-e"
-            target="_blank"
-            rel="noopener noreferrer"
-            data-cursor="magnetic"
-            onMouseEnter={() => SoundEngine.hover()}
-            onClick={() => SoundEngine.click()}
-            className="inline-block mt-10 px-8 py-3 border border-white/20 text-white hover:bg-white hover:text-black transition-colors duration-300 pointer-events-auto font-mono text-xs md:text-sm tracking-[0.3em]"
-          >
-            VOIR LA FIGURINE
-          </a>
+          <div className="mt-10 inline-block">
+            <MagneticButton
+              href="https://buu-koff-2.myshopify.com/products/naruto-shippuden-ichiban-kuji-the-bridge-of-peace-and-the-lament-of-reincarnation-figurine-jiraya-sage-mode-lot-e"
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="ghost"
+            >
+              VOIR LA FIGURINE
+            </MagneticButton>
+          </div>
           <div className="mt-16 flex flex-col items-center gap-2">
             <span className="font-mono text-[10px] text-white/30 tracking-[0.3em]">
               GÉNÉRÉ EN 3 MIN PAR
