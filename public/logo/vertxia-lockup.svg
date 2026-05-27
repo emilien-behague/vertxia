@@ -1,0 +1,44 @@
+<!--
+  Vertxia logo lockup — mark + wordmark horizontal.
+
+  Usage : headers, email signatures, footer, signatures sociales horizontales.
+  Pour le mark seul (favicon, OG square, social pp), voir vertxia-mark.svg.
+
+  La typo wordmark est "VERTXIA" en sans bold (Inter 700) pour cohérence
+  avec le brand voice (technique, direct). Le mark à gauche utilise
+  currentColor — pour l'application web, wrap le SVG dans un container
+  avec text-foreground ou text-accent selon le contexte.
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 280 64"
+  width="280"
+  height="64"
+  fill="none"
+  role="img"
+  aria-label="Vertxia"
+>
+  <!-- Mark (3 axes converging) — left aligned -->
+  <g
+    stroke="currentColor"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <line x1="32" y1="32" x2="32" y2="7" />
+    <line x1="32" y1="32" x2="55" y2="45.5" />
+    <line x1="32" y1="32" x2="9" y2="45.5" />
+  </g>
+  <circle cx="32" cy="32" r="3.2" fill="currentColor" />
+
+  <!-- Wordmark "VERTXIA" — Inter Bold (system fallback si pas dispo) -->
+  <text
+    x="78"
+    y="42"
+    font-family="Inter, system-ui, -apple-system, sans-serif"
+    font-size="28"
+    font-weight="700"
+    letter-spacing="2"
+    fill="currentColor"
+  >VERTXIA</text>
+</svg>

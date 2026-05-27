@@ -237,8 +237,26 @@ Vertxia transforme une URL Shopify en site e-commerce 3D immersif en 4 minutes. 
 - ❌ Sparkles/quads visibles sous bloom
 
 ### Logo / Wordmark
-État actuel : **WORDMARK uniquement** en Calistoga "VERTXIA" — pas de logo iconique.
-À développer : pictogramme V/X minimal (étape 4 — skill `design` logo gen).
+
+**Concept** : "Vertxia" contient *vertex* (= point où 3 axes 3D se rencontrent). Le mark représente les 3 axes (X/Y/Z) convergeant vers une origine en perspective isométrique — l'angle d'un cube wireframe.
+
+**Fichiers** (dans `public/logo/`) :
+
+| Fichier | Usage |
+|---|---|
+| `vertxia-mark.svg` | **Symbole seul** — favicon, OG image square, Insta profile picture, social pp, app icon |
+| `vertxia-lockup.svg` | **Mark + wordmark "VERTXIA"** horizontal — headers, email signature, footer, banners |
+
+**Couleur** : les SVG utilisent `currentColor` — wrap dans un container avec la bonne classe :
+- Sur fond sombre : `<div class="text-foreground">` (cream) ou `<div class="text-accent">` (gold)
+- Sur fond clair : `<div class="text-background">` (warm dark)
+
+**Don'ts** :
+- Ne pas rotater / skewer
+- Ne pas changer les proportions ou rajouter de stroke
+- Ne pas appliquer d'effets (drop shadow, glow) — le mark se suffit
+- Ne pas combiner avec un autre logo dans la même zone sans clear space (1× hauteur du mark minimum)
+- Minimum size : 24px (favicon), 120px lockup (digital), 35mm lockup (print)
 
 ---
 
