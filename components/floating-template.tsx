@@ -24,6 +24,7 @@ import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 type Props = {
   url: string;
@@ -57,9 +58,12 @@ export function FloatingTemplate({
   const { scene } = useGLTF(url);
   const tRef = useRef(phaseOffset);
 
-  // Clone + centre + scale une fois — chaque instance a son propre état
+  // Clone + centre + scale une fois — chaque instance a son propre état.
+  // IMPORTANT : SkeletonUtils.clone (pas scene.clone) pour que les SkinnedMesh
+  // (Trunks, Jiraya — personnages rigés) clonent correctement leur squelette.
+  // Sinon les vertices de la moitié haute se retrouvent au mauvais endroit.
   const prepared = useMemo(() => {
-    const cloned = scene.clone(true);
+    const cloned = cloneSkinned(scene);
     const box = new THREE.Box3().setFromObject(cloned);
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
