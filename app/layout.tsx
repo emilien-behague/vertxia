@@ -60,7 +60,7 @@ export default function RootLayout({
       lang="fr"
       className={`${calistoga.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-[#1C1917] text-[#FAFAF9] selection:bg-[#A16207]/30">
+      <body className="min-h-full bg-background text-foreground">
         {children}
       </body>
     </html>

@@ -454,7 +454,7 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
   return (
     <AudioProvider enableDrone={true}>
     <CustomCursor />
-    <div ref={containerRef} className="relative bg-[#1C1917] text-[#FAFAF9] overflow-x-hidden">
+    <div ref={containerRef} className="relative bg-background text-foreground overflow-x-hidden">
       <SceneLoader />
       {/* Audio toggle discret en bas-droite */}
       <AudioToggle className="fixed bottom-6 right-6 z-50" />
@@ -475,23 +475,23 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
       </div>
 
       {/* Top nav glass — Liquid Glass signature : backdrop-blur + warm dark tint */}
-      <nav className="fixed top-0 inset-x-0 z-50 flex justify-between items-center px-5 md:px-8 py-4 md:py-5 pointer-events-none backdrop-blur-md bg-[#1C1917]/30 border-b border-white/5">
+      <nav className="fixed top-0 inset-x-0 z-50 flex justify-between items-center px-5 md:px-8 py-4 md:py-5 pointer-events-none backdrop-blur-md bg-background/30 border-b border-white/5">
         <Link
           href="/"
-          className="font-mono text-[10px] md:text-xs tracking-[0.3em] text-[#FAFAF9]/70 hover:text-[#FAFAF9] transition pointer-events-auto"
+          className="font-mono text-[10px] md:text-xs tracking-[0.3em] text-foreground/70 hover:text-foreground transition pointer-events-auto"
         >
           VERTXIA · DÉMO LIVE
         </Link>
         <div className="flex items-center gap-2 md:gap-3 pointer-events-auto">
           <button
             onClick={copyLink}
-            className="font-mono text-[9px] md:text-[10px] tracking-[0.3em] text-[#FAFAF9]/70 hover:text-[#FAFAF9] border border-[#FAFAF9]/15 hover:border-[#FAFAF9]/40 px-2.5 md:px-3 py-2 rounded-md transition"
+            className="font-mono text-[9px] md:text-[10px] tracking-[0.3em] text-foreground/70 hover:text-foreground border border-foreground/15 hover:border-foreground/40 px-2.5 md:px-3 py-2 rounded-md transition"
           >
             {copied ? "✓ COPIÉ" : "COPIER LE LIEN"}
           </button>
           <a
             href={mailtoUrl}
-            className="font-mono text-[9px] md:text-[10px] tracking-[0.3em] bg-[#A16207] text-[#FAFAF9] hover:bg-[#B45309] px-3 md:px-4 py-2 rounded-md transition"
+            className="font-mono text-[9px] md:text-[10px] tracking-[0.3em] bg-accent text-accent-foreground hover:bg-accent-hover px-3 md:px-4 py-2 rounded-md transition"
           >
             ACTIVER →
           </a>
@@ -504,13 +504,13 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
 
         {/* MOBILE */}
         <div className="md:hidden absolute top-20 left-6 right-6 z-10">
-          <span className="hero-meta font-mono text-[10px] tracking-[0.4em] text-[#D97706] block mb-3">
+          <span className="hero-meta font-mono text-[10px] tracking-[0.4em] text-accent block mb-3">
             ✓ GÉNÉRÉ EN LIVE · {shop.toUpperCase() || "SHOPIFY"}
           </span>
-          <h1 className="hero-brand font-display text-[clamp(3rem,15vw,5rem)] font-normal leading-[0.9] tracking-tight text-[#FAFAF9] drop-shadow-2xl">
+          <h1 className="hero-brand font-display text-[clamp(3rem,15vw,5rem)] font-normal leading-[0.9] tracking-tight text-foreground drop-shadow-2xl">
             {heroLetters}
           </h1>
-          <p className="hero-meta text-sm text-[#FAFAF9]/65 max-w-xs mt-5 drop-shadow-lg leading-relaxed">
+          <p className="hero-meta text-sm text-foreground/65 max-w-xs mt-5 drop-shadow-lg leading-relaxed">
             {product}
             <br />
             Boutique 3D immersive. Générée en 4 min.
@@ -519,13 +519,13 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
 
         {/* DESKTOP */}
         <div className="hidden md:block">
-          <span className="hero-meta font-mono text-xs tracking-[0.4em] text-[#D97706] block mb-6">
+          <span className="hero-meta font-mono text-xs tracking-[0.4em] text-accent block mb-6">
             ✓ GÉNÉRÉ EN LIVE · {shop.toUpperCase() || "SHOPIFY"}
           </span>
-          <h1 className="hero-brand font-display text-[clamp(4rem,12vw,11rem)] font-normal leading-[0.9] tracking-tight text-[#FAFAF9] whitespace-nowrap">
+          <h1 className="hero-brand font-display text-[clamp(4rem,12vw,11rem)] font-normal leading-[0.9] tracking-tight text-foreground whitespace-nowrap">
             {heroLetters}
           </h1>
-          <p className="hero-meta text-lg text-[#FAFAF9]/55 max-w-md mt-7 leading-relaxed">
+          <p className="hero-meta text-lg text-foreground/55 max-w-md mt-7 leading-relaxed">
             {product}
             <br />
             Boutique 3D immersive. Générée en 4 min.
@@ -674,13 +674,13 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
       {/* ─── 7. CTA — Activer ma boutique ─────────────────────────────────── */}
       <section className="v-fade relative z-10 h-screen flex flex-col items-center justify-center p-6 md:p-16 text-center">
         <div className="max-w-2xl">
-          <span className="font-mono text-xs tracking-[0.4em] text-[#D97706] block mb-6">
+          <span className="font-mono text-xs tracking-[0.4em] text-accent block mb-6">
             ACTIVER MA BOUTIQUE 3D
           </span>
-          <h2 className="glitch-text font-display text-4xl md:text-7xl font-normal text-[#FAFAF9] tracking-tight leading-[0.95]">
+          <h2 className="glitch-text font-display text-4xl md:text-7xl font-normal text-foreground tracking-tight leading-[0.95]">
             On construit la tienne.
           </h2>
-          <p className="text-[#FAFAF9]/60 text-base md:text-lg mt-8 max-w-md mx-auto leading-relaxed">
+          <p className="text-foreground/60 text-base md:text-lg mt-8 max-w-md mx-auto leading-relaxed">
             Envoie-moi ton URL Shopify. Je te livre ton site 3D complet
             sur ton domaine, avec tous tes produits.
           </p>

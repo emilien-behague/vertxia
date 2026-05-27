@@ -40,13 +40,17 @@ type Props = {
 //   solid  = primary CTA gold (#A16207) — bouton dominant
 //   ghost  = secondary action, border cream subtil
 //   accent = soft gold tint avec border + gradient (highlights non-primaires)
+// Variants tokenisées (cf. design-system/vertxia/tokens.json) :
+//   solid  = primary CTA gold (--color-accent → #A16207) — bouton dominant
+//   ghost  = secondary action, border cream subtil
+//   accent = soft gold tint avec border + gradient (highlights non-primaires)
 const VARIANT_CLASSES: Record<Variant, string> = {
   solid:
-    "bg-[#A16207] text-[#FAFAF9] hover:bg-[#B45309] border border-[#A16207]",
+    "bg-accent text-accent-foreground hover:bg-accent-hover border border-accent",
   ghost:
-    "bg-transparent text-[#FAFAF9] border border-[#FAFAF9]/15 hover:border-[#FAFAF9]/40",
+    "bg-transparent text-foreground border border-foreground/15 hover:border-foreground/40",
   accent:
-    "bg-gradient-to-r from-[#A16207]/25 to-[#A16207]/10 border border-[#A16207]/40 text-[#FAFAF9] hover:from-[#A16207]/40 hover:to-[#A16207]/20",
+    "bg-gradient-to-r from-accent/25 to-accent/10 border border-accent/40 text-foreground hover:from-accent/40 hover:to-accent/20",
 };
 
 export function MagneticButton({
