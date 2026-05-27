@@ -22,6 +22,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { CinematicEffects } from "@/components/cinematic-effects";
+import { SceneLoader } from "@/components/scene-loader";
 
 const MODEL_PATH = "/3d/jiraya_m6.glb";
 
@@ -246,6 +247,9 @@ export default function JirayaReel() {
 
   return (
     <div ref={containerRef} className="relative bg-black overflow-x-hidden">
+      {/* Skeleton loader overlay pendant le download GLB/textures */}
+      <SceneLoader />
+
       {/* Canvas sticky plein écran (z-0) */}
       <div className="fixed inset-0 z-0">
         <Canvas

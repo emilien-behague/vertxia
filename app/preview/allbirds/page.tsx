@@ -11,6 +11,7 @@ import {
 } from "@react-three/drei";
 import * as THREE from "three";
 import { CinematicEffects } from "@/components/cinematic-effects";
+import { SceneLoader } from "@/components/scene-loader";
 
 const MODEL_PATH = "/3d/wool-runner.glb";
 
@@ -67,6 +68,9 @@ export default function AllbirdsPreview() {
 
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden">
+      {/* Skeleton loader overlay pendant le download GLB/textures */}
+      <SceneLoader />
+
       {/* Overlay branding — z-30 pour passer devant tout */}
       <div className="absolute inset-0 z-30 pointer-events-none flex flex-col justify-between p-6 md:p-16">
         {/* Top: Vertxia tag */}

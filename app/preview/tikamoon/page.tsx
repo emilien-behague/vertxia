@@ -11,6 +11,7 @@ import {
 } from "@react-three/drei";
 import * as THREE from "three";
 import { CinematicEffects } from "@/components/cinematic-effects";
+import { SceneLoader } from "@/components/scene-loader";
 
 const MODEL_PATH = "/3d/coffee-tek-meuble-tv-180_clean.glb";
 
@@ -67,6 +68,9 @@ export default function TikamoonPreview() {
 
   return (
     <div className="relative w-full h-screen bg-black overflow-hidden">
+      {/* Skeleton loader overlay pendant le download GLB/textures */}
+      <SceneLoader />
+
       <div className="absolute inset-0 z-30 pointer-events-none flex flex-col justify-between p-6 md:p-16">
         <div className="flex justify-between items-start">
           <span className="font-mono text-[10px] md:text-xs tracking-[0.3em] text-white/50">

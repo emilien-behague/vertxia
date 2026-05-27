@@ -13,6 +13,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { CinematicEffects } from "@/components/cinematic-effects";
+import { SceneLoader } from "@/components/scene-loader";
 
 const MODEL_PATH = "/3d/dbz-trunks_m6.glb";
 
@@ -189,6 +190,9 @@ export default function BuuKoffImmersive() {
 
   return (
     <div ref={containerRef} className="relative bg-black overflow-x-hidden">
+      {/* Skeleton loader overlay pendant le download GLB/textures */}
+      <SceneLoader />
+
       {/* Sticky Canvas 3D */}
       <div className="fixed inset-0 z-0">
         <Canvas
