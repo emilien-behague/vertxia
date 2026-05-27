@@ -356,11 +356,11 @@ function LabInner() {
           </Suspense>
 
           <CinematicEffects
-            bloom={0.4}
+            bloom={0.22}
             vignette={0.55}
-            saturation={0.12}
-            contrast={0.06}
-            chromaticAberration={0.0014}
+            saturation={0.1}
+            contrast={0.05}
+            chromaticAberration={0.0012}
           />
         </Canvas>
 

@@ -267,7 +267,8 @@ const FRAGMENT = /* glsl */ `
     // (sinon le mot d'une chambre éloignée reste visible depuis l'entrée)
     float depthFade = clamp(1.0 - (vDepth - 2.0) * 0.035, 0.0, 1.0);
     // Alpha bas pour que l'accumulation additive ne sature pas au centre du mot
-    float alpha = halo * depthFade * 0.55;
+    // (mobile : densité par pixel plus haute à cause du scale → baisser ici)
+    float alpha = halo * depthFade * 0.32;
     gl_FragColor = vec4(col, alpha);
   }
 `;
