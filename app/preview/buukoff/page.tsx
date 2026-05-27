@@ -11,8 +11,22 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import SplitText from "@activetheory/split-text";
 import { CinematicEffects } from "@/components/cinematic-effects";
 import { SceneLoader } from "@/components/scene-loader";
+import { AudioProvider } from "@/components/audio/audio-provider";
+import { AudioToggle } from "@/components/audio/audio-toggle";
+import { SoundEngine } from "@/components/audio/sound-engine";
+import { CustomCursor } from "@/components/custom-cursor";
+import { MagneticButton } from "@/components/magnetic-button";
+
+// Override des types officiels de @activetheory/split-text qui declarent
+// chars/words/lines comme string[] alors qu au runtime ce sont des HTMLElement[]
+type SplitTextDom = SplitText & {
+  chars: HTMLElement[];
+  words: HTMLElement[];
+  lines: HTMLElement[];
+};
 
 const MODEL_PATH = "/3d/dbz-trunks_m6.glb";
 
@@ -143,55 +157,146 @@ export default function BuuKoffImmersive() {
     if (typeof window === "undefined") return;
     gsap.registerPlugin(ScrollTrigger);
 
-    const ctx = gsap.context(() => {
-      // Hero : lettres apparaissent au mount
-      gsap.fromTo(
-        ".hero-brand-letter",
-        { opacity: 0, y: 120, rotationX: -90 },
-        {
-          opacity: 1,
-          y: 0,
-          rotationX: 0,
-          stagger: 0.08,
-          duration: 1.3,
-          ease: "power4.out",
-          delay: 0.4,
-        }
-      );
+    const splits: SplitText[] = [];
 
-      gsap.fromTo(
-        ".hero-meta",
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 1.5, delay: 1.2, ease: "power3.out" }
-      );
+    const init = async () => {
+      if (typeof document !== "undefined" && "fonts" in document) {
+        await document.fonts.ready;
+      }
 
-      // Texte sections fade-in au scroll
-      gsap.utils.toArray<HTMLElement>(".v-fade > *").forEach((el) => {
+      const ctx = gsap.context(() => {
+        // ─── Hero : "BUU KOFF" char-by-char ───────────────────────────────
+        containerRef.current
+          ?.querySelectorAll<HTMLElement>(".hero-brand")
+          .forEach((heroEl) => {
+            const heroSplit = new SplitText(heroEl, {
+              type: "chars",
+            }) as SplitTextDom;
+            splits.push(heroSplit);
+            gsap.fromTo(
+              heroSplit.chars,
+              { opacity: 0, y: 120, rotationX: -90 },
+              {
+                opacity: 1,
+                y: 0,
+                rotationX: 0,
+                stagger: 0.08,
+                duration: 1.3,
+                ease: "power4.out",
+                delay: 0.4,
+              }
+            );
+          });
+
+        // Hero meta (sous-titres + scroll hint)
         gsap.fromTo(
-          el,
-          { opacity: 0, y: 40 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 1,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: el,
-              start: "top 80%",
-              toggleActions: "play none none reverse",
-            },
-          }
+          ".hero-meta",
+          { opacity: 0, y: 30 },
+          { opacity: 1, y: 0, duration: 1.5, delay: 1.2, ease: "power3.out" }
         );
-      });
-    }, containerRef);
 
-    return () => ctx.revert();
+        // ─── Chapter titles : char-by-char au scroll + whoosh ─────────────
+        containerRef.current
+          ?.querySelectorAll<HTMLElement>(".chapter-title")
+          .forEach((el) => {
+            const split = new SplitText(el, {
+              type: "chars",
+            }) as SplitTextDom;
+            splits.push(split);
+            gsap.fromTo(
+              split.chars,
+              { opacity: 0, y: 50, rotationX: -60 },
+              {
+                opacity: 1,
+                y: 0,
+                rotationX: 0,
+                stagger: 0.03,
+                duration: 0.7,
+                ease: "power3.out",
+                scrollTrigger: {
+                  trigger: el,
+                  start: "top 75%",
+                  toggleActions: "play none none reverse",
+                  onEnter: () => SoundEngine.whoosh(),
+                },
+              }
+            );
+          });
+
+        // ─── Quotes : word-by-word avec blur + reveal sonore ──────────────
+        containerRef.current
+          ?.querySelectorAll<HTMLElement>(".v-quote")
+          .forEach((el) => {
+            const split = new SplitText(el, {
+              type: "words",
+            }) as SplitTextDom;
+            splits.push(split);
+            gsap.fromTo(
+              split.words,
+              { opacity: 0, y: 30, filter: "blur(8px)" },
+              {
+                opacity: 1,
+                y: 0,
+                filter: "blur(0px)",
+                stagger: 0.06,
+                duration: 0.9,
+                ease: "power3.out",
+                scrollTrigger: {
+                  trigger: el,
+                  start: "top 78%",
+                  toggleActions: "play none none reverse",
+                  onEnter: () => SoundEngine.reveal(),
+                },
+              }
+            );
+          });
+
+        // Autres éléments .v-fade > * (paragraphes / stats / CTA) : fade-up
+        gsap.utils.toArray<HTMLElement>(".v-fade > *").forEach((el) => {
+          if (
+            el.classList.contains("chapter-title") ||
+            el.classList.contains("v-quote")
+          ) {
+            return;
+          }
+          gsap.fromTo(
+            el,
+            { opacity: 0, y: 40 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 1,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: el,
+                start: "top 80%",
+                toggleActions: "play none none reverse",
+              },
+            }
+          );
+        });
+      }, containerRef);
+
+      return ctx;
+    };
+
+    const ctxPromise = init();
+
+    return () => {
+      ctxPromise.then((ctx) => ctx?.revert());
+      splits.forEach((s) => s.revert());
+    };
   }, []);
 
   return (
+    <AudioProvider enableDrone={true}>
+    <CustomCursor />
     <div ref={containerRef} className="relative bg-black overflow-x-hidden">
       {/* Skeleton loader overlay pendant le download GLB/textures */}
       <SceneLoader />
+
+      {/* Audio toggle discret en bas-droite */}
+      <AudioToggle className="fixed bottom-6 right-6 z-50" />
 
       {/* Sticky Canvas 3D */}
       <div className="fixed inset-0 z-0">
@@ -227,12 +332,8 @@ export default function BuuKoffImmersive() {
           <span className="hero-meta font-mono text-[10px] tracking-[0.4em] text-white/50 block mb-3">
             GENERATED FROM · BUU-KOFF
           </span>
-          <h1 className="text-5xl font-light leading-[0.85] tracking-tighter text-white drop-shadow-2xl">
-            {"BUU’KOFF".split("").map((letter, i) => (
-              <span key={i} className="hero-brand-letter inline-block">
-                {letter}
-              </span>
-            ))}
+          <h1 className="hero-brand text-5xl font-light leading-[0.85] tracking-tighter text-white drop-shadow-2xl">
+            BUU&rsquo;KOFF
           </h1>
           <p className="hero-meta text-xs text-white/70 max-w-xs mt-4 drop-shadow-lg">
             DBZ — Trunks Solid Edge Works.
@@ -246,12 +347,8 @@ export default function BuuKoffImmersive() {
           <span className="hero-meta font-mono text-xs tracking-[0.4em] text-white/40 block mb-6">
             GENERATED FROM · BUU-KOFF-2.MYSHOPIFY.COM
           </span>
-          <h1 className="text-[clamp(3.5rem,12vw,11rem)] font-light leading-[0.85] tracking-tighter text-white max-w-[90vw] overflow-hidden">
-            {"BUU’KOFF".split("").map((letter, i) => (
-              <span key={i} className="hero-brand-letter inline-block">
-                {letter}
-              </span>
-            ))}
+          <h1 className="hero-brand text-[clamp(3.5rem,12vw,11rem)] font-light leading-[0.85] tracking-tighter text-white max-w-[90vw] overflow-hidden">
+            BUU&rsquo;KOFF
           </h1>
           <p className="hero-meta text-base text-white/50 max-w-md mt-6">
             DBZ — Trunks Solid Edge Works.
@@ -272,7 +369,7 @@ export default function BuuKoffImmersive() {
           <span className="font-mono text-xs tracking-[0.4em] text-white/40 block">
             CHAPITRE 01
           </span>
-          <h2 className="text-3xl md:text-6xl font-light leading-[0.95] tracking-tight">
+          <h2 className="chapter-title text-3xl md:text-6xl font-light leading-[0.95] tracking-tight">
             Buu&rsquo;Koff.
           </h2>
           <p className="text-lg md:text-3xl font-light text-white/80 leading-tight">
@@ -297,7 +394,7 @@ export default function BuuKoffImmersive() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-purple-950/30 to-black/80" />
         <div className="relative z-10 text-center text-white max-w-[85vw] md:max-w-3xl px-6">
-          <p className="text-3xl md:text-7xl font-light leading-[1] tracking-tight">
+          <p className="v-quote text-3xl md:text-7xl font-light leading-[1] tracking-tight">
             « Le fils de Vegeta
             <br />
             <span className="italic text-white/80">venu d&apos;un futur brisé. »</span>
@@ -314,7 +411,7 @@ export default function BuuKoffImmersive() {
           <span className="font-mono text-xs tracking-[0.4em] text-white/40 block">
             CHAPITRE 02
           </span>
-          <h2 className="text-3xl md:text-6xl font-light leading-[0.95] tracking-tight">
+          <h2 className="chapter-title text-3xl md:text-6xl font-light leading-[0.95] tracking-tight">
             Solid Edge Works.
             <br />
             <span className="text-white/60">Arêtes vives.</span>
@@ -358,10 +455,10 @@ export default function BuuKoffImmersive() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-purple-950/20 to-black/40" />
         <div className="relative z-10 text-center text-white max-w-[85vw] md:max-w-3xl px-6">
-          <p className="text-3xl md:text-7xl font-light leading-[1] tracking-tight">
+          <p className="v-quote text-3xl md:text-7xl font-light leading-[1] tracking-tight">
             Une pièce de collection.
           </p>
-          <p className="text-lg md:text-4xl font-light text-white/50 mt-3 italic">
+          <p className="v-quote text-lg md:text-4xl font-light text-white/50 mt-3 italic">
             Pas un produit dérivé.
           </p>
         </div>
@@ -373,17 +470,19 @@ export default function BuuKoffImmersive() {
           <span className="font-mono text-xs tracking-[0.4em] text-white/40 block mb-6">
             DÉCOUVRIR
           </span>
-          <h2 className="text-5xl md:text-9xl font-light text-white tracking-tighter leading-none">
+          <h2 className="chapter-title text-5xl md:text-9xl font-light text-white tracking-tighter leading-none">
             buu-koff
           </h2>
-          <a
-            href="https://buu-koff-2.myshopify.com/products/dragon-ball-z-trunks-solid-edge-works-1"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block mt-10 px-8 py-3 border border-white/20 text-white hover:bg-white hover:text-black transition-colors duration-300 pointer-events-auto font-mono text-xs md:text-sm tracking-[0.3em]"
-          >
-            VOIR LA FIGURINE
-          </a>
+          <div className="mt-10 inline-block">
+            <MagneticButton
+              href="https://buu-koff-2.myshopify.com/products/dragon-ball-z-trunks-solid-edge-works-1"
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="ghost"
+            >
+              VOIR LA FIGURINE
+            </MagneticButton>
+          </div>
           <div className="mt-16 flex flex-col items-center gap-2">
             <span className="font-mono text-[10px] text-white/30 tracking-[0.3em]">
               GÉNÉRÉ EN 3 MIN PAR
@@ -398,6 +497,7 @@ export default function BuuKoffImmersive() {
         </div>
       </section>
     </div>
+    </AudioProvider>
   );
 }
 
