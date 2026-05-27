@@ -62,7 +62,9 @@ type Props = {
 };
 
 // Camera fly-through path : courbe Catmull-Rom traversée par le scroll.
-// 8 waypoints dramatisent les 7 sections (hero → CTA) + plongée gallery.
+// 9 waypoints — explore le mesh, plonge dans la gallery, PUIS pull-back très
+// large sur le CTA final pour que les cartes du gallery disparaissent du
+// cadre et que le mesh principal redevienne le sujet.
 const CAMERA_CURVE = new THREE.CatmullRomCurve3(
   [
     new THREE.Vector3(3, 1.2, 6),     // 0. hero — angle initial
@@ -72,15 +74,16 @@ const CAMERA_CURVE = new THREE.CatmullRomCurve3(
     new THREE.Vector3(0, 3.2, 7),     // 4. story 2 — top wide pull-back
     new THREE.Vector3(0, 1.8, 2),     // 5. transition gallery — avance vers le mesh
     new THREE.Vector3(0, 1.2, -6),    // 6. gallery entry — passe AU TRAVERS du mesh
-    new THREE.Vector3(0, 0.5, -14),   // 7. gallery deep — au milieu des cartes
+    new THREE.Vector3(0, 0.6, -12),   // 7. gallery section — au cœur des cartes
+    new THREE.Vector3(5, 2.5, 9),     // 8. CTA — PULL BACK très large derrière mesh
   ],
   false,
   "catmullrom",
   0.5
 );
 
-// Look-at path : la caméra regarde le mesh sur les 5 premiers segments,
-// puis pivote pour regarder dans le couloir de cartes.
+// Look-at path : la caméra regarde le mesh sur les premiers segments,
+// pivote vers la gallery au milieu, puis REVIENT sur le mesh pour le CTA.
 const LOOKAT_CURVE = new THREE.CatmullRomCurve3(
   [
     new THREE.Vector3(0, 0.2, 0),
@@ -90,7 +93,8 @@ const LOOKAT_CURVE = new THREE.CatmullRomCurve3(
     new THREE.Vector3(0, 0.2, 0),
     new THREE.Vector3(0, 0.2, -3),    // pivote vers l avant
     new THREE.Vector3(0, 0.5, -12),   // regarde au cœur du gallery
-    new THREE.Vector3(0, 1.5, -18),   // regarde la carte du fond
+    new THREE.Vector3(0, 1.0, -15),   // regarde dans le couloir cartes
+    new THREE.Vector3(0, 0.5, 0),     // CTA — revient sur le mesh hero
   ],
   false,
   "catmullrom",
