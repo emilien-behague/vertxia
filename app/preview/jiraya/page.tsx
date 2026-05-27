@@ -12,8 +12,19 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import SplitText, { isFontReady } from "@activetheory/split-text";
 import { CinematicEffects } from "@/components/cinematic-effects";
 import { SceneLoader } from "@/components/scene-loader";
+
+// Les types officiels de @activetheory/split-text annoncent chars/words/lines
+// comme string[] alors qu'au runtime ce sont des HTMLElement[] (cf. source :
+// usage de .offsetWidth, .parentElement, etc). On corrige le type via cast
+// pour pouvoir passer ces arrays à GSAP directement.
+type SplitTextDom = SplitText & {
+  chars: HTMLElement[];
+  words: HTMLElement[];
+  lines: HTMLElement[];
+};
 
 const MODEL_PATH = "/3d/jiraya_m6.glb";
 
@@ -145,47 +156,141 @@ export default function JirayaImmersive() {
     if (typeof window === "undefined") return;
     gsap.registerPlugin(ScrollTrigger);
 
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        ".hero-brand-letter",
-        { opacity: 0, y: 120, rotationX: -90 },
-        {
-          opacity: 1,
-          y: 0,
-          rotationX: 0,
-          stagger: 0.08,
-          duration: 1.3,
-          ease: "power4.out",
-          delay: 0.4,
-        }
-      );
+    // Liste des SplitText à revert au cleanup (avant que React/Lenis touchent le DOM)
+    const splits: SplitText[] = [];
 
-      gsap.fromTo(
-        ".hero-meta",
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 1.5, delay: 1.2, ease: "power3.out" }
-      );
+    // On attend que les fonts soient chargées avant de splitter sinon
+    // split-text mesure les line-breaks sur la mauvaise police et casse le layout.
+    const init = async () => {
+      await isFontReady();
 
-      gsap.utils.toArray<HTMLElement>(".v-fade > *").forEach((el) => {
+      const ctx = gsap.context(() => {
+        // ─── Hero : "JIRAYA" char-by-char ─────────────────────────────────
+        // On a 2 hero-brand : un mobile (md:hidden) et un desktop (hidden md:block).
+        // SplitText les traite TOUS LES DEUX — l'animation joue sur les deux,
+        // mais seul le visible (selon le media query) s'affiche à l'écran.
+        containerRef.current
+          ?.querySelectorAll<HTMLElement>(".hero-brand")
+          .forEach((heroEl) => {
+            const heroSplit = new SplitText(heroEl, {
+              type: "chars",
+            }) as SplitTextDom;
+            splits.push(heroSplit);
+            gsap.fromTo(
+              heroSplit.chars,
+              { opacity: 0, y: 120, rotationX: -90 },
+              {
+                opacity: 1,
+                y: 0,
+                rotationX: 0,
+                stagger: 0.08,
+                duration: 1.3,
+                ease: "power4.out",
+                delay: 0.4,
+              }
+            );
+          });
+
+        // Hero meta (sous-titres + scroll hint)
         gsap.fromTo(
-          el,
-          { opacity: 0, y: 40 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 1,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: el,
-              start: "top 80%",
-              toggleActions: "play none none reverse",
-            },
-          }
+          ".hero-meta",
+          { opacity: 0, y: 30 },
+          { opacity: 1, y: 0, duration: 1.5, delay: 1.2, ease: "power3.out" }
         );
-      });
-    }, containerRef);
 
-    return () => ctx.revert();
+        // ─── Chapter titles : char-by-char reveal au scroll ───────────────
+        containerRef.current
+          ?.querySelectorAll<HTMLElement>(".chapter-title")
+          .forEach((el) => {
+            const split = new SplitText(el, {
+              type: "chars",
+            }) as SplitTextDom;
+            splits.push(split);
+            gsap.fromTo(
+              split.chars,
+              { opacity: 0, y: 50, rotationX: -60 },
+              {
+                opacity: 1,
+                y: 0,
+                rotationX: 0,
+                stagger: 0.03,
+                duration: 0.7,
+                ease: "power3.out",
+                scrollTrigger: {
+                  trigger: el,
+                  start: "top 75%",
+                  toggleActions: "play none none reverse",
+                },
+              }
+            );
+          });
+
+        // ─── Quotes : word-by-word reveal au scroll ───────────────────────
+        containerRef.current
+          ?.querySelectorAll<HTMLElement>(".v-quote")
+          .forEach((el) => {
+            const split = new SplitText(el, {
+              type: "words",
+            }) as SplitTextDom;
+            splits.push(split);
+            gsap.fromTo(
+              split.words,
+              { opacity: 0, y: 30, filter: "blur(8px)" },
+              {
+                opacity: 1,
+                y: 0,
+                filter: "blur(0px)",
+                stagger: 0.06,
+                duration: 0.9,
+                ease: "power3.out",
+                scrollTrigger: {
+                  trigger: el,
+                  start: "top 78%",
+                  toggleActions: "play none none reverse",
+                },
+              }
+            );
+          });
+
+        // ─── Autres éléments (paragraphes, stats, CTA) : fade-up classique ─
+        // Tous les enfants directs de .v-fade qui ne sont PAS déjà gérés par
+        // les splits ci-dessus (chapter-title, v-quote) reçoivent un fade-up.
+        gsap.utils
+          .toArray<HTMLElement>(".v-fade > *")
+          .forEach((el) => {
+            if (
+              el.classList.contains("chapter-title") ||
+              el.classList.contains("v-quote")
+            ) {
+              return;
+            }
+            gsap.fromTo(
+              el,
+              { opacity: 0, y: 40 },
+              {
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                ease: "power3.out",
+                scrollTrigger: {
+                  trigger: el,
+                  start: "top 80%",
+                  toggleActions: "play none none reverse",
+                },
+              }
+            );
+          });
+      }, containerRef);
+
+      return ctx;
+    };
+
+    const ctxPromise = init();
+
+    return () => {
+      ctxPromise.then((ctx) => ctx?.revert());
+      splits.forEach((s) => s.revert());
+    };
   }, []);
 
   return (
@@ -227,12 +332,10 @@ export default function JirayaImmersive() {
           <span className="hero-meta font-mono text-[10px] tracking-[0.4em] text-white/50 block mb-3">
             GENERATED FROM · BUU-KOFF
           </span>
-          <h1 className="text-5xl font-light leading-[0.85] tracking-tighter text-white drop-shadow-2xl">
-            {"JIRAYA".split("").map((letter, i) => (
-              <span key={i} className="hero-brand-letter inline-block">
-                {letter}
-              </span>
-            ))}
+          {/* SplitText (côté client, dans useEffect) injecte <span class="char">
+              autour de chaque lettre pour les animer une par une. */}
+          <h1 className="hero-brand text-5xl font-light leading-[0.85] tracking-tighter text-white drop-shadow-2xl">
+            JIRAYA
           </h1>
           <p className="hero-meta text-xs text-white/70 max-w-xs mt-4 drop-shadow-lg">
             Naruto Shippuden — Ichiban Kuji.
@@ -246,12 +349,8 @@ export default function JirayaImmersive() {
           <span className="hero-meta font-mono text-xs tracking-[0.4em] text-white/40 block mb-6">
             GENERATED FROM · BUU-KOFF-2.MYSHOPIFY.COM
           </span>
-          <h1 className="text-[clamp(3.5rem,12vw,11rem)] font-light leading-[0.85] tracking-tighter text-white max-w-[90vw] overflow-hidden">
-            {"JIRAYA".split("").map((letter, i) => (
-              <span key={i} className="hero-brand-letter inline-block">
-                {letter}
-              </span>
-            ))}
+          <h1 className="hero-brand text-[clamp(3.5rem,12vw,11rem)] font-light leading-[0.85] tracking-tighter text-white max-w-[90vw] overflow-hidden">
+            JIRAYA
           </h1>
           <p className="hero-meta text-base text-white/50 max-w-md mt-6">
             Naruto Shippuden — Ichiban Kuji.
@@ -272,7 +371,7 @@ export default function JirayaImmersive() {
           <span className="font-mono text-xs tracking-[0.4em] text-white/40 block">
             CHAPITRE 01
           </span>
-          <h2 className="text-3xl md:text-6xl font-light leading-[0.95] tracking-tight">
+          <h2 className="chapter-title text-3xl md:text-6xl font-light leading-[0.95] tracking-tight">
             Buu&rsquo;Koff.
           </h2>
           <p className="text-lg md:text-3xl font-light text-white/80 leading-tight">
@@ -297,7 +396,7 @@ export default function JirayaImmersive() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-red-950/30 to-black/80" />
         <div className="relative z-10 text-center text-white max-w-[85vw] md:max-w-3xl px-6">
-          <p className="text-3xl md:text-7xl font-light leading-[1] tracking-tight">
+          <p className="v-quote text-3xl md:text-7xl font-light leading-[1] tracking-tight">
             « L&apos;ermite crapaud
             <br />
             <span className="italic text-white/80">qui a écrit la suite. »</span>
@@ -314,7 +413,7 @@ export default function JirayaImmersive() {
           <span className="font-mono text-xs tracking-[0.4em] text-white/40 block">
             CHAPITRE 02
           </span>
-          <h2 className="text-3xl md:text-6xl font-light leading-[0.95] tracking-tight">
+          <h2 className="chapter-title text-3xl md:text-6xl font-light leading-[0.95] tracking-tight">
             Sage Mode.
             <br />
             <span className="text-white/60">Lot E.</span>
@@ -358,10 +457,10 @@ export default function JirayaImmersive() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-red-950/20 to-black/40" />
         <div className="relative z-10 text-center text-white max-w-[85vw] md:max-w-3xl px-6">
-          <p className="text-3xl md:text-7xl font-light leading-[1] tracking-tight">
+          <p className="v-quote text-3xl md:text-7xl font-light leading-[1] tracking-tight">
             Une pièce de collection.
           </p>
-          <p className="text-lg md:text-4xl font-light text-white/50 mt-3 italic">
+          <p className="v-quote text-lg md:text-4xl font-light text-white/50 mt-3 italic">
             Pas un produit dérivé.
           </p>
         </div>
@@ -373,7 +472,7 @@ export default function JirayaImmersive() {
           <span className="font-mono text-xs tracking-[0.4em] text-white/40 block mb-6">
             DÉCOUVRIR
           </span>
-          <h2 className="text-5xl md:text-9xl font-light text-white tracking-tighter leading-none">
+          <h2 className="chapter-title text-5xl md:text-9xl font-light text-white tracking-tighter leading-none">
             buu-koff
           </h2>
           <a

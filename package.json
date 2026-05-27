@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@activetheory/split-text": "^1.1.2",
     "@gltf-transform/core": "^4.3.0",
     "@gltf-transform/extensions": "^4.3.0",
     "@gltf-transform/functions": "^4.3.0",
