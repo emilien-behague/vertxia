@@ -32,8 +32,20 @@ import * as THREE from "three";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import SplitText from "@activetheory/split-text";
 import { CinematicEffects } from "@/components/cinematic-effects";
 import { SceneLoader } from "@/components/scene-loader";
+import { AudioProvider } from "@/components/audio/audio-provider";
+import { AudioToggle } from "@/components/audio/audio-toggle";
+import { SoundEngine } from "@/components/audio/sound-engine";
+import { CustomCursor } from "@/components/custom-cursor";
+import { MagneticButton } from "@/components/magnetic-button";
+
+type SplitTextDom = SplitText & {
+  chars: HTMLElement[];
+  words: HTMLElement[];
+  lines: HTMLElement[];
+};
 
 type Props = {
   id: string;
@@ -179,54 +191,140 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
     };
   }, []);
 
-  // GSAP animations : hero letters + scroll fade-in
+  // GSAP animations : hero letters + scroll fade-in + sound triggers
   useEffect(() => {
     if (typeof window === "undefined") return;
     gsap.registerPlugin(ScrollTrigger);
 
-    const ctx = gsap.context(() => {
-      // Hero : lettres apparaissent au mount
-      gsap.fromTo(
-        ".hero-brand-letter",
-        { opacity: 0, y: 120, rotationX: -90 },
-        {
-          opacity: 1,
-          y: 0,
-          rotationX: 0,
-          stagger: 0.06,
-          duration: 1.3,
-          ease: "power4.out",
-          delay: 0.4,
-        }
-      );
+    const splits: SplitText[] = [];
 
-      gsap.fromTo(
-        ".hero-meta",
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 1.5, delay: 1.2, ease: "power3.out" }
-      );
+    const init = async () => {
+      if (typeof document !== "undefined" && "fonts" in document) {
+        await document.fonts.ready;
+      }
 
-      // Texte sections fade-in au scroll
-      gsap.utils.toArray<HTMLElement>(".v-fade > *").forEach((el) => {
+      const ctx = gsap.context(() => {
+        // Hero : vendor letters char-by-char au mount
+        containerRef.current
+          ?.querySelectorAll<HTMLElement>(".hero-brand")
+          .forEach((heroEl) => {
+            const heroSplit = new SplitText(heroEl, {
+              type: "chars",
+            }) as SplitTextDom;
+            splits.push(heroSplit);
+            gsap.fromTo(
+              heroSplit.chars,
+              { opacity: 0, y: 120, rotationX: -90 },
+              {
+                opacity: 1,
+                y: 0,
+                rotationX: 0,
+                stagger: 0.06,
+                duration: 1.3,
+                ease: "power4.out",
+                delay: 0.4,
+              }
+            );
+          });
+
+        // Hero meta (sous-titres + scroll hint)
         gsap.fromTo(
-          el,
-          { opacity: 0, y: 40 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 1,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: el,
-              start: "top 80%",
-              toggleActions: "play none none reverse",
-            },
-          }
+          ".hero-meta",
+          { opacity: 0, y: 30 },
+          { opacity: 1, y: 0, duration: 1.5, delay: 1.2, ease: "power3.out" }
         );
-      });
-    }, containerRef);
 
-    return () => ctx.revert();
+        // Chapter titles : char-by-char + whoosh sonore
+        containerRef.current
+          ?.querySelectorAll<HTMLElement>(".chapter-title")
+          .forEach((el) => {
+            const split = new SplitText(el, {
+              type: "chars",
+            }) as SplitTextDom;
+            splits.push(split);
+            gsap.fromTo(
+              split.chars,
+              { opacity: 0, y: 50, rotationX: -60 },
+              {
+                opacity: 1,
+                y: 0,
+                rotationX: 0,
+                stagger: 0.03,
+                duration: 0.7,
+                ease: "power3.out",
+                scrollTrigger: {
+                  trigger: el,
+                  start: "top 75%",
+                  toggleActions: "play none none reverse",
+                  onEnter: () => SoundEngine.whoosh(),
+                },
+              }
+            );
+          });
+
+        // Quotes : word-by-word avec blur + reveal sonore
+        containerRef.current
+          ?.querySelectorAll<HTMLElement>(".v-quote")
+          .forEach((el) => {
+            const split = new SplitText(el, {
+              type: "words",
+            }) as SplitTextDom;
+            splits.push(split);
+            gsap.fromTo(
+              split.words,
+              { opacity: 0, y: 30, filter: "blur(8px)" },
+              {
+                opacity: 1,
+                y: 0,
+                filter: "blur(0px)",
+                stagger: 0.06,
+                duration: 0.9,
+                ease: "power3.out",
+                scrollTrigger: {
+                  trigger: el,
+                  start: "top 78%",
+                  toggleActions: "play none none reverse",
+                  onEnter: () => SoundEngine.reveal(),
+                },
+              }
+            );
+          });
+
+        // Autres éléments .v-fade > * (paragraphes / stats / CTA) : fade-up classique
+        gsap.utils.toArray<HTMLElement>(".v-fade > *").forEach((el) => {
+          if (
+            el.classList.contains("chapter-title") ||
+            el.classList.contains("v-quote")
+          ) {
+            return;
+          }
+          gsap.fromTo(
+            el,
+            { opacity: 0, y: 40 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 1,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: el,
+                start: "top 80%",
+                toggleActions: "play none none reverse",
+              },
+            }
+          );
+        });
+      }, containerRef);
+
+      return ctx;
+    };
+
+    const ctxPromise = init();
+
+    return () => {
+      ctxPromise.then((ctx) => ctx?.revert());
+      splits.forEach((s) => s.revert());
+    };
   }, []);
 
   async function copyLink() {
@@ -273,8 +371,12 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
     : "https://shopify.com";
 
   return (
+    <AudioProvider enableDrone={true}>
+    <CustomCursor />
     <div ref={containerRef} className="relative bg-black overflow-x-hidden">
       <SceneLoader />
+      {/* Audio toggle discret en bas-droite */}
+      <AudioToggle className="fixed bottom-6 right-6 z-50" />
 
       {/* Sticky Canvas 3D en fond */}
       <div className="fixed inset-0 z-0">
@@ -324,12 +426,8 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
           <span className="hero-meta font-mono text-[10px] tracking-[0.4em] text-emerald-400/80 block mb-3">
             ✓ GÉNÉRÉ EN LIVE · {shop.toUpperCase() || "SHOPIFY"}
           </span>
-          <h1 className="text-5xl font-light leading-[0.85] tracking-tighter text-white drop-shadow-2xl">
-            {heroLetters.split("").map((letter, i) => (
-              <span key={i} className="hero-brand-letter inline-block">
-                {letter === " " ? " " : letter}
-              </span>
-            ))}
+          <h1 className="hero-brand text-5xl font-light leading-[0.85] tracking-tighter text-white drop-shadow-2xl">
+            {heroLetters}
           </h1>
           <p className="hero-meta text-xs text-white/70 max-w-xs mt-4 drop-shadow-lg">
             {product}
@@ -343,12 +441,8 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
           <span className="hero-meta font-mono text-xs tracking-[0.4em] text-emerald-400/80 block mb-6">
             ✓ GÉNÉRÉ EN LIVE · {shop.toUpperCase() || "SHOPIFY"}
           </span>
-          <h1 className="text-[clamp(3rem,11vw,10rem)] font-light leading-[0.85] tracking-tighter text-white max-w-[90vw] overflow-hidden">
-            {heroLetters.split("").map((letter, i) => (
-              <span key={i} className="hero-brand-letter inline-block">
-                {letter === " " ? " " : letter}
-              </span>
-            ))}
+          <h1 className="hero-brand text-[clamp(3rem,11vw,10rem)] font-light leading-[0.85] tracking-tighter text-white max-w-[90vw] overflow-hidden">
+            {heroLetters}
           </h1>
           <p className="hero-meta text-base text-white/50 max-w-md mt-6">
             {product}
@@ -369,7 +463,7 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
           <span className="font-mono text-xs tracking-[0.4em] text-white/40 block">
             CHAPITRE 01
           </span>
-          <h2 className="text-3xl md:text-6xl font-light leading-[0.95] tracking-tight">
+          <h2 className="chapter-title text-3xl md:text-6xl font-light leading-[0.95] tracking-tight">
             {vendor}.
           </h2>
           <p className="text-lg md:text-3xl font-light text-white/80 leading-tight">
@@ -396,7 +490,7 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-purple-950/30 to-black/80" />
           <div className="relative z-10 text-center text-white max-w-[85vw] md:max-w-3xl px-6">
-            <p className="text-3xl md:text-7xl font-light leading-[1] tracking-tight">
+            <p className="v-quote text-3xl md:text-7xl font-light leading-[1] tracking-tight">
               « Une boutique
               <br />
               <span className="italic text-white/80">qu&apos;on n&apos;oublie pas. »</span>
@@ -414,7 +508,7 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
           <span className="font-mono text-xs tracking-[0.4em] text-white/40 block">
             CHAPITRE 02
           </span>
-          <h2 className="text-3xl md:text-6xl font-light leading-[0.95] tracking-tight">
+          <h2 className="chapter-title text-3xl md:text-6xl font-light leading-[0.95] tracking-tight">
             Vraie 3D.
             <br />
             <span className="text-white/60">Pas un GIF.</span>
@@ -462,7 +556,7 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
           </>
         )}
         <div className="relative z-10 text-center text-white max-w-[85vw] md:max-w-3xl px-6">
-          <p className="text-3xl md:text-7xl font-light leading-[1] tracking-tight">
+          <p className="v-quote text-3xl md:text-7xl font-light leading-[1] tracking-tight">
             Imagine.
           </p>
           <p className="text-lg md:text-4xl font-light text-white/70 mt-6">
@@ -492,20 +586,18 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
           </p>
 
           <div className="mt-12 flex flex-col gap-3 max-w-sm mx-auto">
-            <a
-              href={mailtoUrl}
-              className="block px-8 py-4 bg-white text-black hover:bg-white/90 font-mono text-xs tracking-[0.3em] rounded-lg transition"
-            >
+            <MagneticButton href={mailtoUrl} variant="solid" className="w-full">
               ACTIVER MA BOUTIQUE →
-            </a>
-            <a
+            </MagneticButton>
+            <MagneticButton
               href={shopHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="block px-8 py-4 border border-white/20 text-white hover:bg-white/5 font-mono text-xs tracking-[0.3em] rounded-lg transition"
+              variant="ghost"
+              className="w-full"
             >
               VOIR LA BOUTIQUE SOURCE ↗
-            </a>
+            </MagneticButton>
             <button
               onClick={copyLink}
               className="block px-8 py-4 border border-white/10 text-white/60 hover:text-white hover:border-white/30 font-mono text-xs tracking-[0.3em] rounded-lg transition"
@@ -528,5 +620,6 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
         </div>
       </section>
     </div>
+    </AudioProvider>
   );
 }
