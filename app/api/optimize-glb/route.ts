@@ -1,23 +1,20 @@
 /**
  * POST /api/optimize-glb
  *
- * Télécharge un GLB depuis une URL (typiquement Meshy CDN) et le re-compresse
- * avec Draco mesh compression. Renvoie le GLB optimisé en stream binaire.
+ * Pipeline complet :
+ *   1. Télécharge le GLB depuis une URL (typiquement Meshy CDN, ~30-50 MB)
+ *   2. Re-compresse avec Draco mesh compression (gain ~70%)
+ *   3. Upload le GLB compressé vers Vercel Blob (storage persistant)
+ *   4. Renvoie JSON avec { id, url, originalSize, compressedSize, ratio }
  *
- * Gain attendu : 50 MB Meshy brut → ~15 MB Draco (-70%).
- * Pas de compression WebP textures ici (nécessite sharp, lourd au cold start).
+ * L'URL Vercel Blob est PUBLIQUE et permanente — c'est elle qui sert
+ * de "site démo partageable" via /demo/[id]?u=<blob-url>.
  *
- * Usage côté client :
- *   const glbResponse = await fetch('/api/optimize-glb', {
- *     method: 'POST',
- *     body: JSON.stringify({ glbUrl: meshyUrl }),
- *   });
- *   const blob = await glbResponse.blob();
- *   const localUrl = URL.createObjectURL(blob);
- *   // Pass localUrl à useGLTF
+ * Variables d'env requises (auto-injectées par Vercel Blob "Connect Project") :
+ *   - BLOB_READ_WRITE_TOKEN
  *
- * Note timeout : Vercel hobby free = 10s, Pro = 60s. La compression d'un GLB
- * 50 MB prend ~5-10s en Node sans WebP, devrait passer sur les 2 plans.
+ * Note timeout : Vercel hobby free = 10s, Pro = 60s. Compression d'un GLB
+ * 50 MB prend ~5-10s en Node, upload Blob ~1-2s, total < 15s.
  */
 
 import { NextRequest } from "next/server";
@@ -25,6 +22,8 @@ import { NodeIO } from "@gltf-transform/core";
 import { KHRDracoMeshCompression } from "@gltf-transform/extensions";
 import { draco } from "@gltf-transform/functions";
 import draco3d from "draco3d";
+import { put } from "@vercel/blob";
+import { nanoid } from "nanoid";
 import path from "path";
 
 // Workaround Emscripten WASM path : draco3d cherche par défaut son .wasm
@@ -45,17 +44,11 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     if (typeof body.glbUrl !== "string" || !body.glbUrl.startsWith("http")) {
-      return new Response(
-        JSON.stringify({ error: "glbUrl invalide" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return Response.json({ error: "glbUrl invalide" }, { status: 400 });
     }
     glbUrl = body.glbUrl;
   } catch {
-    return new Response(
-      JSON.stringify({ error: "Body JSON invalide" }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
+    return Response.json({ error: "Body JSON invalide" }, { status: 400 });
   }
 
   // 1. Télécharger le GLB depuis Meshy CDN (peut être 30-50 MB)
@@ -65,18 +58,18 @@ export async function POST(req: NextRequest) {
       headers: { "User-Agent": "Vertxia/1.0 GLB-optimizer" },
     });
     if (!res.ok) {
-      return new Response(
-        JSON.stringify({ error: `Téléchargement GLB échoué : ${res.status}` }),
-        { status: 502, headers: { "Content-Type": "application/json" } }
+      return Response.json(
+        { error: `Téléchargement GLB échoué : ${res.status}` },
+        { status: 502 }
       );
     }
     inputBuffer = Buffer.from(await res.arrayBuffer());
   } catch (err) {
-    return new Response(
-      JSON.stringify({
+    return Response.json(
+      {
         error: `Erreur réseau Meshy : ${err instanceof Error ? err.message : "?"}`,
-      }),
-      { status: 502, headers: { "Content-Type": "application/json" } }
+      },
+      { status: 502 }
     );
   }
 
@@ -97,31 +90,52 @@ export async function POST(req: NextRequest) {
     await doc.transform(draco());
     outputBuffer = await io.writeBinary(doc);
   } catch (err) {
-    return new Response(
-      JSON.stringify({
+    return Response.json(
+      {
         error: `Compression échouée : ${err instanceof Error ? err.message : "?"}`,
-      }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      },
+      { status: 500 }
     );
   }
 
   const outputSize = outputBuffer.byteLength;
   const ratio = ((1 - outputSize / inputSize) * 100).toFixed(1);
 
-  // 3. Stream le binary en response avec metadata dans les headers.
-  // Copy buffer dans un ArrayBuffer "fresh" pour satisfaire le typing strict
-  // (TS 5.x distingue ArrayBuffer vs SharedArrayBuffer dans BodyInit/BlobPart).
-  const ab = new ArrayBuffer(outputBuffer.byteLength);
-  new Uint8Array(ab).set(outputBuffer);
-  return new Response(ab, {
-    status: 200,
-    headers: {
-      "Content-Type": "model/gltf-binary",
-      "Content-Length": String(outputSize),
-      "Cache-Control": "public, max-age=3600", // 1h cache, ~= durée vie Meshy URL
-      "X-Original-Size": String(inputSize),
-      "X-Compressed-Size": String(outputSize),
-      "X-Compression-Ratio": ratio,
+  // 3. Upload vers Vercel Blob (storage public permanent)
+  // ID court genre "V1StGXR8_Z" — assez random pour pas être devinable mais lisible.
+  const id = nanoid(10);
+  let blobUrl: string;
+  try {
+    // Copy dans un ArrayBuffer "fresh" pour satisfaire le typing strict
+    // (TS 5.x distingue ArrayBuffer vs SharedArrayBuffer dans BodyInit/BlobPart).
+    const ab = new ArrayBuffer(outputBuffer.byteLength);
+    new Uint8Array(ab).set(outputBuffer);
+
+    const blob = await put(`demos/${id}.glb`, ab, {
+      access: "public",
+      contentType: "model/gltf-binary",
+      cacheControlMaxAge: 31536000, // 1 an : le GLB d'une démo ne change jamais
+      addRandomSuffix: false,
+    });
+    blobUrl = blob.url;
+  } catch (err) {
+    return Response.json(
+      {
+        error: `Upload Blob échoué : ${err instanceof Error ? err.message : "?"}`,
+      },
+      { status: 500 }
+    );
+  }
+
+  return Response.json(
+    {
+      ok: true,
+      id,
+      url: blobUrl,
+      originalSize: inputSize,
+      compressedSize: outputSize,
+      ratio,
     },
-  });
+    { status: 200 }
+  );
 }

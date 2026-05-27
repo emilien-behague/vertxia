@@ -314,7 +314,7 @@ export default function TryPage() {
       }
       if (!glbUrl) throw new Error("Meshy timeout 6 min");
 
-      // ─── STEP 3 : Optimize GLB pour viewer inline ─────────────────────────
+      // ─── STEP 3 : Optimize + persiste sur Vercel Blob ─────────────────────
       if (aborted.current) return;
       setState((s) =>
         s.kind === "generating"
@@ -322,13 +322,13 @@ export default function TryPage() {
               ...s,
               step: "optimize",
               progress: 95,
-              message: "Compression Draco pour ton navigateur (10-30s)…",
+              message: "Compression + sauvegarde de ta démo (10-30s)…",
               glbUrl: glbUrl || undefined,
             }
           : s
       );
 
-      let optimizedBlobUrl: string | undefined;
+      let demoData: { id: string; url: string } | null = null;
       try {
         const optRes = await fetch("/api/optimize-glb", {
           method: "POST",
@@ -336,27 +336,43 @@ export default function TryPage() {
           body: JSON.stringify({ glbUrl }),
         });
         if (!optRes.ok) {
-          throw new Error(`Optimize ${optRes.status}`);
+          const errData = await optRes.json().catch(() => ({}));
+          throw new Error(errData.error || `Optimize ${optRes.status}`);
         }
-        const blob = await optRes.blob();
-        optimizedBlobUrl = URL.createObjectURL(blob);
+        const json = await optRes.json();
+        if (json.ok && json.id && json.url) {
+          demoData = { id: json.id, url: json.url };
+        }
       } catch (err) {
-        // Si l'optimisation échoue, on continue avec le GLB Meshy brut.
-        // Le viewer inline sera skippé, l'utilisateur aura seulement le download.
+        // Si l'optimisation/upload échoue, on tombe en fallback download-only.
         console.warn("[optimize-glb] failed :", err);
       }
 
-      // ─── STEP 4 : Done ────────────────────────────────────────────────────
+      // ─── STEP 4 : Redirect vers la démo persistante OU fallback ───────────
       if (aborted.current) return;
+
+      if (demoData) {
+        // Démo persistée — on redirige vers l'URL publique partageable
+        const params = new URLSearchParams({
+          u: demoData.url,
+          shop: scrapeData.shop,
+          vendor: scrapeData.vendor,
+          product: product.title,
+          image: product.image || "",
+        });
+        window.location.href = `/demo/${demoData.id}?${params.toString()}`;
+        return; // page is leaving, don't update state
+      }
+
+      // Fallback : Blob a échoué — on garde l'ancien comportement download-only
       setState((s) =>
         s.kind === "generating"
           ? {
               ...s,
               step: "done",
               progress: 100,
-              message: "Prêt.",
+              message: "Prêt (mode fallback, démo non persistée).",
               glbUrl: glbUrl || undefined,
-              optimizedBlobUrl,
             }
           : s
       );
