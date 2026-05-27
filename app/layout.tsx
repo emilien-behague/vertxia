@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Calistoga, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { cn } from "@/lib/utils";
 
 /**
  * Vertxia typography stack (design system ui-ux-pro-max recommendation) :
@@ -8,7 +9,8 @@ import "./globals.css";
  *   - Inter : sans body (UI, paragraphes, tout le reste)
  *   - JetBrains Mono : monospace pour data / labels techniques / stats
  *
- * Triplet retenu pour : "B2B SaaS premium, editorial, human warmth".
+ * NB : shadcn init avait réinjecté Geist comme --font-sans — on l a retiré
+ * pour conserver Inter, conformément au brand-guidelines § Typography.
  */
 const calistoga = Calistoga({
   variable: "--font-display",
@@ -58,7 +60,7 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${calistoga.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={cn("h-full antialiased font-sans", calistoga.variable, inter.variable, jetbrainsMono.variable)}
     >
       <body className="min-h-full bg-background text-foreground">
         {children}
