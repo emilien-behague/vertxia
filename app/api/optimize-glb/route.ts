@@ -108,8 +108,12 @@ export async function POST(req: NextRequest) {
   const outputSize = outputBuffer.byteLength;
   const ratio = ((1 - outputSize / inputSize) * 100).toFixed(1);
 
-  // 3. Stream le binary en response avec metadata dans les headers
-  return new Response(outputBuffer, {
+  // 3. Stream le binary en response avec metadata dans les headers.
+  // Copy buffer dans un ArrayBuffer "fresh" pour satisfaire le typing strict
+  // (TS 5.x distingue ArrayBuffer vs SharedArrayBuffer dans BodyInit/BlobPart).
+  const ab = new ArrayBuffer(outputBuffer.byteLength);
+  new Uint8Array(ab).set(outputBuffer);
+  return new Response(ab, {
     status: 200,
     headers: {
       "Content-Type": "model/gltf-binary",
