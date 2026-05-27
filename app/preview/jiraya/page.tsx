@@ -158,7 +158,7 @@ function Scene({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
 function Loader() {
   return (
     <Html center>
-      <div className="text-white/40 text-xs font-mono tracking-widest">
+      <div className="text-foreground/40 text-xs font-mono tracking-widest">
         LOADING SCENE...
       </div>
     </Html>
@@ -357,7 +357,7 @@ export default function JirayaImmersive() {
   return (
     <AudioProvider enableDrone={true}>
     <CustomCursor />
-    <div ref={containerRef} className="relative bg-black overflow-x-hidden">
+    <div ref={containerRef} className="relative bg-background overflow-x-hidden">
       {/* Skeleton loader overlay (couvre le Canvas pendant le download GLB/textures) */}
       <SceneLoader />
 
@@ -381,29 +381,29 @@ export default function JirayaImmersive() {
 
       {/* Top fixed nav */}
       <div className="fixed top-0 inset-x-0 z-50 flex justify-between items-center p-6 md:p-10 pointer-events-none">
-        <span className="font-mono text-[10px] md:text-xs tracking-[0.3em] text-white/50">
+        <span className="font-mono text-[10px] md:text-xs tracking-[0.3em] text-foreground/50">
           VERTXIA · PREVIEW
         </span>
-        <span className="font-mono text-[10px] md:text-xs tracking-[0.3em] text-white/50">
+        <span className="font-mono text-[10px] md:text-xs tracking-[0.3em] text-foreground/50">
           DAY 2 · BUU&apos;KOFF
         </span>
       </div>
 
       {/* HERO */}
       <section className="relative z-10 h-screen flex flex-col items-start justify-end p-6 md:p-16 overflow-hidden">
-        <div className="absolute top-0 inset-x-0 h-[55vh] z-0 pointer-events-none md:hidden bg-gradient-to-b from-black/70 via-black/30 to-transparent" />
+        <div className="absolute top-0 inset-x-0 h-[55vh] z-0 pointer-events-none md:hidden bg-gradient-to-b from-background/70 via-background/30 to-transparent" />
 
         {/* MOBILE */}
         <div className="md:hidden absolute top-20 left-6 right-6 z-10">
-          <span className="hero-meta font-mono text-[10px] tracking-[0.4em] text-white/50 block mb-3">
+          <span className="hero-meta font-mono text-[10px] tracking-[0.4em] text-foreground/50 block mb-3">
             GENERATED FROM · BUU-KOFF
           </span>
           {/* SplitText (côté client, dans useEffect) injecte <span class="char">
               autour de chaque lettre pour les animer une par une. */}
-          <h1 className="hero-brand text-5xl font-light leading-[0.85] tracking-tighter text-white drop-shadow-2xl">
+          <h1 className="hero-brand font-display text-[clamp(3rem,15vw,5rem)] font-normal leading-[0.9] tracking-tight text-foreground drop-shadow-2xl">
             JIRAYA
           </h1>
-          <p className="hero-meta text-xs text-white/70 max-w-xs mt-4 drop-shadow-lg">
+          <p className="hero-meta text-xs text-foreground/70 max-w-xs mt-4 drop-shadow-lg">
             Naruto Shippuden — Ichiban Kuji.
             <br />
             Sage Mode, Lot E. Page 3D générée en 3 min.
@@ -412,20 +412,20 @@ export default function JirayaImmersive() {
 
         {/* DESKTOP */}
         <div className="hidden md:block">
-          <span className="hero-meta font-mono text-xs tracking-[0.4em] text-white/40 block mb-6">
+          <span className="hero-meta font-mono text-xs tracking-[0.4em] text-foreground/40 block mb-6">
             GENERATED FROM · BUU-KOFF-2.MYSHOPIFY.COM
           </span>
-          <h1 className="hero-brand text-[clamp(3.5rem,12vw,11rem)] font-light leading-[0.85] tracking-tighter text-white whitespace-nowrap">
+          <h1 className="hero-brand font-display text-[clamp(4rem,12vw,11rem)] font-normal leading-[0.9] tracking-tight text-foreground whitespace-nowrap">
             JIRAYA
           </h1>
-          <p className="hero-meta text-base text-white/50 max-w-md mt-6">
+          <p className="hero-meta text-base text-foreground/50 max-w-md mt-6">
             Naruto Shippuden — Ichiban Kuji.
             <br />
             Sage Mode, Lot E. Page 3D générée en 3 min.
           </p>
         </div>
 
-        <div className="hero-meta absolute bottom-8 left-1/2 -translate-x-1/2 text-white/30 text-[10px] font-mono tracking-[0.3em] flex flex-col items-center gap-3">
+        <div className="hero-meta absolute bottom-8 left-1/2 -translate-x-1/2 text-foreground/30 text-[10px] font-mono tracking-[0.3em] flex flex-col items-center gap-3">
           <span>SCROLL</span>
           <span className="text-base animate-bounce">↓</span>
         </div>
@@ -433,19 +433,19 @@ export default function JirayaImmersive() {
 
       {/* CHAPITRE 01 — Buu'Koff */}
       <section className="v-fade relative z-10 h-screen flex items-center justify-end p-6 md:p-16">
-        <div className="max-w-md text-right text-white space-y-4">
-          <span className="font-mono text-xs tracking-[0.4em] text-white/40 block">
+        <div className="max-w-md text-right text-foreground space-y-4">
+          <span className="font-mono text-xs tracking-[0.4em] text-foreground/40 block">
             CHAPITRE 01
           </span>
           <h2 className="chapter-title text-3xl md:text-6xl font-light leading-[0.95] tracking-tight">
             Buu&rsquo;Koff.
           </h2>
-          <p className="text-lg md:text-3xl font-light text-white/80 leading-tight">
+          <p className="text-lg md:text-3xl font-light text-foreground/80 leading-tight">
             Figurines anime
             <br />
             authentifiées.
           </p>
-          <p className="text-sm md:text-base text-white/50 leading-relaxed pt-2">
+          <p className="text-sm md:text-base text-foreground/50 leading-relaxed pt-2">
             Banpresto, Ichiban Kuji, Figuarts — sélection collector pour les puristes.
           </p>
         </div>
@@ -460,14 +460,14 @@ export default function JirayaImmersive() {
             filter: "brightness(0.4) saturate(1.1)",
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-red-950/30 to-black/80" />
-        <div className="relative z-10 text-center text-white max-w-[85vw] md:max-w-3xl px-6">
+        <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-red-950/30 to-background/80" />
+        <div className="relative z-10 text-center text-foreground max-w-[85vw] md:max-w-3xl px-6">
           <p className="v-quote text-3xl md:text-7xl font-light leading-[1] tracking-tight">
             « L&apos;ermite crapaud
             <br />
-            <span className="italic text-white/80">qui a écrit la suite. »</span>
+            <span className="italic text-foreground/80">qui a écrit la suite. »</span>
           </p>
-          <p className="mt-8 text-xs md:text-sm text-white/50 font-mono tracking-[0.3em]">
+          <p className="mt-8 text-xs md:text-sm text-foreground/50 font-mono tracking-[0.3em]">
             — NARUTO SHIPPUDEN LORE
           </p>
         </div>
@@ -475,36 +475,36 @@ export default function JirayaImmersive() {
 
       {/* CHAPITRE 02 — Sage Mode detail */}
       <section className="v-fade relative z-10 h-screen flex items-center justify-start p-6 md:p-16">
-        <div className="max-w-md text-white space-y-4">
-          <span className="font-mono text-xs tracking-[0.4em] text-white/40 block">
+        <div className="max-w-md text-foreground space-y-4">
+          <span className="font-mono text-xs tracking-[0.4em] text-foreground/40 block">
             CHAPITRE 02
           </span>
           <h2 className="chapter-title text-3xl md:text-6xl font-light leading-[0.95] tracking-tight">
             Sage Mode.
             <br />
-            <span className="text-white/60">Lot E.</span>
+            <span className="text-foreground/60">Lot E.</span>
           </h2>
-          <p className="text-base md:text-lg text-white/60 leading-relaxed pt-2">
+          <p className="text-base md:text-lg text-foreground/60 leading-relaxed pt-2">
             Série Ichiban Kuji — The Bridge of Peace and the Lament of Reincarnation.
             <br />
             Hommage Banpresto à l&apos;ermite Sannin.
           </p>
           <div className="pt-6 grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="font-mono text-3xl md:text-4xl text-white">96</div>
-              <div className="text-[10px] tracking-widest text-white/40 mt-1">
+              <div className="font-mono text-3xl md:text-4xl text-foreground">96</div>
+              <div className="text-[10px] tracking-widest text-foreground/40 mt-1">
                 € PRIX
               </div>
             </div>
             <div>
-              <div className="font-mono text-3xl md:text-4xl text-white">20cm</div>
-              <div className="text-[10px] tracking-widest text-white/40 mt-1">
+              <div className="font-mono text-3xl md:text-4xl text-foreground">20cm</div>
+              <div className="text-[10px] tracking-widest text-foreground/40 mt-1">
                 HAUTEUR
               </div>
             </div>
             <div>
-              <div className="font-mono text-3xl md:text-4xl text-white">PVC</div>
-              <div className="text-[10px] tracking-widest text-white/40 mt-1">
+              <div className="font-mono text-3xl md:text-4xl text-foreground">PVC</div>
+              <div className="text-[10px] tracking-widest text-foreground/40 mt-1">
                 MATÉRIAU
               </div>
             </div>
@@ -521,12 +521,12 @@ export default function JirayaImmersive() {
             filter: "brightness(0.35) saturate(1.05)",
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-red-950/20 to-black/40" />
-        <div className="relative z-10 text-center text-white max-w-[85vw] md:max-w-3xl px-6">
+        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-red-950/20 to-background/40" />
+        <div className="relative z-10 text-center text-foreground max-w-[85vw] md:max-w-3xl px-6">
           <p className="v-quote text-3xl md:text-7xl font-light leading-[1] tracking-tight">
             Une pièce de collection.
           </p>
-          <p className="v-quote text-lg md:text-4xl font-light text-white/50 mt-3 italic">
+          <p className="v-quote text-lg md:text-4xl font-light text-foreground/50 mt-3 italic">
             Pas un produit dérivé.
           </p>
         </div>
@@ -535,10 +535,10 @@ export default function JirayaImmersive() {
       {/* CTA */}
       <section className="v-fade relative z-10 h-screen flex flex-col items-center justify-center p-6 md:p-16 text-center">
         <div>
-          <span className="font-mono text-xs tracking-[0.4em] text-white/40 block mb-6">
+          <span className="font-mono text-xs tracking-[0.4em] text-foreground/40 block mb-6">
             DÉCOUVRIR
           </span>
-          <h2 className="glitch-text text-5xl md:text-9xl font-light text-white tracking-tighter leading-none">
+          <h2 className="glitch-text font-display text-5xl md:text-9xl font-normal text-foreground tracking-tight leading-none">
             buu-koff
           </h2>
           <div className="mt-10 inline-block">
@@ -552,12 +552,12 @@ export default function JirayaImmersive() {
             </MagneticButton>
           </div>
           <div className="mt-16 flex flex-col items-center gap-2">
-            <span className="font-mono text-[10px] text-white/30 tracking-[0.3em]">
+            <span className="font-mono text-[10px] text-foreground/30 tracking-[0.3em]">
               GÉNÉRÉ EN 3 MIN PAR
             </span>
             <a
               href="https://vertxia.com"
-              className="font-mono text-sm text-white/60 hover:text-white transition pointer-events-auto"
+              className="font-mono text-sm text-foreground/60 hover:text-foreground transition pointer-events-auto"
             >
               vertxia.com
             </a>
