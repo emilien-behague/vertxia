@@ -2,7 +2,13 @@
 
 import { useEffect, useRef } from "react";
 
-export function AnimatedSphere() {
+type Props = {
+  // "dark"  : caractères noirs sur fond clair (homepage par défaut)
+  // "light" : caractères blancs sur fond sombre (page /try, dashboards sombres)
+  variant?: "dark" | "light";
+};
+
+export function AnimatedSphere({ variant = "dark" }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameRef = useRef(0);
 
@@ -69,12 +75,15 @@ export function AnimatedSphere() {
 
       points.sort((a, b) => a.z - b.z);
 
+      const isLight = variant === "light";
+      const rgb = isLight ? "255, 255, 255" : "0, 0, 0";
+
       points.forEach((point) => {
         // Alpha basé sur |z| : les points au bord visuel (z proche de 0) deviennent
         // transparents → plus de contour circulaire visible. Les pôles avant/arrière
         // restent visibles, la rotation 3D reste perceptible.
         const alpha = Math.pow(Math.abs(point.z), 1.5) * 0.85 + 0.04;
-        ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+        ctx.fillStyle = `rgba(${rgb}, ${alpha})`;
         ctx.fillText(point.char, point.x, point.y);
       });
 
@@ -88,7 +97,7 @@ export function AnimatedSphere() {
       window.removeEventListener("resize", resize);
       cancelAnimationFrame(frameRef.current);
     };
-  }, []);
+  }, [variant]);
 
   return (
     <canvas

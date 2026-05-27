@@ -24,6 +24,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { Environment, useGLTF, OrbitControls, Html } from "@react-three/drei";
 import * as THREE from "three";
 import { CinematicEffects } from "@/components/cinematic-effects";
+import { AnimatedSphere } from "@/components/animated-sphere";
 
 type Product = {
   id: number;
@@ -338,7 +339,15 @@ export default function TryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="relative min-h-screen bg-black text-white overflow-x-hidden">
+      {/* Orbe ASCII rotative en arrière-plan — variant light pour fond noir */}
+      <div
+        className="fixed right-[-120px] md:right-[-150px] top-1/2 -translate-y-1/2 w-[420px] h-[420px] md:w-[750px] md:h-[750px] lg:w-[900px] lg:h-[900px] pointer-events-none opacity-40 md:opacity-55 z-0"
+        aria-hidden="true"
+      >
+        <AnimatedSphere variant="light" />
+      </div>
+
       {/* Top nav */}
       <nav className="fixed top-0 inset-x-0 z-50 flex justify-between items-center p-6 md:p-10 bg-black/40 backdrop-blur-sm">
         <Link
@@ -353,7 +362,7 @@ export default function TryPage() {
       </nav>
 
       {/* Hero + input */}
-      <section className="min-h-screen flex flex-col items-center justify-center px-6 py-24">
+      <section className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 py-24">
         <div className="max-w-2xl w-full text-center">
           <span className="font-mono text-[10px] md:text-xs tracking-[0.4em] text-white/40 block mb-6">
             ESSAYE MAINTENANT
@@ -431,7 +440,7 @@ export default function TryPage() {
 
       {/* Result state — choix du produit à générer */}
       {state.kind === "result" && (
-        <section ref={resultRef} className="px-6 pb-32 max-w-5xl mx-auto pt-12">
+        <section ref={resultRef} className="relative z-10 px-6 pb-32 max-w-5xl mx-auto pt-12">
           <div className="mb-12 text-center">
             <span className="font-mono text-[10px] md:text-xs tracking-[0.4em] text-emerald-400 block mb-3">
               ✓ BOUTIQUE DÉTECTÉE
@@ -501,7 +510,7 @@ export default function TryPage() {
 
       {/* Generating state — progress + (à la fin) viewer 3D */}
       {state.kind === "generating" && (
-        <section ref={resultRef} className="px-6 pb-32 max-w-4xl mx-auto pt-12">
+        <section ref={resultRef} className="relative z-10 px-6 pb-32 max-w-4xl mx-auto pt-12">
           <div className="mb-8 text-center">
             <span className="font-mono text-[10px] md:text-xs tracking-[0.4em] text-white/40 block mb-3">
               GÉNÉRATION 3D EN COURS
@@ -632,7 +641,7 @@ export default function TryPage() {
         </section>
       )}
 
-      <footer className="border-t border-white/10 p-8 text-center">
+      <footer className="relative z-10 border-t border-white/10 p-8 text-center bg-black/80 backdrop-blur-sm">
         <span className="font-mono text-[10px] tracking-[0.4em] text-white/30">
           VERTXIA · BUILD IN PUBLIC · 2026
         </span>
