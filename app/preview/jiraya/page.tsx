@@ -5,7 +5,6 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import {
   Environment,
   useGLTF,
-  Sparkles,
   Html,
 } from "@react-three/drei";
 import * as THREE from "three";
@@ -96,7 +95,9 @@ function Scene({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
         <primitive object={scene} />
       </group>
 
-      <Sparkles count={120} size={2.5} speed={0.3} scale={[14, 16, 14]} opacity={0.55} color="#f5d76e" />
+      {/* Sparkles retire : les quads des sprites deviennent visibles a cause
+          du bloom qui amplifie le centre brillant — artefact carre net en
+          fond. On laisse le bloom + vignette + rim lights faire l atmosphere. */}
 
       <Environment files="/hdri/studio_small_03_2k.hdr" environmentIntensity={0.6} background={false} />
 
