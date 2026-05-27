@@ -1,50 +1,36 @@
 /**
- * Page /demo (index) — URL canonique showcase pour le Reel.
+ * Page /demo — Vertxia Lab portfolio.
  *
- * Pas besoin de générer une démo via /try : cette page rend l expérience
- * /demo/[id] complète (avec walkable portfolio chantier #5) en utilisant
- * un GLB local hardcodé (jiraya_m6.glb).
+ * Pivot 27/05/2026 : ce n'est plus une démo "voici ce qu'on ferait avec ton
+ *   produit" (mesh-centric). C'est un portfolio qui démontre la capacité à
+ *   concevoir un site 3D incroyable. Le site EST la preuve.
  *
- * Cas d usage :
- *   - Filmer le Reel sur une URL stable (vertxia.com/demo)
- *   - Partage TikTok / Instagram sans dépendance à une génération éphémère
- *   - Onboarding marketing — la home pointe ici pour montrer le WOW
- *
- * Le contenu (vendor, product, image) est hardcodé pour matcher
- * l esthétique de la démo Jiraya (Naruto Shippuden / buu-koff).
+ * Pour les démos clients spécifiques (mesh d'un produit Shopify généré via
+ *   /try), voir /demo/[id] qui rend toujours <DemoView /> (le composant
+ *   mesh-centric initial).
  */
 
 import type { Metadata } from "next";
-import { DemoView } from "./[id]/demo-view";
+import { PortfolioView } from "./portfolio-view";
 
 export const metadata: Metadata = {
-  title: "Vertxia · Démo immersive 3D",
+  title: "Vertxia · Lab — L'IA qui transforme ton Shopify en site 3D cinéma",
   description:
-    "Découvre Vertxia — la boutique 3D générée en 4 min depuis ton Shopify. Mesh haute densité, scroll cinématique, gallery walkable.",
+    "Build in public solo. Un dev, une IA, des sites 3D cinéma en 4 minutes à partir d'une URL Shopify. Particules GPU, postprocess ACES, palette Magic Window.",
   openGraph: {
-    title: "Vertxia · Démo immersive 3D",
+    title: "Vertxia · Lab",
     description:
-      "Découvre Vertxia — la boutique 3D générée en 4 min depuis ton Shopify.",
+      "L'IA qui transforme ton Shopify en site 3D cinéma. Build in public solo.",
     type: "website",
     siteName: "Vertxia",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Vertxia · Démo immersive 3D",
-    description:
-      "Découvre Vertxia — la boutique 3D générée en 4 min depuis ton Shopify.",
+    title: "Vertxia · Lab",
+    description: "L'IA qui transforme ton Shopify en site 3D cinéma.",
   },
 };
 
-export default function DemoShowcasePage() {
-  return (
-    <DemoView
-      id="showcase"
-      glbUrl="/3d/jiraya_m6.glb"
-      shop="buu-koff-2.myshopify.com"
-      vendor="BUU-KOFF"
-      product="Naruto Shippuden — Ichiban Kuji · Figurine Jiraya Sage Mode"
-      image="https://cdn.shopify.com/s/files/1/0995/9597/7051/files/0C04CB5E-FB19-4670-BB18-4F60505AE02B.jpg?v=1779453813"
-    />
-  );
+export default function VertxiaLabPage() {
+  return <PortfolioView />;
 }
