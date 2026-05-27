@@ -59,21 +59,18 @@ const TOTAL_DEPTH = 165;
 const SCROLL_HEIGHT_VH = 600; // 6 sections × 100vh
 
 /**
- * MobileScale — wrappe un sous-arbre 3D pour le rétrécir sur écran portrait.
- * Le FOV horizontal d'une caméra perspective est étroit en aspect 9:16, donc
- * les mots particules débordent sans cette correction. 55% en portrait laisse
- * VERTXIA / TON TOUR cadrés avec respiration latérale.
+ * MobileScale — wrappe un sous-arbre 3D pour qu'il tienne dans le FOV horizontal.
+ * Le FOV horizontal d'une caméra perspective est = vFov * aspect. Sur portrait
+ * 9:16 (aspect 0.56), il vaut ~28° — bien trop étroit pour cadrer VERTXIA à
+ * scale 1. On scale dynamiquement par aspect pour que le mot tienne quelle que
+ * soit la largeur du viewport. Min 0.28 = sécurité sur les écrans très étroits.
  */
-function MobileScale({
-  children,
-  portraitScale = 0.55,
-}: {
-  children: React.ReactNode;
-  portraitScale?: number;
-}) {
+function MobileScale({ children }: { children: React.ReactNode }) {
   const { size } = useThree();
-  const isPortrait = size.width < size.height;
-  return <group scale={isPortrait ? portraitScale : 1}>{children}</group>;
+  const aspect = size.width / size.height;
+  // Landscape : pas de scale. Portrait : aspect * 0.6 (avec floor 0.28).
+  const scale = aspect >= 1 ? 1 : Math.max(0.28, aspect * 0.6);
+  return <group scale={scale}>{children}</group>;
 }
 
 function LabInner() {
