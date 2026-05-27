@@ -1,20 +1,29 @@
 "use client";
 
 /**
- * Page /try — démo interactive Vertxia.
+ * Page /try — démo interactive Vertxia avec génération 3D live.
  *
- * MVP Phase 1a (27/05/2026) : scraping Shopify live + display produits + CTA waitlist.
- * Pas de génération 3D dans cette phase (5-6 min de pipeline, demande Phase 1b).
+ * Phase 1b (27/05/2026 nuit) : génération 3D réelle via Replicate + Meshy
+ * chaînés. Polling côté client pour éviter les timeouts Vercel.
  *
  * Flow utilisateur :
  *   1. Colle URL Shopify
- *   2. ~3-5s : scraping live via /api/scrape
- *   3. Affichage : boutique détectée, vendor, count, 5 premiers produits
- *   4. CTA "Je veux ce site pour ma boutique" → form email mailto
+ *   2. ~3-5s scraping live via /api/scrape
+ *   3. Affiche produits + bouton "Générer mon site 3D"
+ *   4. Clic -> orchestration :
+ *      a. /api/upscale/start (Real-ESRGAN si petite source)
+ *      b. Poll /api/upscale/status jusqu'à succeeded (15-30s)
+ *      c. /api/mesh/start (Meshy image-to-3D)
+ *      d. Poll /api/mesh/status jusqu'à SUCCEEDED (3-4 min)
+ *   5. Rendu 3D inline dans la page (Canvas R3F)
  */
 
-import { useState } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Environment, useGLTF, OrbitControls, Html } from "@react-three/drei";
+import * as THREE from "three";
+import { CinematicEffects } from "@/components/cinematic-effects";
 
 type Product = {
   id: number;
@@ -32,22 +41,109 @@ type ScrapeResult = {
   products: Product[];
 };
 
+type GenStep =
+  | "upscale_start"
+  | "upscale_poll"
+  | "mesh_start"
+  | "mesh_poll"
+  | "done"
+  | "error";
+
 type State =
   | { kind: "idle" }
-  | { kind: "loading" }
+  | { kind: "scraping" }
   | { kind: "result"; data: ScrapeResult }
+  | {
+      kind: "generating";
+      data: ScrapeResult;
+      product: Product;
+      step: GenStep;
+      progress: number;
+      message: string;
+      glbUrl?: string;
+      error?: string;
+    }
   | { kind: "error"; message: string };
 
+// ─── Helper : sleep async ────────────────────────────────────────────────────
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+// ─── 3D viewer inline pour le GLB généré ─────────────────────────────────────
+function GeneratedModel({ url }: { url: string }) {
+  const { scene } = useGLTF(url);
+  const groupRef = useRef<THREE.Group>(null);
+
+  useFrame((state) => {
+    if (groupRef.current) {
+      groupRef.current.rotation.y = state.clock.elapsedTime * 0.4;
+    }
+  });
+
+  return (
+    <group ref={groupRef} scale={1.5} position={[0, -0.9, 0]}>
+      <primitive object={scene} />
+    </group>
+  );
+}
+
+function GeneratedViewer({ url }: { url: string }) {
+  return (
+    <div className="relative w-full aspect-square md:aspect-[4/3] rounded-2xl overflow-hidden bg-black border border-white/10">
+      <Canvas
+        camera={{ position: [3, 1.2, 6], fov: 28 }}
+        gl={{ antialias: true, alpha: false }}
+        dpr={[1, 2]}
+      >
+        <Suspense
+          fallback={
+            <Html center>
+              <span className="font-mono text-[10px] tracking-widest text-white/40">
+                LOADING GLB…
+              </span>
+            </Html>
+          }
+        >
+          <color attach="background" args={["#0c0a07"]} />
+          <fog attach="fog" args={["#0c0a07", 8, 22]} />
+          <ambientLight intensity={0.3} />
+          <directionalLight position={[5, 8, 5]} intensity={1.1} color="#ffd9a3" />
+          <pointLight position={[-4, 3, -4]} intensity={1.2} color="#a855f7" />
+          <pointLight position={[4, 5, -3]} intensity={0.6} color="#22d3ee" />
+          <GeneratedModel url={url} />
+          <Environment
+            files="/hdri/studio_small_03_2k.hdr"
+            environmentIntensity={0.6}
+            background={false}
+          />
+          <CinematicEffects bloom={0.3} vignette={0.3} saturation={0.05} contrast={0.03} />
+          <OrbitControls enablePan={false} enableZoom={true} minDistance={3} maxDistance={12} />
+        </Suspense>
+      </Canvas>
+      <div className="absolute top-3 left-3 font-mono text-[9px] tracking-widest text-white/50">
+        DRAG · ZOOM
+      </div>
+    </div>
+  );
+}
+
+// ─── Page ────────────────────────────────────────────────────────────────────
 export default function TryPage() {
   const [url, setUrl] = useState("");
   const [state, setState] = useState<State>({ kind: "idle" });
+  // Ref pour éviter les setState après navigation (cleanup)
+  const aborted = useRef(false);
+  useEffect(() => {
+    return () => {
+      aborted.current = true;
+    };
+  }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleScrape(e: React.FormEvent) {
     e.preventDefault();
-    if (state.kind === "loading") return;
+    if (state.kind === "scraping" || state.kind === "generating") return;
     if (!url || url.length < 5) return;
 
-    setState({ kind: "loading" });
+    setState({ kind: "scraping" });
 
     try {
       const res = await fetch("/api/scrape", {
@@ -69,6 +165,154 @@ export default function TryPage() {
         kind: "error",
         message: err instanceof Error ? err.message : "Erreur réseau",
       });
+    }
+  }
+
+  async function handleGenerate(product: Product) {
+    if (state.kind !== "result") return;
+    if (!product.image) {
+      alert("Produit sans image, impossible de générer.");
+      return;
+    }
+    const scrapeData = state.data;
+
+    setState({
+      kind: "generating",
+      data: scrapeData,
+      product,
+      step: "upscale_start",
+      progress: 0,
+      message: "Préparation de l'image source…",
+    });
+
+    try {
+      // ─── STEP 1 : Upscale (Real-ESRGAN si nécessaire) ─────────────────────
+      const upscaleRes = await fetch("/api/upscale/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl: product.image }),
+      });
+      if (!upscaleRes.ok) {
+        const err = await upscaleRes.json().catch(() => ({}));
+        throw new Error(`Upscale ${err.error || upscaleRes.status}`);
+      }
+      const upscaleData = await upscaleRes.json();
+
+      let upscaledImageUrl: string;
+      if (upscaleData.skipped) {
+        // Source déjà sharp, on passe direct à Meshy
+        upscaledImageUrl = upscaleData.output;
+      } else {
+        // Poll Replicate
+        const predictionId = upscaleData.predictionId;
+        if (!predictionId) throw new Error("Pas de predictionId Replicate");
+        if (aborted.current) return;
+        setState((s) =>
+          s.kind === "generating"
+            ? { ...s, step: "upscale_poll", progress: 10, message: "AI upscale en cours (Real-ESRGAN)…" }
+            : s
+        );
+
+        let output: string | null = null;
+        const tStart = Date.now();
+        while (!output && Date.now() - tStart < 120_000) {
+          await sleep(3000);
+          if (aborted.current) return;
+          const r = await fetch(`/api/upscale/status?id=${predictionId}`);
+          const d = await r.json();
+          if (d.status === "succeeded" && d.output) {
+            output = d.output;
+            break;
+          }
+          if (d.status === "failed" || d.status === "canceled") {
+            throw new Error(`Upscale ${d.status} : ${d.error || "inconnu"}`);
+          }
+          const elapsed = (Date.now() - tStart) / 1000;
+          setState((s) =>
+            s.kind === "generating"
+              ? { ...s, progress: Math.min(10 + (elapsed / 30) * 20, 30) }
+              : s
+          );
+        }
+        if (!output) throw new Error("Upscale timeout 120s");
+        upscaledImageUrl = output;
+      }
+
+      // ─── STEP 2 : Meshy image-to-3D ───────────────────────────────────────
+      if (aborted.current) return;
+      setState((s) =>
+        s.kind === "generating"
+          ? { ...s, step: "mesh_start", progress: 30, message: "Génération du mesh 3D (Meshy-6 UHQ)…" }
+          : s
+      );
+      const meshRes = await fetch("/api/mesh/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl: upscaledImageUrl }),
+      });
+      if (!meshRes.ok) {
+        const err = await meshRes.json().catch(() => ({}));
+        throw new Error(`Meshy ${err.error || meshRes.status}`);
+      }
+      const meshData = await meshRes.json();
+      const taskId = meshData.taskId;
+      if (!taskId) throw new Error("Pas de taskId Meshy");
+
+      // Poll Meshy
+      if (aborted.current) return;
+      setState((s) =>
+        s.kind === "generating"
+          ? { ...s, step: "mesh_poll", progress: 35, message: "Sculpture du mesh 3D (peut prendre 2-4 min)…" }
+          : s
+      );
+
+      let glbUrl: string | null = null;
+      const tMeshStart = Date.now();
+      while (!glbUrl && Date.now() - tMeshStart < 360_000) {
+        await sleep(5000);
+        if (aborted.current) return;
+        const r = await fetch(`/api/mesh/status?id=${taskId}`);
+        const d = await r.json();
+        if (d.status === "SUCCEEDED" && d.modelUrls?.glb) {
+          glbUrl = d.modelUrls.glb;
+          break;
+        }
+        if (d.status === "FAILED" || d.status === "EXPIRED") {
+          throw new Error(`Meshy ${d.status} : ${d.error || "inconnu"}`);
+        }
+        const meshyProgress = typeof d.progress === "number" ? d.progress : 0;
+        // 30-95% : période Meshy
+        const mapped = 35 + (meshyProgress / 100) * 60;
+        setState((s) =>
+          s.kind === "generating"
+            ? {
+                ...s,
+                progress: Math.min(mapped, 95),
+                message: `Sculpture du mesh 3D (${meshyProgress}%, peut prendre 2-4 min)…`,
+              }
+            : s
+        );
+      }
+      if (!glbUrl) throw new Error("Meshy timeout 6 min");
+
+      // ─── STEP 3 : Done ────────────────────────────────────────────────────
+      if (aborted.current) return;
+      setState((s) =>
+        s.kind === "generating"
+          ? { ...s, step: "done", progress: 100, message: "Prêt.", glbUrl: glbUrl || undefined }
+          : s
+      );
+    } catch (err) {
+      if (aborted.current) return;
+      setState((s) =>
+        s.kind === "generating"
+          ? {
+              ...s,
+              step: "error",
+              error: err instanceof Error ? err.message : String(err),
+            }
+          : s
+      );
     }
   }
 
@@ -102,32 +346,34 @@ export default function TryPage() {
           <h1 className="text-4xl md:text-6xl font-light tracking-tighter leading-[1.05] mb-6">
             Colle ton URL Shopify.
             <br />
-            <span className="text-white/60 italic">On te montre ton site 3D.</span>
+            <span className="text-white/60 italic">On génère ton 3D en live.</span>
           </h1>
 
           <p className="text-white/50 text-sm md:text-base max-w-md mx-auto mb-10">
-            Scraping en direct. Aperçu des produits. Demande de génération en
-            5 minutes.
+            Scraping en direct. Real-ESRGAN AI upscale. Meshy-6 image-to-3D. Affiché dans le navigateur dès la fin.
           </p>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="w-full max-w-xl mx-auto">
+          <form onSubmit={handleScrape} className="w-full max-w-xl mx-auto">
             <div className="flex flex-col md:flex-row gap-3">
               <input
                 type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://ta-boutique.myshopify.com"
-                disabled={state.kind === "loading"}
+                disabled={state.kind === "scraping" || state.kind === "generating"}
                 className="flex-1 px-5 py-4 bg-white/5 border border-white/10 rounded-lg font-mono text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/40 transition disabled:opacity-50"
                 autoFocus
               />
               <button
                 type="submit"
-                disabled={state.kind === "loading" || url.length < 5}
+                disabled={
+                  state.kind === "scraping" ||
+                  state.kind === "generating" ||
+                  url.length < 5
+                }
                 className="px-8 py-4 bg-white text-black font-mono text-xs tracking-[0.3em] rounded-lg hover:bg-white/90 transition disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
               >
-                {state.kind === "loading" ? "ANALYSE..." : "GÉNÉRER →"}
+                {state.kind === "scraping" ? "ANALYSE…" : "ANALYSER →"}
               </button>
             </div>
 
@@ -137,8 +383,7 @@ export default function TryPage() {
           </form>
         </div>
 
-        {/* Loading state */}
-        {state.kind === "loading" && (
+        {state.kind === "scraping" && (
           <div className="mt-16 flex flex-col items-center gap-4 animate-pulse">
             <div className="relative w-10 h-10">
               <div className="absolute inset-0 rounded-full border border-white/10" />
@@ -150,7 +395,6 @@ export default function TryPage() {
           </div>
         )}
 
-        {/* Error state */}
         {state.kind === "error" && (
           <div className="mt-12 max-w-md w-full text-center">
             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-5">
@@ -169,7 +413,7 @@ export default function TryPage() {
         )}
       </section>
 
-      {/* Result state */}
+      {/* Result state — choix du produit à générer */}
       {state.kind === "result" && (
         <section className="px-6 pb-32 max-w-5xl mx-auto">
           <div className="mb-12 text-center">
@@ -184,15 +428,17 @@ export default function TryPage() {
             </p>
           </div>
 
-          {/* Produits grid */}
+          <p className="text-center text-white/60 text-sm mb-6">
+            Clique sur un produit pour générer son site 3D en live
+          </p>
+
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-16">
             {state.data.products.map((p) => (
-              <a
+              <button
                 key={p.id}
-                href={p.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative block aspect-square rounded-lg border border-white/10 bg-white/[0.02] overflow-hidden hover:border-white/30 transition"
+                onClick={() => handleGenerate(p)}
+                disabled={!p.image}
+                className="group relative block aspect-square rounded-lg border border-white/10 bg-white/[0.02] overflow-hidden hover:border-white/50 transition disabled:opacity-30 disabled:cursor-not-allowed text-left"
               >
                 {p.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -217,52 +463,16 @@ export default function TryPage() {
                     </div>
                   )}
                 </div>
-              </a>
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition bg-black/40">
+                  <span className="font-mono text-[10px] tracking-[0.3em] text-white px-3 py-1.5 border border-white/40 rounded">
+                    GÉNÉRER 3D →
+                  </span>
+                </div>
+              </button>
             ))}
           </div>
 
-          {/* Aperçu site 3D : lien vers Jiraya en exemple */}
-          <div className="text-center mb-16">
-            <span className="font-mono text-[10px] md:text-xs tracking-[0.4em] text-white/40 block mb-4">
-              VOILÀ À QUOI RESSEMBLERA TON SITE
-            </span>
-            <Link
-              href="/preview/jiraya"
-              className="inline-block px-8 py-3 border border-white/30 text-white font-mono text-xs tracking-[0.3em] hover:bg-white hover:text-black transition rounded"
-            >
-              VOIR UN EXEMPLE 3D →
-            </Link>
-          </div>
-
-          {/* CTA waitlist */}
-          <div className="max-w-md mx-auto bg-gradient-to-br from-white/[0.04] to-white/[0.01] border border-white/10 rounded-2xl p-8 text-center">
-            <span className="font-mono text-[10px] tracking-[0.4em] text-white/40 block mb-4">
-              GÉNÈRE MON SITE
-            </span>
-            <h3 className="text-xl md:text-2xl font-light tracking-tight mb-3">
-              On te le construit en 5 minutes.
-            </h3>
-            <p className="text-white/50 text-sm mb-6">
-              Real-ESRGAN AI · Meshy-6 · React Three Fiber. On t&apos;envoie le
-              lien dès que c&apos;est prêt.
-            </p>
-            <a
-              href={`mailto:emilien@vertxia.com?subject=Génération%20site%203D%20pour%20${encodeURIComponent(
-                state.data.shop
-              )}&body=Salut%20Emilien,%0A%0AJe%20veux%20mon%20site%203D%20Vertxia%20pour%20:%0A${encodeURIComponent(
-                state.data.shop
-              )}%0A%0AVoilà%20mon%20email%20pour%20recevoir%20le%20lien%20:%0A%5BMETS%20TON%20EMAIL%20ICI%5D%0A%0AMerci%20!`}
-              className="inline-block px-8 py-3 bg-white text-black font-mono text-xs tracking-[0.3em] rounded hover:bg-white/90 transition"
-            >
-              JE VEUX MON SITE 3D →
-            </a>
-            <p className="mt-4 text-white/30 font-mono text-[9px] tracking-widest">
-              Réponse sous 24h · build in public
-            </p>
-          </div>
-
-          {/* Reset */}
-          <div className="text-center mt-12">
+          <div className="text-center">
             <button
               onClick={reset}
               className="font-mono text-[10px] tracking-[0.3em] text-white/30 hover:text-white/70 transition"
@@ -273,7 +483,139 @@ export default function TryPage() {
         </section>
       )}
 
-      {/* Footer */}
+      {/* Generating state — progress + (à la fin) viewer 3D */}
+      {state.kind === "generating" && (
+        <section className="px-6 pb-32 max-w-4xl mx-auto">
+          <div className="mb-8 text-center">
+            <span className="font-mono text-[10px] md:text-xs tracking-[0.4em] text-white/40 block mb-3">
+              GÉNÉRATION 3D EN COURS
+            </span>
+            <h2 className="text-xl md:text-3xl font-light tracking-tight">
+              {state.product.title}
+            </h2>
+          </div>
+
+          {/* Progress bar */}
+          <div className="max-w-xl mx-auto mb-6">
+            <div className="h-1 w-full bg-white/10 rounded overflow-hidden">
+              <div
+                className="h-full bg-white/80 transition-all duration-500"
+                style={{ width: `${state.progress}%` }}
+              />
+            </div>
+            <div className="mt-3 flex justify-between font-mono text-[10px] tracking-widest text-white/50">
+              <span>{state.message}</span>
+              <span>{Math.round(state.progress)}%</span>
+            </div>
+          </div>
+
+          {/* Steps overview */}
+          <div className="max-w-xl mx-auto mb-12 grid grid-cols-4 gap-2 text-center">
+            {[
+              { id: "scrape", label: "Scraping" },
+              { id: "upscale", label: "AI Upscale" },
+              { id: "mesh", label: "Meshy 3D" },
+              { id: "render", label: "Rendu" },
+            ].map((s, i) => {
+              let active = false;
+              let done = false;
+              if (s.id === "scrape") done = true;
+              if (s.id === "upscale") {
+                active =
+                  state.step === "upscale_start" || state.step === "upscale_poll";
+                done = state.step !== "upscale_start" && state.step !== "upscale_poll";
+              }
+              if (s.id === "mesh") {
+                active = state.step === "mesh_start" || state.step === "mesh_poll";
+                done = state.step === "done";
+              }
+              if (s.id === "render") {
+                active = false;
+                done = state.step === "done";
+              }
+              return (
+                <div key={s.id} className="flex flex-col items-center gap-1">
+                  <div
+                    className={`w-6 h-6 rounded-full border flex items-center justify-center text-[10px] ${
+                      done
+                        ? "border-emerald-400 bg-emerald-400/20 text-emerald-400"
+                        : active
+                        ? "border-white/80 text-white animate-pulse"
+                        : "border-white/20 text-white/30"
+                    }`}
+                  >
+                    {done ? "✓" : i + 1}
+                  </div>
+                  <span
+                    className={`font-mono text-[9px] tracking-widest ${
+                      done || active ? "text-white/70" : "text-white/30"
+                    }`}
+                  >
+                    {s.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Erreur de génération */}
+          {state.step === "error" && (
+            <div className="max-w-md mx-auto text-center">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-5">
+                <div className="font-mono text-[10px] tracking-[0.4em] text-red-400 mb-2">
+                  ÉCHEC GÉNÉRATION
+                </div>
+                <div className="text-white/80 text-sm">{state.error}</div>
+              </div>
+              <button
+                onClick={reset}
+                className="mt-4 font-mono text-[10px] tracking-[0.3em] text-white/40 hover:text-white/80 transition"
+              >
+                ← RECOMMENCER
+              </button>
+            </div>
+          )}
+
+          {/* Viewer 3D */}
+          {state.step === "done" && state.glbUrl && (
+            <div className="max-w-3xl mx-auto">
+              <div className="mb-4 text-center">
+                <span className="font-mono text-[10px] md:text-xs tracking-[0.4em] text-emerald-400">
+                  ✓ TON SITE 3D EST PRÊT
+                </span>
+              </div>
+              <GeneratedViewer url={state.glbUrl} />
+              <div className="mt-8 text-center">
+                <p className="text-white/60 text-sm mb-4">
+                  Ce mesh expire dans ~1h côté Meshy. Pour un site complet hébergé,
+                  on te l&apos;envoie sur ton mail.
+                </p>
+                <a
+                  href={`mailto:emilien@vertxia.com?subject=Site%20complet%20pour%20${encodeURIComponent(
+                    state.data.shop
+                  )}&body=Salut%20Emilien,%0A%0AJe%20veux%20le%20site%203D%20complet%20pour%20:%0A${encodeURIComponent(
+                    state.data.shop
+                  )}%0AProduit%20test%C3%A9%20:%20${encodeURIComponent(
+                    state.product.title
+                  )}%0A%0AMon%20email%20:%20%5BMETS%20TON%20EMAIL%20ICI%5D%0A%0AMerci%20!`}
+                  className="inline-block px-8 py-3 bg-white text-black font-mono text-xs tracking-[0.3em] rounded hover:bg-white/90 transition"
+                >
+                  RECEVOIR LE SITE COMPLET →
+                </a>
+              </div>
+              <div className="text-center mt-10">
+                <button
+                  onClick={reset}
+                  className="font-mono text-[10px] tracking-[0.3em] text-white/30 hover:text-white/70 transition"
+                >
+                  ← GÉNÉRER UNE AUTRE BOUTIQUE
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
       <footer className="border-t border-white/10 p-8 text-center">
         <span className="font-mono text-[10px] tracking-[0.4em] text-white/30">
           VERTXIA · BUILD IN PUBLIC · 2026
