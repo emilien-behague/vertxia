@@ -131,12 +131,28 @@ export default function TryPage() {
   const [url, setUrl] = useState("");
   const [state, setState] = useState<State>({ kind: "idle" });
   // Ref pour éviter les setState après navigation (cleanup)
+  // Reset au mount : sur React 19 / Strict Mode, le component peut mount/unmount/remount,
+  // si on ne reset pas, aborted.current reste true et tous les setState sont skippés.
   const aborted = useRef(false);
   useEffect(() => {
+    aborted.current = false;
     return () => {
       aborted.current = true;
     };
   }, []);
+
+  // Auto-scroll vers la section results quand le scraping est terminé ou
+  // vers la section generating. Sans ça, l'utilisateur reste en haut et
+  // ne voit pas que le résultat est apparu plus bas.
+  const resultRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (state.kind === "result" || state.kind === "generating") {
+      // Smooth scroll vers le bas après le rendu
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [state.kind]);
 
   async function handleScrape(e: React.FormEvent) {
     e.preventDefault();
@@ -415,7 +431,7 @@ export default function TryPage() {
 
       {/* Result state — choix du produit à générer */}
       {state.kind === "result" && (
-        <section className="px-6 pb-32 max-w-5xl mx-auto">
+        <section ref={resultRef} className="px-6 pb-32 max-w-5xl mx-auto pt-12">
           <div className="mb-12 text-center">
             <span className="font-mono text-[10px] md:text-xs tracking-[0.4em] text-emerald-400 block mb-3">
               ✓ BOUTIQUE DÉTECTÉE
@@ -485,7 +501,7 @@ export default function TryPage() {
 
       {/* Generating state — progress + (à la fin) viewer 3D */}
       {state.kind === "generating" && (
-        <section className="px-6 pb-32 max-w-4xl mx-auto">
+        <section ref={resultRef} className="px-6 pb-32 max-w-4xl mx-auto pt-12">
           <div className="mb-8 text-center">
             <span className="font-mono text-[10px] md:text-xs tracking-[0.4em] text-white/40 block mb-3">
               GÉNÉRATION 3D EN COURS
