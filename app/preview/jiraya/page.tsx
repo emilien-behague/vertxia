@@ -13,6 +13,9 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import SplitText from "@activetheory/split-text";
 import { CinematicEffects } from "@/components/cinematic-effects";
+import { VolumetricFog } from "@/components/volumetric-fog";
+import { applyIridescence } from "@/components/mesh-fx";
+import { buildGlitchTextAnimation } from "@/components/glitch-text-anim";
 import { useCanvasPerfTier } from "@/components/use-perf-tier";
 import { SceneLoader } from "@/components/scene-loader";
 import { AudioProvider } from "@/components/audio/audio-provider";
@@ -38,13 +41,36 @@ const LIFESTYLE_IMG_1 =
 const LIFESTYLE_IMG_2 =
   "https://cdn.shopify.com/s/files/1/0995/9597/7051/files/4111A9CE-FD92-49DE-BC60-05D61606A2EB.jpg?v=1779453813";
 
+// Camera fly-through path : courbe Catmull-Rom traversée par le scroll
+const CAMERA_CURVE = new THREE.CatmullRomCurve3(
+  [
+    new THREE.Vector3(3, 1.2, 6),
+    new THREE.Vector3(1.5, 2.5, 5),
+    new THREE.Vector3(-2.5, 0.5, 4.5),
+    new THREE.Vector3(-3, 2, 5),
+    new THREE.Vector3(0, 3.2, 7),
+    new THREE.Vector3(3, 1.2, 6),
+  ],
+  false,
+  "catmullrom",
+  0.5
+);
+const CAM_TARGET_POS = new THREE.Vector3();
+const CAM_LOOK_AT = new THREE.Vector3(0, 0.2, 0);
+
 // ─── Scene 3D ────────────────────────────────────────────────────────────────
 function Scene({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
   const { scene } = useGLTF(MODEL_PATH);
+  const perf = useCanvasPerfTier();
   const groupRef = useRef<THREE.Group>(null);
   const bgColor = useRef(new THREE.Color("#0c0a07"));
   const rimRef = useRef<THREE.PointLight>(null);
   const auraRef = useRef<THREE.PointLight>(null);
+
+  // Signature Active Theory : iridescence subtile + clearcoat (soap-bubble feel)
+  useEffect(() => {
+    applyIridescence(scene, { strength: 0.5, clearcoat: 0.4 });
+  }, [scene]);
 
   useFrame((state) => {
     if (groupRef.current) {
@@ -61,6 +87,11 @@ function Scene({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
     if (auraRef.current) {
       auraRef.current.intensity = 0.6 + Math.sin(state.clock.elapsedTime * 2.0 + 1) * 0.15;
     }
+
+    // Active Theory camera fly-through driven par le scroll
+    CAMERA_CURVE.getPoint(p, CAM_TARGET_POS);
+    state.camera.position.lerp(CAM_TARGET_POS, 0.08);
+    state.camera.lookAt(CAM_LOOK_AT);
   });
 
   return (
@@ -101,14 +132,33 @@ function Scene({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
         <primitive object={scene} />
       </group>
 
-      {/* Sparkles retire : les quads des sprites deviennent visibles a cause
-          du bloom qui amplifie le centre brillant — artefact carre net en
-          fond. On laisse le bloom + vignette + rim lights faire l atmosphere. */}
+      {/* Volumetric data cloud Active Theory-style — palette Naruto sage
+          (rouge crimson, vert sage, or, orange) */}
+      <VolumetricFog
+        count={perf.isMobile ? 400 : 1200}
+        radius={11}
+        colors={["#dc2626", "#84cc16", "#fbbf24", "#fb923c", "#fff7ed", "#fde047"]}
+      />
+      <VolumetricFog
+        count={perf.isMobile ? 80 : 200}
+        radius={5}
+        sizeMin={2}
+        sizeMax={9}
+        opacity={0.7}
+        colors={["#fde047", "#fbbf24", "#ffffff"]}
+      />
+
 
       <Environment files="/hdri/studio_small_03_2k.hdr" environmentIntensity={0.6} background={false} />
 
-      {/* Cinematic post-processing : ACES tone mapping + bloom subtle + vignette + saturation */}
-      <CinematicEffects bloom={0.35} vignette={0.35} saturation={0.08} contrast={0.04} />
+      {/* Cinematic post-processing : ACES + bloom + vignette + chromatic aberration (signature AT) */}
+      <CinematicEffects
+        bloom={0.4}
+        vignette={0.35}
+        saturation={0.1}
+        contrast={0.05}
+        chromaticAberration={0.0018}
+      />
     </>
   );
 }
@@ -267,15 +317,19 @@ export default function JirayaImmersive() {
             );
           });
 
+        // Glitch text reveal (signature Active Theory) sur les .glitch-text
+        buildGlitchTextAnimation(containerRef.current, splits);
+
         // ─── Autres éléments (paragraphes, stats, CTA) : fade-up classique ─
         // Tous les enfants directs de .v-fade qui ne sont PAS déjà gérés par
-        // les splits ci-dessus (chapter-title, v-quote) reçoivent un fade-up.
+        // les splits ci-dessus (chapter-title, v-quote, glitch-text) reçoivent un fade-up.
         gsap.utils
           .toArray<HTMLElement>(".v-fade > *")
           .forEach((el) => {
             if (
               el.classList.contains("chapter-title") ||
-              el.classList.contains("v-quote")
+              el.classList.contains("v-quote") ||
+              el.classList.contains("glitch-text")
             ) {
               return;
             }
@@ -492,7 +546,7 @@ export default function JirayaImmersive() {
           <span className="font-mono text-xs tracking-[0.4em] text-white/40 block mb-6">
             DÉCOUVRIR
           </span>
-          <h2 className="chapter-title text-5xl md:text-9xl font-light text-white tracking-tighter leading-none">
+          <h2 className="glitch-text text-5xl md:text-9xl font-light text-white tracking-tighter leading-none">
             buu-koff
           </h2>
           <div className="mt-10 inline-block">

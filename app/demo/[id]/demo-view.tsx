@@ -34,6 +34,10 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import SplitText from "@activetheory/split-text";
 import { CinematicEffects } from "@/components/cinematic-effects";
+import { VolumetricFog } from "@/components/volumetric-fog";
+import { FloatingCards } from "@/components/floating-cards";
+import { applyIridescence } from "@/components/mesh-fx";
+import { buildGlitchTextAnimation } from "@/components/glitch-text-anim";
 import { useCanvasPerfTier } from "@/components/use-perf-tier";
 import { SceneLoader } from "@/components/scene-loader";
 import { AudioProvider } from "@/components/audio/audio-provider";
@@ -57,6 +61,45 @@ type Props = {
   image: string;
 };
 
+// Camera fly-through path : courbe Catmull-Rom traversée par le scroll.
+// 8 waypoints dramatisent les 7 sections (hero → CTA) + plongée gallery.
+const CAMERA_CURVE = new THREE.CatmullRomCurve3(
+  [
+    new THREE.Vector3(3, 1.2, 6),     // 0. hero — angle initial
+    new THREE.Vector3(1.5, 2.5, 5),   // 1. chapitre 01 — slightly high front
+    new THREE.Vector3(-2.5, 0.5, 4.5),// 2. story 1 — bas, contre-plongée side
+    new THREE.Vector3(-3, 2, 5),      // 3. chapitre 02 — far side mid-height
+    new THREE.Vector3(0, 3.2, 7),     // 4. story 2 — top wide pull-back
+    new THREE.Vector3(0, 1.8, 2),     // 5. transition gallery — avance vers le mesh
+    new THREE.Vector3(0, 1.2, -6),    // 6. gallery entry — passe AU TRAVERS du mesh
+    new THREE.Vector3(0, 0.5, -14),   // 7. gallery deep — au milieu des cartes
+  ],
+  false,
+  "catmullrom",
+  0.5
+);
+
+// Look-at path : la caméra regarde le mesh sur les 5 premiers segments,
+// puis pivote pour regarder dans le couloir de cartes.
+const LOOKAT_CURVE = new THREE.CatmullRomCurve3(
+  [
+    new THREE.Vector3(0, 0.2, 0),
+    new THREE.Vector3(0, 0.2, 0),
+    new THREE.Vector3(0, 0.2, 0),
+    new THREE.Vector3(0, 0.2, 0),
+    new THREE.Vector3(0, 0.2, 0),
+    new THREE.Vector3(0, 0.2, -3),    // pivote vers l avant
+    new THREE.Vector3(0, 0.5, -12),   // regarde au cœur du gallery
+    new THREE.Vector3(0, 1.5, -18),   // regarde la carte du fond
+  ],
+  false,
+  "catmullrom",
+  0.5
+);
+
+const CAM_TARGET_POS = new THREE.Vector3();
+const CAM_LOOK_AT = new THREE.Vector3();
+
 // ─── Scene 3D ────────────────────────────────────────────────────────────────
 function Scene({
   url,
@@ -66,10 +109,17 @@ function Scene({
   scrollRef: React.MutableRefObject<number>;
 }) {
   const { scene } = useGLTF(url);
+  const perf = useCanvasPerfTier();
   const groupRef = useRef<THREE.Group>(null);
   const bgColor = useRef(new THREE.Color("#0a0612"));
   const rimRef = useRef<THREE.PointLight>(null);
   const auraRef = useRef<THREE.PointLight>(null);
+
+  // Active Theory : iridescence + clearcoat sur tous les matériaux pour
+  // donner la signature "matière futuriste" — soap bubble / nacre.
+  useEffect(() => {
+    applyIridescence(scene, { strength: 0.55, clearcoat: 0.4 });
+  }, [scene]);
 
   useFrame((state) => {
     if (groupRef.current) {
@@ -92,6 +142,14 @@ function Scene({
       auraRef.current.intensity =
         0.6 + Math.sin(state.clock.elapsedTime * 2.0 + 1) * 0.15;
     }
+
+    // Active Theory camera fly-through driven par le scroll.
+    // Position + look-at sont 2 courbes Catmull-Rom synchronisées.
+    // Lerp 0.08 = inertie organique, pas de snap brutal.
+    CAMERA_CURVE.getPoint(p, CAM_TARGET_POS);
+    LOOKAT_CURVE.getPoint(p, CAM_LOOK_AT);
+    state.camera.position.lerp(CAM_TARGET_POS, 0.08);
+    state.camera.lookAt(CAM_LOOK_AT);
   });
 
   return (
@@ -126,8 +184,26 @@ function Scene({
         <primitive object={scene} />
       </group>
 
-      {/* Sparkles retire : artefacts carres a cause du bloom qui rend visible
-          les quads des sprites. Atmosphere portee par bloom + vignette + rim lights. */}
+      {/* Active Theory-style data cloud (remplace les ex-Sparkles).
+          Sprite circulaire + shader custom — pas d artefacts carres. */}
+      <VolumetricFog
+        count={perf.isMobile ? 400 : 1200}
+        radius={11}
+        colors={["#a855f7", "#22d3ee", "#fbbf24", "#fb923c", "#ffffff", "#c084fc"]}
+      />
+      <VolumetricFog
+        count={perf.isMobile ? 80 : 200}
+        radius={5}
+        sizeMin={2}
+        sizeMax={9}
+        opacity={0.7}
+        colors={["#ffd9a3", "#fbbf24", "#ffffff"]}
+      />
+
+      {/* Active Theory walkable portfolio : gallery cards en z<0.
+          La caméra plonge dedans en fin de scroll (cf. CAMERA_CURVE). */}
+      <FloatingCards />
+
 
       <Environment
         files="/hdri/studio_small_03_2k.hdr"
@@ -136,10 +212,11 @@ function Scene({
       />
 
       <CinematicEffects
-        bloom={0.35}
+        bloom={0.4}
         vignette={0.35}
-        saturation={0.08}
-        contrast={0.04}
+        saturation={0.1}
+        contrast={0.05}
+        chromaticAberration={0.0018}
       />
     </>
   );
@@ -292,11 +369,15 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
             );
           });
 
+        // Glitch text reveal (signature Active Theory) sur les .glitch-text
+        buildGlitchTextAnimation(containerRef.current, splits);
+
         // Autres éléments .v-fade > * (paragraphes / stats / CTA) : fade-up classique
         gsap.utils.toArray<HTMLElement>(".v-fade > *").forEach((el) => {
           if (
             el.classList.contains("chapter-title") ||
-            el.classList.contains("v-quote")
+            el.classList.contains("v-quote") ||
+            el.classList.contains("glitch-text")
           ) {
             return;
           }
@@ -573,13 +654,32 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
         </div>
       </section>
 
-      {/* ─── 6. CTA — Activer ma boutique ─────────────────────────────────── */}
+      {/* ─── 6. GALLERY — Walkable portfolio (camera plonge dans les cartes) ─ */}
+      <section className="v-fade relative z-10 h-screen flex flex-col items-end justify-center p-6 md:p-16 text-right">
+        <div className="max-w-md text-white space-y-4">
+          <span className="font-mono text-xs tracking-[0.4em] text-white/40 block">
+            CHAPITRE 03
+          </span>
+          <h2 className="chapter-title text-3xl md:text-6xl font-light leading-[0.95] tracking-tight">
+            Pas qu&apos;une page.
+            <br />
+            <span className="text-white/60">Tout un univers.</span>
+          </h2>
+          <p className="text-base md:text-lg text-white/60 leading-relaxed pt-2">
+            HOME, PRODUITS, CHECKOUT, À PROPOS, EMAILS, DOMAINE.
+            <br />
+            Toutes tes pages en 3D, cohérentes, sous ton univers.
+          </p>
+        </div>
+      </section>
+
+      {/* ─── 7. CTA — Activer ma boutique ─────────────────────────────────── */}
       <section className="v-fade relative z-10 h-screen flex flex-col items-center justify-center p-6 md:p-16 text-center">
         <div className="max-w-2xl">
           <span className="font-mono text-xs tracking-[0.4em] text-emerald-400/80 block mb-6">
             ACTIVER MA BOUTIQUE 3D
           </span>
-          <h2 className="text-4xl md:text-7xl font-light text-white tracking-tighter leading-[0.95]">
+          <h2 className="glitch-text text-4xl md:text-7xl font-light text-white tracking-tighter leading-[0.95]">
             On construit la tienne.
           </h2>
           <p className="text-white/60 text-base md:text-lg mt-8 max-w-md mx-auto leading-relaxed">
