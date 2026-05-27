@@ -1,15 +1,34 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Calistoga, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+/**
+ * Vertxia typography stack (design system ui-ux-pro-max recommendation) :
+ *   - Calistoga : display serif chunky (hero titles, accent moments éditoriaux)
+ *   - Inter : sans body (UI, paragraphes, tout le reste)
+ *   - JetBrains Mono : monospace pour data / labels techniques / stats
+ *
+ * Triplet retenu pour : "B2B SaaS premium, editorial, human warmth".
+ */
+const calistoga = Calistoga({
+  variable: "--font-display",
   subsets: ["latin"],
+  weight: ["400"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
+  variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -39,9 +58,9 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${calistoga.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-[#F5F4F0] text-[#111] selection:bg-black/10">
+      <body className="min-h-full bg-[#1C1917] text-[#FAFAF9] selection:bg-[#A16207]/30">
         {children}
       </body>
     </html>

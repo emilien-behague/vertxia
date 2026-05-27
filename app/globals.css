@@ -1,22 +1,48 @@
 @import "tailwindcss";
 
+/**
+ * Vertxia palette — design system ui-ux-pro-max v1 (dark warm + gold accent).
+ *
+ * Philosophie : "premium dark cinema" type Active Theory / Magic Window — pas
+ * de pur #000 (OLED smear), tonalité chaude (stone) plutôt que froide (slate),
+ * accent gold #A16207 luxueux et restreint (1 seul accent CTA).
+ */
 :root {
-  --background: #F5F4F0;
-  --foreground: #111111;
+  --background: #1C1917;         /* stone-900 warm — fond cinéma chaud */
+  --foreground: #FAFAF9;         /* stone-50 — texte cream */
+  --surface: #292524;            /* stone-800 — cartes / panels */
+  --surface-glass: rgba(28, 25, 23, 0.55); /* fond glassmorphism */
+  --secondary: #44403C;          /* stone-700 — texte secondaire */
+  --muted: #78716C;              /* stone-500 — text tertiary, captions */
+  --border: #44403C;             /* stone-700 — borders subtils */
+  --border-strong: #57534E;      /* stone-600 — borders accentués */
+  --accent: #A16207;             /* yellow-700 gold — CTA + highlights */
+  --accent-hover: #B45309;       /* yellow-700 → 800 hover */
+  --accent-soft: rgba(161, 98, 7, 0.12); /* gold tint pour bg highlights */
+  --destructive: #DC2626;        /* red-600 — erreurs only */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface: var(--surface);
+  --color-secondary: var(--secondary);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-destructive: var(--destructive);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
 }
 
 html,
 body {
-  background: #F5F4F0;
-  color: #111111;
-  font-family: var(--font-geist-sans), "IBM Plex Sans", system-ui, sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), "Inter", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -51,4 +77,21 @@ html {
 @keyframes statusPulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
+}
+
+/* Ambient light blob — signature "Modern Dark Cinema" du design system.
+   Tache de lumière colorée qui flotte lentement en arrière-plan, donne
+   l'atmosphère cinéma. À utiliser ponctuellement, jamais 3+ par viewport. */
+@keyframes ambientFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(40px, -30px) scale(1.05); }
+  66%      { transform: translate(-30px, 40px) scale(0.95); }
+}
+
+/* Hover lift subtil pour cards / boutons — 150-300ms ease-out (norme MD) */
+.lift-on-hover {
+  transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+}
+.lift-on-hover:hover {
+  transform: translateY(-2px);
 }

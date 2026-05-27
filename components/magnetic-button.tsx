@@ -36,12 +36,17 @@ type Props = {
   onClick?: (e: MouseEvent<HTMLAnchorElement>) => void;
 };
 
+// Variants alignées sur le design system ui-ux-pro-max v1 :
+//   solid  = primary CTA gold (#A16207) — bouton dominant
+//   ghost  = secondary action, border cream subtil
+//   accent = soft gold tint avec border + gradient (highlights non-primaires)
 const VARIANT_CLASSES: Record<Variant, string> = {
-  solid: "bg-white text-black hover:bg-white/95 border border-white/0",
+  solid:
+    "bg-[#A16207] text-[#FAFAF9] hover:bg-[#B45309] border border-[#A16207]",
   ghost:
-    "bg-transparent text-white border border-white/20 hover:border-white/60",
+    "bg-transparent text-[#FAFAF9] border border-[#FAFAF9]/15 hover:border-[#FAFAF9]/40",
   accent:
-    "bg-gradient-to-r from-emerald-500/30 to-emerald-500/15 border border-emerald-400/40 text-white hover:from-emerald-500/40 hover:to-emerald-500/25",
+    "bg-gradient-to-r from-[#A16207]/25 to-[#A16207]/10 border border-[#A16207]/40 text-[#FAFAF9] hover:from-[#A16207]/40 hover:to-[#A16207]/20",
 };
 
 export function MagneticButton({
