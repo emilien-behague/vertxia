@@ -18,8 +18,12 @@
  *   5. Rendu 3D inline dans la page (Canvas R3F)
  */
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Environment, useGLTF, OrbitControls, Html } from "@react-three/drei";
+import * as THREE from "three";
+import { CinematicEffects } from "@/components/cinematic-effects";
 import { AnimatedSphere } from "@/components/animated-sphere";
 
 type Product = {
@@ -43,6 +47,7 @@ type GenStep =
   | "upscale_poll"
   | "mesh_start"
   | "mesh_poll"
+  | "optimize"
   | "done"
   | "error";
 
@@ -57,13 +62,72 @@ type State =
       step: GenStep;
       progress: number;
       message: string;
-      glbUrl?: string;
+      glbUrl?: string;             // URL Meshy brute (download)
+      optimizedBlobUrl?: string;   // blob URL local après /api/optimize-glb (viewer inline)
       error?: string;
     }
   | { kind: "error"; message: string };
 
 // ─── Helper : sleep async ────────────────────────────────────────────────────
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+// ─── Viewer 3D inline pour le GLB compressé ──────────────────────────────────
+function GeneratedModel({ url }: { url: string }) {
+  const { scene } = useGLTF(url);
+  const groupRef = useRef<THREE.Group>(null);
+
+  useFrame((state) => {
+    if (groupRef.current) {
+      groupRef.current.rotation.y = state.clock.elapsedTime * 0.4;
+    }
+  });
+
+  return (
+    <group ref={groupRef} scale={1.5} position={[0, -0.9, 0]}>
+      <primitive object={scene} />
+    </group>
+  );
+}
+
+function GeneratedViewer({ url }: { url: string }) {
+  return (
+    <div className="relative w-full aspect-square md:aspect-[4/3] rounded-2xl overflow-hidden bg-black border border-white/10">
+      <Canvas
+        camera={{ position: [3, 1.2, 6], fov: 28 }}
+        gl={{ antialias: true, alpha: false }}
+        dpr={[1, 2]}
+      >
+        <Suspense
+          fallback={
+            <Html center>
+              <span className="font-mono text-[10px] tracking-widest text-white/40">
+                LOADING GLB…
+              </span>
+            </Html>
+          }
+        >
+          <color attach="background" args={["#0c0a07"]} />
+          <fog attach="fog" args={["#0c0a07", 8, 22]} />
+          <ambientLight intensity={0.3} />
+          <directionalLight position={[5, 8, 5]} intensity={1.1} color="#ffd9a3" />
+          <pointLight position={[-4, 3, -4]} intensity={1.2} color="#a855f7" />
+          <pointLight position={[4, 5, -3]} intensity={0.6} color="#22d3ee" />
+          <GeneratedModel url={url} />
+          <Environment
+            files="/hdri/studio_small_03_2k.hdr"
+            environmentIntensity={0.6}
+            background={false}
+          />
+          <CinematicEffects bloom={0.3} vignette={0.3} saturation={0.05} contrast={0.03} />
+          <OrbitControls enablePan={false} enableZoom={true} minDistance={3} maxDistance={12} />
+        </Suspense>
+      </Canvas>
+      <div className="absolute top-3 left-3 font-mono text-[9px] tracking-widest text-white/50 pointer-events-none">
+        DRAG · ZOOM
+      </div>
+    </div>
+  );
+}
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function TryPage() {
@@ -250,11 +314,50 @@ export default function TryPage() {
       }
       if (!glbUrl) throw new Error("Meshy timeout 6 min");
 
-      // ─── STEP 3 : Done ────────────────────────────────────────────────────
+      // ─── STEP 3 : Optimize GLB pour viewer inline ─────────────────────────
       if (aborted.current) return;
       setState((s) =>
         s.kind === "generating"
-          ? { ...s, step: "done", progress: 100, message: "Prêt.", glbUrl: glbUrl || undefined }
+          ? {
+              ...s,
+              step: "optimize",
+              progress: 95,
+              message: "Compression Draco pour ton navigateur (10-30s)…",
+              glbUrl: glbUrl || undefined,
+            }
+          : s
+      );
+
+      let optimizedBlobUrl: string | undefined;
+      try {
+        const optRes = await fetch("/api/optimize-glb", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ glbUrl }),
+        });
+        if (!optRes.ok) {
+          throw new Error(`Optimize ${optRes.status}`);
+        }
+        const blob = await optRes.blob();
+        optimizedBlobUrl = URL.createObjectURL(blob);
+      } catch (err) {
+        // Si l'optimisation échoue, on continue avec le GLB Meshy brut.
+        // Le viewer inline sera skippé, l'utilisateur aura seulement le download.
+        console.warn("[optimize-glb] failed :", err);
+      }
+
+      // ─── STEP 4 : Done ────────────────────────────────────────────────────
+      if (aborted.current) return;
+      setState((s) =>
+        s.kind === "generating"
+          ? {
+              ...s,
+              step: "done",
+              progress: 100,
+              message: "Prêt.",
+              glbUrl: glbUrl || undefined,
+              optimizedBlobUrl,
+            }
           : s
       );
     } catch (err) {
@@ -473,11 +576,12 @@ export default function TryPage() {
           </div>
 
           {/* Steps overview */}
-          <div className="max-w-xl mx-auto mb-12 grid grid-cols-4 gap-2 text-center">
+          <div className="max-w-2xl mx-auto mb-12 grid grid-cols-5 gap-2 text-center">
             {[
               { id: "scrape", label: "Scraping" },
               { id: "upscale", label: "AI Upscale" },
               { id: "mesh", label: "Meshy 3D" },
+              { id: "optim", label: "Optim." },
               { id: "render", label: "Rendu" },
             ].map((s, i) => {
               let active = false;
@@ -490,6 +594,11 @@ export default function TryPage() {
               }
               if (s.id === "mesh") {
                 active = state.step === "mesh_start" || state.step === "mesh_poll";
+                done =
+                  state.step === "optimize" || state.step === "done";
+              }
+              if (s.id === "optim") {
+                active = state.step === "optimize";
                 done = state.step === "done";
               }
               if (s.id === "render") {
@@ -541,7 +650,7 @@ export default function TryPage() {
 
           {/* Résultat — modèle prêt */}
           {state.step === "done" && state.glbUrl && (
-            <div className="max-w-2xl mx-auto">
+            <div className="max-w-3xl mx-auto">
               <div className="mb-8 text-center">
                 <span className="font-mono text-[10px] md:text-xs tracking-[0.4em] text-emerald-400 block mb-3">
                   ✓ TON MODÈLE 3D EST GÉNÉRÉ
@@ -554,6 +663,13 @@ export default function TryPage() {
                   Le mesh expire chez Meshy dans ~1h, télécharge-le maintenant.
                 </p>
               </div>
+
+              {/* Viewer 3D inline (si optimisation a réussi) */}
+              {state.optimizedBlobUrl && (
+                <div className="mb-8">
+                  <GeneratedViewer url={state.optimizedBlobUrl} />
+                </div>
+              )}
 
               {/* Actions */}
               <div className="space-y-3 max-w-md mx-auto">
