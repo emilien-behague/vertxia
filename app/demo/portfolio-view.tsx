@@ -492,9 +492,11 @@ function Section({
       : align === "start"
         ? "items-start justify-start"
         : "items-start justify-end";
+  // pb-32 sur mobile pour rester clear de la tab bar iOS Safari (~80-100px).
+  // md:pb-10 desktop normal. pt-24 sur mobile pour clear le header fixe.
   return (
     <section
-      className={`pointer-events-none relative flex h-screen flex-col p-6 md:p-10 ${alignment}`}
+      className={`pointer-events-none relative flex h-screen flex-col px-6 pt-24 pb-32 md:p-10 ${alignment}`}
     >
       <div className="space-y-5">{children}</div>
     </section>
