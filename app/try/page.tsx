@@ -65,6 +65,7 @@ type State =
       glbUrl?: string;             // URL Meshy brute (download)
       optimizedBlobUrl?: string;   // blob URL local après /api/optimize-glb (viewer inline)
       error?: string;
+      fallbackReason?: string;     // raison du fallback si Blob upload echoue
     }
   | { kind: "error"; message: string };
 
@@ -329,6 +330,7 @@ export default function TryPage() {
       );
 
       let demoData: { id: string; url: string } | null = null;
+      let fallbackReason: string | undefined;
       try {
         const optRes = await fetch("/api/optimize-glb", {
           method: "POST",
@@ -337,15 +339,22 @@ export default function TryPage() {
         });
         if (!optRes.ok) {
           const errData = await optRes.json().catch(() => ({}));
-          throw new Error(errData.error || `Optimize ${optRes.status}`);
+          throw new Error(errData.error || `HTTP ${optRes.status}`);
         }
         const json = await optRes.json();
         if (json.ok && json.id && json.url) {
           demoData = { id: json.id, url: json.url };
+        } else {
+          throw new Error(
+            `Réponse Blob incomplète : ${JSON.stringify(json).slice(0, 200)}`
+          );
         }
       } catch (err) {
         // Si l'optimisation/upload échoue, on tombe en fallback download-only.
-        console.warn("[optimize-glb] failed :", err);
+        // On capture la raison pour l'afficher dans l'UI — sinon le user voit
+        // "fallback" sans comprendre pourquoi.
+        fallbackReason = err instanceof Error ? err.message : String(err);
+        console.warn("[optimize-glb] failed :", fallbackReason);
       }
 
       // ─── STEP 4 : Redirect vers la démo persistante OU fallback ───────────
@@ -373,6 +382,7 @@ export default function TryPage() {
               progress: 100,
               message: "Prêt (mode fallback, démo non persistée).",
               glbUrl: glbUrl || undefined,
+              fallbackReason,
             }
           : s
       );
@@ -679,6 +689,45 @@ export default function TryPage() {
                   Le mesh expire chez Meshy dans ~1h, télécharge-le maintenant.
                 </p>
               </div>
+
+              {/* Mode fallback : Blob upload échoué — on explique pourquoi */}
+              {state.fallbackReason && (
+                <div className="mb-8 max-w-xl mx-auto">
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+                    <div className="font-mono text-[10px] tracking-[0.4em] text-amber-400 mb-2">
+                      ⚠ DÉMO NON PERSISTÉE
+                    </div>
+                    <p className="text-white/80 text-sm mb-2">
+                      Le mesh est généré mais la sauvegarde Vercel Blob a échoué.
+                      Tu peux télécharger le .glb mais pas obtenir d&apos;URL partageable.
+                    </p>
+                    <p className="text-white/50 text-xs font-mono break-all">
+                      {state.fallbackReason}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Aperçu produit en fallback : pas de viewer 3D mais au moins l'image */}
+              {!state.optimizedBlobUrl && state.product.image && (
+                <div className="mb-8 relative aspect-square md:aspect-[4/3] rounded-2xl overflow-hidden bg-black border border-white/10">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={state.product.image}
+                    alt={state.product.title}
+                    className="absolute inset-0 w-full h-full object-cover opacity-90"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <div className="absolute bottom-4 left-4 right-4 text-center">
+                    <span className="font-mono text-[9px] tracking-[0.4em] text-white/60 block mb-1">
+                      MESH 3D GÉNÉRÉ — APERÇU SOURCE
+                    </span>
+                    <span className="font-mono text-[10px] text-white/40">
+                      Visualise-le en 3D via le bouton ci-dessous
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Viewer 3D inline (si optimisation a réussi) */}
               {state.optimizedBlobUrl && (
