@@ -34,6 +34,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import SplitText from "@activetheory/split-text";
 import { CinematicEffects } from "@/components/cinematic-effects";
+import { useCanvasPerfTier } from "@/components/use-perf-tier";
 import { SceneLoader } from "@/components/scene-loader";
 import { AudioProvider } from "@/components/audio/audio-provider";
 import { AudioToggle } from "@/components/audio/audio-toggle";
@@ -158,6 +159,7 @@ function Loader() {
 export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
   const scrollRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const perf = useCanvasPerfTier();
   const [copied, setCopied] = useState(false);
 
   // Lenis smooth scroll + tracking scroll progress pour la scène 3D
@@ -383,8 +385,8 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
         <Canvas
           camera={{ position: [3, 1.2, 6], fov: 28 }}
           gl={{ antialias: true, alpha: false }}
-          shadows
-          dpr={[1, 2]}
+          shadows={perf.shadows}
+          dpr={perf.dpr}
           frameloop="always"
         >
           <Suspense fallback={<Loader />}>

@@ -13,6 +13,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import SplitText from "@activetheory/split-text";
 import { CinematicEffects } from "@/components/cinematic-effects";
+import { useCanvasPerfTier } from "@/components/use-perf-tier";
 import { SceneLoader } from "@/components/scene-loader";
 import { AudioProvider } from "@/components/audio/audio-provider";
 import { AudioToggle } from "@/components/audio/audio-toggle";
@@ -126,6 +127,7 @@ function Loader() {
 export default function JirayaImmersive() {
   const scrollRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const perf = useCanvasPerfTier();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -321,8 +323,8 @@ export default function JirayaImmersive() {
         <Canvas
           camera={{ position: [3, 1.2, 6], fov: 28 }}
           gl={{ antialias: true, alpha: false }}
-          shadows
-          dpr={[1, 2]}
+          shadows={perf.shadows}
+          dpr={perf.dpr}
           frameloop="always"
         >
           <Suspense fallback={<Loader />}>
