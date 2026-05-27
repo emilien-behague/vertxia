@@ -443,7 +443,7 @@ export function DemoView({ id, glbUrl, shop, vendor, product, image }: Props) {
           <span className="hero-meta font-mono text-xs tracking-[0.4em] text-emerald-400/80 block mb-6">
             ✓ GÉNÉRÉ EN LIVE · {shop.toUpperCase() || "SHOPIFY"}
           </span>
-          <h1 className="hero-brand text-[clamp(3rem,11vw,10rem)] font-light leading-[0.85] tracking-tighter text-white max-w-[90vw] overflow-hidden">
+          <h1 className="hero-brand text-[clamp(3rem,11vw,10rem)] font-light leading-[0.85] tracking-tighter text-white whitespace-nowrap">
             {heroLetters}
           </h1>
           <p className="hero-meta text-base text-white/50 max-w-md mt-6">

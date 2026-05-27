@@ -2,18 +2,16 @@
 
 /**
  * Template Next.js 16 App Router : applique à CHAQUE route un fade-in
- * cinéma à chaque navigation. Différent de layout.tsx — un template
- * re-mount à chaque navigation (pas de state persistant), donc l'animation
- * de mount joue à chaque page.
+ * cinéma à chaque navigation.
  *
- * Effet : transitions entre / → /try → /preview/jiraya → /demo/xxx
- * deviennent fluides avec un blur+opacity 0→1 sur l'arrivée, plutôt qu'un
- * flash brutal.
+ * IMPORTANT — pourquoi PAS de filter/transform dans l'animation :
+ * Un parent avec `filter:*` ou `transform:*` crée un CSS "containing block"
+ * pour les descendants `position:fixed`. Donc les Canvas R3F en
+ * `position:fixed inset-0` sont mal placés/clippés tant que le template
+ * a un filter actif, le 3D devient invisible.
  *
- * Note : pas de animation EXIT (Next.js App Router ne supporte pas nativement
- * les exit animations sans framer-motion AnimatePresence wrapper, et on évite
- * d'ajouter framer-motion pour 1 effet). L'entrée est ce qui compte le plus
- * perçu-cinema de toute façon.
+ * Solution : opacity only. Le fade-in marche, et les Canvas restent
+ * positionnés par rapport au viewport.
  */
 
 import { useEffect, useRef, ReactNode } from "react";
@@ -29,35 +27,24 @@ export default function Template({ children }: { children: ReactNode }) {
     const el = rootRef.current;
     if (!el) return;
 
-    // Animation d'entrée : fade-in + blur clear + slight y up
+    // Animation d'entrée : opacity seulement (PAS de filter ni de transform
+    // pour ne pas casser les position:fixed enfants — voir docstring).
     gsap.fromTo(
       el,
-      {
-        opacity: 0,
-        filter: "blur(12px)",
-        y: 12,
-      },
+      { opacity: 0 },
       {
         opacity: 1,
-        filter: "blur(0px)",
-        y: 0,
-        duration: 0.7,
-        ease: "power3.out",
-        clearProps: "filter,y,opacity",
+        duration: 0.5,
+        ease: "power2.out",
+        clearProps: "opacity",
       }
     );
 
-    // Whoosh sonore SEULEMENT sur navigations (pas sur le tout premier mount
-    // qui aurait son loader cinema avec son propre whoosh)
     if (!isFirstMountRef.current) {
       SoundEngine.whoosh();
     }
     isFirstMountRef.current = false;
   }, []);
 
-  return (
-    <div ref={rootRef} style={{ willChange: "opacity, filter, transform" }}>
-      {children}
-    </div>
-  );
+  return <div ref={rootRef}>{children}</div>;
 }

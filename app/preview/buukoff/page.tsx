@@ -349,7 +349,7 @@ export default function BuuKoffImmersive() {
           <span className="hero-meta font-mono text-xs tracking-[0.4em] text-white/40 block mb-6">
             GENERATED FROM · BUU-KOFF-2.MYSHOPIFY.COM
           </span>
-          <h1 className="hero-brand text-[clamp(3.5rem,12vw,11rem)] font-light leading-[0.85] tracking-tighter text-white max-w-[90vw] overflow-hidden">
+          <h1 className="hero-brand text-[clamp(3.5rem,12vw,11rem)] font-light leading-[0.85] tracking-tighter text-white whitespace-nowrap">
             BUU&rsquo;KOFF
           </h1>
           <p className="hero-meta text-base text-white/50 max-w-md mt-6">
