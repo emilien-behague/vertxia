@@ -18,12 +18,8 @@
  *   5. Rendu 3D inline dans la page (Canvas R3F)
  */
 
-import { useState, useRef, useEffect, Suspense } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Environment, useGLTF, OrbitControls, Html } from "@react-three/drei";
-import * as THREE from "three";
-import { CinematicEffects } from "@/components/cinematic-effects";
 import { AnimatedSphere } from "@/components/animated-sphere";
 
 type Product = {
@@ -68,64 +64,6 @@ type State =
 
 // ─── Helper : sleep async ────────────────────────────────────────────────────
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-
-// ─── 3D viewer inline pour le GLB généré ─────────────────────────────────────
-function GeneratedModel({ url }: { url: string }) {
-  const { scene } = useGLTF(url);
-  const groupRef = useRef<THREE.Group>(null);
-
-  useFrame((state) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y = state.clock.elapsedTime * 0.4;
-    }
-  });
-
-  return (
-    <group ref={groupRef} scale={1.5} position={[0, -0.9, 0]}>
-      <primitive object={scene} />
-    </group>
-  );
-}
-
-function GeneratedViewer({ url }: { url: string }) {
-  return (
-    <div className="relative w-full aspect-square md:aspect-[4/3] rounded-2xl overflow-hidden bg-black border border-white/10">
-      <Canvas
-        camera={{ position: [3, 1.2, 6], fov: 28 }}
-        gl={{ antialias: true, alpha: false }}
-        dpr={[1, 2]}
-      >
-        <Suspense
-          fallback={
-            <Html center>
-              <span className="font-mono text-[10px] tracking-widest text-white/40">
-                LOADING GLB…
-              </span>
-            </Html>
-          }
-        >
-          <color attach="background" args={["#0c0a07"]} />
-          <fog attach="fog" args={["#0c0a07", 8, 22]} />
-          <ambientLight intensity={0.3} />
-          <directionalLight position={[5, 8, 5]} intensity={1.1} color="#ffd9a3" />
-          <pointLight position={[-4, 3, -4]} intensity={1.2} color="#a855f7" />
-          <pointLight position={[4, 5, -3]} intensity={0.6} color="#22d3ee" />
-          <GeneratedModel url={url} />
-          <Environment
-            files="/hdri/studio_small_03_2k.hdr"
-            environmentIntensity={0.6}
-            background={false}
-          />
-          <CinematicEffects bloom={0.3} vignette={0.3} saturation={0.05} contrast={0.03} />
-          <OrbitControls enablePan={false} enableZoom={true} minDistance={3} maxDistance={12} />
-        </Suspense>
-      </Canvas>
-      <div className="absolute top-3 left-3 font-mono text-[9px] tracking-widest text-white/50">
-        DRAG · ZOOM
-      </div>
-    </div>
-  );
-}
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function TryPage() {
@@ -601,20 +539,45 @@ export default function TryPage() {
             </div>
           )}
 
-          {/* Viewer 3D */}
+          {/* Résultat — modèle prêt */}
           {state.step === "done" && state.glbUrl && (
-            <div className="max-w-3xl mx-auto">
-              <div className="mb-4 text-center">
-                <span className="font-mono text-[10px] md:text-xs tracking-[0.4em] text-emerald-400">
-                  ✓ TON SITE 3D EST PRÊT
+            <div className="max-w-2xl mx-auto">
+              <div className="mb-8 text-center">
+                <span className="font-mono text-[10px] md:text-xs tracking-[0.4em] text-emerald-400 block mb-3">
+                  ✓ TON MODÈLE 3D EST GÉNÉRÉ
                 </span>
-              </div>
-              <GeneratedViewer url={state.glbUrl} />
-              <div className="mt-8 text-center">
-                <p className="text-white/60 text-sm mb-4">
-                  Ce mesh expire dans ~1h côté Meshy. Pour un site complet hébergé,
-                  on te l&apos;envoie sur ton mail.
+                <h3 className="text-2xl md:text-4xl font-light tracking-tight">
+                  Mesh prêt en 4 min.
+                </h3>
+                <p className="text-white/50 text-sm mt-3 max-w-md mx-auto">
+                  300 000 polygones, quad topology, textures PBR.
+                  Le mesh expire chez Meshy dans ~1h, télécharge-le maintenant.
                 </p>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-3 max-w-md mx-auto">
+                <a
+                  href={state.glbUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download={`${state.product.handle}_vertxia.glb`}
+                  className="flex items-center justify-between w-full px-6 py-4 bg-white text-black font-mono text-xs tracking-[0.3em] rounded-lg hover:bg-white/90 transition"
+                >
+                  <span>TÉLÉCHARGER LE .GLB</span>
+                  <span>↓</span>
+                </a>
+
+                <a
+                  href={`https://gltf-viewer.donmccurdy.com/?model=${encodeURIComponent(state.glbUrl)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between w-full px-6 py-4 border border-white/20 text-white font-mono text-xs tracking-[0.3em] rounded-lg hover:bg-white/5 transition"
+                >
+                  <span>VISUALISER EN 3D (gltf-viewer)</span>
+                  <span>→</span>
+                </a>
+
                 <a
                   href={`mailto:emilien@vertxia.com?subject=Site%20complet%20pour%20${encodeURIComponent(
                     state.data.shop
@@ -623,12 +586,14 @@ export default function TryPage() {
                   )}%0AProduit%20test%C3%A9%20:%20${encodeURIComponent(
                     state.product.title
                   )}%0A%0AMon%20email%20:%20%5BMETS%20TON%20EMAIL%20ICI%5D%0A%0AMerci%20!`}
-                  className="inline-block px-8 py-3 bg-white text-black font-mono text-xs tracking-[0.3em] rounded hover:bg-white/90 transition"
+                  className="flex items-center justify-between w-full px-6 py-4 bg-gradient-to-r from-emerald-500/20 to-emerald-500/10 border border-emerald-400/40 text-white font-mono text-xs tracking-[0.3em] rounded-lg hover:from-emerald-500/30 hover:to-emerald-500/20 transition"
                 >
-                  RECEVOIR LE SITE COMPLET →
+                  <span>RECEVOIR LE SITE 3D COMPLET</span>
+                  <span>→</span>
                 </a>
               </div>
-              <div className="text-center mt-10">
+
+              <div className="text-center mt-12">
                 <button
                   onClick={reset}
                   className="font-mono text-[10px] tracking-[0.3em] text-white/30 hover:text-white/70 transition"
