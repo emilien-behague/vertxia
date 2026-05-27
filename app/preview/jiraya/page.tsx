@@ -14,6 +14,9 @@ import Lenis from "lenis";
 import SplitText, { isFontReady } from "@activetheory/split-text";
 import { CinematicEffects } from "@/components/cinematic-effects";
 import { SceneLoader } from "@/components/scene-loader";
+import { AudioProvider } from "@/components/audio/audio-provider";
+import { AudioToggle } from "@/components/audio/audio-toggle";
+import { SoundEngine } from "@/components/audio/sound-engine";
 
 // Les types officiels de @activetheory/split-text annoncent chars/words/lines
 // comme string[] alors qu'au runtime ce sont des HTMLElement[] (cf. source :
@@ -221,6 +224,8 @@ export default function JirayaImmersive() {
                   trigger: el,
                   start: "top 75%",
                   toggleActions: "play none none reverse",
+                  // Whoosh sonore au moment où le titre entre dans le viewport
+                  onEnter: () => SoundEngine.whoosh(),
                 },
               }
             );
@@ -248,6 +253,8 @@ export default function JirayaImmersive() {
                   trigger: el,
                   start: "top 78%",
                   toggleActions: "play none none reverse",
+                  // Reveal tonal montant pour ponctuer les citations
+                  onEnter: () => SoundEngine.reveal(),
                 },
               }
             );
@@ -295,9 +302,13 @@ export default function JirayaImmersive() {
   }, []);
 
   return (
+    <AudioProvider enableDrone={true}>
     <div ref={containerRef} className="relative bg-black overflow-x-hidden">
       {/* Skeleton loader overlay (couvre le Canvas pendant le download GLB/textures) */}
       <SceneLoader />
+
+      {/* Audio toggle discret en bas-droite */}
+      <AudioToggle className="fixed bottom-6 right-6 z-50" />
 
       {/* Sticky Canvas 3D */}
       <div className="fixed inset-0 z-0">
@@ -480,6 +491,8 @@ export default function JirayaImmersive() {
             href="https://buu-koff-2.myshopify.com/products/naruto-shippuden-ichiban-kuji-the-bridge-of-peace-and-the-lament-of-reincarnation-figurine-jiraya-sage-mode-lot-e"
             target="_blank"
             rel="noopener noreferrer"
+            onMouseEnter={() => SoundEngine.hover()}
+            onClick={() => SoundEngine.click()}
             className="inline-block mt-10 px-8 py-3 border border-white/20 text-white hover:bg-white hover:text-black transition-colors duration-300 pointer-events-auto font-mono text-xs md:text-sm tracking-[0.3em]"
           >
             VOIR LA FIGURINE
@@ -498,6 +511,7 @@ export default function JirayaImmersive() {
         </div>
       </section>
     </div>
+    </AudioProvider>
   );
 }
 
