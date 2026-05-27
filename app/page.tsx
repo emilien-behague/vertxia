@@ -167,7 +167,7 @@ export default function VertxiaPage() {
             ))}
           </div>
 
-          {/* CTA inline — Démo /try + Insta */}
+          {/* CTA inline — DM Insta + mail */}
           <div
             className="flex flex-col sm:flex-row gap-2 max-w-md"
             style={{
@@ -177,17 +177,10 @@ export default function VertxiaPage() {
             }}
           >
             <a
-              href="/try"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium whitespace-nowrap"
-            >
-              ESSAYE AVEC TA BOUTIQUE
-              <span className="text-base">→</span>
-            </a>
-            <a
               href="https://instagram.com/vertxia.fr"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3 border border-black/10 text-black/70 text-sm rounded-xl hover:border-black/25 hover:bg-black/[0.04] transition-colors tracking-widest whitespace-nowrap"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium whitespace-nowrap"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -790,7 +783,6 @@ export default function VertxiaPage() {
 
           <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
             {[
-              { label: "Essayer", href: "/try" },
               { label: "Pipeline", href: "#pipeline" },
               { label: "Templates", href: "#templates" },
               { label: "Stack", href: "#stack" },
