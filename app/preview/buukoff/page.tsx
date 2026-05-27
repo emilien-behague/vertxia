@@ -65,10 +65,7 @@ function Scene({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
   const rimRef = useRef<THREE.PointLight>(null);
   const auraRef = useRef<THREE.PointLight>(null);
 
-  // Signature Active Theory : iridescence subtile + clearcoat
-  useEffect(() => {
-    applyIridescence(scene, { strength: 0.55, clearcoat: 0.4 });
-  }, [scene]);
+  // Iridescence désactivée : casse les textures peintes Meshy.
 
   useFrame((state) => {
     if (groupRef.current) {
@@ -128,32 +125,26 @@ function Scene({ scrollRef }: { scrollRef: React.MutableRefObject<number> }) {
         <primitive object={scene} />
       </group>
 
-      {/* Volumetric data cloud Active Theory-style — palette violet/cyan/or
-          (rim + aura + warm rim accent) */}
+      {/* Volumetric fog calme : pastels lavés (palette AT, pas saturé) */}
       <VolumetricFog
-        count={perf.isMobile ? 400 : 1200}
-        radius={11}
-        colors={["#a855f7", "#22d3ee", "#fbbf24", "#fb923c", "#ffffff", "#c084fc"]}
-      />
-      <VolumetricFog
-        count={perf.isMobile ? 80 : 200}
-        radius={5}
-        sizeMin={2}
-        sizeMax={9}
-        opacity={0.7}
-        colors={["#ffd9a3", "#fbbf24", "#ffffff"]}
+        count={perf.isMobile ? 60 : 150}
+        radius={12}
+        sizeMin={4}
+        sizeMax={14}
+        opacity={0.45}
+        colors={["#fef3c7", "#e0e7ff", "#fce7f3", "#ffffff"]}
       />
 
 
       <Environment files="/hdri/studio_small_03_2k.hdr" environmentIntensity={0.6} background={false} />
 
-      {/* Cinematic post-processing : ACES + bloom + vignette + chromatic aberration (signature AT) */}
+      {/* Cinematic post-processing : ACES + bloom + vignette, sans CA */}
       <CinematicEffects
-        bloom={0.4}
+        bloom={0.35}
         vignette={0.35}
-        saturation={0.1}
-        contrast={0.05}
-        chromaticAberration={0.0018}
+        saturation={0.08}
+        contrast={0.04}
+        chromaticAberration={0}
       />
     </>
   );
