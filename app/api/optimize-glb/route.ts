@@ -103,7 +103,9 @@ export async function POST(req: NextRequest) {
 
   // 3. Upload vers Vercel Blob (storage public permanent)
   // ID court genre "V1StGXR8_Z" — assez random pour pas être devinable mais lisible.
+  // Path date-prefixed pour /api/check-quota qui compte les gens du jour via list().
   const id = nanoid(10);
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
   let blobUrl: string;
   try {
     // Copy dans un ArrayBuffer "fresh" pour satisfaire le typing strict
@@ -111,7 +113,7 @@ export async function POST(req: NextRequest) {
     const ab = new ArrayBuffer(outputBuffer.byteLength);
     new Uint8Array(ab).set(outputBuffer);
 
-    const blob = await put(`demos/${id}.glb`, ab, {
+    const blob = await put(`demos/${today}/${id}.glb`, ab, {
       access: "public",
       contentType: "model/gltf-binary",
       cacheControlMaxAge: 31536000, // 1 an : le GLB d'une démo ne change jamais

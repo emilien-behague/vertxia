@@ -52,6 +52,28 @@ export async function POST(req: NextRequest) {
 
   if (res.status !== 200 && res.status !== 202) {
     const errText = await res.text();
+
+    // Détection erreurs Meshy "file pleine" : rate limit, concurrent tasks, quota.
+    // Meshy renvoie typiquement 429 ou 400 avec un message du genre
+    // "max concurrent tasks reached" / "rate limit exceeded" / "quota exceeded".
+    // On les remappe en code error stable "queue_full" pour que /try affiche
+    // un message d'attente plutôt qu'une erreur rouge.
+    const isQueueFull =
+      res.status === 429 ||
+      /concurrent|rate.?limit|too.?many|quota|busy/i.test(errText);
+
+    if (isQueueFull) {
+      return NextResponse.json(
+        {
+          error: "queue_full",
+          message:
+            "Trop de générations Meshy en cours. Reviens dans 3-5 min, ta place est gardée.",
+          meshyRaw: errText.slice(0, 200),
+        },
+        { status: 429 }
+      );
+    }
+
     return NextResponse.json(
       { error: `Meshy ${res.status}: ${errText.slice(0, 200)}` },
       { status: 502 }

@@ -196,6 +196,27 @@ export default function TryPage() {
     }
     const scrapeData = state.data;
 
+    // ─── STEP 0 : Vérifier le quota quotidien AVANT de payer Replicate/Meshy ──
+    // Si on est au cap, on stoppe net avant de cramer 1€ de crédit pour rien.
+    try {
+      const quotaRes = await fetch("/api/check-quota");
+      if (quotaRes.ok) {
+        const quota = await quotaRes.json();
+        if (!quota.allowed) {
+          setState({
+            kind: "error",
+            message:
+              quota.message ||
+              "Vertxia est complet pour aujourd'hui. Reviens demain.",
+          });
+          return;
+        }
+      }
+      // Si quotaRes pas ok, on ferme les yeux et on continue (fail-open).
+    } catch {
+      // Réseau down, on continue.
+    }
+
     setState({
       kind: "generating",
       data: scrapeData,
@@ -272,6 +293,14 @@ export default function TryPage() {
       });
       if (!meshRes.ok) {
         const err = await meshRes.json().catch(() => ({}));
+        // Cas spécifique : Meshy a refusé pour cause de file pleine.
+        // On préfixe avec "QUEUE:" pour que le rendu d'erreur sache afficher
+        // un message d'attente bleu plutôt qu'une erreur rouge.
+        if (err.error === "queue_full") {
+          throw new Error(
+            `QUEUE:${err.message || "File Meshy pleine, ressaye dans 3-5 min."}`
+          );
+        }
         throw new Error(`Meshy ${err.error || meshRes.status}`);
       }
       const meshData = await meshRes.json();
@@ -489,12 +518,22 @@ export default function TryPage() {
 
         {state.kind === "error" && (
           <div className="mt-12 max-w-md w-full text-center">
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-5">
-              <div className="font-mono text-[10px] tracking-[0.4em] text-red-400 mb-2">
-                ERREUR
+            {/* Refus quota quotidien : ton amber/jaune ("complet") plutôt que rouge erreur */}
+            {state.message.toLowerCase().includes("complet pour aujourd") ? (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-5">
+                <div className="font-mono text-[10px] tracking-[0.4em] text-amber-400 mb-2">
+                  ⏳ COMPLET POUR AUJOURD&apos;HUI
+                </div>
+                <div className="text-white/80 text-sm">{state.message}</div>
               </div>
-              <div className="text-white/80 text-sm">{state.message}</div>
-            </div>
+            ) : (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-5">
+                <div className="font-mono text-[10px] tracking-[0.4em] text-red-400 mb-2">
+                  ERREUR
+                </div>
+                <div className="text-white/80 text-sm">{state.message}</div>
+              </div>
+            )}
             <button
               onClick={reset}
               className="mt-4 font-mono text-[10px] tracking-[0.3em] text-white/40 hover:text-white/80 transition"
@@ -659,17 +698,31 @@ export default function TryPage() {
           {/* Erreur de génération */}
           {state.step === "error" && (
             <div className="max-w-md mx-auto text-center">
-              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-5">
-                <div className="font-mono text-[10px] tracking-[0.4em] text-red-400 mb-2">
-                  ÉCHEC GÉNÉRATION
+              {/* Cas "QUEUE:..." : file Meshy pleine, message d'attente bleu/ambre */}
+              {state.error?.startsWith("QUEUE:") ? (
+                <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-5">
+                  <div className="font-mono text-[10px] tracking-[0.4em] text-cyan-400 mb-2">
+                    ⏳ FILE D&apos;ATTENTE
+                  </div>
+                  <div className="text-white/80 text-sm">
+                    {state.error.slice("QUEUE:".length).trim()}
+                  </div>
                 </div>
-                <div className="text-white/80 text-sm">{state.error}</div>
-              </div>
+              ) : (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-5">
+                  <div className="font-mono text-[10px] tracking-[0.4em] text-red-400 mb-2">
+                    ÉCHEC GÉNÉRATION
+                  </div>
+                  <div className="text-white/80 text-sm">{state.error}</div>
+                </div>
+              )}
               <button
                 onClick={reset}
                 className="mt-4 font-mono text-[10px] tracking-[0.3em] text-white/40 hover:text-white/80 transition"
               >
-                ← RECOMMENCER
+                {state.error?.startsWith("QUEUE:")
+                  ? "← RÉESSAYER PLUS TARD"
+                  : "← RECOMMENCER"}
               </button>
             </div>
           )}
