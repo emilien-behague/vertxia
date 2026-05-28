@@ -1,0 +1,137 @@
+{
+  "brand": {
+    "name": "Loom",
+    "domain": "loom.fr",
+    "category": "Vestiaire homme / Linge de maison",
+    "positioning_one_liner": "Des pièces conçues pour durer, pas pour être remplacées.",
+    "icp": "Homme 28-45 ans, urbain, fatigué du fast-fashion, cherche un vestiaire restreint et honnête.",
+    "voice": "manifeste"
+  },
+  "client_prompt_interpretation": "Créer un site éditorial au ton radical et minimaliste, centré sur un vestiaire masculin essentiel, avec une palette monochrome stone/ecru/charcoal et un discours anti-consommation qui valorise la longévité des pièces.",
+  "creative_direction": {
+    "mood": "Le silence d'un vestiaire bien choisi — austère, durable, sans justification.",
+    "reference_style": "Aesop (copywriting manifeste), Margaret Howell (austérité structurée), Wodniack (minimalisme éditorial)",
+    "narrative_arc": "L'utilisateur entre dans un espace épuré, lit un engagement, découvre trois pièces comme des arguments, et repart avec une conviction."
+  },
+  "visual_system": {
+    "palette": [
+      {
+        "name": "background",
+        "hex": "#F2EDE6"
+      },
+      {
+        "name": "foreground",
+        "hex": "#1E1E1A"
+      },
+      {
+        "name": "accent",
+        "hex": "#8C8476"
+      },
+      {
+        "name": "muted",
+        "hex": "#C9C3B8"
+      },
+      {
+        "name": "deep",
+        "hex": "#2F2D28"
+      }
+    ],
+    "fonts": {
+      "serif": "Freight Display Pro",
+      "sans": "Suisse Int'l"
+    },
+    "spacing_density": "spacious",
+    "imagery_treatment": "Photographies plein cadre sur fond neutre ecru, sans ombre portée — les vêtements existent seuls, sans mise en scène."
+  },
+  "hero": {
+    "kicker": "Vestiaire essentiel · 2025",
+    "headline": "Moins de pièces.\nMieux choisies.\nPour longtemps.",
+    "subheadline": "Loom construit un vestiaire restreint pour l'homme qui a cessé d'acheter par habitude. Chaque pièce est conçue pour traverser les saisons sans s'excuser d'exister.",
+    "primary_cta_label": "Voir le vestiaire",
+    "secondary_cta_label": "Notre manifeste"
+  },
+  "site_structure": [
+    {
+      "section": "manifesto",
+      "section_role": "Poser l'engagement éthique et éditorial de la marque",
+      "headline": "Nous fabriquons moins. C'est une position.",
+      "body_paragraphs": [
+        "L'industrie textile produit trop, vend trop, jette trop. Loom n'a rien à ajouter à ce bruit. Notre catalogue tient en quelques pièces — choisies pour leur structure, leur matière, leur capacité à traverser le temps sans se déprécier. Ce n'est pas de la frugalité. C'est une forme d'exigence.",
+        "Chaque vêtement Loom est conçu pour être porté cinq ans, pas cinq fois. Les matières sont sourcées avec soin, les coupes calibrées pour vieillir juste. Il n'y a pas de tendance ici. Il y a une conviction : ce que vous portez doit vous ressembler encore dans dix ans."
+      ],
+      "pull_quote": "Un vestiaire honnête n'a pas besoin d'être renouvelé chaque saison."
+    },
+    {
+      "section": "collection",
+      "section_role": "Présenter les trois pièces phares comme des archétypes, pas des produits",
+      "headline": "Trois pièces. Un vestiaire complet.",
+      "body_paragraphs": [
+        "Le short, le polo, la veste. Ces trois silhouettes forment le noyau dur d'un vestiaire masculin qui n'a rien à prouver. Pas de logo visible, pas de détail superflu — seulement la qualité du tissu, la justesse de la coupe, la cohérence de l'ensemble."
+      ],
+      "pull_quote": null
+    },
+    {
+      "section": "materiaux",
+      "section_role": "Expliquer le choix des matières comme argument de longévité",
+      "headline": "La matière n'est pas un détail. C'est la pièce entière.",
+      "body_paragraphs": [
+        "Le coton biologique vieillit bien. Le canevas de la veste de travail gagne en caractère avec l'usure. La maille du polo se détend au fil des lavages pour prendre exactement la forme du corps qui la porte. Ce n'est pas de l'usure — c'est de la mémoire.",
+        "Nous choisissons des fibres naturelles parce qu'elles sont honnêtes : elles ne simulent pas ce qu'elles ne sont pas. Un coton brossé reste un coton brossé à la troisième année comme à la première. C'est cette constance que nous cherchons. C'est cette constance que nous garantissons."
+      ],
+      "pull_quote": "Une matière naturelle ne ment pas. Elle vieillit, elle s'adapte, elle reste."
+    },
+    {
+      "section": "engagement",
+      "section_role": "Consolider la promesse de marque et convertir vers l'achat",
+      "headline": "Acheter moins. Acheter Loom.",
+      "body_paragraphs": [
+        "Nous ne faisons pas de soldes. Nous ne faisons pas de collections flash. Nos pièces sont disponibles tant qu'elles tiennent la route — et elles tiennent. Si vous cherchez une excuse pour acheter, ce n'est pas ici que vous la trouverez. Si vous cherchez une raison de ne plus chercher, vous êtes au bon endroit."
+      ],
+      "pull_quote": null
+    }
+  ],
+  "featured_products": [
+    {
+      "handle": "le-short-relax",
+      "title": "Le short relax",
+      "video_prompt": "Slow dolly-in on a pair of stone-beige organic cotton relaxed shorts draped over a raw oak chair. Morning side light, single window source, hard shadows on natural linen background. Fabric texture fills frame, elastic waistband in focus. 16mm film grain, muted tonal palette, no movement except slight fabric breath.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5,
+      "editorial_caption": "Taillé dans un coton biologique stone, le short relax porte sa fonction dans sa coupe — ample sans être informe, structuré sans contraindre. Il s'adapte au corps, pas l'inverse.",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/1355/7899/files/SLIDESHOWIMAGE4_47749f08-4d1b-41e0-b379-4538f3ca7fbe.jpg?v=1777363113",
+      "price_eur": "80.00"
+    },
+    {
+      "handle": "le-polo-en-maille",
+      "title": "Le polo en maille",
+      "video_prompt": "Slow orbit around a flat-laid ecru knit polo on a pale stone surface. Raking natural light from the left reveals the texture of the knit weave in sharp detail. Camera completes a 180-degree arc, grazing the fabric surface. Muted film look, slight lens softness, warm bone tones throughout.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5,
+      "editorial_caption": "Tricoté en maille fine coton, le polo évolue avec le lavage et prend le galbe du corps avec le temps. Une pièce qui ne prétend à rien — et qui reste longtemps.",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/1355/7899/files/SLIDESHOWIMAGE2_08bd4ae3-0cdc-435b-b1fb-e1525daf9ddc.jpg?v=1777282886",
+      "price_eur": "75.00"
+    },
+    {
+      "handle": "la-veste",
+      "title": "La veste",
+      "video_prompt": "Push-in toward a khaki canvas work jacket hanging on a raw iron hook against a whitewashed concrete wall. Overcast diffused light, no specular highlights. Camera slowly closes in on the chest pocket stitching and button placket. Deep olive-stone tones, 35mm grain, documentary stillness, no motion except imperceptible fabric sway.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5,
+      "editorial_caption": "Construite en canevas mi-saison, la veste de travail est taillée pour durer — ses coutures épaisses, ses poches fonctionnelles et son canvas qui se patine en font une pièce qui gagne en caractère à mesure qu'elle s'use.",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/1355/7899/files/IMAGE5_9d2241ed-f8a5-4d71-b930-4f58a18838d9.jpg?v=1779286139",
+      "price_eur": "110.00"
+    }
+  ],
+  "footer": {
+    "tagline": "Moins de pièces. Plus de sens.",
+    "closing_line": "Loom fabrique des vêtements pour ceux qui ont décidé d'arrêter de chercher."
+  },
+  "_meta": {
+    "model": "claude-sonnet-4-6",
+    "client_prompt": "Site editorial radical, mood tonal et structure, focus vestiaire essentiel pour homme moderne, palette monochrome stone/ecru/charcoal, ton manifeste anti-consommation et longevite des pieces. Tous les textes en francais.",
+    "source_json": "www.loom.fr_hero.json",
+    "product_count_total": 20,
+    "featured_count": 3,
+    "generated_in_seconds": 46.7
+  }
+}

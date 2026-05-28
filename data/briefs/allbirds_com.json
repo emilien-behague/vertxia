@@ -1,0 +1,162 @@
+{
+  "brand": {
+    "name": "Allbirds",
+    "domain": "allbirds.com",
+    "category": "Chaussures & Accessoires durables",
+    "positioning_one_liner": "Des sandales d'été fabriquées avec les ressources de la terre, portées pour durer au-delà d'une saison.",
+    "icp": "Consommateurs conscients, 25-40 ans, urbains et nature-lovers, qui rejettent le fast fashion sans renoncer au style.",
+    "voice": "manifeste"
+  },
+  "client_prompt_interpretation": "Le client souhaite un site éditorial sobre et solaire centré sur la collection Sugar (sandales d'été), avec une palette beige/sauge/orange chaude et un discours manifeste anti-fast-fashion ancré dans la durabilité.",
+  "creative_direction": {
+    "mood": "La chaleur d'une fin d'après-midi d'été, lente, matérielle, sans artifice.",
+    "reference_style": "Aesop editorial, Patagonia manifesto print, Kinfolk summer issue",
+    "narrative_arc": "L'utilisateur passe de l'éveil d'un manifeste radical à la découverte sensorielle des produits, puis termine sur un engagement de marque ancré et silencieux."
+  },
+  "visual_system": {
+    "palette": [
+      {
+        "name": "background",
+        "hex": "#F5EFE0"
+      },
+      {
+        "name": "foreground",
+        "hex": "#2B2520"
+      },
+      {
+        "name": "accent",
+        "hex": "#E8601C"
+      },
+      {
+        "name": "muted",
+        "hex": "#8A9E82"
+      },
+      {
+        "name": "surface",
+        "hex": "#EDE0C4"
+      },
+      {
+        "name": "warm-mid",
+        "hex": "#C4956A"
+      }
+    ],
+    "fonts": {
+      "serif": "Freight Display Pro",
+      "sans": "Suisse Int'l"
+    },
+    "spacing_density": "spacious",
+    "imagery_treatment": "Produits isolés sur fond de texture naturelle, traitement grain argentique léger, ombres douces au sol pour ancrer chaque silhouette dans la matière."
+  },
+  "hero": {
+    "kicker": "Collection Sugar · Été 2025",
+    "headline": "La terre sous\nvos pieds,\nrien de plus.",
+    "subheadline": "Chaque sandale Sugar est née d'une matière naturelle, pensée pour durer des étés entiers — pas une saison. Parce que marcher légèrement sur la planète commence au sol.",
+    "primary_cta_label": "Découvrir Sugar",
+    "secondary_cta_label": "Notre démarche"
+  },
+  "site_structure": [
+    {
+      "section": "manifesto",
+      "section_role": "Poser le contrat éthique et émotionnel de la marque",
+      "headline": "Nous fabriquons moins. Nous fabriquons mieux.",
+      "body_paragraphs": [
+        "L'industrie de la mode produit 92 millions de tonnes de déchets chaque année. Allbirds a décidé de ne pas participer. Depuis le début, nous choisissons les matières comme on choisit ses mots : avec intention, avec parcimonie, sans jamais prendre plus que nécessaire à la planète.",
+        "La collection Sugar n'est pas une collection d'été de plus. C'est la preuve que la légèreté n'exige pas le sacrifice — ni du confort, ni de la conscience. Des matériaux issus de la canne à sucre, une empreinte carbone mesurée, un objet conçu pour traverser les saisons sans se dissoudre dans l'oubli."
+      ],
+      "pull_quote": "Un été ne devrait pas coûter une planète."
+    },
+    {
+      "section": "collection",
+      "section_role": "Présenter la gamme Sugar comme une sélection éditoriale cohérente",
+      "headline": "Sugar. Quatre formes. Un seul été.",
+      "body_paragraphs": [
+        "Zeffer ou Slider : deux silhouettes, une même philosophie. La collection Sugar décline chaque forme en coloris choisis pour leur résonance avec la lumière de juillet — le beige sable d'une dune au matin, l'orange brûlé d'un soleil de 18h, le noir dense d'une nuit de terrasse.",
+        "Portez-les du bord de mer au marché, du marché au dîner. Les Sugar ne connaissent pas les frontières de la journée. Elles épousent le mouvement sans effort, sans bruit, sans laisser de trace."
+      ],
+      "pull_quote": null
+    },
+    {
+      "section": "sustainability",
+      "section_role": "Ancrer les preuves matérielles de la durabilité",
+      "headline": "Ce que vous portez change ce que vous laissez.",
+      "body_paragraphs": [
+        "La semelle Sugar est fabriquée à partir de mélasse de canne à sucre — un sous-produit agricole qui remplace les mousses pétrolières traditionnelles. Résultat : une empreinte carbone réduite de 33 % par rapport à une sandale synthétique standard. Ce n'est pas du marketing. C'est de la chimie verte appliquée à vos pieds.",
+        "Allbirds publie l'empreinte carbone de chaque produit sur son étiquette, comme d'autres affichent le prix. Parce que la transparence n'est pas une option — c'est le minimum requis pour mériter votre confiance."
+      ],
+      "pull_quote": "Nous affichons notre empreinte carbone comme d'autres affichent leur logo."
+    },
+    {
+      "section": "editorial_lookbook",
+      "section_role": "Immersion visuelle et sensorielle dans la collection",
+      "headline": "Portées, usées, aimées.",
+      "body_paragraphs": [
+        "Une bonne sandale ne se remarque pas. Elle disparaît dans le quotidien, s'imprègne de la poussière des chemins, prend la forme du pied qui la porte. Les Sugar vieillissent bien — pas parce qu'elles résistent au temps, mais parce qu'elles s'y inscrivent avec grâce.",
+        "C'est ça, l'anti-fast-fashion : ne pas chercher à briller une saison, mais à durer sans effort. Porter quelque chose qui mérite d'être gardé."
+      ],
+      "pull_quote": null
+    },
+    {
+      "section": "cta_final",
+      "section_role": "Convertir avec un appel ancré dans le manifeste",
+      "headline": "Choisissez moins. Choisissez juste.",
+      "body_paragraphs": [
+        "La collection Sugar est disponible maintenant. Quatre modèles, trois coloris, une seule question à vous poser : de quoi avez-vous vraiment besoin cet été ?"
+      ],
+      "pull_quote": null
+    }
+  ],
+  "featured_products": [
+    {
+      "handle": "sugar-zeffers-natural-black-2",
+      "title": "Sugar Zeffer 2 - Natural Black",
+      "video_prompt": "Slow dolly-in on a black flip-flop resting on warm concrete at golden hour. Harsh sidelight rakes across the woven strap texture, casting a long shadow. The frame breathes — wind stirs a dried grass blade nearby. 16mm film grain, muted tones, contemplative silence.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5,
+      "editorial_caption": "Le noir absolu de la nuit de juillet. La Zeffer Natural Black disparaît dans chaque contexte — et c'est précisément là sa force.",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/1104/4168/files/AB005VU_SHOE_LEFT_GLOBAL_MENS_SUGAR_ZEFFER_NATURAL_BLACK.png?v=1776183989",
+      "price_eur": "24.00"
+    },
+    {
+      "handle": "sugar-zeffers-lux-beige",
+      "title": "Sugar Zeffer 2 - Lux Beige",
+      "video_prompt": "Orbital camera move around a beige flip-flop placed on sun-bleached linen fabric. Soft diffused morning light, warm 5500K. The braided strap catches golden highlights. Shallow depth of field, slow rotation, 35mm film aesthetic with gentle halation on edges.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5,
+      "editorial_caption": "La couleur du sable à marée basse, du lin séché au soleil. La Zeffer Lux Beige est une évidence portée sur le pied.",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/1104/4168/files/AB005UU_SHOE_LEFT_GLOBAL_MENS_SUGAR_ZEFFER_LUX_BEIGE.png?v=1776183979",
+      "price_eur": "24.00"
+    },
+    {
+      "handle": "sugar-zeffers-buoyant-orange",
+      "title": "Sugar Zeffer 2 - Buoyant Orange",
+      "video_prompt": "Push-in on a vivid orange flip-flop resting on sun-warmed terracotta tiles. Late afternoon direct sunlight creates deep cast shadows. The camera drifts slowly forward, revealing the embossed sole texture. Saturated warm palette, slight lens flare, super-16 film grain.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5,
+      "editorial_caption": "L'orange de la fin d'été, quand le soleil touche l'horizon. Une couleur qui ne demande pas la permission.",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/1104/4168/files/AB005SU_SHOE_LEFT_GLOBAL_MENS_SUGAR_ZEFFER_BUOYANT_ORANGE.png?v=1776806980",
+      "price_eur": "24.00"
+    },
+    {
+      "handle": "sugar-sliders-buoyant-orange",
+      "title": "Sugar Sliders - Buoyant Orange",
+      "video_prompt": "Low-angle dolly tracking shot following an orange slide sandal on wet stone at the edge of a natural pool. Water reflections dance across the molded foam surface. Backlit by warm sunlight, steam rising subtly. Analogue color grade, golden hour, tactile and grounded.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5,
+      "editorial_caption": "Une seule pièce moulée, zéro compromis. Le Sugar Slider Buoyant Orange est la forme la plus directe de ce que nous savons faire.",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/1104/4168/files/AB0049U_SHOE_LEFT_GLOBAL_MENS_SUGAR_SLIDER_BUOYANT_ORANGE.png?v=1776804395",
+      "price_eur": "30.00"
+    }
+  ],
+  "footer": {
+    "tagline": "Fait avec la terre. Porté avec intention.",
+    "closing_line": "Chaque pas compte — autant pour vous que pour ce qui reste après vous."
+  },
+  "_meta": {
+    "model": "claude-sonnet-4-6",
+    "client_prompt": "Site editorial sobre, mood natural et solaire, focus collection Sugar (sandales d'ete), palette beige/sauge/orange chaude, ton manifeste anti-fast-fashion sustainability. Tous les textes en francais.",
+    "source_json": "www.allbirds.com_hero.json",
+    "product_count_total": 30,
+    "featured_count": 4,
+    "generated_in_seconds": 52.7
+  }
+}
