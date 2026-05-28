@@ -45,6 +45,11 @@ import { BlendFunction, GlitchMode, ToneMappingMode } from "postprocessing";
 //   0.62 → 0.75 : EXPLOSION — plane vidéo se brise, fragments + particules
 //   0.75 → 1.00 : PLUNGE 3D — caméra traverse z=0 → z=-3 dans le monde
 
+// @react-three/postprocessing v3 attend des THREE.Vector2 (pas des tuples).
+// Constants module-level pour identité stable (évite re-init du Glitch).
+const GLITCH_DELAY = new THREE.Vector2(0.6, 2.0);
+const GLITCH_DURATION = new THREE.Vector2(0.15, 0.5);
+
 const palette = {
   bg: "#050505",
   bgDeep: "#0A0606",
@@ -2509,10 +2514,10 @@ function CinematicScene({
   const glitchRatio = in3DWorld
     ? 0.88
     : Math.max(0.15, 1 - tensionT * 0.5 - sT * 0.4);
-  const glitchStrength: [number, number] = [
+  const glitchStrength = new THREE.Vector2(
     Math.max(tensionT * 0.15 + sT * 0.4, glitchBaseline * 0.08),
     Math.max(tensionT * 0.5 + sT * 0.8, glitchBaseline * 0.2),
-  ];
+  );
   const scanDensity = 0.8 + tensionT * 4 + glitchBaseline * 1.5;
   const scanOpacity = tensionT * 0.6 + glitchBaseline * 0.22;
   const noiseOpacity = tensionT * 0.35 + sT * 0.25 + glitchBaseline * 0.08;
@@ -2568,8 +2573,8 @@ function CinematicScene({
           modulationOffset={inBlackHolePhase ? 0.05 : inCosmicPhase ? 0.15 : 0}
         />
         <Glitch
-          delay={[0.6, 2.0]}
-          duration={[0.15, 0.5]}
+          delay={GLITCH_DELAY}
+          duration={GLITCH_DURATION}
           strength={glitchStrength}
           mode={GlitchMode.SPORADIC}
           active={glitchActive}
