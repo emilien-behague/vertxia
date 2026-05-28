@@ -15,6 +15,7 @@ import { notFound } from "next/navigation";
 import { loadBrief, listBriefs } from "@/lib/brief-loader";
 import { paletteColor } from "@/lib/brief";
 import { CinematicNarrative } from "@/components/lite-templates/cinematic-narrative";
+import { DocumentaryStory } from "@/components/lite-templates/documentary-story";
 
 type PageProps = {
   params: Promise<{ domain: string }>;
@@ -50,6 +51,9 @@ export default async function LiteDynamicPage({ params }: PageProps) {
   // Route selon template_id — squelettes structurellement differents
   if (brief.template_id === "cinematic-narrative") {
     return <CinematicNarrative brief={brief} />;
+  }
+  if (brief.template_id === "documentary-story") {
+    return <DocumentaryStory brief={brief} />;
   }
 
   // Default = editorial-magazine (squelette grid + manifesto + collection)

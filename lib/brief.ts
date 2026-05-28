@@ -73,8 +73,12 @@ export type FeaturedProduct = {
  * Template structurel : pas juste palette/couleur — squelette du site different.
  * - editorial-magazine : grid 2 colonnes, manifesto bloc, sections scroll vertical (DEFAULT)
  * - cinematic-narrative : scroll-snap fullscreen par produit, caption side, pas de grid
+ * - documentary-story : long-form article scroll, drop caps, reading bar, photos parallax, chapitres
  */
-export type TemplateId = "editorial-magazine" | "cinematic-narrative";
+export type TemplateId =
+  | "editorial-magazine"
+  | "cinematic-narrative"
+  | "documentary-story";
 
 export type Brief = {
   brand: Brand;
