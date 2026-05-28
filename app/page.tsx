@@ -7,7 +7,6 @@ import { StickyNav } from "@/components/sticky-nav";
 import { StackingTemplateCards } from "@/components/stacking-template-cards";
 import { LivePipelineFeed, LiveCounter } from "@/components/live-pipeline-feed";
 import { AnimatedSphere } from "@/components/animated-sphere";
-import { AuroraGlow } from "@/components/aurora-glow";
 
 // ─── Intersection Observer hook ───────────────────────────────────────────────
 function useInView(threshold = 0.15) {
@@ -95,10 +94,7 @@ export default function VertxiaPage() {
       <StickyNav />
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
-      {/* overflow-x-clip (pas overflow-hidden) : contient la AnimatedSphere
-          qui déborde à droite (right:-80px), mais laisse les halos AuroraGlow
-          s'épanouir verticalement sans être tronqués. */}
-      <section className="relative min-h-screen overflow-x-clip flex flex-col">
+      <section className="relative min-h-screen overflow-hidden flex flex-col">
         {/* Animated sphere — discrète sur mobile, visible sur desktop ; bordures fadées dans le rendu canvas */}
         <div
           className={`absolute right-[-80px] md:right-[-80px] top-1/2 -translate-y-1/2 w-[320px] h-[320px] md:w-[700px] md:h-[700px] lg:w-[850px] lg:h-[850px] pointer-events-none z-0 transition-opacity duration-[1400ms] ease-out delay-[400ms] ${
@@ -202,30 +198,28 @@ export default function VertxiaPage() {
               transition: "opacity 1s cubic-bezier(0.16,1,0.3,1) 700ms, transform 1s cubic-bezier(0.16,1,0.3,1) 700ms",
             }}
           >
-            <AuroraGlow>
-              <a
-                href="https://instagram.com/vertxia.fr"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium whitespace-nowrap"
+            <a
+              href="https://instagram.com/vertxia.fr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium whitespace-nowrap"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-4 h-4"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-4 h-4"
-                >
-                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                </svg>
-                SUIVRE LE BUILD
-              </a>
-            </AuroraGlow>
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+              </svg>
+              SUIVRE LE BUILD
+            </a>
             <a
               href="mailto:emilien@vertxia.com?subject=Vertxia%20beta%20%E2%80%94%20marque%20DTC&body=Salut%20Emilien%2C%0A%0AJe%20suis%20fondateur%2Ftrice%20d%27une%20marque%20DTC%20et%20je%20suis%20int%C3%A9ress%C3%A9(e)%20par%20la%20beta%20Vertxia.%0A%0AMa%20marque%20%3A%20%0AURL%20Shopify%20%3A%20%0A%0AMerci%20!"
               className="inline-flex items-center justify-center gap-2 px-8 py-3 border border-black/10 text-black/70 text-sm rounded-xl hover:border-black/25 hover:bg-black/[0.04] transition-colors tracking-widest whitespace-nowrap"
