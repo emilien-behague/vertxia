@@ -7,6 +7,7 @@ import { StickyNav } from "@/components/sticky-nav";
 import { StackingTemplateCards } from "@/components/stacking-template-cards";
 import { LivePipelineFeed, LiveCounter } from "@/components/live-pipeline-feed";
 import { AnimatedSphere } from "@/components/animated-sphere";
+import { AuroraGlow } from "@/components/aurora-glow";
 
 // ─── Intersection Observer hook ───────────────────────────────────────────────
 function useInView(threshold = 0.15) {
@@ -119,6 +120,28 @@ export default function VertxiaPage() {
             · Build in public · Day 1 · 27 mai 2026
           </p>
 
+          {/* Teaser /v3 — nouveau site cinematic */}
+          <a
+            href="/v3"
+            className="group inline-flex items-center gap-3 self-start mb-8 pl-2 pr-4 py-1.5 rounded-full border border-black/10 bg-white/60 backdrop-blur-sm hover:border-black/30 hover:bg-white transition-all"
+            style={{
+              opacity: heroReady ? 1 : 0,
+              transform: heroReady ? "translateY(0px)" : "translateY(8px)",
+              transition: "opacity 800ms cubic-bezier(0.16,1,0.3,1) 120ms, transform 800ms cubic-bezier(0.16,1,0.3,1) 120ms, border-color 200ms, background-color 200ms",
+            }}
+          >
+            <span className="relative flex items-center justify-center w-6 h-6">
+              <span className="absolute inset-0 rounded-full bg-[#111] animate-ping opacity-30" />
+              <span className="relative w-2 h-2 rounded-full bg-[#111]" />
+            </span>
+            <span className="text-[11px] font-mono tracking-[0.2em] text-black/70 uppercase">
+              Nouveau · Expérience immersive
+            </span>
+            <span className="text-[11px] font-mono tracking-widest text-black/40 group-hover:text-black/80 group-hover:translate-x-0.5 transition-all">
+              →
+            </span>
+          </a>
+
           <h1
             className="text-5xl sm:text-7xl md:text-8xl font-light text-[#111] leading-[1.0] tracking-tight mb-10"
             style={{
@@ -176,28 +199,30 @@ export default function VertxiaPage() {
               transition: "opacity 1s cubic-bezier(0.16,1,0.3,1) 700ms, transform 1s cubic-bezier(0.16,1,0.3,1) 700ms",
             }}
           >
-            <a
-              href="https://instagram.com/vertxia.fr"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium whitespace-nowrap"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-4 h-4"
+            <AuroraGlow>
+              <a
+                href="https://instagram.com/vertxia.fr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium whitespace-nowrap"
               >
-                <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-              </svg>
-              SUIVRE LE BUILD
-            </a>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-4 h-4"
+                >
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                </svg>
+                SUIVRE LE BUILD
+              </a>
+            </AuroraGlow>
             <a
               href="mailto:emilien@vertxia.com?subject=Vertxia%20beta%20%E2%80%94%20marque%20DTC&body=Salut%20Emilien%2C%0A%0AJe%20suis%20fondateur%2Ftrice%20d%27une%20marque%20DTC%20et%20je%20suis%20int%C3%A9ress%C3%A9(e)%20par%20la%20beta%20Vertxia.%0A%0AMa%20marque%20%3A%20%0AURL%20Shopify%20%3A%20%0A%0AMerci%20!"
               className="inline-flex items-center justify-center gap-2 px-8 py-3 border border-black/10 text-black/70 text-sm rounded-xl hover:border-black/25 hover:bg-black/[0.04] transition-colors tracking-widest whitespace-nowrap"
@@ -375,6 +400,14 @@ export default function VertxiaPage() {
                 product: "Naruto Ichiban Kuji Sage",
                 tag: "AI upscale",
                 tagColor: "#dc2626",
+              },
+              {
+                brand: "KAGE",
+                href: "/preview/kage",
+                source: "kage.studio",
+                product: "Halftone editorial",
+                tag: "Editorial",
+                tagColor: "#aaaaaa",
               },
             ].map((demo) => (
               <a
