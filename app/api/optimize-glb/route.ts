@@ -25,6 +25,10 @@ import draco3d from "draco3d";
 import { put } from "@vercel/blob";
 import { nanoid } from "nanoid";
 import path from "path";
+import { validateExternalUrl } from "@/lib/ssrf-guard";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+
+const MAX_GLB_BYTES = 100 * 1024 * 1024; // 100 MB cap (Meshy UHQ ~30-50 MB)
 
 // Workaround Emscripten WASM path : draco3d cherche par défaut son .wasm
 // dans un chemin Emscripten "C:\ROOT" virtuel qui n'existe pas. On lui dit
@@ -40,6 +44,15 @@ export const runtime = "nodejs";
 export const maxDuration = 60; // 60s timeout (Pro). Free tier silencieusement caped à 10s.
 
 export async function POST(req: NextRequest) {
+  // Rate limit : 5/min/IP (optimize-glb = Vercel Blob storage cost + bandwidth)
+  const rl = checkRateLimit(getClientIp(req), "optimize-glb", { max: 5, windowMs: 60_000 });
+  if (rl.blocked) {
+    return Response.json(
+      { error: `Trop de requêtes — réessaie dans ${rl.retryAfterSec}s` },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
+    );
+  }
+
   let glbUrl: string;
   try {
     const body = await req.json();
@@ -51,19 +64,64 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Body JSON invalide" }, { status: 400 });
   }
 
-  // 1. Télécharger le GLB depuis Meshy CDN (peut être 30-50 MB)
+  // SSRF guard : refuse URLs vers IPs internes / metadata cloud
+  const guard = await validateExternalUrl(glbUrl);
+  if (!guard.ok) {
+    return Response.json({ error: `glbUrl bloquée : ${guard.reason}` }, { status: 400 });
+  }
+
+  // 1. Télécharger le GLB depuis Meshy CDN (peut être 30-50 MB).
+  // Cap MAX_GLB_BYTES pour éviter qu'un attaquant nous fasse OOM avec une URL
+  // pointée vers un fichier de 1 GB.
   let inputBuffer: Buffer;
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30_000); // 30s timeout
     const res = await fetch(glbUrl, {
       headers: { "User-Agent": "Vertxia/1.0 GLB-optimizer" },
+      redirect: "error",
+      signal: controller.signal,
     });
     if (!res.ok) {
+      clearTimeout(timeout);
       return Response.json(
         { error: `Téléchargement GLB échoué : ${res.status}` },
         { status: 502 }
       );
     }
-    inputBuffer = Buffer.from(await res.arrayBuffer());
+    // Check Content-Length avant le download complet
+    const len = res.headers.get("content-length");
+    if (len && parseInt(len, 10) > MAX_GLB_BYTES) {
+      clearTimeout(timeout);
+      return Response.json(
+        { error: `GLB trop volumineux : ${len} bytes (max ${MAX_GLB_BYTES})` },
+        { status: 400 }
+      );
+    }
+    // Lecture streaming avec cap — au cas où Content-Length manque/ment
+    const reader = res.body?.getReader();
+    if (!reader) {
+      clearTimeout(timeout);
+      return Response.json({ error: "Pas de body GLB" }, { status: 502 });
+    }
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_GLB_BYTES) {
+        await reader.cancel();
+        clearTimeout(timeout);
+        return Response.json(
+          { error: `GLB dépasse ${MAX_GLB_BYTES} bytes pendant download` },
+          { status: 400 }
+        );
+      }
+      chunks.push(value);
+    }
+    clearTimeout(timeout);
+    inputBuffer = Buffer.concat(chunks);
   } catch (err) {
     return Response.json(
       {

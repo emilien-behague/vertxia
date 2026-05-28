@@ -10,8 +10,12 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { validateExternalUrl } from "@/lib/ssrf-guard";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
+
+const MAX_RESPONSE_BYTES = 5 * 1024 * 1024; // 5 MB max pour /products.json
 
 type ScrapedProduct = {
   id: number;
@@ -43,6 +47,16 @@ function normalizeUrl(input: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Rate limit : 20 scrapes / min / IP (gentil, le scrape coûte rien chez nous
+  // mais bombarde des serveurs Shopify tiers)
+  const rl = checkRateLimit(getClientIp(req), "scrape", { max: 20, windowMs: 60_000 });
+  if (rl.blocked) {
+    return NextResponse.json<ScrapeError>(
+      { error: `Trop de requêtes — réessaie dans ${rl.retryAfterSec}s` },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
+    );
+  }
+
   let url: string;
   try {
     const body = await req.json();
@@ -60,12 +74,35 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // SSRF guard : refuse les hostnames qui résolvent en IPs privées / metadata
+  const guard = await validateExternalUrl(`${url}/products.json`);
+  if (!guard.ok) {
+    return NextResponse.json<ScrapeError>(
+      { error: `URL bloquée : ${guard.reason}` },
+      { status: 400 },
+    );
+  }
+
   let shopifyData: { products: unknown[] };
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000); // 10s timeout
     const res = await fetch(`${url}/products.json?limit=20`, {
       headers: { "User-Agent": "Vertxia/1.0 (demo)" },
-      // Timeout via AbortController serait plus propre, mais fetch native Node a un timeout par défaut
+      redirect: "error", // refuse les redirects (anti-SSRF post-DNS-rebinding)
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
+
+    // Cap la taille de la réponse pour éviter qu'un serveur ennemi nous envoie
+    // un /products.json de 500 MB et fasse OOM la fonction.
+    const len = res.headers.get("content-length");
+    if (len && parseInt(len, 10) > MAX_RESPONSE_BYTES) {
+      return NextResponse.json<ScrapeError>(
+        { error: "Réponse trop volumineuse" },
+        { status: 400 },
+      );
+    }
 
     if (!res.ok) {
       return NextResponse.json<ScrapeError>(

@@ -11,6 +11,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { validateExternalUrl } from "@/lib/ssrf-guard";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -26,10 +28,18 @@ async function getImageDimensions(
   url: string
 ): Promise<{ width: number; height: number } | null> {
   try {
+    // SSRF check avant fetch (l'URL vient du user)
+    const guard = await validateExternalUrl(url);
+    if (!guard.ok) return null;
     // Récupère les 64 KB premiers pour parser le header JPEG/PNG/WebP
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8_000);
     const res = await fetch(url, {
       headers: { Range: "bytes=0-65535", "User-Agent": "Vertxia/1.0" },
+      redirect: "error",
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
     if (!res.ok && res.status !== 206) return null;
     const buffer = Buffer.from(await res.arrayBuffer());
 
@@ -75,6 +85,15 @@ async function getImageDimensions(
 }
 
 export async function POST(req: NextRequest) {
+  // Rate limit Replicate : 10/min/IP (chaque appel = ~$0.005 + temps GPU)
+  const rl = checkRateLimit(getClientIp(req), "upscale", { max: 10, windowMs: 60_000 });
+  if (rl.blocked) {
+    return NextResponse.json(
+      { error: `Trop de requêtes — réessaie dans ${rl.retryAfterSec}s` },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
+    );
+  }
+
   const apiKey = process.env.REPLICATE_API_TOKEN;
   if (!apiKey) {
     return NextResponse.json(
@@ -92,6 +111,17 @@ export async function POST(req: NextRequest) {
     imageUrl = body.imageUrl;
   } catch {
     return NextResponse.json({ error: "Body JSON invalide" }, { status: 400 });
+  }
+
+  // SSRF guard sur l'imageUrl avant de l'envoyer à Replicate (et avant
+  // notre propre getImageDimensions). Replicate va aussi fetch l'URL → on
+  // ne veut pas leur faire scrap nos endpoints internes non plus.
+  const guard = await validateExternalUrl(imageUrl);
+  if (!guard.ok) {
+    return NextResponse.json(
+      { error: `imageUrl bloquée : ${guard.reason}` },
+      { status: 400 },
+    );
   }
 
   // Détection taille source : si déjà sharp, skip Real-ESRGAN

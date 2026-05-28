@@ -8,18 +8,54 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { list } from "@vercel/blob";
+import { validateExternalUrl } from "@/lib/ssrf-guard";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 const MESHY_API = "https://api.meshy.ai/openapi/v1";
+const DEFAULT_MAX_DAILY = 30;
 
 export async function POST(req: NextRequest) {
+  // Rate limit : 3 générations / 5min / IP (Meshy coûte ~$0.50-1 par appel UHQ)
+  const rl = checkRateLimit(getClientIp(req), "mesh", { max: 3, windowMs: 5 * 60_000 });
+  if (rl.blocked) {
+    return NextResponse.json(
+      { error: `Trop de générations — réessaie dans ${rl.retryAfterSec}s` },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
+    );
+  }
+
   const apiKey = process.env.MESHY_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
       { error: "MESHY_API_KEY manquant côté serveur" },
       { status: 500 }
     );
+  }
+
+  // Quota check CÔTÉ SERVEUR (pas confiance au /api/check-quota client-side
+  // qui peut être skippé par un attaquant qui appelle direct).
+  // Fail-open en cas de panne Blob, mais log.
+  const maxDaily = parseInt(
+    process.env.MAX_DAILY_GENERATIONS || String(DEFAULT_MAX_DAILY),
+    10,
+  );
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const { blobs } = await list({ prefix: `demos/${today}/` });
+    if (blobs.length >= maxDaily) {
+      return NextResponse.json(
+        {
+          error: "quota_exceeded",
+          message: `Vertxia est complet pour aujourd'hui (${blobs.length}/${maxDaily}). Reviens demain ou DM emilien@vertxia.com.`,
+        },
+        { status: 429 },
+      );
+    }
+  } catch (err) {
+    console.warn("[mesh/start] quota check failed (fail-open):", err);
   }
 
   let imageUrl: string;
@@ -31,6 +67,16 @@ export async function POST(req: NextRequest) {
     imageUrl = body.imageUrl;
   } catch {
     return NextResponse.json({ error: "Body JSON invalide" }, { status: 400 });
+  }
+
+  // SSRF guard : Meshy va fetch cette URL côté leur infra, mais on bloque
+  // quand même pour cohérence + au cas où on ajoute du fetch local plus tard
+  const guard = await validateExternalUrl(imageUrl);
+  if (!guard.ok) {
+    return NextResponse.json(
+      { error: `imageUrl bloquée : ${guard.reason}` },
+      { status: 400 },
+    );
   }
 
   const res = await fetch(`${MESHY_API}/image-to-3d`, {
