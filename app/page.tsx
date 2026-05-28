@@ -119,9 +119,9 @@ export default function VertxiaPage() {
             · Build in public · Day 1 · 27 mai 2026
           </p>
 
-          {/* Teaser /v3 — nouveau site cinematic */}
+          {/* Teaser /lite — démos live */}
           <a
-            href="/v3"
+            href="/lite"
             className="group inline-flex items-center gap-3 self-start mb-8 pl-2 pr-4 py-1.5 rounded-full border border-black/10 bg-white/60 backdrop-blur-sm hover:border-black/30 hover:bg-white transition-all"
             style={{
               opacity: heroReady ? 1 : 0,
@@ -134,7 +134,7 @@ export default function VertxiaPage() {
               <span className="relative w-2 h-2 rounded-full bg-[#111]" />
             </span>
             <span className="text-[11px] font-mono tracking-[0.2em] text-black/70 uppercase">
-              Nouveau · Expérience immersive
+              Live · 2 sites générés
             </span>
             <span className="text-[11px] font-mono tracking-widest text-black/40 group-hover:text-black/80 group-hover:translate-x-0.5 transition-all">
               →
@@ -152,8 +152,8 @@ export default function VertxiaPage() {
             }}
           >
             URL Shopify.<br />
-            <span className="text-black/40">Site 3D cinéma.</span><br />
-            En 30 minutes.
+            <span className="text-black/40">Site cinematic complet.</span><br />
+            En minutes.
           </h1>
 
           <p
@@ -164,15 +164,15 @@ export default function VertxiaPage() {
               transition: "opacity 1s cubic-bezier(0.16,1,0.3,1) 250ms, transform 1s cubic-bezier(0.16,1,0.3,1) 250ms",
             }}
           >
-            Vertxia transforme automatiquement n'importe quelle boutique Shopify en site 3D immersif type Adidas Chile 20 ou Apple Vision Pro. Sans agence à 50 000 €. Sans 4 mois d'attente.
+            Vertxia transforme n'importe quelle boutique Shopify en site éditorial avec vidéos cinematic IA auto par produit. Brief créatif rédigé par Claude, vidéos générées par Kling. Sans agence à 50 000 €. Sans 4 mois d'attente.
           </p>
 
           {/* 3 metrics */}
           <div className="flex gap-8 sm:gap-12 mb-12">
             {[
-              { value: "30min", label: "Génération site" },
-              { value: "0.10€", label: "Coût IA / produit" },
-              { value: "50×", label: "Moins cher" },
+              { value: "~10min", label: "Génération site" },
+              { value: "~2€", label: "Coût IA / site" },
+              { value: "Unique", label: "Chaque rendu" },
             ].map((stat, i) => (
               <div
                 key={i}
@@ -236,7 +236,7 @@ export default function VertxiaPage() {
           <div className="mb-16">
             <Tag>PIPELINE</Tag>
             <RevealText className="mt-5 text-4xl md:text-5xl lg:text-6xl font-light tracking-tight leading-[1.05]">
-              {"De l'URL au site 3D,\nentièrement automatisé."}
+              {"De l'URL au site cinematic,\nentièrement automatisé."}
             </RevealText>
           </div>
 
@@ -277,33 +277,36 @@ export default function VertxiaPage() {
                   <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
                 </svg>
               </div>
-              <h3 className="text-lg font-light mb-2">Claude Vision IA</h3>
+              <h3 className="text-lg font-light mb-2">Brief créatif Claude</h3>
               <p className="text-sm text-black/45 leading-relaxed">
-                Analyse couleurs, matériaux, qualité 3D et choisit le template cinéma optimal pour chaque produit.
+                Claude Sonnet analyse les images produits, extrait la palette, rédige copy + prompts vidéo, choisit l&apos;angle hero. Pas de template, brief unique.
               </p>
             </BentoCard>
 
             <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[200px]" delay={160}>
               <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                  <polygon points="23 7 16 12 23 17 23 7" />
+                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
                 </svg>
               </div>
-              <h3 className="text-lg font-light mb-2">Génération 3D auto</h3>
+              <h3 className="text-lg font-light mb-2">Vidéos cinematic Kling</h3>
               <p className="text-sm text-black/45 leading-relaxed">
-                Chaque produit devient un mesh 3D PBR photoréaliste via Meshy & TripoSR.
+                Chaque produit reçoit sa vidéo cinematic 5s — orbit, dolly, push-in — générée par Kling 2.0 depuis l&apos;image hero.
               </p>
             </BentoCard>
 
             <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[200px]" delay={200}>
               <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                  <polyline points="4 7 4 4 20 4 20 7" />
+                  <line x1="9" y1="20" x2="15" y2="20" />
+                  <line x1="12" y1="4" x2="12" y2="20" />
                 </svg>
               </div>
-              <h3 className="text-lg font-light mb-2">Templates cinéma</h3>
+              <h3 className="text-lg font-light mb-2">Composition éditoriale</h3>
               <p className="text-sm text-black/45 leading-relaxed">
-                5 templates polish, React Three Fiber + GSAP scroll-driven. Optimisés mobile 60fps.
+                Site composé dynamiquement depuis le brief — palette, fonts, sections, captions. Chaque rendu est unique.
               </p>
             </BentoCard>
 
@@ -313,9 +316,9 @@ export default function VertxiaPage() {
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-light mb-2">Livraison embed/host</h3>
+              <h3 className="text-lg font-light mb-2">Livraison instantanée</h3>
               <p className="text-sm text-black/45 leading-relaxed">
-                Site standalone OU code embed pour ta boutique Shopify. Mis à jour automatiquement.
+                URL partageable, déployée sur Vercel Edge. Site standalone ou intégrable en iframe.
               </p>
             </BentoCard>
           </div>
@@ -341,108 +344,125 @@ export default function VertxiaPage() {
         </div>
       </section>
 
-      {/* ── DEMOS / VITRINES IMMERSIVES LIVE ─────────────────────────────── */}
+      {/* ── DEMOS / VITRINES LIVE — Vertxia Lite ──────────────────────────── */}
       <section id="demos" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-12">
             <div>
-              <Tag>4 VITRINES LIVE</Tag>
+              <Tag>2 VITRINES LIVE</Tag>
               <RevealText className="mt-5 text-4xl md:text-5xl font-light tracking-tight leading-[1.05]">
                 {"Pas des mockups.\nDes vraies pages live."}
               </RevealText>
             </div>
             <p className="text-sm text-black/45 leading-relaxed max-w-xs">
-              Chaque démo ci-dessous est générée depuis la vraie URL Shopify de la marque. 3D model rendu via notre pipeline (Meshy + R3F). Clique pour voir le résultat.
+              Chaque démo ci-dessous a été générée automatiquement depuis l&apos;URL Shopify de la marque + un prompt créatif court. Brief Claude, vidéos Kling, site composé.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
               {
-                brand: "LOOM",
-                href: "/preview/loom",
-                source: "loom.fr",
-                product: "Les derbies femme",
-                tag: "Immersif scroll",
-                tagColor: "#a78bfa",
-              },
-              {
                 brand: "ALLBIRDS",
-                href: "/preview/allbirds",
+                href: "/lite/allbirds_com",
                 source: "allbirds.com",
-                product: "Wool Runner",
-                tag: "Hero 3D",
-                tagColor: "#60a5fa",
+                product: "Collection Sugar · sandales d'été",
+                tag: "Manifeste sustainability",
+                tagColor: "#E05A1E",
+                video: "/lite/videos/allbirds_com/sugar-zeffers-lux-beige.mp4",
+                bg: "#F5EFE0",
+                fg: "#2C2416",
               },
               {
-                brand: "TIKAMOON",
-                href: "/preview/tikamoon",
-                source: "tikamoon.com",
-                product: "Coffee Tek Meuble TV",
-                tag: "Hero 3D",
-                tagColor: "#60a5fa",
-              },
-              {
-                brand: "BUU'KOFF",
-                href: "/preview/buukoff",
-                source: "buu-koff-2.myshopify.com",
-                product: "DBZ Trunks Solid Edge",
-                tag: "Hero 3D",
-                tagColor: "#facc15",
-              },
-              {
-                brand: "JIRAYA",
-                href: "/preview/jiraya",
-                source: "buu-koff-2.myshopify.com",
-                product: "Naruto Ichiban Kuji Sage",
-                tag: "AI upscale",
-                tagColor: "#dc2626",
-              },
-              {
-                brand: "KAGE",
-                href: "/preview/kage",
-                source: "kage.studio",
-                product: "Halftone editorial",
-                tag: "Editorial",
-                tagColor: "#aaaaaa",
+                brand: "LOOM",
+                href: "/lite/loom_fr",
+                source: "loom.fr",
+                product: "Vestiaire essentiel homme",
+                tag: "Manifeste anti-consommation",
+                tagColor: "#8C8476",
+                video: "/lite/videos/loom_fr/le-short-relax.mp4",
+                bg: "#F2EDE6",
+                fg: "#1E1E1A",
               },
             ].map((demo) => (
               <a
                 key={demo.brand}
                 href={demo.href}
-                className="group relative block aspect-[4/5] rounded-2xl border border-black/[0.08] bg-gradient-to-br from-black to-[#1a1a1a] overflow-hidden hover:border-black/30 transition-colors"
+                className="group relative block aspect-[4/5] md:aspect-[3/4] rounded-2xl border border-black/[0.08] overflow-hidden hover:border-black/30 transition-colors"
+                style={{ background: demo.bg }}
               >
-                <div className="absolute top-4 left-4 right-4 flex items-start justify-between z-10">
-                  <span className="font-mono text-[9px] tracking-[0.3em] text-white/40 uppercase">
+                <video
+                  src={demo.video}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-[1.03]"
+                />
+                {/* Gradient bas pour lisibilité */}
+                <div
+                  className="absolute inset-x-0 bottom-0 h-2/3"
+                  style={{
+                    background: `linear-gradient(180deg, transparent 0%, ${demo.bg}c0 50%, ${demo.bg} 100%)`,
+                  }}
+                />
+                <div className="absolute top-5 left-5 right-5 flex items-start justify-between z-10">
+                  <span
+                    className="font-mono text-[10px] tracking-[0.3em] uppercase px-2.5 py-1 rounded-sm backdrop-blur-md"
+                    style={{
+                      background: `${demo.bg}b3`,
+                      color: demo.fg,
+                      border: `1px solid ${demo.fg}20`,
+                    }}
+                  >
                     {demo.source}
                   </span>
                   <span
-                    className="font-mono text-[8px] tracking-[0.2em] text-white/60 px-2 py-1 rounded-sm"
-                    style={{ background: `${demo.tagColor}20`, color: demo.tagColor }}
+                    className="font-mono text-[9px] tracking-[0.2em] uppercase px-2.5 py-1 rounded-sm"
+                    style={{ background: `${demo.tagColor}30`, color: demo.tagColor }}
                   >
                     {demo.tag}
                   </span>
                 </div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-white text-3xl md:text-4xl font-light tracking-tighter">
-                    {demo.brand}
-                  </span>
-                </div>
-                <div className="absolute bottom-4 left-4 right-4 z-10 flex items-end justify-between">
-                  <span className="font-mono text-[9px] text-white/50 leading-tight">
+                <div className="absolute bottom-0 left-0 right-0 p-8 z-10">
+                  <p
+                    className="font-mono text-[10px] tracking-[0.3em] uppercase mb-3"
+                    style={{ color: `${demo.fg}99` }}
+                  >
                     {demo.product}
-                  </span>
-                  <span className="font-mono text-xs text-white/70 group-hover:text-white transition-colors">
-                    →
-                  </span>
+                  </p>
+                  <h3
+                    className="text-4xl md:text-5xl font-light tracking-tight mb-4"
+                    style={{ color: demo.fg, fontFamily: "'Cormorant', serif" }}
+                  >
+                    {demo.brand}
+                  </h3>
+                  <div
+                    className="inline-flex items-center gap-3 text-[11px] tracking-[0.25em] uppercase pb-1"
+                    style={{
+                      color: demo.fg,
+                      borderBottom: `1px solid ${demo.fg}40`,
+                    }}
+                  >
+                    Visiter le site
+                    <span className="transition-transform duration-500 group-hover:translate-x-1">→</span>
+                  </div>
                 </div>
               </a>
             ))}
           </div>
 
-          <p className="mt-10 text-xs text-black/40 font-mono tracking-wide text-center">
-            Build in public — nouvelles vitrines publiées plusieurs fois par semaine
-          </p>
+          <div className="mt-10 flex items-center justify-center gap-4">
+            <a
+              href="/lite"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-black/15 bg-white text-sm text-black/70 hover:border-black/30 hover:bg-black/[0.03] transition-all tracking-widest"
+            >
+              VOIR TOUTES LES DÉMOS
+              <span>→</span>
+            </a>
+            <p className="text-xs text-black/40 font-mono tracking-wide">
+              Nouvelles vitrines plusieurs fois par semaine
+            </p>
+          </div>
         </div>
       </section>
 
@@ -708,11 +728,11 @@ export default function VertxiaPage() {
               </p>
 
               <p className="text-sm text-black/50 leading-relaxed mb-5">
-                L&apos;idée est née d&apos;une frustration simple : un site e-commerce 3D type Adidas Chile 20 ou Apple Vision Pro coûte entre 30 et 150 000 € et 4 mois avec une agence. C&apos;est inaccessible à 99 % des marques DTC.
+                L&apos;idée est née d&apos;une frustration simple : un site e-commerce cinematic avec vidéos premium par produit coûte entre 30 et 150 000 € et 4 mois avec une agence. C&apos;est inaccessible à 99 % des marques DTC.
               </p>
 
               <p className="text-sm text-black/50 leading-relaxed mb-5">
-                Mais avec l&apos;IA en 2026, ce niveau de présentation produit devrait être à la portée de tout le monde. C&apos;est exactement ce que Vertxia construit : un pipeline où l&apos;URL Shopify devient un site 3D cinéma en 30 minutes — pour 99 €/mois, pas 50 000 €.
+                Mais avec les modèles vidéo IA en 2026 (Kling, Runway, Veo), ce niveau de présentation produit devrait être à la portée de tout le monde. C&apos;est exactement ce que Vertxia construit : un pipeline où l&apos;URL Shopify devient un site éditorial avec vidéos cinematic auto-générées par produit en quelques minutes — pour quelques euros, pas 50 000 €.
               </p>
 
               <p className="text-sm text-black/50 leading-relaxed mb-10">

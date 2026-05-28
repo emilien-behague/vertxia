@@ -14,6 +14,7 @@ import { notFound } from "next/navigation";
 
 import { loadBrief, listBriefs } from "@/lib/brief-loader";
 import { paletteColor } from "@/lib/brief";
+import { CinematicNarrative } from "@/components/lite-templates/cinematic-narrative";
 
 type PageProps = {
   params: Promise<{ domain: string }>;
@@ -46,6 +47,12 @@ export default async function LiteDynamicPage({ params }: PageProps) {
     notFound();
   }
 
+  // Route selon template_id — squelettes structurellement differents
+  if (brief.template_id === "cinematic-narrative") {
+    return <CinematicNarrative brief={brief} />;
+  }
+
+  // Default = editorial-magazine (squelette grid + manifesto + collection)
   const { brand, visual_system, creative_direction, site_structure, featured_products, hero, footer } = brief;
   const palette = visual_system.palette;
 

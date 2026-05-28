@@ -69,6 +69,13 @@ export type FeaturedProduct = {
   video_url?: string;
 };
 
+/**
+ * Template structurel : pas juste palette/couleur — squelette du site different.
+ * - editorial-magazine : grid 2 colonnes, manifesto bloc, sections scroll vertical (DEFAULT)
+ * - cinematic-narrative : scroll-snap fullscreen par produit, caption side, pas de grid
+ */
+export type TemplateId = "editorial-magazine" | "cinematic-narrative";
+
 export type Brief = {
   brand: Brand;
   client_prompt_interpretation: string;
@@ -78,6 +85,8 @@ export type Brief = {
   site_structure: SiteSection[];
   featured_products: FeaturedProduct[];
   footer?: FooterCopy;
+  /** Squelette structurel — default "editorial-magazine" si absent. */
+  template_id?: TemplateId;
   _meta?: {
     model: string;
     client_prompt: string;
