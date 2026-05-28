@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# media backups locaux (ne pas shipper en prod)
+*.bak.mp4
+
 # debug
 npm-debug.log*
 yarn-debug.log*

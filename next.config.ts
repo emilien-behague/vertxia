@@ -25,12 +25,24 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "plus.unsplash.com" },
+    ],
+  },
   async headers() {
     return [
       {
         source: "/:path*",
         headers: securityHeaders,
       },
+    ];
+  },
+  async rewrites() {
+    return [
+      // /v3 sert le nouveau site v3 (URL publique partageable)
+      { source: "/v3", destination: "/preview/vertxia-v3" },
     ];
   },
 };
