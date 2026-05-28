@@ -95,7 +95,10 @@ export default function VertxiaPage() {
       <StickyNav />
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
-      <section className="relative min-h-screen overflow-hidden flex flex-col">
+      {/* overflow-x-clip (pas overflow-hidden) : contient la AnimatedSphere
+          qui déborde à droite (right:-80px), mais laisse les halos AuroraGlow
+          s'épanouir verticalement sans être tronqués. */}
+      <section className="relative min-h-screen overflow-x-clip flex flex-col">
         {/* Animated sphere — discrète sur mobile, visible sur desktop ; bordures fadées dans le rendu canvas */}
         <div
           className={`absolute right-[-80px] md:right-[-80px] top-1/2 -translate-y-1/2 w-[320px] h-[320px] md:w-[700px] md:h-[700px] lg:w-[850px] lg:h-[850px] pointer-events-none z-0 transition-opacity duration-[1400ms] ease-out delay-[400ms] ${
