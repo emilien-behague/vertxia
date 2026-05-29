@@ -48,7 +48,9 @@ export function HeroCenter() {
 
   function handleSubmit() {
     setError(null);
-    const trimmed = value.trim();
+    // Defense en profondeur : truncate cote handler meme si maxLength bypass par DevTools.
+    // 500 chars largement assez pour URL + brief prompt court.
+    const trimmed = value.trim().slice(0, 500);
     if (!trimmed) return;
 
     const result = extractDomainAndSlug(trimmed);
@@ -66,6 +68,8 @@ export function HeroCenter() {
     // Encode le prompt en query param pour qu'il soit dispo cote /lite (futur usage pipeline)
     const params = new URLSearchParams({ prompt: trimmed });
     router.push(`/lite/${result.slug}?${params.toString()}`);
+    // Fallback : reset submitting si la navigation tarde >5s (evite bouton bloque ad vitam)
+    setTimeout(() => setSubmitting(false), 5000);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -153,6 +157,7 @@ export function HeroCenter() {
             onKeyDown={handleKeyDown}
             placeholder="Colle une URL Shopify + decris l'ambiance (ex : allbirds.com — site editorial print magazine)"
             rows={3}
+            maxLength={500}
             className="w-full bg-transparent px-6 pt-5 pb-2 text-[15px] text-white placeholder:text-white/35 resize-none outline-none font-sans"
             style={{ minHeight: "84px" }}
           />
