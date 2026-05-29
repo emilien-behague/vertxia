@@ -164,7 +164,7 @@ export default function VertxiaPage() {
               transition: "opacity 1s cubic-bezier(0.16,1,0.3,1) 250ms, transform 1s cubic-bezier(0.16,1,0.3,1) 250ms",
             }}
           >
-            Vertxia transforme n'importe quelle boutique Shopify en site éditorial avec vidéos cinematic IA auto par produit. Brief créatif rédigé par Claude, vidéos générées par Kling. Sans agence à 50 000 €. Sans 4 mois d'attente.
+            Vertxia transforme n'importe quelle boutique Shopify en site éditorial avec vidéos cinematic IA auto par produit. Brief créatif rédigé par Claude, vidéos générées par Kling. Sans agence. Sans 4 mois d'attente.
           </p>
 
           {/* 3 metrics */}
@@ -221,10 +221,10 @@ export default function VertxiaPage() {
               SUIVRE LE BUILD
             </a>
             <a
-              href="/pricing"
+              href="/app"
               className="inline-flex items-center justify-center gap-2 px-8 py-3 border border-black/10 text-black/70 text-sm rounded-xl hover:border-black/25 hover:bg-black/[0.04] transition-colors tracking-widest whitespace-nowrap"
             >
-              VOIR LES OFFRES
+              OUVRIR L'APP
             </a>
           </div>
         </div>
@@ -625,7 +625,7 @@ export default function VertxiaPage() {
                   </div>
                   <p className="text-xs text-black/35 tracking-wide">{plan.sub}</p>
                 </div>
-                <ul className="space-y-3 flex-1 mb-8">
+                <ul className="space-y-3 flex-1">
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-center gap-3 text-sm text-black/55">
                       <div className="w-1 h-1 rounded-full bg-black/25 shrink-0" />
@@ -633,21 +633,11 @@ export default function VertxiaPage() {
                     </li>
                   ))}
                 </ul>
-                <a
-                  href="/pricing"
-                  className={`w-full py-3 rounded-xl text-sm tracking-widest transition-all duration-200 text-center ${
-                    plan.highlight
-                      ? "bg-[#111] text-white hover:bg-[#333]"
-                      : "border border-black/10 text-black/60 hover:border-black/25 hover:text-black hover:bg-black/[0.04]"
-                  }`}
-                >
-                  S'ABONNER
-                </a>
               </BentoCard>
             ))}
           </div>
 
-          <p className="mt-8 text-center text-xs text-black/35 tracking-wide">
+          <p className="mt-10 text-center text-xs text-black/35 tracking-wide">
             Paiement immédiat · Résiliable à tout moment · Sans engagement
           </p>
         </div>
@@ -660,11 +650,11 @@ export default function VertxiaPage() {
             Ton premier site cinematic,<br />en quelques minutes.
           </h2>
           <p className="text-sm text-black/45 leading-relaxed mb-10 max-w-md mx-auto">
-            Pas d'agence à 50 000 €. Pas de 4 mois d'attente. Choisis ton plan, connecte ton URL Shopify, et Vertxia fait le reste.
+            Pas d'agence. Pas de 4 mois d'attente. Connecte ton URL Shopify et Vertxia fait le reste.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto justify-center">
             <a
-              href="/pricing"
+              href="/app"
               className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium"
             >
               COMMENCER MAINTENANT
@@ -736,11 +726,11 @@ export default function VertxiaPage() {
               </p>
 
               <p className="text-sm text-black/50 leading-relaxed mb-5">
-                L&apos;idée est née d&apos;une frustration simple : un site e-commerce cinematic avec vidéos premium par produit coûte entre 30 et 150 000 € et 4 mois avec une agence. C&apos;est inaccessible à 99 % des marques DTC.
+                L&apos;idée est née d&apos;une frustration simple : un site e-commerce cinematic avec vidéos premium par produit demande plusieurs mois de prod avec une agence. C&apos;est inaccessible à 99 % des marques DTC.
               </p>
 
               <p className="text-sm text-black/50 leading-relaxed mb-5">
-                Mais avec les modèles vidéo IA en 2026 (Kling, Runway, Veo), ce niveau de présentation produit devrait être à la portée de tout le monde. C&apos;est exactement ce que Vertxia construit : un pipeline où l&apos;URL Shopify devient un site éditorial avec vidéos cinematic auto-générées par produit en quelques minutes — pour quelques euros, pas 50 000 €.
+                Mais avec les modèles vidéo IA en 2026 (Kling, Runway, Veo), ce niveau de présentation produit devrait être à la portée de tout le monde. C&apos;est exactement ce que Vertxia construit : un pipeline où l&apos;URL Shopify devient un site éditorial avec vidéos cinematic auto-générées par produit en quelques minutes.
               </p>
 
               <p className="text-sm text-black/50 leading-relaxed mb-10">
