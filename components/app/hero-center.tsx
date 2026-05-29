@@ -53,7 +53,7 @@ export function HeroCenter() {
   const [submitting, setSubmitting] = useState(false);
   const [portalOpen, setPortalOpen] = useState(false);
 
-  function handleSubmit() {
+  async function handleSubmit() {
     setError(null);
     // Defense en profondeur : truncate cote handler meme si maxLength bypass par DevTools.
     // 500 chars largement assez pour URL + brief prompt court.
@@ -61,7 +61,6 @@ export function HeroCenter() {
     if (!trimmed) return;
 
     const result = extractDomainAndSlug(trimmed);
-
     if (!result.ok) {
       if (result.reason === "no-url") {
         setError("Colle une URL Shopify dans ton prompt (ex : allbirds.com).");
@@ -72,31 +71,48 @@ export function HeroCenter() {
     }
 
     setSubmitting(true);
-    // Encode le prompt en query param pour qu'il soit dispo cote /lite (futur usage pipeline)
-    const params = new URLSearchParams({ prompt: trimmed });
-    const targetUrl = `/lite/${result.slug}?${params.toString()}`;
 
-    // Respect prefers-reduced-motion : skip portail, navigation immediate
+    // Respect prefers-reduced-motion : skip portail
     const reducedMotion =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reducedMotion) setPortalOpen(true);
 
-    if (reducedMotion) {
-      router.push(targetUrl);
-      setTimeout(() => setSubmitting(false), 5000);
-      return;
-    }
+    // Demarre fetch POST + attend en parallele que le portail finisse son anim
+    const fetchPromise = fetch("/api/lite/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: result.raw, prompt: trimmed }),
+    })
+      .then(async (r) => {
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({}));
+          throw new Error(err.error || `HTTP ${r.status}`);
+        }
+        return (await r.json()) as { jobId: string; slug: string };
+      });
 
-    // Sequence : portail R3F warp speed (1400ms) -> router.push
-    setPortalOpen(true);
-    setTimeout(() => {
-      router.push(targetUrl);
-      // Garde le portail visible un peu apres push pour couvrir la transition
+    const minWait = reducedMotion
+      ? Promise.resolve()
+      : new Promise((res) => setTimeout(res, PORTAL_DURATION_MS));
+
+    try {
+      const [job] = await Promise.all([fetchPromise, minWait]);
+      const params = new URLSearchParams({ job: job.jobId });
+      router.push(`/lite/${job.slug}/generating?${params.toString()}`);
+      // Garde portail visible un peu apres push pour couvrir la transition
       setTimeout(() => {
         setPortalOpen(false);
         setSubmitting(false);
       }, 1000);
-    }, PORTAL_DURATION_MS);
+    } catch (err) {
+      setPortalOpen(false);
+      setSubmitting(false);
+      setError(
+        "Echec creation job : " +
+          (err instanceof Error ? err.message : "unknown")
+      );
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
