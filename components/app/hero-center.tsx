@@ -7,7 +7,9 @@
  */
 
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { extractDomainAndSlug } from "@/lib/url-to-slug";
 import {
   IconPlus,
   IconMic,
@@ -38,8 +40,41 @@ const itemVariants = {
 };
 
 export function HeroCenter() {
+  const router = useRouter();
   const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  function handleSubmit() {
+    setError(null);
+    const trimmed = value.trim();
+    if (!trimmed) return;
+
+    const result = extractDomainAndSlug(trimmed);
+
+    if (!result.ok) {
+      if (result.reason === "no-url") {
+        setError("Colle une URL Shopify dans ton prompt (ex : allbirds.com).");
+      } else {
+        setError("Ce domaine n'est pas une boutique Shopify utilisable.");
+      }
+      return;
+    }
+
+    setSubmitting(true);
+    // Encode le prompt en query param pour qu'il soit dispo cote /lite (futur usage pipeline)
+    const params = new URLSearchParams({ prompt: trimmed });
+    router.push(`/lite/${result.slug}?${params.toString()}`);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    // Cmd/Ctrl + Enter pour submit (convention chat AI)
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      handleSubmit();
+    }
+  }
 
   return (
     <motion.div
@@ -109,10 +144,14 @@ export function HeroCenter() {
         >
           <textarea
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => {
+              setValue(e.target.value);
+              if (error) setError(null);
+            }}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
-            placeholder="Describe what you want to build…"
+            onKeyDown={handleKeyDown}
+            placeholder="Colle une URL Shopify + decris l'ambiance (ex : allbirds.com — site editorial print magazine)"
             rows={3}
             className="w-full bg-transparent px-6 pt-5 pb-2 text-[15px] text-white placeholder:text-white/35 resize-none outline-none font-sans"
             style={{ minHeight: "84px" }}
@@ -146,18 +185,63 @@ export function HeroCenter() {
               <button
                 type="button"
                 aria-label="Envoyer"
-                disabled={!value.trim()}
+                disabled={!value.trim() || submitting}
+                onClick={handleSubmit}
                 className={[
                   "w-9 h-9 grid place-items-center rounded-full transition",
-                  value.trim()
+                  value.trim() && !submitting
                     ? "bg-white text-black hover:scale-105"
                     : "bg-white/[0.12] text-white/45 cursor-not-allowed",
                 ].join(" ")}
               >
-                <IconArrowUp size={16} />
+                {submitting ? (
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    className="animate-spin"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="9"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeDasharray="42"
+                      strokeDashoffset="14"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                ) : (
+                  <IconArrowUp size={16} />
+                )}
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Helper text + erreur */}
+        <div className="mt-3 flex items-center justify-between px-2 text-[11.5px]">
+          <span
+            className={
+              error ? "text-rose-300/90" : "text-white/35"
+            }
+          >
+            {error ??
+              "Le pipeline scrape ta boutique, ecrit le brief creatif, genere les videos AI et compose le site."}
+          </span>
+          {!error && (
+            <span className="text-white/30 hidden md:inline">
+              <kbd className="px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08]">
+                Ctrl
+              </kbd>
+              <span className="mx-1">+</span>
+              <kbd className="px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08]">
+                Enter
+              </kbd>
+            </span>
+          )}
         </div>
       </motion.div>
     </motion.div>
