@@ -11,7 +11,9 @@
  */
 import type { Metadata } from "next";
 import { Sidebar } from "@/components/app/sidebar";
-import { ContextPanel } from "@/components/app/context-panel";
+
+// ContextPanel : importe mais affiche uniquement quand projet selectionne (V0.2)
+// Pour V0.1 (galerie sans projet selectionne), on le retire du layout par defaut.
 
 export const metadata: Metadata = {
   title: "Vertxia Studio",
@@ -26,7 +28,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <main className="flex-1 h-screen relative overflow-hidden">
         {children}
       </main>
-      <ContextPanel />
     </div>
   );
 }

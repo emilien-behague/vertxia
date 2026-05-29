@@ -1,33 +1,34 @@
 /**
- * Vertxia Studio — workspace principal (route /app).
- * Refonte v2 (2026-05-29) : showcase magazine au centre, Command Bar Raycast en bas.
+ * Vertxia Studio — galerie 3D flottante + central command Lovable-style.
  *
- * Plus de grille perspective, plus de particules cosmiques, plus de gros titre centre,
- * plus de Command Surface centrale. Le centre est plein de previews magazine, le
- * prompt devient secondaire (Command Bar bottom Raycast-style).
+ * La galerie 3D devient le DECOR vivant (creations qui flottent dans l'espace).
+ * Au centre, le hero Lovable-style (badge + titre + prompt box) prend les commandes.
+ * Pas de Command Bar bottom (le central remplace).
  */
 
-import { ShowcaseBento } from "@/components/app/showcase-bento";
-import { CommandBar } from "@/components/app/command-bar";
+import { FloatingGallery } from "@/components/app/floating-gallery";
+import { CentralCommand } from "@/components/app/central-command";
 
 export default function AppPage() {
   return (
-    <div className="relative h-screen overflow-y-auto">
-      {/* Ambient gradient ultra subtil — pas une scene, juste un wash */}
+    <div className="absolute inset-0 overflow-hidden">
+      {/* Ambient gradient diffus inspire Lovable mais subtil */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 z-0"
+        className="pointer-events-none absolute inset-0 z-0"
         style={{
           background:
-            "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(79,125,255,0.05) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 50% 100%, rgba(138,92,255,0.04) 0%, transparent 70%)",
+            "radial-gradient(ellipse 70% 50% at 50% 110%, rgba(79,125,255,0.18) 0%, rgba(138,92,255,0.09) 35%, transparent 65%), radial-gradient(ellipse 50% 30% at 30% -10%, rgba(138,92,255,0.10) 0%, transparent 60%)",
         }}
       />
 
-      <div className="relative z-10">
-        <ShowcaseBento />
+      {/* Galerie 3D — decor vivant en arriere-plan */}
+      <div className="absolute inset-0 z-10">
+        <FloatingGallery />
       </div>
 
-      <CommandBar />
+      {/* Hero central Lovable-style — overlay au-dessus de la galerie */}
+      <CentralCommand />
     </div>
   );
 }
