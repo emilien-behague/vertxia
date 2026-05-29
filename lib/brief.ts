@@ -75,12 +75,15 @@ export type FeaturedProduct = {
  * - cinematic-narrative : scroll-snap fullscreen par produit, caption side, pas de grid
  * - documentary-story   : long-form article scroll, drop caps, reading bar, photos parallax
  * - horizontal-slider   : scroll HORIZONTAL snap-x, 1 slide = 100vw, keyboard/wheel/dots nav
+ * - brutalist-tech      : neubrutalism — palette NB+accent forcee, sans-serif chunky uppercase,
+ *                         bordures 2px partout, hard shadows offset zero blur, hover invert
  */
 export type TemplateId =
   | "editorial-magazine"
   | "cinematic-narrative"
   | "documentary-story"
-  | "horizontal-slider";
+  | "horizontal-slider"
+  | "brutalist-tech";
 
 export type Brief = {
   brand: Brand;

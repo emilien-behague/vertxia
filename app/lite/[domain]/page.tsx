@@ -17,6 +17,7 @@ import { paletteColor } from "@/lib/brief";
 import { CinematicNarrative } from "@/components/lite-templates/cinematic-narrative";
 import { DocumentaryStory } from "@/components/lite-templates/documentary-story";
 import { HorizontalSlider } from "@/components/lite-templates/horizontal-slider";
+import { BrutalistTech } from "@/components/lite-templates/brutalist-tech";
 
 type PageProps = {
   params: Promise<{ domain: string }>;
@@ -58,6 +59,9 @@ export default async function LiteDynamicPage({ params }: PageProps) {
   }
   if (brief.template_id === "horizontal-slider") {
     return <HorizontalSlider brief={brief} />;
+  }
+  if (brief.template_id === "brutalist-tech") {
+    return <BrutalistTech brief={brief} />;
   }
 
   // Default = editorial-magazine (squelette grid + manifesto + collection)
