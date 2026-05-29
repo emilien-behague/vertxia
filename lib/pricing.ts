@@ -15,7 +15,7 @@
 export type PricingPeriod = "monthly" | "annual";
 
 export type PricingTier = {
-  id: "studio" | "agency";
+  id: "starter" | "studio" | "agency";
   name: string;
   tagline: string;
   description: string;
@@ -34,13 +34,22 @@ export type PricingTier = {
   highlighted?: boolean;
 };
 
-// Fallbacks = price_id TEST MODE (cree par scripts/seed-stripe-test-products.mjs).
+// Fallbacks = price_id TEST MODE (cree par scripts/seed-stripe-test-products.mjs)
+// pour Studio/Agency. Starter n'a pas encore de prix TEST (a recreer si besoin local).
 // En prod, override avec les vrais price_id live via NEXT_PUBLIC_STRIPE_PRICE_*.
 // Live IDs (a injecter en prod) :
+//   Starter monthly : price_1TcSsCBnV2SwnvVRwc8IPtEN
+//   Starter annual  : price_1TcSuHBnV2SwnvVRc0CwBdoV
 //   Studio monthly  : price_1TcPbPBnV2SwnvVRn9ZEyP5g
 //   Studio annual   : price_1TcPckBnV2SwnvVRH8wRQj0t
 //   Agency monthly  : price_1TcPe2BnV2SwnvVRPTmq4qNE
 //   Agency annual   : price_1TcPegBnV2SwnvVRKRzBHYJD
+const STARTER_MONTHLY_ID =
+  process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER_MONTHLY ||
+  "price_1TcSsCBnV2SwnvVRwc8IPtEN";
+const STARTER_ANNUAL_ID =
+  process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER_ANNUAL ||
+  "price_1TcSuHBnV2SwnvVRc0CwBdoV";
 const STUDIO_MONTHLY_ID =
   process.env.NEXT_PUBLIC_STRIPE_PRICE_STUDIO_MONTHLY ||
   "price_1TcQFZBnV2SwnvVRlTwQ9Yj9";
@@ -59,6 +68,28 @@ const AGENCY_ANNUAL_ID =
  * ========================================================= */
 
 export const PRICING_TIERS: PricingTier[] = [
+  {
+    id: "starter",
+    name: "Starter",
+    tagline: "Pour solos Shopify qui démarrent",
+    description:
+      "Le moyen le plus accessible de générer ton premier site cinematic Vertxia avec des vidéos AI par produit.",
+    prices: {
+      monthly: { amount: 49, priceId: STARTER_MONTHLY_ID },
+      annual: { amount: 490, priceId: STARTER_ANNUAL_ID },
+    },
+    annualSavingsPct: Math.round(((49 * 12 - 490) / (49 * 12)) * 100),
+    features: [
+      "3 sites cinematic / mois",
+      "20 vidéos AI Kling / mois",
+      "3 templates × 5 signatures = 15 looks",
+      "Direction artistique IA Claude V0.1",
+      "URL unique partageable",
+      "Génération en ~3 min",
+      "Support par email",
+    ],
+    ctaLabel: "S'abonner",
+  },
   {
     id: "studio",
     name: "Studio",

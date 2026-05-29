@@ -8,7 +8,7 @@
  * Retourne : { url: string } (URL Stripe vers laquelle rediriger)
  *
  * Securite :
- *  - priceId doit etre un des 4 tarifs declares (Studio|Agency × monthly|annual)
+ *  - priceId doit etre un des 6 tarifs declares (Starter|Studio|Agency × monthly|annual)
  *  - L'email du checkout est celui du user logge (pas de double saisie)
  *  - client_reference_id = user.id (pour que le webhook puisse lier la sub au user)
  *

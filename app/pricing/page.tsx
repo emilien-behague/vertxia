@@ -167,8 +167,8 @@ export default function PricingPage() {
       </header>
 
       {/* Pricing cards */}
-      <section className="relative z-10 px-6 pb-16 max-w-5xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <section className="relative z-10 px-6 pb-16 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {PRICING_TIERS.map((tier, i) => (
             <PricingCard
               key={tier.id}
