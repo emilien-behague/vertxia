@@ -119,7 +119,16 @@ export function CentralCommand() {
       body: JSON.stringify({ url: result.raw, prompt: trimmed }),
     }).then(async (r) => {
       if (!r.ok) {
-        const e = await r.json().catch(() => ({}));
+        const e = (await r.json().catch(() => ({}))) as {
+          error?: string;
+          redirectTo?: string;
+        };
+        // Redirige automatiquement vers /pricing si l'API le demande
+        // (cas 401 pas-loggé, 402 pas-abonné)
+        if (e.redirectTo) {
+          window.location.href = e.redirectTo;
+          throw new Error(e.error || "Redirecting...");
+        }
         throw new Error(e.error || `HTTP ${r.status}`);
       }
       return (await r.json()) as { jobId: string; slug: string };

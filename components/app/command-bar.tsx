@@ -93,7 +93,14 @@ export function CommandBar() {
       body: JSON.stringify({ url: result.raw, prompt: trimmed }),
     }).then(async (r) => {
       if (!r.ok) {
-        const e = await r.json().catch(() => ({}));
+        const e = (await r.json().catch(() => ({}))) as {
+          error?: string;
+          redirectTo?: string;
+        };
+        if (e.redirectTo) {
+          window.location.href = e.redirectTo;
+          throw new Error(e.error || "Redirecting...");
+        }
         throw new Error(e.error || `HTTP ${r.status}`);
       }
       return (await r.json()) as { jobId: string; slug: string };

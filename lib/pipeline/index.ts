@@ -134,12 +134,13 @@ export async function runPipeline(job: Job): Promise<void> {
 }
 
 /* =========================================================
- *  buildBrief — Claude LLM avec fallback stub gracieux
+ *  buildBrief — Claude LLM (erreur surfacee, plus de fallback silencieux)
  *
  *  Strategy :
- *    1. Si brief cure existe deja (cas demo) → return direct
- *    2. Sinon, si ANTHROPIC_API_KEY present → appel Claude
- *    3. Sinon ou en cas d'erreur Claude → fallback stub (pipeline ne fail jamais sur le brief)
+ *    1. Si brief cure (curated:true) existe → return direct
+ *    2. Si ANTHROPIC_API_KEY absent → fallback stub (cas dev sans cle)
+ *    3. Sinon appel Claude → propage l'erreur si fail (job.status = failed avec
+ *       message clair). Plus de fallback silencieux qui donne un brief vide.
  * ========================================================= */
 
 async function buildBrief(
@@ -152,21 +153,22 @@ async function buildBrief(
     | null;
   if (existing && existing.curated === true) return existing;
 
-  // 2. Try Claude
-  if (process.env.ANTHROPIC_API_KEY) {
-    try {
-      return await runBriefer(scrape, job.prompt);
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        "[briefer] Claude failed, fallback to stub:",
-        err instanceof Error ? err.message : err
-      );
-    }
+  // 2. Pas de cle Claude (dev sans key) → stub OK
+  if (!process.env.ANTHROPIC_API_KEY) {
+    // eslint-disable-next-line no-console
+    console.warn("[briefer] ANTHROPIC_API_KEY absent — fallback stub brief.");
+    return buildStubBrief(job, scrape);
   }
 
-  // 3. Fallback stub
-  return buildStubBrief(job, scrape);
+  // 3. Vrai appel Claude — propage les erreurs au lieu de stub silencieux
+  try {
+    return await runBriefer(scrape, job.prompt);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // eslint-disable-next-line no-console
+    console.error("[briefer] Claude API error:", err);
+    throw new Error(`Brief Claude impossible : ${msg}`);
+  }
 }
 
 /**

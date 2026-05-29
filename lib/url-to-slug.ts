@@ -7,17 +7,20 @@
 
 /**
  * Regex : capture domain optionnellement prefixe par http(s):// et www.
- * - Accepte TLDs courants (2-6 chars) avec optionnel ccTLD second-level (.co.uk)
+ *
+ * - Supporte multi-level (subdomain.domain.tld) — ex: buu-koff-2.myshopify.com
+ * - TLD final 2 a 24 chars (accepte .com, .fr, .myshop nope -> doit etre une vraie TLD)
  * - Tolere path/query apres (ignores)
  *
  * Exemples matches :
- *   "allbirds.com"
- *   "https://allbirds.com"
- *   "www.allbirds.com/products/sugar"
- *   "Check https://loom.fr please"
+ *   "allbirds.com"                       -> "allbirds.com"
+ *   "https://allbirds.com"               -> "allbirds.com"
+ *   "www.allbirds.com/products/sugar"    -> "allbirds.com"
+ *   "https://buu-koff-2.myshopify.com/?" -> "buu-koff-2.myshopify.com"
+ *   "Check https://loom.fr please"       -> "loom.fr"
  */
 const URL_REGEX =
-  /\b((?:https?:\/\/)?(?:www\.)?([a-z0-9][a-z0-9-]*\.[a-z]{2,6}(?:\.[a-z]{2,3})?))/i;
+  /\b((?:https?:\/\/)?(?:www\.)?((?:[a-z0-9][a-z0-9-]*\.)+[a-z]{2,24}))(?=[/?#:\s]|$)/i;
 
 export type ExtractResult =
   | { ok: true; domain: string; slug: string; raw: string }

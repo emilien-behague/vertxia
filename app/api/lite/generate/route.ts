@@ -14,6 +14,7 @@ import { extractDomainAndSlug } from "@/lib/url-to-slug";
 import { createJob } from "@/lib/jobs";
 import { runPipeline } from "@/lib/pipeline";
 import { getCurrentUser } from "@/lib/session";
+import { hasActiveSubscription } from "@/lib/billing/active-sub";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { checkOrigin } from "@/lib/origin-check";
 
@@ -25,6 +26,20 @@ export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Connexion requise" }, { status: 401 });
+  }
+
+  // [BILLING] Abonnement Stripe actif obligatoire — sinon hemorragie cash
+  // (chaque generation cout reel : Claude tokens + Kling videos + scrape).
+  const subCheck = await hasActiveSubscription(user.stripe_customer_id);
+  if (!subCheck.active) {
+    return NextResponse.json(
+      {
+        error: "Abonnement Vertxia requis pour generer un site.",
+        reason: subCheck.reason,
+        redirectTo: "/pricing",
+      },
+      { status: 402 } // Payment Required
+    );
   }
 
   // [SECURITY M3] CSRF defense-in-depth
