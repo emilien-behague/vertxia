@@ -16,6 +16,7 @@ import { loadBrief, listBriefs } from "@/lib/brief-loader";
 import { paletteColor } from "@/lib/brief";
 import { CinematicNarrative } from "@/components/lite-templates/cinematic-narrative";
 import { DocumentaryStory } from "@/components/lite-templates/documentary-story";
+import { HorizontalSlider } from "@/components/lite-templates/horizontal-slider";
 
 type PageProps = {
   params: Promise<{ domain: string }>;
@@ -54,6 +55,9 @@ export default async function LiteDynamicPage({ params }: PageProps) {
   }
   if (brief.template_id === "documentary-story") {
     return <DocumentaryStory brief={brief} />;
+  }
+  if (brief.template_id === "horizontal-slider") {
+    return <HorizontalSlider brief={brief} />;
   }
 
   // Default = editorial-magazine (squelette grid + manifesto + collection)

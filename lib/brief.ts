@@ -71,14 +71,16 @@ export type FeaturedProduct = {
 
 /**
  * Template structurel : pas juste palette/couleur — squelette du site different.
- * - editorial-magazine : grid 2 colonnes, manifesto bloc, sections scroll vertical (DEFAULT)
+ * - editorial-magazine  : grid 2 colonnes, manifesto bloc, sections scroll vertical (DEFAULT)
  * - cinematic-narrative : scroll-snap fullscreen par produit, caption side, pas de grid
- * - documentary-story : long-form article scroll, drop caps, reading bar, photos parallax, chapitres
+ * - documentary-story   : long-form article scroll, drop caps, reading bar, photos parallax
+ * - horizontal-slider   : scroll HORIZONTAL snap-x, 1 slide = 100vw, keyboard/wheel/dots nav
  */
 export type TemplateId =
   | "editorial-magazine"
   | "cinematic-narrative"
-  | "documentary-story";
+  | "documentary-story"
+  | "horizontal-slider";
 
 export type Brief = {
   brand: Brand;
