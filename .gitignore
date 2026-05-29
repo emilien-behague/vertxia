@@ -44,5 +44,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Vertxia Lite job files (ephemeres, generes a chaque submit)
+# Vertxia Lite artefacts (ephemeres, generes a chaque submit) — sauf briefs cures
 /data/jobs/
+/data/scrapes/
+/data/sites/
+# data/briefs/ : tracke pour les briefs cures (Allbirds, Loom, etc.)

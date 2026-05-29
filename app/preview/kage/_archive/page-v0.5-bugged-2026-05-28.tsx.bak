@@ -1,0 +1,1014 @@
+"use client";
+
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Float, Sparkles } from "@react-three/drei";
+import {
+  EffectComposer,
+  Bloom,
+  ChromaticAberration,
+  Noise,
+  Vignette,
+  SMAA,
+  ToneMapping,
+  BrightnessContrast,
+  HueSaturation,
+  Glitch,
+} from "@react-three/postprocessing";
+import { BlendFunction, ToneMappingMode, GlitchMode } from "postprocessing";
+import * as THREE from "three";
+import Lenis from "lenis";
+
+/**
+ * /preview/kage — Vertxia template signature, scroll-narrative WebGL.
+ *
+ * V1 (Day 2) : 3 chambres actives + EXIT.
+ *   1. KAGE     — Crâne wireframe + cursor follow
+ *   2. ENTROPY  — Particles GPU + cursor magnétique
+ *   3. VOID     — Tunnel vortex + scroll acceleration
+ *   4. EXIT     — Watermark Vertxia + signature
+ *
+ * V2/V3 : FLOW (fluid), GRID (mesh), MEMORY (halftone), EXIT-shattered.
+ *
+ * Easter egg : SHIFT inverse contraste. Konami code → mode rave (V3).
+ */
+
+// ─── DATA ──────────────────────────────────────────────────────────────────
+const CHAMBERS = [
+  {
+    id: "kage",
+    label: "KAGE",
+    title: "BUILD IN SILENCE",
+    subtitle: "SHIP IN PUBLIC",
+  },
+  {
+    id: "entropy",
+    label: "ENTROPY",
+    title: "ORDER IS A CONSPIRACY",
+    subtitle: "OF DISCIPLINE",
+  },
+  {
+    id: "void",
+    label: "VOID",
+    title: "TIME IS A FLAT CIRCLE",
+    subtitle: "ENTER THE TUNNEL",
+  },
+  {
+    id: "play",
+    label: "PLAY",
+    title: "TAKE THE WHEEL",
+    subtitle: "← → STEER",
+  },
+  {
+    id: "exit",
+    label: "EXIT",
+    title: "MADE BY KAGE",
+    subtitle: "FOR VERTXIA",
+  },
+];
+
+// ─── CURSOR REF (shared global, R3F can read it via useFrame) ──────────────
+type CursorState = { x: number; y: number; nx: number; ny: number };
+
+// ─── CHAMBRE 1 : SKULL with cursor follow ──────────────────────────────────
+function Skull({
+  visible,
+  cursorRef,
+}: {
+  visible: boolean;
+  cursorRef: React.MutableRefObject<CursorState>;
+}) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame((state, delta) => {
+    if (!ref.current) return;
+    const target = ref.current;
+
+    // Spin slow + cursor follow (lerp pour mouvement smooth)
+    target.rotation.y +=
+      delta * 0.18 + (cursorRef.current.nx * 0.5 - target.rotation.y) * 0.04;
+    target.rotation.x +=
+      (cursorRef.current.ny * -0.3 - target.rotation.x) * 0.04 +
+      Math.sin(state.clock.elapsedTime * 0.5) * 0.001;
+
+    // Fade in/out selon visibility
+    const targetOpacity = visible ? 1 : 0;
+    target.children.forEach((child) => {
+      if ((child as THREE.Mesh).material) {
+        const m = (child as THREE.Mesh).material as THREE.MeshBasicMaterial;
+        m.opacity += (targetOpacity * 0.95 - m.opacity) * 0.08;
+      }
+    });
+    target.visible = target.children.some((c) => {
+      const m = (c as THREE.Mesh).material as THREE.MeshBasicMaterial;
+      return m && m.opacity > 0.01;
+    });
+  });
+
+  const color = "#F0EDE8";
+
+  return (
+    <group ref={ref} position={[0, 0.2, 0]}>
+      <mesh>
+        <icosahedronGeometry args={[1.05, 2]} />
+        <meshBasicMaterial color={color} wireframe transparent opacity={0} />
+      </mesh>
+      <mesh position={[0, -0.65, 0.1]} scale={[0.75, 0.35, 0.7]}>
+        <icosahedronGeometry args={[0.9, 1]} />
+        <meshBasicMaterial color={color} wireframe transparent opacity={0} />
+      </mesh>
+      <mesh position={[-0.35, 0.32, 0.75]}>
+        <icosahedronGeometry args={[0.22, 1]} />
+        <meshBasicMaterial color={color} wireframe transparent opacity={0} />
+      </mesh>
+      <mesh position={[0.35, 0.32, 0.75]}>
+        <icosahedronGeometry args={[0.22, 1]} />
+        <meshBasicMaterial color={color} wireframe transparent opacity={0} />
+      </mesh>
+      <mesh position={[0, 0.0, 0.85]} rotation={[Math.PI, 0, 0]}>
+        <coneGeometry args={[0.08, 0.2, 3]} />
+        <meshBasicMaterial color={color} wireframe transparent opacity={0} />
+      </mesh>
+      {[-0.18, -0.06, 0.06, 0.18].map((x) => (
+        <mesh key={x} position={[x, -0.45, 0.7]}>
+          <boxGeometry args={[0.06, 0.12, 0.05]} />
+          <meshBasicMaterial color={color} wireframe transparent opacity={0} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// ─── CHAMBRE 2 : ENTROPY — particules GPU magnétiques ──────────────────────
+function Entropy({
+  visible,
+  cursorRef,
+}: {
+  visible: boolean;
+  cursorRef: React.MutableRefObject<CursorState>;
+}) {
+  const points = useRef<THREE.Points>(null);
+  const COUNT = 2400;
+  const { positions, originals } = useMemo(() => {
+    const pos = new Float32Array(COUNT * 3);
+    const orig = new Float32Array(COUNT * 3);
+    for (let i = 0; i < COUNT; i++) {
+      // Distribution sphérique
+      const r = 1.5 + Math.random() * 0.6;
+      const t = Math.random() * Math.PI;
+      const p = Math.random() * Math.PI * 2;
+      const x = r * Math.sin(t) * Math.cos(p);
+      const y = r * Math.sin(t) * Math.sin(p);
+      const z = r * Math.cos(t);
+      pos[i * 3] = x;
+      pos[i * 3 + 1] = y;
+      pos[i * 3 + 2] = z;
+      orig[i * 3] = x;
+      orig[i * 3 + 1] = y;
+      orig[i * 3 + 2] = z;
+    }
+    return { positions: pos, originals: orig };
+  }, []);
+
+  const matRef = useRef<THREE.PointsMaterial>(null);
+
+  useFrame((state) => {
+    if (!points.current || !matRef.current) return;
+    const t = state.clock.elapsedTime;
+    const pos = (points.current.geometry.attributes.position as THREE.BufferAttribute)
+      .array as Float32Array;
+
+    // Cursor position en world space (approx, plan z=0)
+    const cx = cursorRef.current.nx * 3;
+    const cy = cursorRef.current.ny * -3;
+
+    for (let i = 0; i < COUNT; i++) {
+      const ox = originals[i * 3];
+      const oy = originals[i * 3 + 1];
+      const oz = originals[i * 3 + 2];
+
+      // Mouvement organique base
+      const wave =
+        Math.sin(t * 0.6 + i * 0.013) * 0.12 +
+        Math.cos(t * 0.4 + i * 0.021) * 0.08;
+
+      // Distance au cursor en XY
+      const dx = ox - cx;
+      const dy = oy - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      // Force répulsive si curseur proche (rayon 1.5)
+      const force = dist < 1.5 ? (1 - dist / 1.5) * 1.6 : 0;
+      const angle = Math.atan2(dy, dx);
+
+      pos[i * 3] = ox + Math.cos(angle) * force + wave * 0.5;
+      pos[i * 3 + 1] = oy + Math.sin(angle) * force + wave * 0.5;
+      pos[i * 3 + 2] = oz + Math.sin(t * 0.5 + i * 0.01) * 0.15;
+    }
+    (points.current.geometry.attributes.position as THREE.BufferAttribute).needsUpdate = true;
+
+    // Rotation lente
+    points.current.rotation.y += 0.001;
+
+    // Visibility
+    matRef.current.opacity += ((visible ? 1 : 0) - matRef.current.opacity) * 0.08;
+    points.current.visible = matRef.current.opacity > 0.01;
+  });
+
+  return (
+    <points ref={points}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          args={[positions, 3]}
+          count={COUNT}
+        />
+      </bufferGeometry>
+      <pointsMaterial
+        ref={matRef}
+        color="#F0EDE8"
+        size={0.025}
+        sizeAttenuation
+        transparent
+        opacity={0}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
+  );
+}
+
+// ─── CHAMBRE 3 : VOID — tunnel vortex avec scroll acceleration ─────────────
+function Void({
+  visible,
+  scrollVelocity,
+  speedBoost,
+}: {
+  visible: boolean;
+  scrollVelocity: React.MutableRefObject<number>;
+  speedBoost?: React.MutableRefObject<number>;
+}) {
+  const group = useRef<THREE.Group>(null);
+  const roadRef = useRef<THREE.Mesh>(null);
+  const wallL = useRef<THREE.Mesh>(null);
+  const wallR = useRef<THREE.Mesh>(null);
+
+  const roadTex = useRoadTexture();
+  const curbTex = useCurbTexture();
+
+  useFrame((state, delta) => {
+    if (!group.current) return;
+    const baseSpeed = 4;
+    const playBoost = speedBoost ? speedBoost.current * 8 : 0;
+    const v = baseSpeed + Math.abs(scrollVelocity.current) * 6 + playBoost;
+    const d = delta * v;
+
+    if (roadRef.current) {
+      const m = roadRef.current.material as THREE.MeshStandardMaterial;
+      if (m.map) m.map.offset.y -= d;
+    }
+    if (wallL.current) {
+      const m = wallL.current.material as THREE.MeshStandardMaterial;
+      if (m.map) m.map.offset.y -= d * 1.4;
+    }
+    if (wallR.current) {
+      const m = wallR.current.material as THREE.MeshStandardMaterial;
+      if (m.map) m.map.offset.y -= d * 1.4;
+    }
+
+    // Fade in/out
+    const targetOpacity = visible ? 1 : 0;
+    group.current.traverse((obj) => {
+      if ((obj as THREE.Mesh).material) {
+        const m = (obj as THREE.Mesh).material as THREE.Material & { opacity: number };
+        if ("opacity" in m && m.transparent) {
+          m.opacity += (targetOpacity - m.opacity) * 0.08;
+        }
+      }
+    });
+    group.current.visible = visible || (roadRef.current?.material as THREE.MeshStandardMaterial)?.opacity > 0.01;
+  });
+
+  return (
+    <group ref={group}>
+      <fog attach="fog" args={["#080808", 4, 18]} />
+      <mesh ref={roadRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.5, -10]}>
+        <planeGeometry args={[10, 60, 1, 1]} />
+        <meshStandardMaterial
+          map={roadTex}
+          color="#0a0a0a"
+          roughness={0.7}
+          metalness={0.1}
+          transparent
+          opacity={0}
+        />
+      </mesh>
+      <mesh ref={wallL} rotation={[-Math.PI / 2, 0, 0]} position={[-5.5, -1.45, -10]}>
+        <planeGeometry args={[1.5, 60, 1, 1]} />
+        <meshStandardMaterial map={curbTex} roughness={0.4} metalness={0.15} transparent opacity={0} />
+      </mesh>
+      <mesh ref={wallR} rotation={[-Math.PI / 2, 0, 0]} position={[5.5, -1.45, -10]}>
+        <planeGeometry args={[1.5, 60, 1, 1]} />
+        <meshStandardMaterial map={curbTex} roughness={0.4} metalness={0.15} transparent opacity={0} />
+      </mesh>
+      <Sparkles
+        count={120}
+        scale={[8, 4, 14]}
+        position={[0, 0.5, -5]}
+        size={4}
+        speed={4}
+        opacity={0.8}
+        color="#fbbf24"
+        noise={2}
+      />
+    </group>
+  );
+}
+
+// ─── CHAMBRE 4 : PLAY — F1 low-poly contrôlable aux flèches ────────────────
+function Car({
+  visible,
+  carXRef,
+  speedRef,
+}: {
+  visible: boolean;
+  carXRef: React.MutableRefObject<number>;
+  speedRef: React.MutableRefObject<number>;
+}) {
+  const group = useRef<THREE.Group>(null);
+  const wheelRefs = useRef<THREE.Mesh[]>([]);
+
+  useFrame((state, delta) => {
+    if (!group.current) return;
+    const g = group.current;
+
+    // Smooth lerp X vers carXRef
+    g.position.x += (carXRef.current - g.position.x) * 0.18;
+
+    // Tilt en virage (Z = roll vers l'intérieur du virage)
+    const targetRoll = (carXRef.current - g.position.x) * -0.35;
+    g.rotation.z += (targetRoll - g.rotation.z) * 0.12;
+
+    // Léger pitch quand on accélère
+    const targetPitch = -Math.min(0.04, speedRef.current * 0.01);
+    g.rotation.x += (targetPitch - g.rotation.x) * 0.1;
+
+    // Rotation des roues proportionnelle vitesse
+    const spin = delta * (8 + Math.abs(speedRef.current) * 4);
+    wheelRefs.current.forEach((w) => {
+      if (w) w.rotation.x -= spin;
+    });
+
+    // Fade in/out
+    const targetOpacity = visible ? 1 : 0;
+    g.traverse((obj) => {
+      const m = (obj as THREE.Mesh).material as
+        | (THREE.Material & { opacity: number })
+        | undefined;
+      if (m && "opacity" in m && m.transparent) {
+        m.opacity += (targetOpacity - m.opacity) * 0.1;
+      }
+    });
+    g.visible = visible || g.children.some((c) => {
+      const m = (c as THREE.Mesh).material as
+        | (THREE.Material & { opacity: number })
+        | undefined;
+      return !!m && m.opacity > 0.01;
+    });
+  });
+
+  const matCommon = {
+    transparent: true,
+    opacity: 0,
+  } as const;
+
+  return (
+    <group ref={group} position={[0, -1.15, 1.2]}>
+      {/* Châssis */}
+      <mesh>
+        <boxGeometry args={[0.55, 0.18, 1.4]} />
+        <meshStandardMaterial
+          color="#dc2626"
+          metalness={0.55}
+          roughness={0.35}
+          {...matCommon}
+        />
+      </mesh>
+      {/* Cockpit */}
+      <mesh position={[0, 0.13, -0.05]}>
+        <boxGeometry args={[0.32, 0.16, 0.55]} />
+        <meshStandardMaterial
+          color="#0a0a0a"
+          metalness={0.7}
+          roughness={0.2}
+          {...matCommon}
+        />
+      </mesh>
+      {/* Casque pilote */}
+      <mesh position={[0, 0.25, -0.05]}>
+        <sphereGeometry args={[0.09, 12, 10]} />
+        <meshStandardMaterial color="#F0EDE8" {...matCommon} />
+      </mesh>
+      {/* Aileron avant */}
+      <mesh position={[0, -0.04, 0.78]}>
+        <boxGeometry args={[0.88, 0.04, 0.16]} />
+        <meshStandardMaterial color="#fbbf24" {...matCommon} />
+      </mesh>
+      {/* Aileron arrière */}
+      <mesh position={[0, 0.22, -0.7]}>
+        <boxGeometry args={[0.62, 0.22, 0.05]} />
+        <meshStandardMaterial color="#fbbf24" {...matCommon} />
+      </mesh>
+      <mesh position={[0, 0.34, -0.7]}>
+        <boxGeometry args={[0.62, 0.03, 0.16]} />
+        <meshStandardMaterial color="#fbbf24" {...matCommon} />
+      </mesh>
+      {/* Roues */}
+      {[
+        [-0.32, -0.08, 0.5],
+        [0.32, -0.08, 0.5],
+        [-0.32, -0.08, -0.55],
+        [0.32, -0.08, -0.55],
+      ].map((p, i) => (
+        <mesh
+          key={i}
+          ref={(el) => {
+            if (el) wheelRefs.current[i] = el;
+          }}
+          position={p as [number, number, number]}
+          rotation={[0, 0, Math.PI / 2]}
+        >
+          <cylinderGeometry args={[0.13, 0.13, 0.13, 18]} />
+          <meshStandardMaterial
+            color="#0a0a0a"
+            roughness={0.85}
+            {...matCommon}
+          />
+        </mesh>
+      ))}
+      {/* Headlights glow */}
+      <pointLight position={[0, 0.05, 0.9]} intensity={0.6} color="#fbbf24" distance={4} />
+    </group>
+  );
+}
+
+function useRoadTexture() {
+  const [texture] = useState(() => {
+    const c = document.createElement("canvas");
+    c.width = 256;
+    c.height = 1024;
+    const ctx = c.getContext("2d")!;
+    ctx.fillStyle = "#0a0a0a";
+    ctx.fillRect(0, 0, c.width, c.height);
+    for (let i = 0; i < 1500; i++) {
+      ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.04})`;
+      ctx.fillRect(Math.random() * c.width, Math.random() * c.height, 1, 1);
+    }
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    for (let y = 0; y < c.height; y += 120) ctx.fillRect(c.width / 2 - 3, y, 6, 60);
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = THREE.RepeatWrapping;
+    t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(1, 8);
+    return t;
+  });
+  return texture;
+}
+
+function useCurbTexture() {
+  const [texture] = useState(() => {
+    const c = document.createElement("canvas");
+    c.width = 64;
+    c.height = 256;
+    const ctx = c.getContext("2d")!;
+    for (let i = 0; i < 8; i++) {
+      ctx.fillStyle = i % 2 === 0 ? "#dc2626" : "#f5f4f0";
+      ctx.fillRect(0, (c.height / 8) * i, c.width, c.height / 8);
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = THREE.RepeatWrapping;
+    t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(1, 6);
+    return t;
+  });
+  return texture;
+}
+
+// ─── CAMERA CONTROLLER (move entre chambres + chase F1 en PLAY) ────────────
+function CameraController({
+  chamber,
+  carXRef,
+}: {
+  chamber: number;
+  carXRef: React.MutableRefObject<number>;
+}) {
+  const { camera } = useThree();
+  const lookAtRef = useRef(new THREE.Vector3(0, 0, 0));
+  const targetPos = useMemo(
+    () => [
+      new THREE.Vector3(0, 0.1, 3.6), // 0 : KAGE
+      new THREE.Vector3(0, 0.1, 4.5), // 1 : ENTROPY (recule)
+      new THREE.Vector3(0, 0.6, 2.5), // 2 : VOID (tunnel cinéma)
+      new THREE.Vector3(0, 0.35, 2.6), // 3 : PLAY (chase F1, plus bas)
+      new THREE.Vector3(0, 0.1, 3.6), // 4 : EXIT (revient)
+    ],
+    []
+  );
+
+  useFrame(() => {
+    const idx = Math.min(chamber, targetPos.length - 1);
+    const target = targetPos[idx].clone();
+    // En PLAY : caméra suit la voiture en X (chase view)
+    if (idx === 3) {
+      target.x += carXRef.current * 0.35;
+      lookAtRef.current.lerp(
+        new THREE.Vector3(carXRef.current * 0.5, -0.5, 0),
+        0.1
+      );
+    } else {
+      lookAtRef.current.lerp(new THREE.Vector3(0, 0, 0), 0.08);
+    }
+    camera.position.lerp(target, 0.05);
+    camera.lookAt(lookAtRef.current);
+  });
+
+  return null;
+}
+
+// ─── PAGE ──────────────────────────────────────────────────────────────────
+export default function KagePreview() {
+  const [inverted, setInverted] = useState(false);
+  const [time, setTime] = useState("--:--");
+  const [chamber, setChamber] = useState(0);
+  const [chamberProgress, setChamberProgress] = useState(0); // 0-1 dans la chambre actuelle
+  const [audioReady, setAudioReady] = useState(false);
+
+  const cursorRef = useRef<CursorState>({ x: 0, y: 0, nx: 0, ny: 0 });
+  const scrollVelocity = useRef(0);
+  const lastScrollY = useRef(0);
+
+  // ─── F1 STATE (chambre PLAY) ───────────────────────────────────────────
+  const carXRef = useRef(0); // position X de la voiture (-2.5 à +2.5)
+  const speedRef = useRef(0); // vitesse (pour rotation roues + camera tilt)
+  const keysRef = useRef({ left: false, right: false });
+  const [distance, setDistance] = useState(0);
+
+  // ─── Heure live + SHIFT toggle ─────────────────────────────────────────
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      setTime(
+        `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
+      );
+    };
+    update();
+    const id = setInterval(update, 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Shift") setInverted(true);
+      if (e.key === "ArrowLeft" || e.key === "a") keysRef.current.left = true;
+      if (e.key === "ArrowRight" || e.key === "d") keysRef.current.right = true;
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Shift") setInverted(false);
+      if (e.key === "ArrowLeft" || e.key === "a") keysRef.current.left = false;
+      if (e.key === "ArrowRight" || e.key === "d") keysRef.current.right = false;
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, []);
+
+  // ─── F1 GAME LOOP (steering + distance counter) ────────────────────────
+  useEffect(() => {
+    let raf = 0;
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      // Steering uniquement quand on est en chambre PLAY (index 3)
+      const inPlay = chamber === 3;
+      if (inPlay) {
+        const steerSpeed = 4.5;
+        if (keysRef.current.left) carXRef.current -= steerSpeed * dt;
+        if (keysRef.current.right) carXRef.current += steerSpeed * dt;
+        // Auto-return progressif vers centre si pas d'input
+        if (!keysRef.current.left && !keysRef.current.right) {
+          carXRef.current += (0 - carXRef.current) * 0.04;
+        }
+        carXRef.current = Math.max(-2.6, Math.min(2.6, carXRef.current));
+        // Speed augmente progressivement en PLAY
+        speedRef.current += (1.4 - speedRef.current) * 0.04;
+        // Distance accumulée
+        setDistance((d) => d + speedRef.current * dt * 60);
+      } else {
+        // Hors PLAY : retour au centre, vitesse 0
+        carXRef.current += (0 - carXRef.current) * 0.06;
+        speedRef.current += (0 - speedRef.current) * 0.06;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [chamber]);
+
+  // ─── Cursor global tracking (mouse + touch) ────────────────────────────
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      cursorRef.current.x = e.clientX;
+      cursorRef.current.y = e.clientY;
+      cursorRef.current.nx = (e.clientX / window.innerWidth) * 2 - 1;
+      cursorRef.current.ny = (e.clientY / window.innerHeight) * 2 - 1;
+    };
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
+  }, []);
+
+  // ─── Lenis smooth scroll + chamber detection ───────────────────────────
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.4,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+    });
+    let raf = 0;
+    const loop = (time: number) => {
+      lenis.raf(time);
+      raf = requestAnimationFrame(loop);
+
+      // Calcul chamber + progress
+      const total = CHAMBERS.length * window.innerHeight;
+      const y = window.scrollY;
+      const idx = Math.min(
+        CHAMBERS.length - 1,
+        Math.floor(y / window.innerHeight)
+      );
+      const local = (y % window.innerHeight) / window.innerHeight;
+      setChamber(idx);
+      setChamberProgress(local);
+
+      // Velocity = dY / dt (approximation pour scroll acceleration tunnel)
+      const dy = y - lastScrollY.current;
+      scrollVelocity.current = scrollVelocity.current * 0.85 + dy * 0.015;
+      lastScrollY.current = y;
+    };
+    raf = requestAnimationFrame(loop);
+    return () => {
+      cancelAnimationFrame(raf);
+      lenis.destroy();
+    };
+  }, []);
+
+  // ─── Audio drone via Web Audio API (start on user gesture) ─────────────
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const startAudio = useCallback(() => {
+    if (audioCtxRef.current) return;
+    try {
+      const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = new AC();
+      audioCtxRef.current = ctx;
+
+      // Drone base : oscillateur sine 55 Hz (A1)
+      const osc1 = ctx.createOscillator();
+      osc1.type = "sine";
+      osc1.frequency.value = 55;
+      const osc2 = ctx.createOscillator();
+      osc2.type = "sine";
+      osc2.frequency.value = 55 * 1.5; // 5e + 2 octaves
+      const osc3 = ctx.createOscillator();
+      osc3.type = "triangle";
+      osc3.frequency.value = 110;
+
+      const gain = ctx.createGain();
+      gain.gain.value = 0.04;
+      const filter = ctx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.value = 800;
+      filter.Q.value = 4;
+
+      // LFO modulation sur le filter cutoff
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 0.15;
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.value = 200;
+      lfo.connect(lfoGain).connect(filter.frequency);
+
+      osc1.connect(filter);
+      osc2.connect(filter);
+      osc3.connect(filter);
+      filter.connect(gain).connect(ctx.destination);
+      osc1.start();
+      osc2.start();
+      osc3.start();
+      lfo.start();
+      setAudioReady(true);
+    } catch {
+      // Pas d'audio = OK, on continue
+      setAudioReady(true);
+    }
+  }, []);
+
+  const bg = inverted ? "#F0EDE8" : "#080808";
+  const fg = inverted ? "#080808" : "#F0EDE8";
+
+  const current = CHAMBERS[chamber];
+  const showAudioPrompt = !audioReady;
+
+  return (
+    <div
+      className="relative w-full overflow-x-hidden"
+      style={{
+        background: bg,
+        color: fg,
+        fontFamily: 'ui-monospace, "Space Mono", "Menlo", monospace',
+        height: `${CHAMBERS.length * 100}vh`,
+        cursor: "none",
+      }}
+    >
+      {/* ── VIDEO BACKGROUND (chambre 0 KAGE only, fade out en quittant) ──── */}
+      <div
+        className="fixed inset-0 z-0 pointer-events-none transition-opacity duration-700"
+        style={{
+          opacity: chamber === 0 ? Math.max(0, 1 - chamberProgress * 1.4) : 0,
+        }}
+      >
+        <video
+          src="/videos/kage-hero.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          className="w-full h-full object-cover"
+        />
+        {/* Overlay dégradé pour lisibilité texte + intégration palette */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: inverted
+              ? "linear-gradient(to bottom, rgba(240,237,232,0.35) 0%, rgba(240,237,232,0.55) 100%)"
+              : "linear-gradient(to bottom, rgba(8,8,8,0.45) 0%, rgba(8,8,8,0.65) 100%)",
+          }}
+        />
+      </div>
+
+      {/* ── CANVAS R3F STICKY FULLSCREEN (transparent pour voir vidéo) ───── */}
+      <div className="fixed inset-0 z-[1]">
+        <Canvas
+          camera={{ position: [0, 0.1, 3.6], fov: 50 }}
+          gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+          dpr={[1, 2]}
+        >
+          <ambientLight intensity={0.5} />
+          <pointLight position={[3, 3, 3]} intensity={0.6} color={fg} />
+
+          <Suspense fallback={null}>
+            <CameraController chamber={chamber} carXRef={carXRef} />
+            <Float speed={0.6} rotationIntensity={0.15} floatIntensity={0.3}>
+              <Skull visible={chamber === 0 || chamber === 4} cursorRef={cursorRef} />
+            </Float>
+            <Entropy visible={chamber === 1} cursorRef={cursorRef} />
+            <Void
+              visible={chamber === 2 || chamber === 3}
+              scrollVelocity={scrollVelocity}
+              speedBoost={chamber === 3 ? speedRef : undefined}
+            />
+            <Car visible={chamber === 3} carXRef={carXRef} speedRef={speedRef} />
+          </Suspense>
+
+          <EffectComposer multisampling={0}>
+            <SMAA />
+            <Bloom
+              intensity={1.4}
+              luminanceThreshold={0.25}
+              luminanceSmoothing={0.7}
+              mipmapBlur
+            />
+            <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+            <HueSaturation hue={0} saturation={0.08} />
+            <BrightnessContrast brightness={0.02} contrast={0.12} />
+            <ChromaticAberration
+              offset={new THREE.Vector2(0.0035, 0.0035)}
+              blendFunction={BlendFunction.NORMAL}
+              radialModulation={false}
+              modulationOffset={0}
+            />
+            <Glitch
+              delay={new THREE.Vector2(4, 9)}
+              duration={new THREE.Vector2(0.15, 0.4)}
+              strength={new THREE.Vector2(0.08, 0.28)}
+              mode={GlitchMode.SPORADIC}
+              ratio={0.85}
+              active
+            />
+            <Noise opacity={0.22} premultiply blendFunction={BlendFunction.OVERLAY} />
+            <Vignette offset={0.28} darkness={0.75} blendFunction={BlendFunction.NORMAL} />
+          </EffectComposer>
+        </Canvas>
+      </div>
+
+      {/* ── CUSTOM CURSOR ─────────────────────────────────────────────────── */}
+      <CustomCursor color={fg} />
+
+      {/* ── AUDIO PROMPT (click to enter) ─────────────────────────────────── */}
+      {showAudioPrompt && (
+        <button
+          onClick={startAudio}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm text-[10px] tracking-[0.4em] uppercase pointer-events-auto"
+          style={{ color: fg, cursor: "none" }}
+        >
+          <span className="border border-current/30 px-6 py-3">
+            CLICK TO ENTER · SOUND ON
+          </span>
+        </button>
+      )}
+
+      {/* ── HEADER (sticky) ───────────────────────────────────────────────── */}
+      <header className="fixed top-0 left-0 right-0 z-30 grid grid-cols-3 items-center px-8 py-6 pointer-events-none">
+        <nav className="flex gap-6 text-[10px] tracking-[0.25em] uppercase opacity-70 pointer-events-auto">
+          <a href="#projects" className="hover:opacity-100">
+            Projects
+          </a>
+          <a href="#about" className="hover:opacity-100">
+            About
+          </a>
+        </nav>
+        <div className="text-center text-sm tracking-[0.35em] font-medium">
+          KAGE
+        </div>
+        <nav className="flex gap-6 justify-end text-[10px] tracking-[0.25em] uppercase opacity-70 pointer-events-auto">
+          <a href="#playground" className="hover:opacity-100">
+            Playground
+          </a>
+          <a href="#contact" className="hover:opacity-100">
+            Contact
+          </a>
+        </nav>
+      </header>
+
+      {/* ── CORNER : top-left ─────────────────────────────────────────────── */}
+      <div className="fixed top-24 left-8 z-20 text-[10px] tracking-[0.22em] uppercase opacity-70 leading-relaxed pointer-events-none">
+        {time} TOULON
+        <br />
+        OVERCAST, 14°
+      </div>
+
+      {/* ── CORNER : top-right — chambre label live ───────────────────────── */}
+      <div className="fixed top-24 right-8 z-20 text-[10px] tracking-[0.22em] uppercase opacity-70 leading-relaxed text-right pointer-events-none">
+        CHAPTER {String(chamber + 1).padStart(2, "0")} / {String(CHAMBERS.length).padStart(2, "0")}
+        <br />
+        {current.label}
+      </div>
+
+      {/* ── CHAMBER TEXTS (un par section, fixed center, fade selon chamber) ── */}
+      {CHAMBERS.map((c, i) => (
+        <div
+          key={c.id}
+          className="fixed inset-0 z-20 flex flex-col items-center justify-center pointer-events-none text-center transition-opacity duration-500"
+          style={{
+            opacity: i === chamber ? Math.max(0, 1 - chamberProgress * 1.3) : 0,
+          }}
+        >
+          <div className="text-[10px] tracking-[0.4em] uppercase opacity-60 mb-3">
+            — CHAPTER {String(i + 1).padStart(2, "0")} —
+          </div>
+          <h1
+            className="text-3xl md:text-4xl tracking-[0.15em] font-medium leading-tight mix-blend-difference"
+            style={{ color: fg }}
+          >
+            {c.title}
+          </h1>
+          <p className="mt-3 text-[10px] tracking-[0.3em] uppercase opacity-60">
+            {c.subtitle}
+          </p>
+        </div>
+      ))}
+
+      {/* ── HUD F1 (chambre PLAY uniquement) ──────────────────────────────── */}
+      {chamber === 3 && (
+        <>
+          {/* Top center : instructions */}
+          <div
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-[120%] z-20 text-center pointer-events-none transition-opacity duration-500"
+            style={{ opacity: Math.max(0, 1 - chamberProgress * 1.3) }}
+          >
+            <div className="flex items-center gap-3 text-[10px] tracking-[0.3em] uppercase opacity-80">
+              <kbd
+                className="inline-block w-7 h-7 border flex items-center justify-center text-[11px] font-mono"
+                style={{ borderColor: fg, color: fg }}
+              >
+                ←
+              </kbd>
+              <span>STEER</span>
+              <kbd
+                className="inline-block w-7 h-7 border flex items-center justify-center text-[11px] font-mono"
+                style={{ borderColor: fg, color: fg }}
+              >
+                →
+              </kbd>
+            </div>
+          </div>
+
+          {/* Bottom-center : distance HUD façon dashboard F1 */}
+          <div
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-20 text-center pointer-events-none"
+            style={{ color: fg }}
+          >
+            <div className="text-[9px] tracking-[0.35em] uppercase opacity-50">
+              DISTANCE
+            </div>
+            <div className="mt-1 text-2xl tracking-[0.18em] font-mono tabular-nums">
+              {String(Math.floor(distance)).padStart(6, "0")}
+              <span className="text-[10px] opacity-50 ml-2">M</span>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── EXIT FINAL — watermark center seulement à la dernière chambre ── */}
+      {chamber === CHAMBERS.length - 1 && (
+        <div className="fixed inset-x-0 bottom-32 z-20 text-center pointer-events-none">
+          <a
+            href="/"
+            className="inline-block text-[10px] tracking-[0.3em] uppercase opacity-70 hover:opacity-100 transition-opacity pointer-events-auto"
+            style={{ color: fg, cursor: "none" }}
+          >
+            ← BACK TO VERTXIA.COM
+          </a>
+        </div>
+      )}
+
+      {/* ── CORNER : bottom-left — SHIFT INVERSE ──────────────────────────── */}
+      <div className="fixed bottom-8 left-8 z-20 flex items-center gap-3 text-[10px] tracking-[0.25em] uppercase opacity-70 pointer-events-none">
+        <span
+          className="inline-block w-5 h-5 border flex items-center justify-center text-[8px]"
+          style={{ borderColor: fg }}
+        >
+          ⇧
+        </span>
+        SHIFT — INVERSE
+      </div>
+
+      {/* ── CORNER : bottom-right — socials + scroll indicator ────────────── */}
+      <div className="fixed bottom-8 right-8 z-20 flex items-center gap-6 text-[10px] tracking-[0.25em] uppercase opacity-60 pointer-events-none">
+        <span>SCROLL TO ENTER ↓</span>
+        <span className="flex gap-4 pointer-events-auto">
+          <a href="#" className="hover:opacity-100" aria-label="X">
+            ✕
+          </a>
+          <a href="#" className="hover:opacity-100" aria-label="Instagram">
+            ○
+          </a>
+        </span>
+      </div>
+
+      {/* ── WATERMARK Vertxia ─────────────────────────────────────────────── */}
+      <div className="fixed bottom-2 left-1/2 -translate-x-1/2 z-20 text-[8px] tracking-[0.3em] uppercase opacity-25 pointer-events-none">
+        · vertxia template · kage v1 ·
+      </div>
+
+      {/* ── SCROLL SECTIONS (vides, juste pour driver le scroll) ──────────── */}
+      {CHAMBERS.map((c) => (
+        <section key={c.id} className="relative w-full h-screen" />
+      ))}
+    </div>
+  );
+}
+
+// ─── CUSTOM CURSOR ─────────────────────────────────────────────────────────
+function CustomCursor({ color }: { color: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (ref.current) {
+        ref.current.style.transform = `translate3d(${e.clientX - 12}px, ${e.clientY - 12}px, 0)`;
+      }
+    };
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
+  }, []);
+  return (
+    <div
+      ref={ref}
+      className="fixed top-0 left-0 z-40 w-6 h-6 pointer-events-none mix-blend-difference"
+      style={{ willChange: "transform" }}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.2">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="2" x2="12" y2="22" />
+        <line x1="2" y1="12" x2="22" y2="12" />
+      </svg>
+    </div>
+  );
+}

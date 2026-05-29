@@ -2,12 +2,11 @@
  * GET /api/lite/status/[jobId]
  *
  * Retourne le statut d'un job Vertxia Lite.
- * V0.1 PHASE 1 (mock) : derive le progress de Date.now - startedAt via deriveMockProgress.
- * V0.1 PHASE 2 (real) : retourne directement le job file ecrit par le wrapper Python.
+ * V0.5 : retourne directement le job file ecrit par runPipeline a chaque etape.
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { isValidJobId, readJob, deriveMockProgress } from "@/lib/jobs";
+import { isValidJobId, readJob } from "@/lib/jobs";
 
 export const runtime = "nodejs";
 
@@ -29,10 +28,7 @@ export async function GET(
     return NextResponse.json({ error: "Job introuvable" }, { status: 404 });
   }
 
-  // PHASE 1 mock : derive le progress. En PHASE 2, on retournera juste `job`.
-  const progressed = deriveMockProgress(job);
-
-  return NextResponse.json(progressed, {
+  return NextResponse.json(job, {
     status: 200,
     headers: {
       // Pas de cache : le statut change a chaque poll

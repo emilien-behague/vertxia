@@ -1,9 +1,8 @@
 /**
  * Jobs management — fichier-based status tracking pour le pipeline Vertxia Lite.
  *
- * V0.1 PHASE 1 (mock) : derive le progress de (Date.now - startedAt).
- * V0.1 PHASE 2 (real) : wrapper Python ecrit reellement le fichier a chaque etape,
- *                       on supprime juste deriveMockProgress() et on retourne raw.
+ * V0.5 PHASE 2 : pipeline reel ecrit dans `data/jobs/{id}.json` a chaque etape.
+ * deriveMockProgress() conserve uniquement comme fallback dev (non utilise en prod).
  *
  * Server-side only (uses node:fs).
  */
@@ -38,6 +37,10 @@ export type Job = {
   redirectSlug: string | null;
   /** Si true, le brief existait deja avant le job (cas demo Allbirds/Loom) — skip rapide. */
   alreadyExists: boolean;
+  /** Si true, runPipeline lance Kling generation sur les featured_products (cost ~$1/job). */
+  withVideos: boolean;
+  /** Limite max de vidéos Kling à generer (default 3 si withVideos). */
+  maxVideos: number;
 };
 
 const JOB_ID_REGEX = /^[a-f0-9-]{36}$/i;
@@ -70,15 +73,19 @@ export async function createJob(input: {
   slug: string;
   url: string;
   prompt: string;
+  withVideos?: boolean;
+  maxVideos?: number;
 }): Promise<Job> {
   await ensureJobsDir();
 
-  // Detecte si le brief existe deja — cas demo Allbirds/Loom
+  // Detecte si un brief CURE existe deja (Allbirds, Loom, etc.).
+  // Un brief simplement genere par un run precedent (non cure) ne compte pas — on regenere.
   const briefPath = path.join(BRIEFS_DIR, `${input.slug}.json`);
   let alreadyExists = false;
   try {
-    await fs.access(briefPath);
-    alreadyExists = true;
+    const raw = await fs.readFile(briefPath, "utf-8");
+    const parsed = JSON.parse(raw) as { curated?: boolean };
+    alreadyExists = parsed.curated === true;
   } catch {
     alreadyExists = false;
   }
@@ -98,6 +105,8 @@ export async function createJob(input: {
     error: null,
     redirectSlug: null,
     alreadyExists,
+    withVideos: input.withVideos === true,
+    maxVideos: Math.max(1, Math.min(6, input.maxVideos ?? 3)),
   };
 
   await atomicWrite(jobPath(id), JSON.stringify(job, null, 2));
@@ -112,6 +121,26 @@ export async function readJob(id: string): Promise<Job | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * Met a jour partiellement un job (merge avec l'existant).
+ * Atomic write — pas de race condition si le reader lit pendant l'update.
+ * `updatedAt` est force a Date.now() systematiquement.
+ */
+export async function updateJob(
+  id: string,
+  partial: Partial<Omit<Job, "id" | "slug" | "url" | "prompt" | "startedAt" | "alreadyExists">>
+): Promise<Job | null> {
+  const current = await readJob(id);
+  if (!current) return null;
+  const next: Job = {
+    ...current,
+    ...partial,
+    updatedAt: Date.now(),
+  };
+  await atomicWrite(jobPath(id), JSON.stringify(next, null, 2));
+  return next;
 }
 
 /**

@@ -11,9 +11,9 @@
  * Pointer-events sur les elements seuls — la galerie 3D reste interactive autour.
  */
 
-import { motion, useMotionTemplate, useMotionValue } from "framer-motion";
+import { AnimatePresence, motion, useMotionTemplate, useMotionValue } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { extractDomainAndSlug } from "@/lib/url-to-slug";
 import {
@@ -28,6 +28,22 @@ const CosmicPortal = dynamic(() => import("./cosmic-portal"), { ssr: false });
 
 const PORTAL_DURATION_MS = 1400;
 const MAX_INPUT_CHARS = 500;
+
+/** Titre central FIXE. */
+const HEADLINE = "Compose your next world.";
+
+/** Placeholders cyclees dans la prompt box — exemples de prompts qui inspirent. */
+const PROMPT_PLACEHOLDERS = [
+  "Ask Vertxia to build a luxury brand site from allbirds.com…",
+  "Compose a dark, jewel-light cinematic site from cartier.com…",
+  "Direct a Margiela editorial — film grain, slow cuts, drop culture…",
+  "Heritage story for riva-yacht.com — Italian summer, sea breeze…",
+  "Reveal fenty.com — neon glow, sensual rhythm, beauty drop…",
+  "Lookbook for loom.fr — natural light, soft jersey, no music…",
+  "Aman resort site — boutique hospitality, silence, slow camera…",
+];
+
+const PLACEHOLDER_INTERVAL_MS = 5500;
 
 const TITLE_VARIANTS = {
   hidden: { opacity: 0, y: 16 },
@@ -45,6 +61,24 @@ export function CentralCommand() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [portalOpen, setPortalOpen] = useState(false);
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
+
+  // Cycle des placeholders — pause quand l'utilisateur a commence a taper ou focused
+  useEffect(() => {
+    if (value.trim() || focused) return;
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+    const id = setInterval(() => {
+      setPlaceholderIdx((p) => (p + 1) % PROMPT_PLACEHOLDERS.length);
+    }, PLACEHOLDER_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [value, focused]);
+
+  const showPlaceholderOverlay = !value.trim();
 
   // Reflet mouse-tracking subtil sur la box
   const mx = useMotionValue(0);
@@ -159,7 +193,7 @@ export function CentralCommand() {
             />
           </motion.button>
 
-          {/* TITRE */}
+          {/* TITRE — fixe */}
           <motion.h1
             variants={TITLE_VARIANTS}
             transition={TRANSITION}
@@ -172,7 +206,7 @@ export function CentralCommand() {
               textShadow: "0 4px 32px rgba(0,0,0,0.5)",
             }}
           >
-            Ready to build, Vertxia?
+            {HEADLINE}
           </motion.h1>
 
           {/* PROMPT BOX */}
@@ -224,6 +258,32 @@ export function CentralCommand() {
                 style={{ background: reflectionBg }}
               />
 
+              {/* Placeholder cycling overlay (cross-fade). Hidden when user starts typing. */}
+              {showPlaceholderOverlay && (
+                <div
+                  className="absolute inset-x-0 top-0 px-6 pt-5 pb-3 pointer-events-none overflow-hidden"
+                  aria-hidden
+                  style={{ minHeight: "92px" }}
+                >
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                      key={placeholderIdx}
+                      initial={{ opacity: 0, y: 6, filter: "blur(4px)" }}
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                      exit={{ opacity: 0, y: -6, filter: "blur(3px)" }}
+                      transition={{
+                        duration: 0.55,
+                        ease: [0.22, 1, 0.36, 1] as const,
+                      }}
+                      className="block text-[15px] text-white/40 leading-snug"
+                      style={{ fontFamily: "inherit" }}
+                    >
+                      {PROMPT_PLACEHOLDERS[placeholderIdx]}
+                    </motion.span>
+                  </AnimatePresence>
+                </div>
+              )}
+
               <textarea
                 value={value}
                 onChange={(e) => {
@@ -233,7 +293,7 @@ export function CentralCommand() {
                 onFocus={() => setFocused(true)}
                 onBlur={() => setFocused(false)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask Vertxia to build a luxury brand site from allbirds.com…"
+                placeholder=""
                 rows={3}
                 maxLength={MAX_INPUT_CHARS}
                 disabled={submitting}
