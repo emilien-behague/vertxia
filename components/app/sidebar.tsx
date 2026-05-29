@@ -13,9 +13,10 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import {
   IconHome,
-  IconSparkles,
   IconLayoutGrid,
-  IconPalette,
+  IconGlobe,
+  IconPlay,
+  IconBot,
   IconImage,
   IconSettings,
 } from "./icons";
@@ -28,9 +29,10 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { key: "home",     label: "Home",     icon: <IconHome size={19} /> },
-  { key: "create",   label: "Create",   icon: <IconSparkles size={19} /> },
   { key: "projects", label: "Projects", icon: <IconLayoutGrid size={19} /> },
-  { key: "brand",    label: "Brand",    icon: <IconPalette size={19} /> },
+  { key: "sites",    label: "Sites",    icon: <IconGlobe size={19} /> },
+  { key: "videos",   label: "Videos",   icon: <IconPlay size={19} /> },
+  { key: "agents",   label: "Agents",   icon: <IconBot size={19} /> },
   { key: "assets",   label: "Assets",   icon: <IconImage size={19} /> },
 ];
 
@@ -97,7 +99,7 @@ export function Sidebar() {
     <motion.aside
       onMouseEnter={() => setExpanded(true)}
       onMouseLeave={() => setExpanded(false)}
-      animate={{ width: expanded ? 132 : 64 }}
+      animate={{ width: expanded ? 148 : 80 }}
       transition={SPRING}
       className="shrink-0 h-screen flex flex-col bg-[#0a0a0a] border-r border-white/[0.05] relative z-30"
       style={{ willChange: "width" }}

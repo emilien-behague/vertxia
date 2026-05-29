@@ -181,3 +181,78 @@ export const IconChevronLeft = ({ size = 16, className }: IconProps) => (
     <path d="m15 18-6-6 6-6" />
   </svg>
 );
+
+export const IconGlobe = ({ size = 18, className }: IconProps) => (
+  <svg {...base(size, className)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h18" />
+    <path d="M12 3a14 14 0 0 1 0 18" />
+    <path d="M12 3a14 14 0 0 0 0 18" />
+  </svg>
+);
+
+export const IconPlay = ({ size = 18, className }: IconProps) => (
+  <svg {...base(size, className)}>
+    <circle cx="12" cy="12" r="9" />
+    <polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+export const IconBot = ({ size = 18, className }: IconProps) => (
+  <svg {...base(size, className)}>
+    <rect x="4" y="7" width="16" height="13" rx="3" />
+    <path d="M12 3v4" />
+    <circle cx="9" cy="13" r="1" fill="currentColor" />
+    <circle cx="15" cy="13" r="1" fill="currentColor" />
+    <path d="M9 17h6" />
+  </svg>
+);
+
+export const IconType = ({ size = 14, className }: IconProps) => (
+  <svg {...base(size, className)}>
+    <path d="M4 7V4h16v3" />
+    <path d="M12 4v16" />
+    <path d="M8 20h8" />
+  </svg>
+);
+
+export const IconWaveform = ({ size = 14, className }: IconProps) => (
+  <svg {...base(size, className)}>
+    <path d="M2 12h2" />
+    <path d="M6 8v8" />
+    <path d="M10 5v14" />
+    <path d="M14 9v6" />
+    <path d="M18 7v10" />
+    <path d="M22 11v2" />
+  </svg>
+);
+
+export const IconFile = ({ size = 14, className }: IconProps) => (
+  <svg {...base(size, className)}>
+    <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+    <path d="M14 3v6h6" />
+  </svg>
+);
+
+export const IconWand = ({ size = 14, className }: IconProps) => (
+  <svg {...base(size, className)}>
+    <path d="M15 4V2" />
+    <path d="M15 16v-2" />
+    <path d="M8 9h2" />
+    <path d="M20 9h2" />
+    <path d="M17.8 11.8 19 13" />
+    <path d="M15 9h.01" />
+    <path d="M17.8 6.2 19 5" />
+    <path d="M3 21 12 12" />
+    <path d="M12.2 6.2 11 5" />
+  </svg>
+);
+
+export const IconRepeat = ({ size = 14, className }: IconProps) => (
+  <svg {...base(size, className)}>
+    <path d="m17 2 4 4-4 4" />
+    <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+    <path d="m7 22-4-4 4-4" />
+    <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+  </svg>
+);
