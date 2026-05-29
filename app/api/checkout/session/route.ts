@@ -13,7 +13,7 @@
  *  - client_reference_id = user.id (pour que le webhook puisse lier la sub au user)
  *
  * Config :
- *  - Trial 7 jours avec CB obligatoire (payment_method_collection: "always")
+ *  - Paiement immediat (TRIAL_PERIOD_DAYS = 0). Si > 0, applique un trial.
  *  - tax_id_collection actif (reverse charge B2B EU si VAT ID)
  *  - automatic_tax actif (Stripe Tax gere les TVA EU)
  *
@@ -21,6 +21,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { getTierByPriceId, TRIAL_PERIOD_DAYS } from "@/lib/pricing";
 import { getCurrentUser } from "@/lib/session";
@@ -105,20 +106,24 @@ export async function POST(req: NextRequest) {
       ? { customer: user.stripe_customer_id }
       : { customer_email: user.email };
 
+    const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {
+      metadata: {
+        vertxia_tier: tier.tier.id,
+        vertxia_period: tier.period,
+        vertxia_user_id: user.id,
+      },
+    };
+    if (TRIAL_PERIOD_DAYS > 0) {
+      subscriptionData.trial_period_days = TRIAL_PERIOD_DAYS;
+      subscriptionData.trial_settings = {
+        end_behavior: { missing_payment_method: "pause" },
+      };
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      subscription_data: {
-        trial_period_days: TRIAL_PERIOD_DAYS,
-        trial_settings: {
-          end_behavior: { missing_payment_method: "pause" },
-        },
-        metadata: {
-          vertxia_tier: tier.tier.id,
-          vertxia_period: tier.period,
-          vertxia_user_id: user.id,
-        },
-      },
+      subscription_data: subscriptionData,
       ...reuseCustomerArgs,
       client_reference_id: user.id,
       payment_method_collection: "always",

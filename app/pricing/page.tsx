@@ -122,8 +122,8 @@ export default function PricingPage() {
           transition={{ ...ANIM.transition, delay: 0.1 }}
           className="mt-6 text-[15px] text-white/60 leading-relaxed max-w-xl mx-auto"
         >
-          Tarifs HT. Essai 7 jours, carte bancaire requise, résiliable à tout
-          moment. Facturation à l'usage au-delà du quota inclus.
+          Tarifs HT. Paiement immédiat par CB, résiliable à tout moment.
+          Facturation à l'usage au-delà du quota inclus.
         </motion.p>
 
         {/* Toggle Monthly / Annual */}
@@ -208,7 +208,7 @@ export default function PricingPage() {
           className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 pt-12 border-t border-white/[0.06]"
         >
           {[
-            { label: "Essai", value: "7 jours" },
+            { label: "Accès", value: "Immédiat" },
             { label: "Résiliable", value: "À tout moment" },
             { label: "Paiement", value: "Stripe sécurisé" },
             { label: "Support", value: "Email réactif" },
@@ -356,7 +356,7 @@ function PricingCard({
       </button>
 
       <p className="mt-3 text-center text-[11px] text-white/35">
-        Essai 7 jours · CB requise · Sans engagement
+        Paiement immédiat · Résiliable à tout moment · Sans engagement
       </p>
 
       <style>{`

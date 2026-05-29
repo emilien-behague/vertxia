@@ -256,8 +256,8 @@ function BillingEmpty({ error }: { error: string | null }) {
           Aucun abonnement actif
         </p>
         <p className="text-[12.5px] text-white/55 leading-relaxed max-w-sm mx-auto mb-5">
-          Demarre ton essai de 7 jours et debloque la generation de sites
-          cinematic + videos AI.
+          Active ton abonnement pour debloquer la generation de sites cinematic
+          + videos AI.
         </p>
         <Link
           href="/pricing"

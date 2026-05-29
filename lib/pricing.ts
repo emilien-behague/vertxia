@@ -7,7 +7,9 @@
  *
  * Source des price_id : Stripe Dashboard > Catalogue de produits > [Studio|Agency] > Tarifs
  *
- * Trial : 7 jours, CB obligatoire au checkout (mode CARD), auto-converge en payant.
+ * Trial : DESACTIVE. Paiement immediat au checkout. Strategie founder/early access
+ * — on reintroduira un trial quand on aura les chiffres de cout unitaire et de
+ * conversion trial -> paid.
  */
 
 export type PricingPeriod = "monthly" | "annual";
@@ -77,7 +79,7 @@ export const PRICING_TIERS: PricingTier[] = [
       "Génération en ~3 min",
       "Support par email",
     ],
-    ctaLabel: "Commencer l'essai",
+    ctaLabel: "S'abonner",
     highlighted: true,
   },
   {
@@ -100,7 +102,7 @@ export const PRICING_TIERS: PricingTier[] = [
       "Branding entièrement personnalisable",
       "Support prioritaire",
     ],
-    ctaLabel: "Commencer l'essai",
+    ctaLabel: "S'abonner",
   },
 ];
 
@@ -147,4 +149,5 @@ export function monthlyEquivalent(
  *  Trial config
  * ========================================================= */
 
-export const TRIAL_PERIOD_DAYS = 7;
+/** 0 = pas de trial, paiement immediat. Si > 0, applique un trial dans Stripe. */
+export const TRIAL_PERIOD_DAYS = 0;

@@ -108,7 +108,7 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
         </h1>
 
         <p className="text-[15px] text-white/65 leading-relaxed max-w-md">
-          Ton essai 7 jours démarre maintenant.
+          Ton abonnement est actif.
           {email && (
             <>
               {" "}
