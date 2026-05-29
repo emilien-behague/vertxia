@@ -85,6 +85,22 @@ export type TemplateId =
   | "horizontal-slider"
   | "brutalist-tech";
 
+/**
+ * Signature visuelle : overlay/filtre applique PAR-DESSUS n'importe quel template.
+ * Multiplie les variations : 5 templates × 5 signatures = 25 looks uniques.
+ * - none           : pass-through, render pur (DEFAULT)
+ * - film-grain     : SVG noise + warm grade + vignette (cinematic, vieux film)
+ * - halftone-print : dots overlay + grain papier (print magazine, riso)
+ * - glitch-vhs     : scanlines + chromatic aberration + RGB split sur img:hover (90s/Y2K)
+ * - neon-noir      : dark gradient overlay + accent glow sur CTAs + text-shadow h1
+ */
+export type VisualSignatureId =
+  | "none"
+  | "film-grain"
+  | "halftone-print"
+  | "glitch-vhs"
+  | "neon-noir";
+
 export type Brief = {
   brand: Brand;
   client_prompt_interpretation: string;
@@ -96,6 +112,8 @@ export type Brief = {
   footer?: FooterCopy;
   /** Squelette structurel — default "editorial-magazine" si absent. */
   template_id?: TemplateId;
+  /** Overlay visuel injecte par-dessus le template — default "none" si absent. */
+  visual_signature?: VisualSignatureId;
   _meta?: {
     model: string;
     client_prompt: string;

@@ -18,6 +18,7 @@ import { CinematicNarrative } from "@/components/lite-templates/cinematic-narrat
 import { DocumentaryStory } from "@/components/lite-templates/documentary-story";
 import { HorizontalSlider } from "@/components/lite-templates/horizontal-slider";
 import { BrutalistTech } from "@/components/lite-templates/brutalist-tech";
+import { VisualSignature } from "@/components/lite-templates/visual-signature";
 
 type PageProps = {
   params: Promise<{ domain: string }>;
@@ -50,18 +51,38 @@ export default async function LiteDynamicPage({ params }: PageProps) {
     notFound();
   }
 
+  // Accent + signature au niveau routeur — wrappe TOUS les retours pour multiplier les variations
+  const signature = brief.visual_signature ?? "none";
+  const routerAccent = paletteColor(brief.visual_system.palette, "accent", "#E8521A");
+
   // Route selon template_id — squelettes structurellement differents
   if (brief.template_id === "cinematic-narrative") {
-    return <CinematicNarrative brief={brief} />;
+    return (
+      <VisualSignature signature={signature} accent={routerAccent}>
+        <CinematicNarrative brief={brief} />
+      </VisualSignature>
+    );
   }
   if (brief.template_id === "documentary-story") {
-    return <DocumentaryStory brief={brief} />;
+    return (
+      <VisualSignature signature={signature} accent={routerAccent}>
+        <DocumentaryStory brief={brief} />
+      </VisualSignature>
+    );
   }
   if (brief.template_id === "horizontal-slider") {
-    return <HorizontalSlider brief={brief} />;
+    return (
+      <VisualSignature signature={signature} accent={routerAccent}>
+        <HorizontalSlider brief={brief} />
+      </VisualSignature>
+    );
   }
   if (brief.template_id === "brutalist-tech") {
-    return <BrutalistTech brief={brief} />;
+    return (
+      <VisualSignature signature={signature} accent={routerAccent}>
+        <BrutalistTech brief={brief} />
+      </VisualSignature>
+    );
   }
 
   // Default = editorial-magazine (squelette grid + manifesto + collection)
@@ -96,6 +117,7 @@ export default async function LiteDynamicPage({ params }: PageProps) {
   const fontsHref = `https://fonts.googleapis.com/css2?family=${fontFamilies.join("&family=")}&display=swap`;
 
   return (
+    <VisualSignature signature={signature} accent={accent}>
     <main
       className="min-h-screen antialiased"
       style={{
@@ -470,5 +492,6 @@ export default async function LiteDynamicPage({ params }: PageProps) {
         </div>
       </footer>
     </main>
+    </VisualSignature>
   );
 }
