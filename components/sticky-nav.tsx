@@ -49,11 +49,11 @@ export function StickyNav() {
 
           <div className="flex items-center gap-2">
             <a
-              href="#cta"
+              href="/pricing"
               className="text-[11px] px-4 py-2 rounded-xl border border-black/10 text-black/60 hover:text-black hover:border-black/20 hover:bg-black/[0.03] transition-all duration-200 tracking-wide hidden md:block"
               style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
             >
-              REJOINDRE
+              S'ABONNER
             </a>
 
             <button
@@ -99,12 +99,12 @@ export function StickyNav() {
             ))}
             <div className="mt-1 px-2 pb-1">
               <a
-                href="#cta"
+                href="/pricing"
                 onClick={close}
                 className="block w-full text-center text-[11px] px-4 py-2.5 rounded-xl border border-black/10 text-black/60 hover:text-black hover:border-black/20 hover:bg-black/[0.03] transition-all duration-200 tracking-wide"
                 style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
               >
-                REJOINDRE
+                S'ABONNER
               </a>
             </div>
           </div>

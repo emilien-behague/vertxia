@@ -221,10 +221,10 @@ export default function VertxiaPage() {
               SUIVRE LE BUILD
             </a>
             <a
-              href="mailto:emilien@vertxia.com?subject=Vertxia%20beta%20%E2%80%94%20marque%20DTC&body=Salut%20Emilien%2C%0A%0AJe%20suis%20fondateur%2Ftrice%20d%27une%20marque%20DTC%20et%20je%20suis%20int%C3%A9ress%C3%A9(e)%20par%20la%20beta%20Vertxia.%0A%0AMa%20marque%20%3A%20%0AURL%20Shopify%20%3A%20%0A%0AMerci%20!"
+              href="/pricing"
               className="inline-flex items-center justify-center gap-2 px-8 py-3 border border-black/10 text-black/70 text-sm rounded-xl hover:border-black/25 hover:bg-black/[0.04] transition-colors tracking-widest whitespace-nowrap"
             >
-              ÉCRIRE UN MAIL
+              VOIR LES OFFRES
             </a>
           </div>
         </div>
@@ -566,44 +566,48 @@ export default function VertxiaPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[
               {
-                name: "Concierge",
-                price: "1 500€",
-                period: "setup",
-                sub: "Premier site fait main",
+                name: "Starter",
+                price: "49€",
+                period: "/mois HT",
+                sub: "Pour solos Shopify qui démarrent",
                 features: [
-                  "1 site 3D livré sur-mesure",
-                  "Modélisation + intégration",
-                  "Hébergement 12 mois inclus",
-                  "Support direct fondateur",
+                  "3 sites cinematic / mois",
+                  "20 vidéos AI Kling / mois",
+                  "3 templates × 5 signatures",
+                  "Direction artistique IA Claude",
+                  "URL unique partageable",
+                  "Support par email",
                 ],
                 delay: 0,
               },
               {
                 name: "Studio",
-                price: "99€",
-                period: "/mois",
-                sub: "Pour marques DTC actives",
+                price: "149€",
+                period: "/mois HT",
+                sub: "Pour e-commerçants et marques DTC",
                 features: [
-                  "Pipeline auto URL → site",
-                  "Jusqu'à 50 produits",
-                  "3 templates au choix",
-                  "Mises à jour auto catalogue",
-                  "Support 48h",
+                  "10 sites cinematic / mois",
+                  "60 vidéos AI Kling / mois",
+                  "5 templates × 5 signatures",
+                  "Direction artistique IA Claude",
+                  "URL unique partageable",
+                  "Support par email",
                 ],
                 highlight: true,
                 delay: 80,
               },
               {
-                name: "Scale",
-                price: "Custom",
-                period: "",
-                sub: "Marques mid/large",
+                name: "Agency",
+                price: "499€",
+                period: "/mois HT",
+                sub: "Pour agences digitales et équipes",
                 features: [
-                  "Catalogue illimité",
-                  "Templates sur-mesure",
-                  "API + webhooks Shopify",
-                  "SLA dédié",
-                  "Onboarding manager",
+                  "40 sites cinematic / mois",
+                  "250 vidéos AI Kling / mois",
+                  "White-label complet",
+                  "5 utilisateurs inclus",
+                  "Domaine personnalisé",
+                  "Support prioritaire",
                 ],
                 delay: 140,
               },
@@ -630,18 +634,22 @@ export default function VertxiaPage() {
                   ))}
                 </ul>
                 <a
-                  href="#cta"
+                  href="/pricing"
                   className={`w-full py-3 rounded-xl text-sm tracking-widest transition-all duration-200 text-center ${
                     plan.highlight
                       ? "bg-[#111] text-white hover:bg-[#333]"
                       : "border border-black/10 text-black/60 hover:border-black/25 hover:text-black hover:bg-black/[0.04]"
                   }`}
                 >
-                  {plan.name === "Scale" ? "NOUS CONTACTER" : "REJOINDRE LA BETA"}
+                  S'ABONNER
                 </a>
               </BentoCard>
             ))}
           </div>
+
+          <p className="mt-8 text-center text-xs text-black/35 tracking-wide">
+            Paiement immédiat · Résiliable à tout moment · Sans engagement
+          </p>
         </div>
       </section>
 
@@ -649,17 +657,23 @@ export default function VertxiaPage() {
       <section id="cta" className="relative py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06] overflow-hidden">
         <div className="relative z-10 max-w-2xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-light tracking-tight leading-[1.05] mb-6">
-            Construis ton site 3D<br />pendant que d'autres attendent une agence.
+            Ton premier site cinematic,<br />en quelques minutes.
           </h2>
           <p className="text-sm text-black/45 leading-relaxed mb-10 max-w-md mx-auto">
-            Les 100 premières marques DTC FR auront un accès early. Suis le build en public — les premières ouvertures beta seront annoncées sur Instagram.
+            Pas d'agence à 50 000 €. Pas de 4 mois d'attente. Choisis ton plan, connecte ton URL Shopify, et Vertxia fait le reste.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto justify-center">
+            <a
+              href="/pricing"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium"
+            >
+              COMMENCER MAINTENANT
+            </a>
             <a
               href="https://instagram.com/vertxia.fr"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3 border border-black/10 text-black/70 text-sm rounded-xl hover:border-black/25 hover:bg-black/[0.04] transition-colors tracking-widest"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -676,12 +690,6 @@ export default function VertxiaPage() {
                 <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
               </svg>
               SUIVRE @VERTXIA.FR
-            </a>
-            <a
-              href="mailto:emilien@vertxia.com?subject=Vertxia%20beta%20%E2%80%94%20marque%20DTC&body=Salut%20Emilien%2C%0A%0AJe%20suis%20fondateur%2Ftrice%20d%27une%20marque%20DTC%20et%20je%20suis%20int%C3%A9ress%C3%A9(e)%20par%20la%20beta%20Vertxia.%0A%0AMa%20marque%20%3A%20%0AURL%20Shopify%20%3A%20%0A%0AMerci%20!"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3 border border-black/10 text-black/70 text-sm rounded-xl hover:border-black/25 hover:bg-black/[0.04] transition-colors tracking-widest"
-            >
-              ÉCRIRE UN MAIL
             </a>
           </div>
         </div>
