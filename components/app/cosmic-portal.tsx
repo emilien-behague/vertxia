@@ -11,7 +11,7 @@
  * Apres 1400ms, le parent declenche router.push et demonte le portail.
  *
  * R3F = lourd (~80KB) -> ce module DOIT etre dynamic-imported avec ssr: false
- * cote hero-center pour eviter de l'inclure dans le bundle initial /app.
+ * cote command-surface pour eviter de l'inclure dans le bundle initial /app.
  */
 
 import { Canvas, useFrame } from "@react-three/fiber";

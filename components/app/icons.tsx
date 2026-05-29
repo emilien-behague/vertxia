@@ -145,3 +145,39 @@ export const IconSparkles = ({ size = 14, className }: IconProps) => (
     <path d="M5 16l.6 1.4L7 18l-1.4.6L5 20l-.6-1.4L3 18l1.4-.6L5 16z" />
   </svg>
 );
+
+export const IconPalette = ({ size = 18, className }: IconProps) => (
+  <svg {...base(size, className)}>
+    <path d="M12 22a10 10 0 1 1 10-10c0 2.2-1.8 4-4 4h-1.5a1.5 1.5 0 0 0-1.06 2.56l.51.5A1.5 1.5 0 0 1 14.89 22H12z" />
+    <circle cx="7.5" cy="10.5" r="1" fill="currentColor" />
+    <circle cx="12" cy="7.5" r="1" fill="currentColor" />
+    <circle cx="16.5" cy="10.5" r="1" fill="currentColor" />
+  </svg>
+);
+
+export const IconImage = ({ size = 18, className }: IconProps) => (
+  <svg {...base(size, className)}>
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <circle cx="9" cy="9" r="1.5" />
+    <path d="m21 15-4-4-8 8" />
+  </svg>
+);
+
+export const IconSettings = ({ size = 18, className }: IconProps) => (
+  <svg {...base(size, className)}>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+  </svg>
+);
+
+export const IconChevronRight = ({ size = 16, className }: IconProps) => (
+  <svg {...base(size, className)}>
+    <path d="m9 18 6-6-6-6" />
+  </svg>
+);
+
+export const IconChevronLeft = ({ size = 16, className }: IconProps) => (
+  <svg {...base(size, className)}>
+    <path d="m15 18-6-6 6-6" />
+  </svg>
+);
