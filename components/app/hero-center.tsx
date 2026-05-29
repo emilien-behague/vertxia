@@ -9,7 +9,13 @@
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { extractDomainAndSlug } from "@/lib/url-to-slug";
+
+// R3F bundle ~80KB : dynamic import sans SSR pour ne pas peser sur le mount /app
+const CosmicPortal = dynamic(() => import("./cosmic-portal"), { ssr: false });
+
+const PORTAL_DURATION_MS = 1400;
 import {
   IconPlus,
   IconMic,
@@ -45,6 +51,7 @@ export function HeroCenter() {
   const [focused, setFocused] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [portalOpen, setPortalOpen] = useState(false);
 
   function handleSubmit() {
     setError(null);
@@ -67,9 +74,29 @@ export function HeroCenter() {
     setSubmitting(true);
     // Encode le prompt en query param pour qu'il soit dispo cote /lite (futur usage pipeline)
     const params = new URLSearchParams({ prompt: trimmed });
-    router.push(`/lite/${result.slug}?${params.toString()}`);
-    // Fallback : reset submitting si la navigation tarde >5s (evite bouton bloque ad vitam)
-    setTimeout(() => setSubmitting(false), 5000);
+    const targetUrl = `/lite/${result.slug}?${params.toString()}`;
+
+    // Respect prefers-reduced-motion : skip portail, navigation immediate
+    const reducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (reducedMotion) {
+      router.push(targetUrl);
+      setTimeout(() => setSubmitting(false), 5000);
+      return;
+    }
+
+    // Sequence : portail R3F warp speed (1400ms) -> router.push
+    setPortalOpen(true);
+    setTimeout(() => {
+      router.push(targetUrl);
+      // Garde le portail visible un peu apres push pour couvrir la transition
+      setTimeout(() => {
+        setPortalOpen(false);
+        setSubmitting(false);
+      }, 1000);
+    }, PORTAL_DURATION_MS);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -249,6 +276,8 @@ export function HeroCenter() {
           )}
         </div>
       </motion.div>
+
+      {portalOpen && <CosmicPortal />}
     </motion.div>
   );
 }
