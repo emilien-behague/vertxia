@@ -29,6 +29,26 @@ export function expectedOrigin(): string {
   return appUrl();
 }
 
+/**
+ * Liste des origines autorisees pour les checks CSRF.
+ *
+ * APP_URL est toujours inclus + une liste optionnelle de domaines alias via
+ * APP_URL_ALIASES (comma-separated, ex: "https://vertxia.fr,https://www.vertxia.fr").
+ *
+ * Utile quand le site est servi sur plusieurs domaines (vertxia.com, vertxia.fr,
+ * fallback vercel.app). Sans ca, les visiteurs sur un alias seraient bloques
+ * par le check Origin.
+ */
+export function allowedOrigins(): string[] {
+  const primary = appUrl();
+  const aliasesRaw = process.env.APP_URL_ALIASES || "";
+  const aliases = aliasesRaw
+    .split(",")
+    .map((s) => s.trim().replace(/\/$/, ""))
+    .filter((s) => s.startsWith("http"));
+  return Array.from(new Set([primary, ...aliases]));
+}
+
 /** Email expediteur des emails Vertxia. Defaut accepte uniquement en dev. */
 export function authEmailFrom(): string {
   const v = process.env.AUTH_EMAIL_FROM;

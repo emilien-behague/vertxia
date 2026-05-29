@@ -34,6 +34,8 @@ export async function POST(req: NextRequest) {
   // [SECURITY M3] CSRF defense-in-depth
   const oc = checkOrigin(req);
   if (!oc.ok) {
+    // eslint-disable-next-line no-console
+    console.warn("[checkout/session] Origin check failed:", oc.reason);
     return NextResponse.json({ error: "Origin invalide" }, { status: 403 });
   }
 

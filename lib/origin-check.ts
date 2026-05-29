@@ -13,32 +13,35 @@
  */
 
 import type { NextRequest } from "next/server";
-import { expectedOrigin } from "./env";
+import { allowedOrigins } from "./env";
 
 export type OriginCheckResult =
   | { ok: true }
   | { ok: false; reason: string };
 
 export function checkOrigin(req: NextRequest): OriginCheckResult {
-  let expected: string;
+  let allowed: string[];
   try {
-    expected = expectedOrigin();
+    allowed = allowedOrigins();
   } catch (err) {
     return { ok: false, reason: (err as Error).message };
   }
 
   const origin = req.headers.get("origin");
   if (origin) {
-    if (origin === expected) return { ok: true };
-    return { ok: false, reason: `Origin mismatch: ${origin}` };
+    if (allowed.includes(origin)) return { ok: true };
+    return { ok: false, reason: `Origin mismatch: ${origin} not in [${allowed.join(", ")}]` };
   }
 
   const referer = req.headers.get("referer");
   if (referer) {
     try {
       const refOrigin = new URL(referer).origin;
-      if (refOrigin === expected) return { ok: true };
-      return { ok: false, reason: `Referer mismatch: ${refOrigin}` };
+      if (allowed.includes(refOrigin)) return { ok: true };
+      return {
+        ok: false,
+        reason: `Referer mismatch: ${refOrigin} not in [${allowed.join(", ")}]`,
+      };
     } catch {
       return { ok: false, reason: "Referer malformed" };
     }
