@@ -4,8 +4,6 @@ import React, { useRef, useEffect, useState, useCallback } from "react";
 import { IntroAnimation, HERO_REVEAL_MS } from "@/components/intro-animation";
 import { RevealText } from "@/components/reveal-text";
 import { StickyNav } from "@/components/sticky-nav";
-import { StackingTemplateCards } from "@/components/stacking-template-cards";
-import { LivePipelineFeed, LiveCounter } from "@/components/live-pipeline-feed";
 import { AnimatedSphere } from "@/components/animated-sphere";
 
 // ─── Intersection Observer hook ───────────────────────────────────────────────
@@ -95,7 +93,7 @@ export default function VertxiaPage() {
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section className="relative min-h-screen overflow-hidden flex flex-col">
-        {/* Animated sphere — discrète sur mobile, visible sur desktop ; bordures fadées dans le rendu canvas */}
+        {/* Animated sphere — l'œil IA qui analyse */}
         <div
           className={`absolute right-[-80px] md:right-[-80px] top-1/2 -translate-y-1/2 w-[320px] h-[320px] md:w-[700px] md:h-[700px] lg:w-[850px] lg:h-[850px] pointer-events-none z-0 transition-opacity duration-[1400ms] ease-out delay-[400ms] ${
             heroReady ? "opacity-20 md:opacity-75" : "opacity-0"
@@ -116,12 +114,12 @@ export default function VertxiaPage() {
               transition: "opacity 800ms cubic-bezier(0.16,1,0.3,1)",
             }}
           >
-            · Build in public · Day 1 · 27 mai 2026
+            · Build in public · Pivot · 31 mai 2026
           </p>
 
-          {/* Teaser /lite — démos live */}
+          {/* Teaser beta — waitlist */}
           <a
-            href="/lite"
+            href="#beta"
             className="group inline-flex items-center gap-3 self-start mb-8 pl-2 pr-4 py-1.5 rounded-full border border-black/10 bg-white/60 backdrop-blur-sm hover:border-black/30 hover:bg-white transition-all"
             style={{
               opacity: heroReady ? 1 : 0,
@@ -134,7 +132,7 @@ export default function VertxiaPage() {
               <span className="relative w-2 h-2 rounded-full bg-[#111]" />
             </span>
             <span className="text-[11px] font-mono tracking-[0.2em] text-black/70 uppercase">
-              Live · 2 sites générés
+              Beta privée · Recrutement
             </span>
             <span className="text-[11px] font-mono tracking-widest text-black/40 group-hover:text-black/80 group-hover:translate-x-0.5 transition-all">
               →
@@ -151,9 +149,9 @@ export default function VertxiaPage() {
                 "opacity 1s cubic-bezier(0.16,1,0.3,1) 0ms, filter 1s cubic-bezier(0.16,1,0.3,1) 0ms, transform 1s cubic-bezier(0.16,1,0.3,1) 0ms",
             }}
           >
-            URL Shopify.<br />
-            <span className="text-black/40">Site cinematic complet.</span><br />
-            En minutes.
+            Conformité électrique.<br />
+            <span className="text-black/40">Avant le contrôle Consuel.</span><br />
+            En 5 minutes.
           </h1>
 
           <p
@@ -164,15 +162,15 @@ export default function VertxiaPage() {
               transition: "opacity 1s cubic-bezier(0.16,1,0.3,1) 250ms, transform 1s cubic-bezier(0.16,1,0.3,1) 250ms",
             }}
           >
-            Vertxia transforme n'importe quelle boutique Shopify en site éditorial avec vidéos cinematic IA auto par produit. Brief créatif rédigé par Claude, vidéos générées par Kling. Sans agence. Sans 4 mois d'attente.
+            Photographie ton tableau. L&apos;IA détecte les non-conformités NF C 15-100 sur photo. Rapport PDF auto avec références normatives. Pour les 80&nbsp;000 électriciens artisans français qui veulent passer le contrôle Consuel au premier coup.
           </p>
 
           {/* 3 metrics */}
           <div className="flex gap-8 sm:gap-12 mb-12">
             {[
-              { value: "~10min", label: "Génération site" },
-              { value: "~2€", label: "Coût IA / site" },
-              { value: "Unique", label: "Chaque rendu" },
+              { value: "63%", label: "Dossiers Consuel à lacunes" },
+              { value: "5 min", label: "Photo → rapport PDF" },
+              { value: "3-6 sem", label: "Délai évité par refus" },
             ].map((stat, i) => (
               <div
                 key={i}
@@ -189,7 +187,7 @@ export default function VertxiaPage() {
             ))}
           </div>
 
-          {/* CTA inline — DM Insta + mail */}
+          {/* CTA inline */}
           <div
             className="flex flex-col sm:flex-row gap-2 max-w-md"
             style={{
@@ -199,10 +197,16 @@ export default function VertxiaPage() {
             }}
           >
             <a
+              href="mailto:emilien@vertxia.com?subject=Beta-test Vertxia&body=Salut Emilien, je suis électricien et je veux tester Vertxia en beta privée. Mon contexte : "
+              className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium whitespace-nowrap"
+            >
+              DEVENIR BETA-TESTEUR
+            </a>
+            <a
               href="https://instagram.com/vertxia.fr"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium whitespace-nowrap"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3 border border-black/10 text-black/70 text-sm rounded-xl hover:border-black/25 hover:bg-black/[0.04] transition-colors tracking-widest whitespace-nowrap"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -220,12 +224,6 @@ export default function VertxiaPage() {
               </svg>
               SUIVRE LE BUILD
             </a>
-            <a
-              href="/app"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3 border border-black/10 text-black/70 text-sm rounded-xl hover:border-black/25 hover:bg-black/[0.04] transition-colors tracking-widest whitespace-nowrap"
-            >
-              OUVRIR L'APP
-            </a>
           </div>
         </div>
       </section>
@@ -236,32 +234,32 @@ export default function VertxiaPage() {
           <div className="mb-16">
             <Tag>PIPELINE</Tag>
             <RevealText className="mt-5 text-4xl md:text-5xl lg:text-6xl font-light tracking-tight leading-[1.05]">
-              {"De l'URL au site cinematic,\nentièrement automatisé."}
+              {"De la photo au rapport,\nen 5 minutes."}
             </RevealText>
           </div>
 
           <div className="grid grid-cols-12 gap-3">
-            {/* Big card top — Scraper */}
+            {/* Big card — Upload photos */}
             <BentoCard className="col-span-12 md:col-span-8 p-8 min-h-[260px] flex flex-col justify-between" delay={0}>
               <div>
                 <div className="w-10 h-10 rounded-xl border border-black/10 bg-white flex items-center justify-center mb-6">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
-                    <path d="M3 12h18M12 3a14.66 14.66 0 0 1 0 18M12 3a14.66 14.66 0 0 0 0 18" />
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <circle cx="12" cy="13" r="4" />
                   </svg>
                 </div>
-                <h3 className="text-2xl font-light mb-3">Scraper universel Shopify</h3>
+                <h3 className="text-2xl font-light mb-3">Photographie depuis ton téléphone</h3>
                 <p className="text-sm text-black/45 leading-relaxed max-w-md">
-                  L'URL de ta boutique suffit. Vertxia scrape automatiquement ton catalogue produits, brand assets, palette colorimétrique. Aucune intégration technique. Aucune extension à installer.
+                  Tableau, prises salle de bain, mise à la terre, serrage tableau divisionnaire. N&apos;importe quel smartphone. EXIF préservés. Upload direct sans installation d&apos;app — PWA mobile en V1, app Expo en V2.
                 </p>
               </div>
               <div className="mt-8 flex items-center gap-3">
                 <div className="font-mono text-[10px] text-black/35 tracking-widest">SUPPORT</div>
                 <div className="flex gap-2">
-                  {["Shopify", "WooCommerce (bientôt)", "Magento (V2)"].map((p, i) => (
+                  {["iPhone", "Android", "Reflex (V2)"].map((p, i) => (
                     <span
                       key={p}
-                      className={`px-2.5 py-1 rounded-md text-[10px] font-mono ${i === 0 ? "bg-black text-white" : "bg-black/[0.04] text-black/40"}`}
+                      className={`px-2.5 py-1 rounded-md text-[10px] font-mono ${i < 2 ? "bg-black text-white" : "bg-black/[0.04] text-black/40"}`}
                     >
                       {p}
                     </span>
@@ -274,195 +272,144 @@ export default function VertxiaPage() {
               <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <circle cx="12" cy="12" r="3" />
-                  <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+                  <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m7.07 7.07l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m7.07-7.07l4.24-4.24" />
                 </svg>
               </div>
-              <h3 className="text-lg font-light mb-2">Brief créatif Claude</h3>
+              <h3 className="text-lg font-light mb-2">Vision IA multi-tier</h3>
               <p className="text-sm text-black/45 leading-relaxed">
-                Claude Sonnet analyse les images produits, extrait la palette, rédige copy + prompts vidéo, choisit l&apos;angle hero. Pas de template, brief unique.
+                Claude Haiku filtre les images, Gemini 2.5 Pro analyse, Claude Sonnet 4.6 tranche les cas complexes. Coût optimisé : ~$0.05 par rapport.
               </p>
             </BentoCard>
 
             <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[200px]" delay={160}>
               <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <polygon points="23 7 16 12 23 17 23 7" />
-                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  <polyline points="9 12 11 14 15 10" />
                 </svg>
               </div>
-              <h3 className="text-lg font-light mb-2">Vidéos cinematic Kling</h3>
+              <h3 className="text-lg font-light mb-2">Détection NF C 15-100</h3>
               <p className="text-sm text-black/45 leading-relaxed">
-                Chaque produit reçoit sa vidéo cinematic 5s — orbit, dolly, push-in — générée par Kling 2.0 depuis l&apos;image hero.
+                Mise à la terre · Salle de bain volumes · Serrage connexions · Calibre protection · Différentiels 30mA · Sections câbles.
               </p>
             </BentoCard>
 
             <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[200px]" delay={200}>
               <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <polyline points="4 7 4 4 20 4 20 7" />
-                  <line x1="9" y1="20" x2="15" y2="20" />
-                  <line x1="12" y1="4" x2="12" y2="20" />
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
                 </svg>
               </div>
-              <h3 className="text-lg font-light mb-2">Composition éditoriale</h3>
+              <h3 className="text-lg font-light mb-2">Annotations sur image</h3>
               <p className="text-sm text-black/45 leading-relaxed">
-                Site composé dynamiquement depuis le brief — palette, fonts, sections, captions. Chaque rendu est unique.
+                Bounding box précise sur chaque défaut + sévérité (info / warning / critical) + référence normative exacte.
               </p>
             </BentoCard>
 
             <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[200px]" delay={240}>
               <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="9" y1="13" x2="15" y2="13" />
+                  <line x1="9" y1="17" x2="15" y2="17" />
                 </svg>
               </div>
-              <h3 className="text-lg font-light mb-2">Livraison instantanée</h3>
+              <h3 className="text-lg font-light mb-2">Rapport PDF Consuel-ready</h3>
               <p className="text-sm text-black/45 leading-relaxed">
-                URL partageable, déployée sur Vercel Edge. Site standalone ou intégrable en iframe.
+                Téléchargeable, partageable client, marque blanche optionnelle. Stats agrégées par chantier.
               </p>
             </BentoCard>
           </div>
         </div>
       </section>
 
-      {/* ── TEMPLATES (STACKING CARDS) ────────────────────────────────────── */}
-      <section id="templates" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
+      {/* ── CATÉGORIES DÉTECTÉES ──────────────────────────────────────────── */}
+      <section id="categories" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-16">
             <div>
-              <Tag>5 TEMPLATES OPINIONATED</Tag>
+              <Tag>CATÉGORIES DÉTECTÉES</Tag>
               <RevealText className="mt-5 text-4xl md:text-5xl font-light tracking-tight leading-[1.05]">
-                {"4 templates cinéma\nprêts à déployer."}
+                {"On détecte ce qui fait\n63% des refus Consuel."}
               </RevealText>
             </div>
             <p className="text-sm text-black/45 leading-relaxed max-w-xs">
-              Chaque template est codé à la main en React Three Fiber, optimisé mobile, scroll-driven. L'IA choisit le template optimal selon ton produit.
+              Données sources : rapport activité Consuel 2024 + statistiques Promotelec ONSE 2024. Vertxia détecte les 9 catégories qui représentent 80% des non-conformités.
             </p>
           </div>
 
-          <StackingTemplateCards />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[
+              { name: "Mise à la terre absente", pct: "16.1%", desc: "Liaison équipotentielle, prise de terre, continuité conducteur." },
+              { name: "Salle de bain (volumes)", pct: "23.5%", desc: "Prises en volume interdit, luminaires IP non conformes, distances." },
+              { name: "Serrage connexions", pct: "22.3%", desc: "Dominos, bornes mal serrées, échauffements, traces de surchauffe." },
+              { name: "Calibre protection", pct: "—", desc: "Surcalibre disjoncteur, ampérage incompatible section câble." },
+              { name: "Différentiels 30mA", pct: "—", desc: "Absence DDR, mauvais raccordement, surcharge circuits." },
+              { name: "Sections câbles", pct: "—", desc: "Section insuffisante, mélange sections, sertissage incorrect." },
+              { name: "Gaines apparentes", pct: "—", desc: "Câbles non protégés, conduits ICTA absents, traversées non isolées." },
+              { name: "Prises sans terre", pct: "—", desc: "Anciennes prises 2P sans contact terre, broche désactivée." },
+              { name: "Cheminement câbles", pct: "—", desc: "Sépar courants forts/faibles, distances respect plinthes/sols." },
+            ].map((cat, i) => (
+              <BentoCard key={cat.name} className="p-6 min-h-[140px] flex flex-col justify-between" delay={i * 40}>
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="text-base font-light text-[#111]">{cat.name}</h3>
+                  {cat.pct !== "—" && (
+                    <span className="text-xs font-mono text-black/35 tracking-wider whitespace-nowrap">{cat.pct}</span>
+                  )}
+                </div>
+                <p className="text-xs text-black/45 leading-relaxed mt-3">{cat.desc}</p>
+              </BentoCard>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* ── DEMOS / VITRINES LIVE — Vertxia Lite ──────────────────────────── */}
-      <section id="demos" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-12">
-            <div>
-              <Tag>2 VITRINES LIVE</Tag>
-              <RevealText className="mt-5 text-4xl md:text-5xl font-light tracking-tight leading-[1.05]">
-                {"Pas des mockups.\nDes vraies pages live."}
-              </RevealText>
-            </div>
-            <p className="text-sm text-black/45 leading-relaxed max-w-xs">
-              Chaque démo ci-dessous a été générée automatiquement depuis l&apos;URL Shopify de la marque + un prompt créatif court. Brief Claude, vidéos Kling, site composé.
+      {/* ── BETA / WAITLIST ──────────────────────────────────────────────── */}
+      <section id="beta" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <Tag>BETA PRIVÉE — RECRUTEMENT</Tag>
+            <RevealText className="mt-5 text-4xl md:text-5xl font-light tracking-tight leading-[1.05]">
+              {"5 électriciens beta-testeurs.\nGratuit. À vie."}
+            </RevealText>
+            <p className="mt-6 text-base text-black/50 leading-relaxed max-w-2xl mx-auto">
+              On cherche 5 électriciens artisans pour calibrer la précision IA sur de vrais chantiers. En échange : accès gratuit à vie au produit final, mention au lancement, et ton retour qui shape directement le produit.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              {
-                brand: "ALLBIRDS",
-                href: "/lite/allbirds_com",
-                source: "allbirds.com",
-                product: "Collection Sugar · sandales d'été",
-                tag: "Manifeste sustainability",
-                tagColor: "#E05A1E",
-                video: "/lite/videos/allbirds_com/sugar-zeffers-lux-beige.mp4",
-                bg: "#F5EFE0",
-                fg: "#2C2416",
-              },
-              {
-                brand: "LOOM",
-                href: "/lite/loom_fr",
-                source: "loom.fr",
-                product: "Vestiaire essentiel homme",
-                tag: "Manifeste anti-consommation",
-                tagColor: "#8C8476",
-                video: "/lite/videos/loom_fr/le-short-relax.mp4",
-                bg: "#F2EDE6",
-                fg: "#1E1E1A",
-              },
-            ].map((demo) => (
-              <a
-                key={demo.brand}
-                href={demo.href}
-                className="group relative block aspect-[4/5] md:aspect-[3/4] rounded-2xl border border-black/[0.08] overflow-hidden hover:border-black/30 transition-colors"
-                style={{ background: demo.bg }}
-              >
-                <video
-                  src={demo.video}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-[1.03]"
-                />
-                {/* Gradient bas pour lisibilité */}
-                <div
-                  className="absolute inset-x-0 bottom-0 h-2/3"
-                  style={{
-                    background: `linear-gradient(180deg, transparent 0%, ${demo.bg}c0 50%, ${demo.bg} 100%)`,
-                  }}
-                />
-                <div className="absolute top-5 left-5 right-5 flex items-start justify-between z-10">
-                  <span
-                    className="font-mono text-[10px] tracking-[0.3em] uppercase px-2.5 py-1 rounded-sm backdrop-blur-md"
-                    style={{
-                      background: `${demo.bg}b3`,
-                      color: demo.fg,
-                      border: `1px solid ${demo.fg}20`,
-                    }}
-                  >
-                    {demo.source}
-                  </span>
-                  <span
-                    className="font-mono text-[9px] tracking-[0.2em] uppercase px-2.5 py-1 rounded-sm"
-                    style={{ background: `${demo.tagColor}30`, color: demo.tagColor }}
-                  >
-                    {demo.tag}
-                  </span>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 p-8 z-10">
-                  <p
-                    className="font-mono text-[10px] tracking-[0.3em] uppercase mb-3"
-                    style={{ color: `${demo.fg}99` }}
-                  >
-                    {demo.product}
-                  </p>
-                  <h3
-                    className="text-4xl md:text-5xl font-light tracking-tight mb-4"
-                    style={{ color: demo.fg, fontFamily: "'Cormorant', serif" }}
-                  >
-                    {demo.brand}
-                  </h3>
-                  <div
-                    className="inline-flex items-center gap-3 text-[11px] tracking-[0.25em] uppercase pb-1"
-                    style={{
-                      color: demo.fg,
-                      borderBottom: `1px solid ${demo.fg}40`,
-                    }}
-                  >
-                    Visiter le site
-                    <span className="transition-transform duration-500 group-hover:translate-x-1">→</span>
-                  </div>
-                </div>
-              </a>
-            ))}
-          </div>
-
-          <div className="mt-10 flex items-center justify-center gap-4">
+          <BentoCard className="p-10 text-center" delay={0}>
+            <div className="text-xs font-mono tracking-widest text-black/40 mb-4">CRITÈRES BETA</div>
+            <ul className="space-y-3 text-sm text-black/65 mb-8 max-w-lg mx-auto text-left">
+              <li className="flex items-start gap-3">
+                <span className="text-black/35 mt-1">·</span>
+                <span>Électricien artisan en activité (SASU, EURL, micro-entreprise)</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-black/35 mt-1">·</span>
+                <span>3+ chantiers résidentiels / mois (neuf ou rénovation)</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-black/35 mt-1">·</span>
+                <span>Prêt à uploader 10-20 photos / semaine pendant 4 semaines</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-black/35 mt-1">·</span>
+                <span>Visio 30 min / semaine pour debrief retour produit</span>
+              </li>
+            </ul>
             <a
-              href="/lite"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-black/15 bg-white text-sm text-black/70 hover:border-black/30 hover:bg-black/[0.03] transition-all tracking-widest"
+              href="mailto:emilien@vertxia.com?subject=Beta-test Vertxia&body=Salut Emilien,%0D%0A%0D%0AJe suis électricien et je veux rejoindre la beta privée Vertxia.%0D%0A%0D%0AMon contexte :%0D%0A- Statut juridique : %0D%0A- Région : %0D%0A- Chantiers / mois : %0D%0A- Type d'installations (neuf/réno/tertiaire) : %0D%0A%0D%0AContact : "
+              className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium"
             >
-              VOIR TOUTES LES DÉMOS
-              <span>→</span>
+              POSTULER À LA BETA
             </a>
-            <p className="text-xs text-black/40 font-mono tracking-wide">
-              Nouvelles vitrines plusieurs fois par semaine
+            <p className="mt-4 text-xs text-black/35 font-mono tracking-wide">
+              emilien@vertxia.com · réponse sous 24h
             </p>
-          </div>
+          </BentoCard>
         </div>
       </section>
 
@@ -474,7 +421,7 @@ export default function VertxiaPage() {
             {"Construit sur du sérieux."}
           </RevealText>
           <p className="mt-6 text-sm text-black/45 max-w-2xl mx-auto leading-relaxed">
-            Chaque brique est documentée, open source quand possible, choisie pour la performance long-terme.
+            Stack moderne, open source quand possible, choisie pour la performance long-terme et la maîtrise des coûts IA.
           </p>
         </div>
       </section>
@@ -485,16 +432,16 @@ export default function VertxiaPage() {
           {[...Array(3)].map((_, rep) => (
             <div key={rep} className="flex shrink-0">
               {[
-                "Next.js 15",
-                "React Three Fiber",
-                "Three.js",
-                "GSAP ScrollTrigger",
-                "Lenis Smooth Scroll",
-                "Claude Vision API",
-                "Meshy AI",
-                "TripoSR",
-                "Tailwind CSS",
-                "TypeScript",
+                "Next.js 16",
+                "Claude Sonnet 4.6",
+                "Claude Haiku 4.5",
+                "Gemini 2.5 Pro",
+                "Voyage AI Embeddings",
+                "Postgres + pgvector",
+                "Trigger.dev v3",
+                "React Native Expo",
+                "Vision Camera v5",
+                "@react-pdf/renderer",
               ].map((cap) => (
                 <div key={cap} className="flex items-center gap-6 px-10 py-5 border-r border-black/[0.06] shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-black/20 shrink-0" />
@@ -508,16 +455,16 @@ export default function VertxiaPage() {
           {[...Array(3)].map((_, rep) => (
             <div key={rep} className="flex shrink-0">
               {[
-                "Supabase",
-                "Cloudflare R2",
-                "Vercel Edge",
-                "Resend",
-                "HasData Scraper",
-                "Anthropic SDK",
-                "Splitting.js",
-                "Drei",
+                "NF C 15-100",
+                "Promotelec",
+                "CAPEB",
+                "Qualifelec",
+                "Consuel",
+                "Guides fabricants RAG",
                 "Stripe Billing",
-                "GitHub Actions",
+                "Resend",
+                "Vercel Edge",
+                "Supabase Auth",
               ].map((cap) => (
                 <div key={cap} className="flex items-center gap-6 px-10 py-5 border-r border-black/[0.06] shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-black/12 shrink-0" />
@@ -529,85 +476,61 @@ export default function VertxiaPage() {
         </div>
       </section>
 
-      {/* ── LIVE PIPELINE ─────────────────────────────────────────────────── */}
-      <section id="live" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-            <div>
-              <Tag>LIVE — DONNÉES RÉELLES</Tag>
-              <RevealText className="mt-5 text-4xl md:text-5xl lg:text-6xl font-light tracking-tight leading-[1.05]">
-                {"Le pipeline tourne\ndéjà. En live."}
-              </RevealText>
-              <p className="mt-6 text-base text-black/40 leading-relaxed max-w-sm">
-                Chaque produit passé par Vertxia est analysé, scoré pour qualité visuelle, modélisé en 3D, intégré dans un template. Coût IA et temps réel affichés. Build in public — tu vois tout ce qu'on fait.
-              </p>
-              <div className="mt-10 flex items-end gap-2">
-                <LiveCounter />
-                <span className="text-black/30 text-sm mb-1 tracking-wide">produits scrapés sur 25 brands DTC<br/>(FR + INTL)</span>
-              </div>
-            </div>
-            <div className="relative">
-              <LivePipelineFeed />
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── PRICING ───────────────────────────────────────────────────────── */}
       <section id="pricing" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16 flex flex-col items-center">
-            <Tag>PRICING</Tag>
+            <Tag>PRICING — APRÈS BETA</Tag>
             <RevealText className="mt-5 text-4xl md:text-5xl font-light tracking-tight leading-[1.05]">
-              {"Pricing transparent.\nAucune surprise."}
+              {"Pricing transparent.\nÉconomise un refus = rentabilisé."}
             </RevealText>
+            <p className="mt-6 text-sm text-black/45 max-w-xl mx-auto leading-relaxed">
+              Pricing prévisionnel (lancement public sept 2026). Beta-testeurs accès gratuit à vie.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[
               {
-                name: "Starter",
+                name: "Solo",
                 price: "49€",
                 period: "/mois HT",
-                sub: "Pour solos Shopify qui démarrent",
+                sub: "Pour l'électricien artisan indépendant",
                 features: [
-                  "3 sites cinematic / mois",
-                  "20 vidéos AI Kling / mois",
-                  "3 templates × 5 signatures",
-                  "Direction artistique IA Claude",
-                  "URL unique partageable",
-                  "Support par email",
+                  "10 rapports IA / mois",
+                  "Détection 9 catégories NF C 15-100",
+                  "Rapport PDF marque personnelle",
+                  "Historique chantiers illimité",
+                  "Email support",
                 ],
                 delay: 0,
               },
               {
-                name: "Studio",
+                name: "Team",
                 price: "149€",
                 period: "/mois HT",
-                sub: "Pour e-commerçants et marques DTC",
+                sub: "Pour entreprise 2-5 électriciens",
                 features: [
-                  "10 sites cinematic / mois",
-                  "60 vidéos AI Kling / mois",
-                  "5 templates × 5 signatures",
-                  "Direction artistique IA Claude",
-                  "URL unique partageable",
-                  "Support par email",
+                  "50 rapports IA / mois",
+                  "Multi-utilisateurs (5 max)",
+                  "Espace partagé chantiers",
+                  "Rapports marque blanche",
+                  "Support prioritaire",
                 ],
                 highlight: true,
                 delay: 80,
               },
               {
-                name: "Agency",
+                name: "Bureau Contrôle",
                 price: "499€",
                 period: "/mois HT",
-                sub: "Pour agences digitales et équipes",
+                sub: "Pour bureaux COFRAC + 5 utilisateurs",
                 features: [
-                  "40 sites cinematic / mois",
-                  "250 vidéos AI Kling / mois",
-                  "White-label complet",
-                  "5 utilisateurs inclus",
-                  "Domaine personnalisé",
-                  "Support prioritaire",
+                  "Rapports illimités",
+                  "Multi-utilisateurs illimités",
+                  "API d'intégration ERP",
+                  "Marque blanche complète",
+                  "Support dédié + SLA",
                 ],
                 delay: 140,
               },
@@ -647,17 +570,17 @@ export default function VertxiaPage() {
       <section id="cta" className="relative py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06] overflow-hidden">
         <div className="relative z-10 max-w-2xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-light tracking-tight leading-[1.05] mb-6">
-            Ton premier site cinematic,<br />en quelques minutes.
+            Ton premier rapport,<br />en 5 minutes.
           </h2>
           <p className="text-sm text-black/45 leading-relaxed mb-10 max-w-md mx-auto">
-            Pas d'agence. Pas de 4 mois d'attente. Connecte ton URL Shopify et Vertxia fait le reste.
+            Pas de contrôle Consuel raté. Pas de 3-6 semaines d&apos;attente bloqué. Photographie, analyse, corrige avant.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto justify-center">
             <a
-              href="/app"
+              href="mailto:emilien@vertxia.com?subject=Beta-test Vertxia"
               className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium"
             >
-              COMMENCER MAINTENANT
+              DEVENIR BETA-TESTEUR
             </a>
             <a
               href="https://instagram.com/vertxia.fr"
@@ -696,7 +619,6 @@ export default function VertxiaPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 items-start">
-            {/* Photo */}
             <div className="md:col-span-1">
               <div className="aspect-square w-full rounded-2xl overflow-hidden bg-white border border-black/[0.07] shadow-sm">
                 <img
@@ -714,11 +636,10 @@ export default function VertxiaPage() {
               </div>
             </div>
 
-            {/* Texte */}
             <div className="md:col-span-2">
               <h3 className="text-2xl md:text-3xl font-light mb-2">Emilien Behague</h3>
               <p className="text-xs text-black/40 mb-8 tracking-[0.2em] uppercase font-mono">
-                Solo Builder · Indie Hacker
+                Solo Builder · Indie Hacker · Toulon
               </p>
 
               <p className="text-base md:text-lg text-black/65 leading-relaxed mb-6">
@@ -726,18 +647,17 @@ export default function VertxiaPage() {
               </p>
 
               <p className="text-sm text-black/50 leading-relaxed mb-5">
-                L&apos;idée est née d&apos;une frustration simple : un site e-commerce cinematic avec vidéos premium par produit demande plusieurs mois de prod avec une agence. C&apos;est inaccessible à 99 % des marques DTC.
+                L&apos;idée est née d&apos;un constat brutal : 63% des dossiers Consuel présentent des lacunes au 1er contrôle. 25 à 40% sont refusés. Quand ça arrive, l&apos;électricien doit revenir corriger, repayer un contrôle (77€), et attendre 3 à 6 semaines pour la contre-visite. Pendant ce temps, le chantier est bloqué, le client râle, l&apos;artisan perd de l&apos;argent.
               </p>
 
               <p className="text-sm text-black/50 leading-relaxed mb-5">
-                Mais avec les modèles vidéo IA en 2026 (Kling, Runway, Veo), ce niveau de présentation produit devrait être à la portée de tout le monde. C&apos;est exactement ce que Vertxia construit : un pipeline où l&apos;URL Shopify devient un site éditorial avec vidéos cinematic auto-générées par produit en quelques minutes.
+                Avec les modèles vision IA en 2026 (Claude Sonnet 4.6, Gemini 2.5 Pro), détecter une non-conformité NF C 15-100 sur photo devient enfin possible et rentable. C&apos;est exactement ce que Vertxia construit : un copilote IA pour les 80 000 électriciens artisans français, qui détecte les défauts AVANT que Consuel passe.
               </p>
 
               <p className="text-sm text-black/50 leading-relaxed mb-10">
-                Je documente chaque ligne de code, chaque décision, chaque échec et chaque learning sur Instagram. Build in public, sans filtre. Si tu kiffes les marathons techniques en solo, suis le build.
+                Je documente chaque ligne de code, chaque décision, chaque échec et chaque learning sur Instagram et LinkedIn. Build in public, sans filtre. Si tu kiffes les marathons techniques en solo, suis le build.
               </p>
 
-              {/* Liens sociaux */}
               <div className="flex flex-wrap gap-3">
                 <a
                   href="https://instagram.com/vertxia.fr"
@@ -798,12 +718,11 @@ export default function VertxiaPage() {
                 </a>
               </div>
 
-              {/* Stats personnels */}
               <div className="mt-12 pt-8 border-t border-black/[0.06] grid grid-cols-3 gap-6">
                 <div>
-                  <div className="text-2xl font-light">10</div>
+                  <div className="text-2xl font-light">3 ans</div>
                   <div className="text-[10px] tracking-widest uppercase text-black/35 mt-1">
-                    Mois de runway
+                    Runway
                   </div>
                 </div>
                 <div>
@@ -832,11 +751,11 @@ export default function VertxiaPage() {
           <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
             {[
               { label: "Pipeline", href: "#pipeline" },
-              { label: "Templates", href: "#templates" },
+              { label: "Catégories", href: "#categories" },
+              { label: "Beta", href: "#beta" },
               { label: "Stack", href: "#stack" },
-              { label: "Vitrine", href: "#demos" },
-              { label: "Preview", href: "#live" },
               { label: "Pricing", href: "#pricing" },
+              { label: "Builder", href: "#builder" },
             ].map((l) => (
               <a
                 key={l.label}
@@ -874,7 +793,7 @@ export default function VertxiaPage() {
           </div>
         </div>
         <div className="max-w-6xl mx-auto mt-8 pt-6 border-t border-black/[0.04]">
-          <span className="text-xs text-black/20">© 2026 Vertxia · Built solo in public.</span>
+          <span className="text-xs text-black/20">© 2026 Vertxia · Conformité électrique IA · Built solo in public.</span>
         </div>
       </footer>
     </div>

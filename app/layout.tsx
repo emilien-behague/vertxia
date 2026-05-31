@@ -34,21 +34,24 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Vertxia — L'IA qui transforme ton Shopify en site 3D cinéma",
+  title: "Vertxia — Conformité électrique IA avant Consuel",
   description:
-    "Vertxia génère un site e-commerce 3D immersif à partir d'une simple URL. Build in public solo.",
+    "Photographie ton tableau. L'IA détecte les non-conformités NF C 15-100 en 5 min. Rapport PDF auto. Pour les 80 000 électriciens artisans FR. 63 % des dossiers Consuel ont des lacunes — Vertxia les évite avant le contrôle.",
   metadataBase: new URL("https://vertxia.com"),
   openGraph: {
-    title: "Vertxia",
-    description: "L'IA qui transforme ton Shopify en site 3D cinéma",
+    title: "Vertxia — Conformité électrique IA avant Consuel",
+    description:
+      "63 % des dossiers Consuel ont des lacunes. Vertxia détecte les non-conformités NF C 15-100 sur photo, avant le contrôle Consuel. Beta privée ouverte.",
     url: "https://vertxia.com",
     siteName: "Vertxia",
     type: "website",
+    locale: "fr_FR",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Vertxia",
-    description: "L'IA qui transforme ton Shopify en site 3D cinéma",
+    title: "Vertxia — Conformité électrique IA",
+    description:
+      "Photographie ton tableau, l'IA détecte les défauts NF C 15-100 avant Consuel. Rapport PDF en 5 min. Pour électriciens FR.",
   },
 };
 
