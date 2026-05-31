@@ -639,7 +639,7 @@ export default function VertxiaPage() {
             <div className="md:col-span-2">
               <h3 className="text-2xl md:text-3xl font-light mb-2">Emilien Behague</h3>
               <p className="text-xs text-black/40 mb-8 tracking-[0.2em] uppercase font-mono">
-                Solo Builder · Indie Hacker · Toulon
+                Solo Builder · Indie Hacker · Hautes-Pyrénées
               </p>
 
               <p className="text-base md:text-lg text-black/65 leading-relaxed mb-6">
