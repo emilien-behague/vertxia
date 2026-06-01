@@ -34,14 +34,14 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Vertxia — Conformité électrique IA avant Consuel",
+  title: "Vertxia — La paperasse F-Gas finie en quelques secondes",
   description:
-    "Photographie ton tableau. L'IA détecte les non-conformités NF C 15-100 en 5 min. Rapport PDF auto. Pour les 80 000 électriciens artisans FR. 63 % des dossiers Consuel ont des lacunes — Vertxia les évite avant le contrôle.",
+    "Photo + voix → BSFF officiel signé Ministère, CERFA 15497*04, déclaration SYDEREP. Pour les frigoristes, climaticiens et installateurs PAC. Connecté à TrackDéchets, Ministère de la Transition écologique. Beta privée ouverte.",
   metadataBase: new URL("https://vertxia.com"),
   openGraph: {
-    title: "Vertxia — Conformité électrique IA avant Consuel",
+    title: "Vertxia — La paperasse F-Gas finie en quelques secondes",
     description:
-      "63 % des dossiers Consuel ont des lacunes. Vertxia détecte les non-conformités NF C 15-100 sur photo, avant le contrôle Consuel. Beta privée ouverte.",
+      "BSFF, CERFA, SYDEREP générés automatiquement depuis votre téléphone. Photo + voix → documents officiels signés Ministère. Pour frigoristes, climaticiens, installateurs PAC. Beta gratuite à vie.",
     url: "https://vertxia.com",
     siteName: "Vertxia",
     type: "website",
@@ -49,9 +49,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Vertxia — Conformité électrique IA",
+    title: "Vertxia — Paperasse F-Gas automatisée",
     description:
-      "Photographie ton tableau, l'IA détecte les défauts NF C 15-100 avant Consuel. Rapport PDF en 5 min. Pour électriciens FR.",
+      "Photo + voix → BSFF officiel signé Ministère en quelques secondes. Pour frigoristes, climaticiens, installateurs PAC.",
   },
 };
 

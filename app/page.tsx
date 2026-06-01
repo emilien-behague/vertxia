@@ -114,7 +114,7 @@ export default function VertxiaPage() {
               transition: "opacity 800ms cubic-bezier(0.16,1,0.3,1)",
             }}
           >
-            · Build in public · Pivot · 31 mai 2026
+            · Build in public · Pivot F-Gas · 1er juin 2026
           </p>
 
           {/* Teaser beta — waitlist */}
@@ -149,9 +149,9 @@ export default function VertxiaPage() {
                 "opacity 1s cubic-bezier(0.16,1,0.3,1) 0ms, filter 1s cubic-bezier(0.16,1,0.3,1) 0ms, transform 1s cubic-bezier(0.16,1,0.3,1) 0ms",
             }}
           >
-            Conformité électrique.<br />
-            <span className="text-black/40">Avant le contrôle Consuel.</span><br />
-            En 5 minutes.
+            La paperasse F-Gas.<br />
+            <span className="text-black/40">Finie en quelques secondes.</span><br />
+            Depuis votre téléphone.
           </h1>
 
           <p
@@ -162,15 +162,15 @@ export default function VertxiaPage() {
               transition: "opacity 1s cubic-bezier(0.16,1,0.3,1) 250ms, transform 1s cubic-bezier(0.16,1,0.3,1) 250ms",
             }}
           >
-            Photographie ton tableau. L&apos;IA détecte les non-conformités NF C 15-100 sur photo. Rapport PDF auto avec références normatives. Pour les 80&nbsp;000 électriciens artisans français qui veulent passer le contrôle Consuel au premier coup.
+            Photo + voix → l&apos;application génère votre BSFF officiel signé Ministère, votre CERFA d&apos;intervention, et votre déclaration annuelle SYDEREP. Pour les frigoristes, climaticiens et installateurs PAC qui veulent en finir avec la paperasse F-Gas.
           </p>
 
           {/* 3 metrics */}
           <div className="flex gap-8 sm:gap-12 mb-12">
             {[
-              { value: "63%", label: "Dossiers Consuel à lacunes" },
-              { value: "5 min", label: "Photo → rapport PDF" },
-              { value: "3-6 sem", label: "Délai évité par refus" },
+              { value: "5 sec", label: "BSFF généré via API" },
+              { value: "Officiel", label: "Signature Ministère" },
+              { value: "0 saisie", label: "Photo + voix" },
             ].map((stat, i) => (
               <div
                 key={i}
@@ -197,7 +197,7 @@ export default function VertxiaPage() {
             }}
           >
             <a
-              href="mailto:emilien@vertxia.com?subject=Beta-test Vertxia&body=Salut Emilien, je suis électricien et je veux tester Vertxia en beta privée. Mon contexte : "
+              href="mailto:emilien@vertxia.com?subject=Beta-test Vertxia F-Gas&body=Salut Emilien, je suis frigoriste / installateur PAC / climaticien et je veux tester Vertxia en beta privée. Mon contexte : "
               className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium whitespace-nowrap"
             >
               DEVENIR BETA-TESTEUR
@@ -234,7 +234,7 @@ export default function VertxiaPage() {
           <div className="mb-16">
             <Tag>PIPELINE</Tag>
             <RevealText className="mt-5 text-4xl md:text-5xl lg:text-6xl font-light tracking-tight leading-[1.05]">
-              {"De la photo au rapport,\nen 5 minutes."}
+              {"De l'intervention au BSFF,\nen quelques secondes."}
             </RevealText>
           </div>
 
@@ -248,9 +248,9 @@ export default function VertxiaPage() {
                     <circle cx="12" cy="13" r="4" />
                   </svg>
                 </div>
-                <h3 className="text-2xl font-light mb-3">Photographie depuis ton téléphone</h3>
+                <h3 className="text-2xl font-light mb-3">Photo de la plaque + commande vocale</h3>
                 <p className="text-sm text-black/45 leading-relaxed max-w-md">
-                  Tableau, prises salle de bain, mise à la terre, serrage tableau divisionnaire. N&apos;importe quel smartphone. EXIF préservés. Upload direct sans installation d&apos;app — PWA mobile en V1, app Expo en V2.
+                  Une photo de la plaque signalétique de l&apos;unité, vous précisez l&apos;intervention à la voix, et c&apos;est fini. Plus aucun champ administratif à saisir. N&apos;importe quel smartphone, sans installation — PWA en V1, app native en V2.
                 </p>
               </div>
               <div className="mt-8 flex items-center gap-3">
@@ -275,9 +275,9 @@ export default function VertxiaPage() {
                   <path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m7.07 7.07l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m7.07-7.07l4.24-4.24" />
                 </svg>
               </div>
-              <h3 className="text-lg font-light mb-2">Vision IA multi-tier</h3>
+              <h3 className="text-lg font-light mb-2">Vision IA + reconnaissance fluide</h3>
               <p className="text-sm text-black/45 leading-relaxed">
-                Claude Haiku filtre les images, Gemini 2.5 Pro analyse, Claude Sonnet 4.6 tranche les cas complexes. Coût optimisé : ~$0.05 par rapport.
+                L&apos;IA lit la plaque signalétique (modèle, fluide, charge), comprend votre dictée vocale, et remplit automatiquement BSFF, CERFA et registre.
               </p>
             </BentoCard>
 
@@ -288,9 +288,9 @@ export default function VertxiaPage() {
                   <polyline points="9 12 11 14 15 10" />
                 </svg>
               </div>
-              <h3 className="text-lg font-light mb-2">Détection NF C 15-100</h3>
+              <h3 className="text-lg font-light mb-2">Connecté à TrackDéchets</h3>
               <p className="text-sm text-black/45 leading-relaxed">
-                Mise à la terre · Salle de bain volumes · Serrage connexions · Calibre protection · Différentiels 30mA · Sections câbles.
+                Génération du BSFF via l&apos;API officielle du Ministère de la Transition écologique. Signature électronique, PDF officiel téléchargé en 5 secondes.
               </p>
             </BentoCard>
 
@@ -302,9 +302,9 @@ export default function VertxiaPage() {
                   <polyline points="21 15 16 10 5 21" />
                 </svg>
               </div>
-              <h3 className="text-lg font-light mb-2">Annotations sur image</h3>
+              <h3 className="text-lg font-light mb-2">Archive interventions année</h3>
               <p className="text-sm text-black/45 leading-relaxed">
-                Bounding box précise sur chaque défaut + sévérité (info / warning / critical) + référence normative exacte.
+                Toutes vos interventions stockées par équipement, prêtes pour générer automatiquement la déclaration annuelle SYDEREP à l&apos;ADEME.
               </p>
             </BentoCard>
 
@@ -317,41 +317,41 @@ export default function VertxiaPage() {
                   <line x1="9" y1="17" x2="15" y2="17" />
                 </svg>
               </div>
-              <h3 className="text-lg font-light mb-2">Rapport PDF Consuel-ready</h3>
+              <h3 className="text-lg font-light mb-2">PDF officiel signé Ministère</h3>
               <p className="text-sm text-black/45 leading-relaxed">
-                Téléchargeable, partageable client, marque blanche optionnelle. Stats agrégées par chantier.
+                BSFF, CERFA 15497*04, étiquette TFE post-intervention. PDF officiel téléchargeable, partageable client, archivable.
               </p>
             </BentoCard>
           </div>
         </div>
       </section>
 
-      {/* ── CATÉGORIES DÉTECTÉES ──────────────────────────────────────────── */}
+      {/* ── DOCUMENTS GÉNÉRÉS ─────────────────────────────────────────────── */}
       <section id="categories" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-16">
             <div>
-              <Tag>CATÉGORIES DÉTECTÉES</Tag>
+              <Tag>DOCUMENTS GÉNÉRÉS</Tag>
               <RevealText className="mt-5 text-4xl md:text-5xl font-light tracking-tight leading-[1.05]">
-                {"On détecte ce qui fait\n63% des refus Consuel."}
+                {"Toute la paperasse F-Gas,\nautomatique."}
               </RevealText>
             </div>
             <p className="text-sm text-black/45 leading-relaxed max-w-xs">
-              Données sources : rapport activité Consuel 2024 + statistiques Promotelec ONSE 2024. Vertxia détecte les 9 catégories qui représentent 80% des non-conformités.
+              Le règlement UE 2024/573 est entré en vigueur en mars 2024. La transition des catégories d&apos;attestation s&apos;achève fin 2026. Vertxia s&apos;occupe de tous les documents obligatoires.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
-              { name: "Mise à la terre absente", pct: "16.1%", desc: "Liaison équipotentielle, prise de terre, continuité conducteur." },
-              { name: "Salle de bain (volumes)", pct: "23.5%", desc: "Prises en volume interdit, luminaires IP non conformes, distances." },
-              { name: "Serrage connexions", pct: "22.3%", desc: "Dominos, bornes mal serrées, échauffements, traces de surchauffe." },
-              { name: "Calibre protection", pct: "—", desc: "Surcalibre disjoncteur, ampérage incompatible section câble." },
-              { name: "Différentiels 30mA", pct: "—", desc: "Absence DDR, mauvais raccordement, surcharge circuits." },
-              { name: "Sections câbles", pct: "—", desc: "Section insuffisante, mélange sections, sertissage incorrect." },
-              { name: "Gaines apparentes", pct: "—", desc: "Câbles non protégés, conduits ICTA absents, traversées non isolées." },
-              { name: "Prises sans terre", pct: "—", desc: "Anciennes prises 2P sans contact terre, broche désactivée." },
-              { name: "Cheminement câbles", pct: "—", desc: "Sépar courants forts/faibles, distances respect plinthes/sols." },
+              { name: "BSFF", pct: "API officielle", desc: "Bordereau de Suivi des Fluides Frigorigènes signé électroniquement via TrackDéchets, Ministère de la Transition écologique." },
+              { name: "CERFA 15497*04", pct: "Obligatoire", desc: "Fiche d'intervention F-Gas exigée à chaque manipulation de fluide frigorigène. Pré-remplie depuis la plaque signalétique." },
+              { name: "Déclaration SYDEREP", pct: "ADEME", desc: "Déclaration annuelle obligatoire avant le 31 mars de l'année suivante. Agrégation automatique de toutes vos interventions." },
+              { name: "Étiquette TFE", pct: "Post-intervention", desc: "Étiquette à apposer sur l'équipement après chaque intervention, conforme aux exigences du règlement UE." },
+              { name: "Registre par équipement", pct: "10 ans", desc: "Registre obligatoire des interventions par équipement, archivé 10 ans. Recherche par client, par fluide, par date." },
+              { name: "Récap volumes annuel", pct: "Auto", desc: "Bilan annuel des fluides chargés, récupérés, recyclés. Prêt pour la déclaration SYDEREP en un clic." },
+              { name: "Attestation client", pct: "PDF", desc: "Attestation d'intervention conforme remise au client après chaque passage. Personnalisable à votre logo." },
+              { name: "Récap mensuel", pct: "Email", desc: "Synthèse mensuelle de votre activité F-Gas envoyée par email. Pour vous, pour votre comptable, pour vos partenaires." },
+              { name: "Archivage cloud", pct: "Sécurisé", desc: "Toutes vos pièces archivées en France, accessibles depuis n'importe quel appareil. Aucune donnée perdue." },
             ].map((cat, i) => (
               <BentoCard key={cat.name} className="p-6 min-h-[140px] flex flex-col justify-between" delay={i * 40}>
                 <div className="flex items-start justify-between gap-3">
@@ -373,10 +373,10 @@ export default function VertxiaPage() {
           <div className="text-center mb-12">
             <Tag>BETA PRIVÉE — RECRUTEMENT</Tag>
             <RevealText className="mt-5 text-4xl md:text-5xl font-light tracking-tight leading-[1.05]">
-              {"5 électriciens beta-testeurs.\nGratuit. À vie."}
+              {"10 frigoristes beta-testeurs.\nGratuit. À vie."}
             </RevealText>
             <p className="mt-6 text-base text-black/50 leading-relaxed max-w-2xl mx-auto">
-              On cherche 5 électriciens artisans pour calibrer la précision IA sur de vrais chantiers. En échange : accès gratuit à vie au produit final, mention au lancement, et ton retour qui shape directement le produit.
+              On cherche 10 frigoristes, climaticiens ou installateurs PAC pour calibrer Vertxia sur de vraies interventions. En échange : accès gratuit à vie au produit final, mention au lancement, et ton retour qui shape directement le produit.
             </p>
           </div>
 
@@ -385,15 +385,15 @@ export default function VertxiaPage() {
             <ul className="space-y-3 text-sm text-black/65 mb-8 max-w-lg mx-auto text-left">
               <li className="flex items-start gap-3">
                 <span className="text-black/35 mt-1">·</span>
-                <span>Électricien artisan en activité (SASU, EURL, micro-entreprise)</span>
+                <span>Frigoriste, climaticien ou installateur PAC en activité</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-black/35 mt-1">·</span>
-                <span>3+ chantiers résidentiels / mois (neuf ou rénovation)</span>
+                <span>Attestation de capacité Catégorie I (ou en cours d&apos;obtention)</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-black/35 mt-1">·</span>
-                <span>Prêt à uploader 10-20 photos / semaine pendant 4 semaines</span>
+                <span>3+ interventions F-Gas par mois (résidentiel, tertiaire, agroalim)</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-black/35 mt-1">·</span>
@@ -401,7 +401,7 @@ export default function VertxiaPage() {
               </li>
             </ul>
             <a
-              href="mailto:emilien@vertxia.com?subject=Beta-test Vertxia&body=Salut Emilien,%0D%0A%0D%0AJe suis électricien et je veux rejoindre la beta privée Vertxia.%0D%0A%0D%0AMon contexte :%0D%0A- Statut juridique : %0D%0A- Région : %0D%0A- Chantiers / mois : %0D%0A- Type d'installations (neuf/réno/tertiaire) : %0D%0A%0D%0AContact : "
+              href="mailto:emilien@vertxia.com?subject=Beta-test Vertxia F-Gas&body=Salut Emilien,%0D%0A%0D%0AJe veux rejoindre la beta privée Vertxia F-Gas.%0D%0A%0D%0AMon contexte :%0D%0A- Métier (frigoriste / climaticien / installateur PAC) : %0D%0A- Statut juridique : %0D%0A- Région : %0D%0A- Catégorie d'attestation F-Gas : %0D%0A- Interventions F-Gas / mois : %0D%0A- Type d'installations (résidentiel / tertiaire / agroalim) : %0D%0A%0D%0AContact : "
               className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium"
             >
               POSTULER À LA BETA
@@ -455,16 +455,16 @@ export default function VertxiaPage() {
           {[...Array(3)].map((_, rep) => (
             <div key={rep} className="flex shrink-0">
               {[
-                "NF C 15-100",
-                "Promotelec",
-                "CAPEB",
-                "Qualifelec",
-                "Consuel",
-                "Guides fabricants RAG",
+                "Règlement UE 2024/573",
+                "ADEME SYDEREP",
+                "TrackDéchets",
+                "Cemafroid",
+                "AFCE",
+                "CAPEB Adour-Pyrénées",
+                "FFB UMGCCP",
+                "Climalife",
                 "Stripe Billing",
-                "Resend",
                 "Vercel Edge",
-                "Supabase Auth",
               ].map((cap) => (
                 <div key={cap} className="flex items-center gap-6 px-10 py-5 border-r border-black/[0.06] shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-black/12 shrink-0" />
@@ -478,91 +478,25 @@ export default function VertxiaPage() {
 
       {/* ── PRICING ───────────────────────────────────────────────────────── */}
       <section id="pricing" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16 flex flex-col items-center">
-            <Tag>PRICING — APRÈS BETA</Tag>
-            <RevealText className="mt-5 text-4xl md:text-5xl font-light tracking-tight leading-[1.05]">
-              {"Pricing transparent.\nÉconomise un refus = rentabilisé."}
-            </RevealText>
-            <p className="mt-6 text-sm text-black/45 max-w-xl mx-auto leading-relaxed">
-              Pricing prévisionnel (lancement public sept 2026). Beta-testeurs accès gratuit à vie.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {[
-              {
-                name: "Solo",
-                price: "49€",
-                period: "/mois HT",
-                sub: "Pour l'électricien artisan indépendant",
-                features: [
-                  "10 rapports IA / mois",
-                  "Détection 9 catégories NF C 15-100",
-                  "Rapport PDF marque personnelle",
-                  "Historique chantiers illimité",
-                  "Email support",
-                ],
-                delay: 0,
-              },
-              {
-                name: "Team",
-                price: "149€",
-                period: "/mois HT",
-                sub: "Pour entreprise 2-5 électriciens",
-                features: [
-                  "50 rapports IA / mois",
-                  "Multi-utilisateurs (5 max)",
-                  "Espace partagé chantiers",
-                  "Rapports marque blanche",
-                  "Support prioritaire",
-                ],
-                highlight: true,
-                delay: 80,
-              },
-              {
-                name: "Bureau Contrôle",
-                price: "499€",
-                period: "/mois HT",
-                sub: "Pour bureaux COFRAC + 5 utilisateurs",
-                features: [
-                  "Rapports illimités",
-                  "Multi-utilisateurs illimités",
-                  "API d'intégration ERP",
-                  "Marque blanche complète",
-                  "Support dédié + SLA",
-                ],
-                delay: 140,
-              },
-            ].map((plan) => (
-              <BentoCard
-                key={plan.name}
-                className={`p-8 flex flex-col ${plan.highlight ? "border-black/20 bg-[#F0EEE8]" : ""}`}
-                delay={plan.delay}
-              >
-                <div className="mb-8">
-                  <div className="font-mono text-[11px] tracking-widest text-black/40 mb-4">{plan.name.toUpperCase()}</div>
-                  <div className="flex items-baseline gap-1 mb-1">
-                    <span className="text-4xl font-light">{plan.price}</span>
-                    {plan.period && <span className="text-black/40 text-sm">{plan.period}</span>}
-                  </div>
-                  <p className="text-xs text-black/35 tracking-wide">{plan.sub}</p>
-                </div>
-                <ul className="space-y-3 flex-1">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-center gap-3 text-sm text-black/55">
-                      <div className="w-1 h-1 rounded-full bg-black/25 shrink-0" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-              </BentoCard>
-            ))}
-          </div>
-
-          <p className="mt-10 text-center text-xs text-black/35 tracking-wide">
-            Paiement immédiat · Résiliable à tout moment · Sans engagement
+        <div className="max-w-3xl mx-auto text-center">
+          <Tag>PRICING</Tag>
+          <RevealText className="mt-5 text-4xl md:text-5xl font-light tracking-tight leading-[1.05]">
+            {"Beta gratuite à vie.\nPricing dévoilé plus tard."}
+          </RevealText>
+          <p className="mt-8 text-base text-black/50 max-w-xl mx-auto leading-relaxed">
+            Vertxia est en phase de construction avec ses premiers beta-testeurs. Les 10 frigoristes qui rejoignent maintenant gardent un accès gratuit à vie au produit final, sans condition de durée.
           </p>
+          <p className="mt-4 text-sm text-black/40 max-w-xl mx-auto leading-relaxed">
+            Le pricing public sera annoncé après la phase beta. Nous construisons d&apos;abord un produit qui résout vraiment vos problèmes, puis nous parlerons argent.
+          </p>
+          <div className="mt-12">
+            <a
+              href="#beta"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium"
+            >
+              REJOINDRE LA BETA GRATUITE
+            </a>
+          </div>
         </div>
       </section>
 
@@ -570,14 +504,14 @@ export default function VertxiaPage() {
       <section id="cta" className="relative py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06] overflow-hidden">
         <div className="relative z-10 max-w-2xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-light tracking-tight leading-[1.05] mb-6">
-            Ton premier rapport,<br />en 5 minutes.
+            Ton premier BSFF,<br />en quelques secondes.
           </h2>
           <p className="text-sm text-black/45 leading-relaxed mb-10 max-w-md mx-auto">
-            Pas de contrôle Consuel raté. Pas de 3-6 semaines d&apos;attente bloqué. Photographie, analyse, corrige avant.
+            Plus de soirées à remplir des CERFA. Plus de week-ends à préparer la déclaration SYDEREP. Vertxia s&apos;en occupe pour vous.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto justify-center">
             <a
-              href="mailto:emilien@vertxia.com?subject=Beta-test Vertxia"
+              href="mailto:emilien@vertxia.com?subject=Beta-test Vertxia F-Gas"
               className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium"
             >
               DEVENIR BETA-TESTEUR
@@ -647,15 +581,15 @@ export default function VertxiaPage() {
               </p>
 
               <p className="text-sm text-black/50 leading-relaxed mb-5">
-                L&apos;idée est née d&apos;un constat brutal : 63% des dossiers Consuel présentent des lacunes au 1er contrôle. 25 à 40% sont refusés. Quand ça arrive, l&apos;électricien doit revenir corriger, repayer un contrôle (77€), et attendre 3 à 6 semaines pour la contre-visite. Pendant ce temps, le chantier est bloqué, le client râle, l&apos;artisan perd de l&apos;argent.
+                L&apos;idée vient d&apos;un constat simple : les frigoristes, climaticiens et installateurs PAC passent un temps considérable sur la paperasse F-Gas. Bordereaux BSFF à remplir à chaque intervention, CERFA d&apos;intervention obligatoire, déclaration annuelle SYDEREP en fin d&apos;année. Tout ça à la main, en double saisie, le soir ou le week-end. Pendant ce temps, leur métier — la technique, le terrain, les clients — passe au second plan.
               </p>
 
               <p className="text-sm text-black/50 leading-relaxed mb-5">
-                Avec les modèles vision IA en 2026 (Claude Sonnet 4.6, Gemini 2.5 Pro), détecter une non-conformité NF C 15-100 sur photo devient enfin possible et rentable. C&apos;est exactement ce que Vertxia construit : un copilote IA pour les 80 000 électriciens artisans français, qui détecte les défauts AVANT que Consuel passe.
+                Avec le règlement UE 2024/573 entré en vigueur en mars 2024 et la transition des catégories d&apos;attestation qui s&apos;achève fin 2026, la charge administrative ne fait qu&apos;augmenter. Et avec les modèles vision et vocaux IA de 2026, automatiser cette paperasse devient enfin possible. C&apos;est exactement ce que Vertxia construit : une application qui transforme une photo de plaque signalétique et une commande vocale en BSFF officiel signé Ministère, en quelques secondes.
               </p>
 
               <p className="text-sm text-black/50 leading-relaxed mb-10">
-                Je documente chaque ligne de code, chaque décision, chaque échec et chaque learning sur Instagram et LinkedIn. Build in public, sans filtre. Si tu kiffes les marathons techniques en solo, suis le build.
+                Je documente chaque ligne de code, chaque décision, chaque échec et chaque learning sur Instagram et LinkedIn. Build in public, sans filtre. Si tu aimes les marathons techniques en solo, suis le build.
               </p>
 
               <div className="flex flex-wrap gap-3">
@@ -751,7 +685,7 @@ export default function VertxiaPage() {
           <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
             {[
               { label: "Pipeline", href: "#pipeline" },
-              { label: "Catégories", href: "#categories" },
+              { label: "Documents", href: "#categories" },
               { label: "Beta", href: "#beta" },
               { label: "Stack", href: "#stack" },
               { label: "Pricing", href: "#pricing" },
@@ -793,7 +727,7 @@ export default function VertxiaPage() {
           </div>
         </div>
         <div className="max-w-6xl mx-auto mt-8 pt-6 border-t border-black/[0.04]">
-          <span className="text-xs text-black/20">© 2026 Vertxia · Conformité électrique IA · Built solo in public.</span>
+          <span className="text-xs text-black/20">© 2026 Vertxia · Paperasse F-Gas automatisée · Built solo in public.</span>
         </div>
       </footer>
     </div>
