@@ -100,6 +100,85 @@ export default function BsffPage() {
   const [portalMounted, setPortalMounted] = useState(false);
   useEffect(() => { setPortalMounted(true); }, []);
 
+  // Vision IA — scan de plaque signalétique
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [scanInfo, setScanInfo] = useState<string | null>(null);
+  const scanInputRef = useRef<HTMLInputElement | null>(null);
+
+  function fluideExists(code: string | null): boolean {
+    if (!code) return false;
+    return FLUIDES.some(f => f.code === code);
+  }
+
+  async function handlePlaqueScan(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setScanning(true);
+    setScanError(null);
+    setScanInfo(null);
+
+    try {
+      // Conversion fichier → dataURL base64
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("Lecture du fichier échouée."));
+        reader.readAsDataURL(file);
+      });
+
+      const res = await fetch("/api/vision/plaque", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageDataUrl: dataUrl }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        setScanError(errJson.error || `Échec analyse (${res.status})`);
+        return;
+      }
+
+      const plaque = await res.json();
+      const detected: string[] = [];
+
+      // Pré-remplissage des champs
+      if (plaque.modele) {
+        const m = [plaque.marque, plaque.modele].filter(Boolean).join(" ").trim();
+        setModeleEquipement(m);
+        detected.push(`modèle "${m}"`);
+      }
+      if (plaque.numeroSerie) {
+        setNumeroSerieEquipement(plaque.numeroSerie);
+        detected.push(`n° série "${plaque.numeroSerie}"`);
+      }
+      if (fluideExists(plaque.fluide)) {
+        setFluide(plaque.fluide);
+        detected.push(`fluide ${plaque.fluide}`);
+      }
+      if (typeof plaque.chargeNominaleKg === "number" && plaque.chargeNominaleKg > 0) {
+        setWeight(String(plaque.chargeNominaleKg));
+        detected.push(`charge ${plaque.chargeNominaleKg} kg`);
+      }
+
+      if (detected.length === 0) {
+        setScanError("Aucune info extraite de la plaque. Vérifie la qualité de la photo (cadrage, lumière, netteté).");
+      } else {
+        setScanInfo(
+          `Détecté : ${detected.join(", ")}. Confiance : ${plaque.confiance ?? "?"}.${
+            plaque.notes ? ` ${plaque.notes}` : ""
+          }`
+        );
+      }
+    } catch (err) {
+      setScanError(err instanceof Error ? err.message : "Erreur réseau.");
+    } finally {
+      setScanning(false);
+      // Reset l'input pour pouvoir re-scanner la même photo si besoin
+      if (scanInputRef.current) scanInputRef.current.value = "";
+    }
+  }
+
   const selectedFluide = FLUIDES.find(f => f.code === fluide) ?? FLUIDES[0];
 
   async function handleSubmit(e: React.FormEvent) {
@@ -608,6 +687,56 @@ export default function BsffPage() {
                 <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/35 mb-3 flex items-center gap-2">
                   <span className="w-1 h-1 rounded-full bg-black/25" />
                   Informations CERFA 15497*04 (fiche d&apos;intervention)
+                </div>
+
+                {/* Vision IA — scan de plaque signalétique */}
+                <div className="mb-4 rounded-xl border-2 border-dashed border-black/15 bg-white/40 p-4">
+                  <input
+                    ref={scanInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handlePlaqueScan}
+                    disabled={scanning || isLoading}
+                    className="hidden"
+                    id="plaque-scan-input"
+                  />
+                  <label
+                    htmlFor="plaque-scan-input"
+                    className={`flex items-center justify-center gap-3 w-full px-5 py-3 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                      scanning
+                        ? "bg-black/[0.04] text-black/40 cursor-wait"
+                        : "bg-[#111] text-white hover:bg-[#333]"
+                    }`}
+                  >
+                    {scanning ? (
+                      <>
+                        <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                        <span className="tracking-widest">ANALYSE EN COURS…</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                          <circle cx="12" cy="13" r="4" />
+                        </svg>
+                        <span className="tracking-widest">SCANNER LA PLAQUE SIGNALÉTIQUE</span>
+                      </>
+                    )}
+                  </label>
+                  <p className="mt-2 text-[11px] text-black/40 text-center">
+                    Photographiez la plaque, l&apos;IA pré-remplit modèle, n° série, fluide et charge.
+                  </p>
+                  {scanInfo && (
+                    <div className="mt-3 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
+                      {scanInfo}
+                    </div>
+                  )}
+                  {scanError && (
+                    <div className="mt-3 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-xs text-red-800">
+                      {scanError}
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-4">
                   <div>
