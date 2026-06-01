@@ -140,25 +140,26 @@ export default function SyderepPage() {
             </div>
           </div>
           <h1 className="mt-6 text-4xl md:text-5xl font-light leading-[1.05] tracking-tight">
-            Déclaration SYDEREP {year}
+            Préparation SYDEREP {year}
           </h1>
           <p className="mt-4 text-sm text-black/50 leading-relaxed max-w-2xl">
-            Bilan annuel des fluides frigorigènes manipulés par votre entreprise.
-            Vertxia agrège automatiquement vos interventions de l&apos;année pour
-            pré-remplir les rubriques que SYDEREP attend. Vous n&apos;avez plus
-            qu&apos;à compléter votre stock initial et vos achats fournisseurs.
+            <strong className="text-black/70">Outil interne de préparation.</strong>{" "}
+            Vertxia agrège automatiquement vos interventions de l&apos;année et
+            pré-calcule vos rubriques par fluide. <strong className="text-black/70">La déclaration officielle se fait sur le portail ADEME</strong> —
+            ici, vous préparez les chiffres exacts à reporter dans SYDEREP, avec une preuve interne datée.
           </p>
         </motion.div>
 
         {/* Bandeau officiel ADEME */}
-        <div className="mb-8 rounded-xl border border-amber-200/60 bg-amber-50/80 px-5 py-4 print:hidden">
+        <div className="mb-4 rounded-xl border border-amber-200/60 bg-amber-50/80 px-5 py-4 print:hidden">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div className="space-y-1">
               <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-amber-800">
-                Période officielle de déclaration
+                ⚠ La déclaration officielle se fait sur le portail ADEME
               </div>
               <div className="text-sm text-amber-900">
-                <strong>{submissionWindow}</strong> sur le portail ADEME.
+                Vertxia pré-calcule vos chiffres. La saisie / l&apos;upload final se fait sur{" "}
+                <strong>syderep.ademe.fr</strong> entre le <strong>{submissionWindow}</strong>.
               </div>
             </div>
             <a
@@ -172,6 +173,18 @@ export default function SyderepPage() {
                 <path d="M7 17L17 7M7 7h10v10" />
               </svg>
             </a>
+          </div>
+        </div>
+
+        {/* Roadmap bandeau */}
+        <div className="mb-8 rounded-xl border border-blue-200/50 bg-blue-50/50 px-5 py-3 print:hidden">
+          <div className="flex items-start gap-3">
+            <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-blue-700 mt-0.5">ROADMAP</span>
+            <p className="text-xs text-blue-900/80 leading-relaxed">
+              SYDEREP accepte un import CSV/Excel via le menu <em>Import acteurs</em>. Vertxia travaille
+              à générer un export directement compatible avec ce format ADEME pour passer de
+              &quot;outil de préparation&quot; à <strong>&quot;upload 1 clic&quot;</strong>.
+            </p>
           </div>
         </div>
 
@@ -201,6 +214,7 @@ export default function SyderepPage() {
             onClick={handleExportCsv}
             disabled={decl.rows.length === 0}
             className="px-4 py-2 rounded-lg bg-white border border-black/10 text-xs font-mono tracking-widest uppercase hover:border-black/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Format Vertxia. L'export au format CSV ADEME directement importable arrive bientôt."
           >
             EXPORT CSV
           </button>
@@ -417,10 +431,10 @@ export default function SyderepPage() {
           </div>
           <div className="rounded-xl border border-black/[0.08] bg-white p-5">
             <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/40 mb-3">
-              Mode opératoire SYDEREP
+              Mode opératoire SYDEREP (aujourd&apos;hui)
             </div>
             <ol className="space-y-2 text-sm text-black/70 leading-relaxed list-decimal list-inside">
-              <li>Téléchargez le CSV de votre déclaration {year} ci-dessus.</li>
+              <li>Téléchargez le CSV / imprimez la page de préparation ci-dessus.</li>
               <li>
                 Connectez-vous sur{" "}
                 <a href={SYDEREP_URL} target="_blank" rel="noopener noreferrer" className="underline">
@@ -428,8 +442,12 @@ export default function SyderepPage() {
                 </a>{" "}
                 entre le 1ᵉʳ février et le 31 mars {year + 1}.
               </li>
-              <li>Reportez les valeurs ligne par ligne dans le formulaire ADEME.</li>
-              <li>Conservez le CSV Vertxia comme preuve interne.</li>
+              <li>
+                Soit vous reportez les valeurs ligne par ligne dans le formulaire web (mode IHM),
+                soit vous utilisez le menu <em>Import acteurs &gt; Import</em> avec le template
+                Excel officiel ADEME.
+              </li>
+              <li>Conservez le CSV / PDF Vertxia comme preuve interne datée.</li>
             </ol>
           </div>
         </div>
