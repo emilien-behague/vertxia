@@ -27,6 +27,14 @@ if (fields.length === 0) {
       const opts = f.getOptions();
       extra = ` options=[${opts.join(", ")}]`;
     }
+    // Coordonnées des champs signature (pour embed image)
+    if (name.startsWith("Sign_")) {
+      const widgets = f.acroField.getWidgets();
+      if (widgets.length > 0) {
+        const r = widgets[0].getRectangle();
+        extra += ` rect={x:${r.x.toFixed(1)},y:${r.y.toFixed(1)},w:${r.width.toFixed(1)},h:${r.height.toFixed(1)}}`;
+      }
+    }
     console.log(`  [${type.padEnd(15)}] ${name}${extra}`);
   }
 }

@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import SignatureCanvas from "react-signature-canvas";
 
 type Fluide = {
   code: string;
@@ -82,6 +84,21 @@ export default function BsffPage() {
   const needsBsff = config.needsBsff;
   const aFaitControle = config.needsControle;
 
+  // Approche C — Modale signature détenteur
+  const [sigModalOpen, setSigModalOpen] = useState(false);
+  const [detenteurName, setDetenteurName] = useState("");
+  const [detenteurQuality, setDetenteurQuality] = useState("");
+  const [sigError, setSigError] = useState<string | null>(null);
+  const [sigLoading, setSigLoading] = useState(false);
+  const sigRef = useRef<SignatureCanvas | null>(null);
+  // Payload CERFA mémorisé pour pouvoir re-générer après signature
+  const [lastCerfaPayload, setLastCerfaPayload] = useState<Record<string, unknown> | null>(null);
+
+  // Portal mount : la modale signature est rendue dans document.body pour
+  // échapper aux stacking contexts créés par framer-motion sur les parents.
+  const [portalMounted, setPortalMounted] = useState(false);
+  useEffect(() => { setPortalMounted(true); }, []);
+
   const selectedFluide = FLUIDES.find(f => f.code === fluide) ?? FLUIDES[0];
 
   async function handleSubmit(e: React.FormEvent) {
@@ -122,32 +139,34 @@ export default function BsffPage() {
 
       // ÉTAPE 2 — CERFA 15497*04 PDF (toujours généré)
       setStatus({ type: "loading", step: "Génération du CERFA 15497*04…" });
+      const cerfaPayload: Record<string, unknown> = {
+        fluide: selectedFluide,
+        weight: needsBsff ? parseFloat(weight) : 0,
+        packagingNumero: needsBsff ? packagingNumero : "",
+        clientName: clientName.trim() || null,
+        modeleEquipement: modeleEquipement.trim() || undefined,
+        numeroSerieEquipement: numeroSerieEquipement.trim() || undefined,
+        attestation: attestation.trim() || undefined,
+        lieuIntervention: lieuIntervention.trim() || undefined,
+        bsffId,
+        destination,
+        typeIntervention,
+        controleDetails: aFaitControle
+          ? {
+              detecteurId: detecteurId.trim() || undefined,
+              detecteurPermanent: detecteurPermanent === "oui",
+              fuiteDetectee: fuiteDetectee === "oui",
+              fuiteLocalisation:
+                fuiteDetectee === "oui" ? fuiteLocalisation.trim() || undefined : undefined,
+              fuiteReparee: fuiteDetectee === "oui" ? fuiteReparee : undefined,
+            }
+          : undefined,
+      };
+      setLastCerfaPayload(cerfaPayload);
       const cerfaRes = await fetch("/api/cerfa/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fluide: selectedFluide,
-          weight: needsBsff ? parseFloat(weight) : 0,
-          packagingNumero: needsBsff ? packagingNumero : "",
-          clientName: clientName.trim() || null,
-          modeleEquipement: modeleEquipement.trim() || undefined,
-          numeroSerieEquipement: numeroSerieEquipement.trim() || undefined,
-          attestation: attestation.trim() || undefined,
-          lieuIntervention: lieuIntervention.trim() || undefined,
-          bsffId,
-          destination,
-          typeIntervention,
-          controleDetails: aFaitControle
-            ? {
-                detecteurId: detecteurId.trim() || undefined,
-                detecteurPermanent: detecteurPermanent === "oui",
-                fuiteDetectee: fuiteDetectee === "oui",
-                fuiteLocalisation:
-                  fuiteDetectee === "oui" ? fuiteLocalisation.trim() || undefined : undefined,
-                fuiteReparee: fuiteDetectee === "oui" ? fuiteReparee : undefined,
-              }
-            : undefined,
-        }),
+        body: JSON.stringify(cerfaPayload),
       });
       if (!cerfaRes.ok) {
         const errJson = await cerfaRes.json().catch(() => ({}));
@@ -179,6 +198,81 @@ export default function BsffPage() {
     if (status.type === "success") URL.revokeObjectURL(status.cerfaUrl);
     setStatus({ type: "idle" });
     setPackagingNumero(`B${Math.floor(Math.random() * 1_000_000_000)}`);
+    setDetenteurName("");
+    setDetenteurQuality("");
+    setLastCerfaPayload(null);
+    setSigError(null);
+  }
+
+  function openSignatureModal() {
+    setDetenteurName(clientName);
+    setDetenteurQuality("");
+    setSigError(null);
+    setSigModalOpen(true);
+  }
+
+  function closeSignatureModal() {
+    setSigModalOpen(false);
+    setSigError(null);
+    sigRef.current?.clear();
+  }
+
+  async function handleSignAndRegenerate() {
+    if (!lastCerfaPayload) {
+      setSigError("Payload CERFA manquant — regénère le PDF d'abord.");
+      return;
+    }
+    if (!detenteurName.trim()) {
+      setSigError("Le nom du détenteur est obligatoire.");
+      return;
+    }
+    if (!sigRef.current || sigRef.current.isEmpty()) {
+      setSigError("Le client doit signer sur le canvas avant de valider.");
+      return;
+    }
+
+    setSigError(null);
+    setSigLoading(true);
+    try {
+      const dataUrl = sigRef.current
+        .getCanvas()
+        .toDataURL("image/png");
+
+      const signedPayload = {
+        ...lastCerfaPayload,
+        detenteurSignature: {
+          name: detenteurName.trim(),
+          quality: detenteurQuality.trim() || undefined,
+          dataUrl,
+        },
+      };
+
+      const res = await fetch("/api/cerfa/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(signedPayload),
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        setSigError(errJson.error || "Échec de la régénération du CERFA.");
+        setSigLoading(false);
+        return;
+      }
+      const blob = await res.blob();
+      const newUrl = URL.createObjectURL(blob);
+
+      // Remplace le blob URL du CERFA dans status (libère l'ancien)
+      if (status.type === "success") {
+        URL.revokeObjectURL(status.cerfaUrl);
+        setStatus({ ...status, cerfaUrl: newUrl });
+      }
+      setSigModalOpen(false);
+      sigRef.current?.clear();
+    } catch (err) {
+      setSigError(err instanceof Error ? err.message : "Erreur réseau.");
+    } finally {
+      setSigLoading(false);
+    }
   }
 
   const isLoading = status.type === "loading";
@@ -680,6 +774,19 @@ export default function BsffPage() {
                 </a>
               </div>
 
+              {/* Approche C — Bouton signature client */}
+              <button
+                onClick={openSignatureModal}
+                className="w-full px-8 py-4 border-2 border-dashed border-black/20 text-[#111] text-sm tracking-widest font-medium rounded-xl hover:border-black/50 hover:bg-black/[0.02] transition-all inline-flex items-center justify-center gap-3"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 17v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2" />
+                  <path d="M12 2v15" />
+                  <path d="m7 11 5-5 5 5" />
+                </svg>
+                FAIRE SIGNER LE CLIENT (OPTIONNEL)
+              </button>
+
               <button
                 onClick={reset}
                 className="w-full px-8 py-3 border border-black/10 text-black/70 text-sm tracking-widest rounded-xl hover:border-black/25 hover:bg-black/[0.03] transition-all"
@@ -689,6 +796,129 @@ export default function BsffPage() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Modale signature détenteur — Approche C — rendue via Portal */}
+        {portalMounted && createPortal((
+          <AnimatePresence>
+          {sigModalOpen && (
+            <motion.div
+              key="sig-modal"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+              onClick={(e) => { if (e.target === e.currentTarget) closeSignatureModal(); }}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 8 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                className="bg-[#F5F4F0] rounded-2xl max-w-lg w-full p-6 md:p-8 space-y-5 shadow-2xl"
+              >
+                <div>
+                  <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/40 mb-1">
+                    Signature client
+                  </div>
+                  <h2 className="text-2xl font-light tracking-tight text-[#111]">
+                    Le client signe sur ton téléphone
+                  </h2>
+                  <p className="mt-2 text-xs text-black/50">
+                    La signature est embarquée dans le CERFA 15497*04 officiel et le PDF est régénéré.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
+                      Nom du détenteur
+                    </label>
+                    <input
+                      type="text"
+                      value={detenteurName}
+                      onChange={e => setDetenteurName(e.target.value)}
+                      disabled={sigLoading}
+                      placeholder="Ex: Jean Dupont"
+                      className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white text-base text-[#111] focus:outline-none focus:border-black/40 transition-all disabled:opacity-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
+                      Qualité (optionnel)
+                    </label>
+                    <input
+                      type="text"
+                      value={detenteurQuality}
+                      onChange={e => setDetenteurQuality(e.target.value)}
+                      disabled={sigLoading}
+                      placeholder="Ex: Propriétaire, Gérant…"
+                      className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white text-base text-[#111] focus:outline-none focus:border-black/40 transition-all disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
+                    Signature
+                  </label>
+                  <div className="border-2 border-black/15 rounded-xl bg-white overflow-hidden">
+                    <SignatureCanvas
+                      ref={sigRef}
+                      penColor="#111"
+                      canvasProps={{
+                        width: 460,
+                        height: 180,
+                        className: "w-full h-[180px] touch-none",
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { sigRef.current?.clear(); setSigError(null); }}
+                    disabled={sigLoading}
+                    className="mt-2 font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 hover:text-black/80 transition-colors disabled:opacity-50"
+                  >
+                    Effacer
+                  </button>
+                </div>
+
+                {sigError && (
+                  <div className="px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800">
+                    {sigError}
+                  </div>
+                )}
+
+                <div className="flex flex-col-reverse md:flex-row gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={closeSignatureModal}
+                    disabled={sigLoading}
+                    className="flex-1 px-6 py-3 border border-black/10 text-black/70 text-sm tracking-widest font-medium rounded-xl hover:border-black/25 hover:bg-black/[0.03] transition-all disabled:opacity-50"
+                  >
+                    ANNULER
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSignAndRegenerate}
+                    disabled={sigLoading}
+                    className="flex-1 px-6 py-3 bg-[#111] text-white text-sm tracking-widest font-medium rounded-xl hover:bg-[#333] transition-colors disabled:opacity-60 disabled:cursor-wait inline-flex items-center justify-center gap-3"
+                  >
+                    {sigLoading ? (
+                      <>
+                        <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                        <span>SIGNATURE EN COURS…</span>
+                      </>
+                    ) : (
+                      <span>VALIDER LA SIGNATURE</span>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+          </AnimatePresence>
+        ), document.body)}
 
         <div className="mt-16 pt-8 border-t border-black/[0.06] text-xs text-black/30 font-mono tracking-wide">
           ENVIRONNEMENT SANDBOX · TrackDéchets bac à sable · Aucun BSFF de production

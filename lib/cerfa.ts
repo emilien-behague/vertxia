@@ -29,6 +29,15 @@ export type Destination = {
   address: string;
 };
 
+export type SignatureDetenteur = {
+  /** Nom complet du détenteur signataire */
+  name: string;
+  /** Qualité du signataire (Propriétaire, Gérant, etc.) */
+  quality?: string;
+  /** Image PNG de la signature en data URL (canvas tactile). */
+  dataUrl: string;
+};
+
 export type CerfaInput = {
   fluide: { code: string; label: string; gwp: number };
   weight: number;
@@ -46,6 +55,10 @@ export type CerfaInput = {
   /** Centre de traitement du fluide récupéré (case 13 du CERFA).
    *  Récupéré depuis TrackDéchets après création du BSFF. */
   destination?: Destination | null;
+  /** Signature du détenteur capturée sur canvas tactile (Approche C).
+   *  Si présente : remplit Sign_Detenteur_Nom/Qualite/Date + embed l'image
+   *  PNG dans la zone signature détenteur du PDF officiel. */
+  detenteurSignature?: SignatureDetenteur | null;
 };
 
 // Famille chimique du fluide (paliers HFC/HFO/HCFC du Règlement UE 2024/573).
@@ -355,9 +368,15 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
   setText("Sign_Operateur_Nom", "Emilien Behague", 8);
   setText("Sign_Operateur_Qualite", "Frigoriste Cat. I", 8);
   setText("Sign_Operateur_Date", dateFR, 8);
-  setText("Sign_Detenteur_Nom", "");
-  setText("Sign_Detenteur_Qualite", "");
-  setText("Sign_Detenteur_Date", "");
+  if (input.detenteurSignature) {
+    setText("Sign_Detenteur_Nom", input.detenteurSignature.name, 8);
+    setText("Sign_Detenteur_Qualite", input.detenteurSignature.quality ?? "", 8);
+    setText("Sign_Detenteur_Date", dateFR, 8);
+  } else {
+    setText("Sign_Detenteur_Nom", "");
+    setText("Sign_Detenteur_Qualite", "");
+    setText("Sign_Detenteur_Date", "");
+  }
 
   // Re-générer les appearances pour appliquer les setFontSize() personnalisés.
   // Sans ça, pdf-lib garde l'apparence d'origine (fontSize auto du PDF source).
@@ -366,6 +385,30 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
   // Flatten = rend tous les champs non-éditables et imprime les valeurs
   // dans le document (PDF "officiel rempli", pas un formulaire à éditer).
   form.flatten();
+
+  // ─── Signature détenteur (Approche C — canvas tactile) ───────────────────
+  // Embed après flatten pour que l'image apparaisse PAR-DESSUS la zone signature.
+  // Coords zone signature détenteur (inspection acroField) :
+  //   Nom    : x=345.2, y=92.9, w=208.0, h=9.5
+  //   Qualité: x=345.2, y=73.8, w=208.0, h=9.5
+  //   Date   : x=345.2, y=43.7, w=208.3, h=19.7
+  // Zone signature manuscrite au-dessus des 3 champs : y=110 à y=150 (h=40).
+  if (input.detenteurSignature?.dataUrl) {
+    const base64 = input.detenteurSignature.dataUrl.replace(
+      /^data:image\/png;base64,/,
+      ""
+    );
+    const pngBytes = Buffer.from(base64, "base64");
+    const sigImg = await pdf.embedPng(pngBytes);
+    const scaled = sigImg.scaleToFit(200, 35);
+    const page = pdf.getPage(0);
+    page.drawImage(sigImg, {
+      x: 350,
+      y: 110,
+      width: scaled.width,
+      height: scaled.height,
+    });
+  }
 
   return await pdf.save();
 }
