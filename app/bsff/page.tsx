@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import SignatureCanvas from "react-signature-canvas";
+import { saveIntervention } from "@/lib/intervention-storage";
 
 type Fluide = {
   code: string;
@@ -179,6 +180,38 @@ export default function BsffPage() {
       const cerfaBlob = await cerfaRes.blob();
       const cerfaUrl = URL.createObjectURL(cerfaBlob);
 
+      // Sauvegarde locale (page Historique)
+      try {
+        saveIntervention({
+          typeIntervention,
+          fluide: selectedFluide,
+          weight: needsBsff ? parseFloat(weight) : 0,
+          packagingNumero: needsBsff ? packagingNumero : "",
+          clientName: clientName.trim() || null,
+          modeleEquipement: modeleEquipement.trim() || undefined,
+          numeroSerieEquipement: numeroSerieEquipement.trim() || undefined,
+          attestation: attestation.trim() || undefined,
+          lieuIntervention: lieuIntervention.trim() || undefined,
+          bsffId,
+          bsffPdfUrl: pdfUrl,
+          bsffSignedAt: signedAt,
+          destination,
+          controleDetails: aFaitControle
+            ? {
+                detecteurId: detecteurId.trim() || undefined,
+                detecteurPermanent: detecteurPermanent === "oui",
+                fuiteDetectee: fuiteDetectee === "oui",
+                fuiteLocalisation:
+                  fuiteDetectee === "oui" ? fuiteLocalisation.trim() || undefined : undefined,
+                fuiteReparee: fuiteDetectee === "oui" ? fuiteReparee : undefined,
+              }
+            : undefined,
+        });
+      } catch (e) {
+        // localStorage indisponible : on continue silencieusement.
+        console.warn("[intervention-storage]", e);
+      }
+
       setStatus({
         type: "success",
         bsffId,
@@ -288,9 +321,17 @@ export default function BsffPage() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="mb-12"
         >
-          <a href="/" className="font-mono text-xs tracking-[0.25em] text-black/50 hover:text-black/80 transition-colors">
-            ← VERTXIA
-          </a>
+          <div className="flex items-center justify-between">
+            <a href="/" className="font-mono text-xs tracking-[0.25em] text-black/50 hover:text-black/80 transition-colors">
+              ← VERTXIA
+            </a>
+            <a href="/historique" className="font-mono text-xs tracking-[0.25em] text-black/50 hover:text-black/80 transition-colors inline-flex items-center gap-2">
+              HISTORIQUE
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </a>
+          </div>
           <h1 className="mt-6 text-4xl md:text-5xl font-light leading-[1.05] tracking-tight">
             Nouvelle intervention F-Gas
           </h1>
