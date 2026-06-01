@@ -123,6 +123,12 @@ export default function SyderepPage() {
             </a>
             <div className="flex items-center gap-5">
               <a
+                href="/equipements"
+                className="font-mono text-xs tracking-[0.25em] text-black/50 hover:text-black/80 transition-colors"
+              >
+                PARC
+              </a>
+              <a
                 href="/historique"
                 className="font-mono text-xs tracking-[0.25em] text-black/50 hover:text-black/80 transition-colors"
               >
