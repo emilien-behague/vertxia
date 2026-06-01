@@ -133,12 +133,17 @@ export default function HistoriquePage() {
             <a href="/" className="font-mono text-xs tracking-[0.25em] text-black/50 hover:text-black/80 transition-colors">
               ← VERTXIA
             </a>
-            <a href="/bsff" className="font-mono text-xs tracking-[0.25em] text-black/50 hover:text-black/80 transition-colors inline-flex items-center gap-2">
-              NOUVELLE INTERVENTION
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-            </a>
+            <div className="flex items-center gap-5">
+              <a href="/syderep" className="font-mono text-xs tracking-[0.25em] text-black/50 hover:text-black/80 transition-colors">
+                DÉCLARATION SYDEREP
+              </a>
+              <a href="/bsff" className="font-mono text-xs tracking-[0.25em] text-black/50 hover:text-black/80 transition-colors inline-flex items-center gap-2">
+                NOUVELLE INTERVENTION
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </a>
+            </div>
           </div>
           <h1 className="mt-6 text-4xl md:text-5xl font-light leading-[1.05] tracking-tight">
             Historique des interventions
