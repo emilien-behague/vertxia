@@ -23,6 +23,12 @@ export type ControleDetails = {
   fuiteReparee?: "realisee" | "a_faire";
 };
 
+export type Destination = {
+  name: string;
+  siret: string;
+  address: string;
+};
+
 export type CerfaInput = {
   fluide: { code: string; label: string; gwp: number };
   weight: number;
@@ -37,6 +43,9 @@ export type CerfaInput = {
   typeIntervention?: TypeIntervention;
   /** Détails du contrôle d'étanchéité — uniquement si typeIntervention ≠ "recuperation" */
   controleDetails?: ControleDetails;
+  /** Centre de traitement du fluide récupéré (case 13 du CERFA).
+   *  Récupéré depuis TrackDéchets après création du BSFF. */
+  destination?: Destination | null;
 };
 
 // Famille chimique du fluide (paliers HFC/HFO/HCFC du Règlement UE 2024/573).
@@ -294,11 +303,19 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
   }
 
   // ─── 13. Installation de destination ──────────────────────────────────────
-  // Section 13 = centre de traitement où va le fluide récupéré (PAS le lieu
-  // d'intervention chez le client, qui est déjà en section 3).
-  // L'info est dans le BSFF TrackDéchets (champ "destination") mais on ne la
-  // récupère pas dans l'API actuelle → laissé vide pour MVP. À ajouter en v2
-  // via un query GraphQL TrackDéchets sur l'identifiant BSFF.
+  // Centre de traitement où le fluide récupéré est envoyé. Récupéré côté
+  // serveur via une query GraphQL TrackDéchets sur l'identifiant du BSFF
+  // qu'on vient de créer — source de vérité officielle.
+  if (hasRecuperation && input.destination) {
+    const d = input.destination;
+    setText(
+      "13_Instal",
+      [d.name, `SIRET ${d.siret}`, d.address]
+        .filter(s => s && s.trim().length > 0)
+        .join(" — "),
+      7
+    );
+  }
 
   // ─── 14. Observations ─────────────────────────────────────────────────────
   const observationsParts: string[] = [];

@@ -169,10 +169,37 @@ export async function POST(req: Request) {
     return serverError("URL PDF absente dans la réponse TrackDéchets", r4);
   }
 
+  // ÉTAPE 5 — récupération de la destination (centre de traitement) pour
+  // la case 13 du CERFA 15497*04 "Installation prévue de destination du
+  // fluide récupéré (Nom, SIRET, adresse)".
+  // Source de vérité = TrackDéchets, donc on relit le BSFF côté serveur
+  // au lieu de réutiliser le payload qu'on a envoyé.
+  const r5 = await gql(
+    token,
+    `query BsffDestination($id: ID!) {
+       bsff(id: $id) {
+         destination {
+           company { name siret address }
+         }
+       }
+     }`,
+    { id: bsff.id }
+  );
+  // Pas bloquant si ça échoue — le CERFA peut être généré sans la section 13.
+  const destCompany = r5.data?.bsff?.destination?.company;
+  const destination = destCompany
+    ? {
+        name: destCompany.name as string,
+        siret: destCompany.siret as string,
+        address: destCompany.address as string,
+      }
+    : null;
+
   return NextResponse.json({
     bsffId: bsff.id,
     status: r3.data?.signBsff?.status,
     signedAt: signedAt ?? new Date().toISOString(),
     pdfUrl,
+    destination,
   });
 }

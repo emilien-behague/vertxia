@@ -90,6 +90,7 @@ export default function BsffPage() {
     let bsffId: string | undefined;
     let pdfUrl: string | undefined;
     let signedAt: string | undefined;
+    let destination: { name: string; siret: string; address: string } | null = null;
 
     try {
       // ÉTAPE 1 (conditionnelle) — BSFF officiel via TrackDéchets
@@ -116,6 +117,7 @@ export default function BsffPage() {
         bsffId = data.bsffId;
         pdfUrl = data.pdfUrl;
         signedAt = data.signedAt;
+        destination = data.destination ?? null;
       }
 
       // ÉTAPE 2 — CERFA 15497*04 PDF (toujours généré)
@@ -133,6 +135,7 @@ export default function BsffPage() {
           attestation: attestation.trim() || undefined,
           lieuIntervention: lieuIntervention.trim() || undefined,
           bsffId,
+          destination,
           typeIntervention,
           controleDetails: aFaitControle
             ? {
