@@ -12,9 +12,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Corps invalide" }, { status: 400 });
   }
 
-  if (!body.fluide?.code || !body.weight) {
+  // Le fluide est requis dans tous les cas (l'équipement contient toujours
+  // un fluide, même si aucune récupération n'est faite). weight = 0 est OK
+  // pour les interventions sans manipulation (contrôle, mise en service).
+  if (!body.fluide?.code || typeof body.weight !== "number" || body.weight < 0) {
     return NextResponse.json(
-      { error: "Champs requis manquants : fluide, weight" },
+      { error: "Champs requis manquants : fluide.code, weight (>= 0)" },
       { status: 400 }
     );
   }

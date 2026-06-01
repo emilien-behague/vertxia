@@ -2,6 +2,27 @@ import { PDFDocument } from "pdf-lib";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
+export type TypeIntervention =
+  | "recuperation"
+  | "demantelement"
+  | "controle_periodique"
+  | "controle_non_periodique"
+  | "mise_service"
+  | "maintenance";
+
+export type ControleDetails = {
+  /** N° du détecteur de fuite manuel utilisé pendant le contrôle */
+  detecteurId?: string;
+  /** Équipement équipé d'un système de détection permanente de fuite ? */
+  detecteurPermanent: boolean;
+  /** Au moins une fuite détectée lors du contrôle ? */
+  fuiteDetectee: boolean;
+  /** Si fuite : localisation décrite par l'opérateur */
+  fuiteLocalisation?: string;
+  /** Si fuite : réparation déjà réalisée ou à faire ? */
+  fuiteReparee?: "realisee" | "a_faire";
+};
+
 export type CerfaInput = {
   fluide: { code: string; label: string; gwp: number };
   weight: number;
@@ -12,18 +33,13 @@ export type CerfaInput = {
   attestation?: string;
   lieuIntervention?: string;
   bsffId?: string;
+  /** Type d'intervention — wizard /bsff. Par défaut "recuperation". */
+  typeIntervention?: TypeIntervention;
+  /** Détails du contrôle d'étanchéité — uniquement si typeIntervention ≠ "recuperation" */
+  controleDetails?: ControleDetails;
 };
 
-const VERTXIA_OPERATEUR = {
-  raisonSociale: "Vertxia TEST",
-  siret: "00000091982033",
-  attestation: "FR-CAT1-TEST-2026",
-  adresse: "Adresse test, 65000 TARBES",
-  contact: "Emilien Behague — 06 52 09 98 85 — emilien@vertxia.com",
-};
-
-// Famille chimique du fluide (détermine quelle case famille est cochée
-// dans la section "périodicité de contrôle d'étanchéité").
+// Famille chimique du fluide (paliers HFC/HFO/HCFC du Règlement UE 2024/573).
 type Famille = "HFC" | "HFO" | "HCFC" | "Naturel";
 const FAMILLE: Record<string, Famille> = {
   "R-32": "HFC",
@@ -34,6 +50,14 @@ const FAMILLE: Record<string, Famille> = {
   "R-1234yf": "HFO",
   "R-22": "HCFC",
   "R-290": "Naturel",
+};
+
+const VERTXIA_OPERATEUR = {
+  raisonSociale: "Vertxia TEST",
+  siret: "00000091982033",
+  attestation: "FR-CAT1-TEST-2026",
+  adresse: "Adresse test, 65000 TARBES",
+  contact: "Emilien Behague — 06 52 09 98 85 — emilien@vertxia.com",
 };
 
 // R-290 (propane) = inflammable → UN3161 + déchet 16 05 04
@@ -51,12 +75,14 @@ function fmtDateFR(d: Date) {
 }
 
 function ficheNumber(d: Date) {
-  const y = d.getFullYear();
+  // Format compact pour tenir dans la case "Fiche N°" du CERFA officiel.
+  // YYMMDD-HHmm = 11 caractères max.
+  const yy = String(d.getFullYear()).slice(-2);
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   const h = String(d.getHours()).padStart(2, "0");
   const mi = String(d.getMinutes()).padStart(2, "0");
-  return `VTX-${y}${m}${day}-${h}${mi}`;
+  return `${yy}${m}${day}-${h}${mi}`;
 }
 
 export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
@@ -76,13 +102,25 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
   const yearStr = String(now.getFullYear());
 
   const teqCO2 = ((input.weight * input.fluide.gwp) / 1000).toFixed(2);
+  const teqCO2Num = parseFloat(teqCO2);
   const famille = FAMILLE[input.fluide.code] ?? "HFC";
   const attestation = input.attestation?.trim() || VERTXIA_OPERATEUR.attestation;
+  const typeIntervention = input.typeIntervention ?? "recuperation";
+  const controle = input.controleDetails;
+  const hasControle =
+    (typeIntervention === "controle_periodique" ||
+      typeIntervention === "controle_non_periodique") &&
+    controle !== undefined;
+  // Récupération de fluide effective dans cette intervention (=> remplir
+  // section 11 manipulation + section 12 code déchet).
+  const hasRecuperation =
+    typeIntervention === "recuperation" || typeIntervention === "demantelement";
 
-  const setText = (name: string, value: string) => {
+  const setText = (name: string, value: string, fontSize?: number) => {
     try {
       const f = form.getTextField(name);
       f.setText(value);
+      if (fontSize !== undefined) f.setFontSize(fontSize);
     } catch {
       // champ absent : on ignore silencieusement
     }
@@ -94,9 +132,17 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
       /* */
     }
   };
+  const selectRadio = (name: string, option: string) => {
+    try {
+      form.getRadioGroup(name).select(option);
+    } catch {
+      /* */
+    }
+  };
 
   // ─── En-tête ──────────────────────────────────────────────────────────────
-  setText("Fiche_no", ficheNumber(now));
+  // Case "Fiche N°" très étroite → fontSize réduite pour éviter le truncate.
+  setText("Fiche_no", ficheNumber(now), 9);
 
   // ─── 1. Opérateur ─────────────────────────────────────────────────────────
   setText(
@@ -106,9 +152,10 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
       `SIRET ${VERTXIA_OPERATEUR.siret}`,
       VERTXIA_OPERATEUR.adresse,
       VERTXIA_OPERATEUR.contact,
-    ].join(" — ")
+    ].join(" — "),
+    7
   );
-  setText("Attestation_no", attestation);
+  setText("Attestation_no", attestation, 9);
 
   // ─── 2. Détenteur ─────────────────────────────────────────────────────────
   setText(
@@ -116,7 +163,8 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
     [
       input.clientName?.trim() || "Client à compléter",
       input.lieuIntervention?.trim() || "Adresse à compléter sur site",
-    ].join(" — ")
+    ].join(" — "),
+    8
   );
 
   // ─── 3. Équipement ────────────────────────────────────────────────────────
@@ -126,80 +174,177 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
       input.modeleEquipement?.trim() || "Modèle à compléter",
       `N° série ${input.numeroSerieEquipement?.trim() || "—"}`,
       input.lieuIntervention?.trim() || "Lieu à compléter sur site",
-    ].join(" — ")
+    ].join(" — "),
+    7
   );
   setText("Equipement_Fluide", input.fluide.code);
-  setText("Equipement_Charge", `${input.weight} kg`);
-  setText("Equipement_teqCO2", `${teqCO2} t eq. CO2`);
+  // Unités "kg" et "t.éq.CO2" déjà imprimées APRÈS les champs dans le PDF officiel.
+  setText("Equipement_Charge", String(input.weight));
+  setText("Equipement_teqCO2", teqCO2);
 
-  // ─── 4. Type d'intervention (récupération = maintenance/démantèlement) ───
-  // On coche Maintenance par défaut — c'est le cas de figure le plus large
-  // qui couvre une récupération de fluide en service après-vente.
-  check("Case_Maintenance");
-
-  // ─── 5-8. Contrôle d'étanchéité ───────────────────────────────────────────
-  // Date du contrôle = date d'intervention
-  setText("Controle_Jour", dayStr);
-  setText("Controle_Mois", monthStr);
-  setText("Controle_Annee", yearStr);
-
-  // Périodicité par famille — seuil bas par défaut (réglementation min).
-  // L'opérateur peut corriger sur site si charge ≥ seuil supérieur.
-  if (famille === "HFC") check("Case_HFC_5");
-  else if (famille === "HFO") check("Case_HFO_1");
-  else if (famille === "HCFC") check("Case_HCFC_2");
-
-  // Périodicité 12 mois (équipement avec système de détection)
-  check("Case_Avec_12m");
-
-  // Pas de fuite par défaut
-  check("Case_Fuite_Non");
-
-  // ─── 11. Fluide manipulé ──────────────────────────────────────────────────
-  setText("11_Quantite", String(input.weight));
-  setText("11_Denom", input.fluide.code);
-  setText("11_BSFF", input.bsffId ?? "");
-  setText("11_Contenant_ID", input.packagingNumero);
-  // QE = quantité récupérée transmise pour destruction/régénération
-  setText("11_QE", String(input.weight));
-
-  // ─── 12. Code déchet ──────────────────────────────────────────────────────
-  if (isInflammable(input.fluide.code)) {
-    check("Case_12_UN3161");
-    check("Case_12_Autre160504");
-  } else {
-    check("Case_12_UN1078");
-    check("Case_12_Autre140601");
+  // ─── 4. Type d'intervention ───────────────────────────────────────────────
+  // Notice 52064*04 : 8 cases possibles, on coche celle(s) qui correspond(ent).
+  switch (typeIntervention) {
+    case "controle_periodique":
+      check("Case_CtrlPerio");
+      break;
+    case "controle_non_periodique":
+      check("Case_CtrlNonPerio");
+      break;
+    case "mise_service":
+      check("Case_MiseService");
+      break;
+    case "maintenance":
+      check("Case_Maintenance");
+      break;
+    case "demantelement":
+      check("Case_Demantel");
+      break;
+    case "recuperation":
+    default:
+      // Pas de case "Récupération" dans le CERFA officiel → Case_Autre + libellé.
+      // Champ "Autre" très étroit → texte raccourci + fontSize 7.
+      check("Case_Autre");
+      setText("Autre", "Récupération de fluide", 7);
+      break;
   }
 
-  // ─── 13. Lieu d'installation ──────────────────────────────────────────────
-  setText(
-    "13_Instal",
-    input.lieuIntervention?.trim() || "Lieu à compléter sur site"
-  );
+  // ─── 5-10. Contrôle d'étanchéité + fuite ──────────────────────────────────
+  // CONDITIONNEL : rempli UNIQUEMENT si l'opérateur a effectivement effectué
+  // un contrôle d'étanchéité dans cette intervention (wizard /bsff).
+  if (hasControle && controle) {
+    // Section 5 — détecteur manuel utilisé
+    if (controle.detecteurId) setText("Detecteur_ID", controle.detecteurId, 8);
+
+    // Date du contrôle (jour / mois / année séparés dans le CERFA officiel)
+    setText("Controle_Jour", dayStr);
+    setText("Controle_Mois", monthStr);
+    setText("Controle_Annee", yearStr);
+
+    // Section 6 — Bouton_Oui : radio à 2 options (1 = Oui, 2 = Non)
+    selectRadio("Bouton_Oui", controle.detecteurPermanent ? "1" : "2");
+
+    // Sections 8/9 — Palier de charge selon famille + tonnage éq. CO2.
+    // Paliers : HFC 5/50/500 t — HFO 1/10/100 t — HCFC 2/30/300 t.
+    if (famille === "HFC") {
+      if (teqCO2Num >= 500) check("Case_HFC_500");
+      else if (teqCO2Num >= 50) check("Case_HFC_50");
+      else check("Case_HFC_5");
+    } else if (famille === "HFO") {
+      if (teqCO2Num >= 100) check("Case_HFO_100");
+      else if (teqCO2Num >= 10) check("Case_HFO_10");
+      else check("Case_HFO_1");
+    } else if (famille === "HCFC") {
+      if (teqCO2Num >= 300) check("Case_HCFC_300");
+      else if (teqCO2Num >= 30) check("Case_HCFC_30");
+      else check("Case_HCFC_2");
+    }
+
+    // Périodicité du contrôle d'étanchéité :
+    //   AVEC détecteur permanent (section 9) : 6m / 12m / 24m
+    //   SANS détecteur permanent (section 8) : 3m / 6m / 12m
+    //   Sous 5 t éq. CO2 : aucune périodicité réglementaire imposée.
+    if (controle.detecteurPermanent) {
+      if (teqCO2Num >= 500) check("Case_Avec_6m");
+      else if (teqCO2Num >= 50) check("Case_Avec_12m");
+      else if (teqCO2Num >= 5) check("Case_Avec_24m");
+    } else {
+      if (teqCO2Num >= 500) check("Case_Sans_3m");
+      else if (teqCO2Num >= 50) check("Case_Sans_6m");
+      else if (teqCO2Num >= 5) check("Case_Sans_12m");
+    }
+
+    // Section 10 — Fuite détectée
+    if (controle.fuiteDetectee) {
+      check("Case_Fuite_Oui");
+      if (controle.fuiteLocalisation) {
+        setText("Fuite_Loca_1", controle.fuiteLocalisation, 8);
+      }
+      if (controle.fuiteReparee === "realisee") check("Case_Rep_Fuite1_realisee");
+      else if (controle.fuiteReparee === "a_faire") check("Case_Rep_Fuite1_AFaire");
+    } else {
+      check("Case_Fuite_Non");
+    }
+  }
+
+  // ─── 11. Fluide manipulé ──────────────────────────────────────────────────
+  // CONDITIONNEL : section remplie uniquement si récupération effective
+  // (recuperation, demantelement). Pour les contrôles d'étanchéité, la mise
+  // en service et la maintenance préventive, aucune quantité n'est manipulée.
+  if (hasRecuperation) {
+    setText("11_Quantite", String(input.weight), 8);
+    setText("11_Denom", input.fluide.code, 8);
+    // BSFF ID : ~21 chars (FF-YYYYMMDD-XXXXXXXXX) → case TRÈS étroite, fontSize 6.
+    setText("11_BSFF", input.bsffId ?? "", 6);
+    setText("11_Contenant_ID", input.packagingNumero, 8);
+    // QE = quantité récupérée transmise pour destruction/régénération
+    setText("11_QE", String(input.weight), 8);
+  }
+
+  // ─── 12. Dénomination ADR/RID ─────────────────────────────────────────────
+  // CONDITIONNEL : section remplie uniquement si récupération de déchet en
+  // contenant (notice 52064*04). Tous les fluides du formulaire sont classés
+  // UN 1078 sauf R-290 (UN 3161, inflammable).
+  if (hasRecuperation) {
+    if (isInflammable(input.fluide.code)) {
+      check("Case_12_UN3161");
+    } else {
+      check("Case_12_UN1078");
+    }
+  }
+
+  // ─── 13. Installation de destination ──────────────────────────────────────
+  // Section 13 = centre de traitement où va le fluide récupéré (PAS le lieu
+  // d'intervention chez le client, qui est déjà en section 3).
+  // L'info est dans le BSFF TrackDéchets (champ "destination") mais on ne la
+  // récupère pas dans l'API actuelle → laissé vide pour MVP. À ajouter en v2
+  // via un query GraphQL TrackDéchets sur l'identifiant BSFF.
 
   // ─── 14. Observations ─────────────────────────────────────────────────────
-  setText(
-    "14_Observations",
-    [
-      "Récupération de fluide pour traitement par centre agréé.",
-      input.bsffId
-        ? `Bordereau de Suivi de Fluides Frigorigènes : ${input.bsffId} (plateforme TrackDéchets, Ministère de la Transition écologique).`
-        : "",
-      `Quantite teq. CO2 : ${teqCO2} t (GWP ${input.fluide.gwp}).`,
-      "Fiche générée automatiquement par Vertxia · vertxia.com",
-    ]
-      .filter(Boolean)
-      .join(" ")
+  const observationsParts: string[] = [];
+  if (hasRecuperation) {
+    observationsParts.push(
+      "Récupération de fluide pour traitement par centre agréé."
+    );
+    if (input.bsffId) {
+      observationsParts.push(
+        `BSFF (TrackDéchets - Ministère Transition écologique) : ${input.bsffId}.`
+      );
+    }
+    observationsParts.push(
+      `Quantité teq. CO2 : ${teqCO2} t (GWP ${input.fluide.gwp}).`
+    );
+  } else if (typeIntervention === "controle_periodique") {
+    observationsParts.push(
+      "Contrôle périodique d'étanchéité réalisé conformément au Règlement UE 2024/573."
+    );
+  } else if (typeIntervention === "controle_non_periodique") {
+    observationsParts.push(
+      "Contrôle non périodique d'étanchéité (suite à fuite signalée ou réparation)."
+    );
+  } else if (typeIntervention === "mise_service") {
+    observationsParts.push("Mise en service de l'équipement.");
+  } else if (typeIntervention === "maintenance") {
+    observationsParts.push(
+      "Maintenance préventive sans manipulation de fluide."
+    );
+  }
+  observationsParts.push(
+    "Fiche générée automatiquement par Vertxia · vertxia.com"
   );
+  setText("14_Observations", observationsParts.join(" "), 7);
 
   // ─── 15. Signatures ───────────────────────────────────────────────────────
-  setText("Sign_Operateur_Nom", "Emilien Behague");
-  setText("Sign_Operateur_Qualite", "Frigoriste — Catégorie I");
-  setText("Sign_Operateur_Date", dateFR);
+  setText("Sign_Operateur_Nom", "Emilien Behague", 8);
+  setText("Sign_Operateur_Qualite", "Frigoriste Cat. I", 8);
+  setText("Sign_Operateur_Date", dateFR, 8);
   setText("Sign_Detenteur_Nom", "");
   setText("Sign_Detenteur_Qualite", "");
   setText("Sign_Detenteur_Date", "");
+
+  // Re-générer les appearances pour appliquer les setFontSize() personnalisés.
+  // Sans ça, pdf-lib garde l'apparence d'origine (fontSize auto du PDF source).
+  form.updateFieldAppearances();
 
   // Flatten = rend tous les champs non-éditables et imprime les valeurs
   // dans le document (PDF "officiel rempli", pas un formulaire à éditer).

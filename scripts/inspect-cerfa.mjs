@@ -22,6 +22,11 @@ if (fields.length === 0) {
   for (const f of fields) {
     const name = f.getName();
     const type = f.constructor.name;
-    console.log(`  [${type.padEnd(15)}] ${name}`);
+    let extra = "";
+    if (type === "PDFRadioGroup") {
+      const opts = f.getOptions();
+      extra = ` options=[${opts.join(", ")}]`;
+    }
+    console.log(`  [${type.padEnd(15)}] ${name}${extra}`);
   }
 }

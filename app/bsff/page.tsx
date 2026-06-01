@@ -23,8 +23,41 @@ const FLUIDES: Fluide[] = [
 type Status =
   | { type: "idle" }
   | { type: "loading"; step: string }
-  | { type: "success"; bsffId: string; pdfUrl: string; signedAt: string; cerfaUrl: string }
+  | {
+      type: "success";
+      // BSFF facultatif : si l'intervention ne nécessite pas de récupération
+      // (contrôle d'étanchéité, mise en service, maintenance), pas de bordereau.
+      bsffId?: string;
+      pdfUrl?: string;
+      signedAt?: string;
+      cerfaUrl: string;
+    }
   | { type: "error"; message: string };
+
+type TypeIntervention =
+  | "recuperation"
+  | "demantelement"
+  | "controle_periodique"
+  | "controle_non_periodique"
+  | "mise_service"
+  | "maintenance";
+
+type InterventionConfig = {
+  v: TypeIntervention;
+  label: string;
+  desc: string;
+  needsBsff: boolean;     // doit créer un BSFF TrackDéchets (récup de fluide)
+  needsControle: boolean; // doit remplir les sections 5-10 du CERFA
+};
+
+const INTERVENTIONS: InterventionConfig[] = [
+  { v: "recuperation", label: "Récupération de fluide", desc: "Transfert vers contenant agréé + BSFF officiel", needsBsff: true, needsControle: false },
+  { v: "demantelement", label: "Démantèlement", desc: "Récupération obligatoire + BSFF", needsBsff: true, needsControle: false },
+  { v: "controle_periodique", label: "Contrôle d'étanchéité périodique", desc: "Annuel · selon palier t éq. CO2", needsBsff: false, needsControle: true },
+  { v: "controle_non_periodique", label: "Contrôle non périodique", desc: "Suite à fuite signalée ou réparation", needsBsff: false, needsControle: true },
+  { v: "mise_service", label: "Mise en service", desc: "Première mise en route de l'équipement", needsBsff: false, needsControle: false },
+  { v: "maintenance", label: "Maintenance", desc: "Entretien préventif sans manipulation", needsBsff: false, needsControle: false },
+];
 
 export default function BsffPage() {
   const [fluide, setFluide] = useState(FLUIDES[0].code);
@@ -35,46 +68,82 @@ export default function BsffPage() {
   const [numeroSerieEquipement, setNumeroSerieEquipement] = useState("DK2024042587");
   const [attestation, setAttestation] = useState("");
   const [lieuIntervention, setLieuIntervention] = useState("");
+
+  // Wizard "Type d'intervention" — débloque les sections 5-10 du CERFA.
+  const [typeIntervention, setTypeIntervention] = useState<TypeIntervention>("recuperation");
+  const [detecteurId, setDetecteurId] = useState("");
+  const [detecteurPermanent, setDetecteurPermanent] = useState<"oui" | "non">("non");
+  const [fuiteDetectee, setFuiteDetectee] = useState<"oui" | "non">("non");
+  const [fuiteLocalisation, setFuiteLocalisation] = useState("");
+  const [fuiteReparee, setFuiteReparee] = useState<"realisee" | "a_faire">("realisee");
+
   const [status, setStatus] = useState<Status>({ type: "idle" });
+  const config = INTERVENTIONS.find(t => t.v === typeIntervention) ?? INTERVENTIONS[0];
+  const needsBsff = config.needsBsff;
+  const aFaitControle = config.needsControle;
 
   const selectedFluide = FLUIDES.find(f => f.code === fluide) ?? FLUIDES[0];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setStatus({ type: "loading", step: "Création du bordereau BSFF…" });
+
+    let bsffId: string | undefined;
+    let pdfUrl: string | undefined;
+    let signedAt: string | undefined;
+
     try {
-      // ÉTAPE 1 — BSFF officiel via TrackDéchets
-      const res = await fetch("/api/bsff/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fluide: selectedFluide,
-          weight: parseFloat(weight),
-          packagingNumero,
-          clientName: clientName.trim() || null,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setStatus({ type: "error", message: data.error || "Erreur inconnue" });
-        return;
+      // ÉTAPE 1 (conditionnelle) — BSFF officiel via TrackDéchets
+      // Seulement pour les interventions qui impliquent une récupération de fluide
+      // (Récupération pure, Démantèlement). Les contrôles d'étanchéité, la mise en
+      // service et la maintenance ne nécessitent pas de BSFF.
+      if (needsBsff) {
+        setStatus({ type: "loading", step: "Création du bordereau BSFF…" });
+        const res = await fetch("/api/bsff/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fluide: selectedFluide,
+            weight: parseFloat(weight),
+            packagingNumero,
+            clientName: clientName.trim() || null,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setStatus({ type: "error", message: data.error || "Erreur inconnue" });
+          return;
+        }
+        bsffId = data.bsffId;
+        pdfUrl = data.pdfUrl;
+        signedAt = data.signedAt;
       }
 
-      // ÉTAPE 2 — CERFA 15497*04 PDF (en parallèle, lié au bsffId)
+      // ÉTAPE 2 — CERFA 15497*04 PDF (toujours généré)
       setStatus({ type: "loading", step: "Génération du CERFA 15497*04…" });
       const cerfaRes = await fetch("/api/cerfa/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fluide: selectedFluide,
-          weight: parseFloat(weight),
-          packagingNumero,
+          weight: needsBsff ? parseFloat(weight) : 0,
+          packagingNumero: needsBsff ? packagingNumero : "",
           clientName: clientName.trim() || null,
           modeleEquipement: modeleEquipement.trim() || undefined,
           numeroSerieEquipement: numeroSerieEquipement.trim() || undefined,
           attestation: attestation.trim() || undefined,
           lieuIntervention: lieuIntervention.trim() || undefined,
-          bsffId: data.bsffId,
+          bsffId,
+          typeIntervention,
+          controleDetails: aFaitControle
+            ? {
+                detecteurId: detecteurId.trim() || undefined,
+                detecteurPermanent: detecteurPermanent === "oui",
+                fuiteDetectee: fuiteDetectee === "oui",
+                fuiteLocalisation:
+                  fuiteDetectee === "oui" ? fuiteLocalisation.trim() || undefined : undefined,
+                fuiteReparee: fuiteDetectee === "oui" ? fuiteReparee : undefined,
+              }
+            : undefined,
         }),
       });
       if (!cerfaRes.ok) {
@@ -90,9 +159,9 @@ export default function BsffPage() {
 
       setStatus({
         type: "success",
-        bsffId: data.bsffId,
-        pdfUrl: data.pdfUrl,
-        signedAt: data.signedAt,
+        bsffId,
+        pdfUrl,
+        signedAt,
         cerfaUrl,
       });
     } catch (err) {
@@ -129,7 +198,7 @@ export default function BsffPage() {
             Nouvelle intervention F-Gas
           </h1>
           <p className="mt-4 text-sm text-black/50 leading-relaxed max-w-md">
-            Renseignez l&apos;intervention. Vertxia génère le BSFF officiel signé par le Ministère via TrackDéchets en quelques secondes.
+            Renseignez l&apos;intervention. Vertxia génère le CERFA 15497*04 pré-rempli, plus le BSFF officiel TrackDéchets si vous récupérez du fluide.
           </p>
         </motion.div>
 
@@ -145,10 +214,179 @@ export default function BsffPage() {
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="space-y-6"
             >
+              {/* Wizard — Type d'intervention */}
+              <div>
+                <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
+                  Type d&apos;intervention
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {INTERVENTIONS.map(opt => (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      onClick={() => setTypeIntervention(opt.v)}
+                      disabled={isLoading}
+                      className={`text-left px-4 py-3 rounded-xl border-2 transition-all ${
+                        typeIntervention === opt.v
+                          ? "border-[#111] bg-[#111] text-white"
+                          : "border-black/10 bg-white text-[#111] hover:border-black/30"
+                      }`}
+                    >
+                      <div className="text-sm font-medium flex items-center gap-2">
+                        {opt.label}
+                        {opt.needsBsff && (
+                          <span className={`text-[9px] font-mono tracking-widest px-1.5 py-0.5 rounded ${
+                            typeIntervention === opt.v ? "bg-white/15 text-white/80" : "bg-emerald-50 text-emerald-700"
+                          }`}>
+                            + BSFF
+                          </span>
+                        )}
+                      </div>
+                      <div className={`text-xs mt-0.5 ${typeIntervention === opt.v ? "text-white/60" : "text-black/40"}`}>
+                        {opt.desc}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Détails contrôle d'étanchéité (conditionnel) */}
+              <AnimatePresence mode="wait">
+                {aFaitControle && (
+                  <motion.div
+                    key="controle-details"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                    className="overflow-hidden"
+                  >
+                    <div className="space-y-4 pt-2 pb-1 pl-4 border-l-2 border-black/10">
+                      <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/35 flex items-center gap-2">
+                        <span className="w-1 h-1 rounded-full bg-black/25" />
+                        Détails du contrôle d&apos;étanchéité
+                      </div>
+
+                      <div>
+                        <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
+                          N° du détecteur manuel utilisé
+                        </label>
+                        <input
+                          type="text"
+                          value={detecteurId}
+                          onChange={e => setDetecteurId(e.target.value)}
+                          disabled={isLoading}
+                          placeholder="Ex: DTC-T1-001"
+                          className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white text-base text-[#111] font-mono focus:outline-none focus:border-black/40 focus:bg-[#fafaf8] transition-all disabled:opacity-50"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
+                          Équipement avec détecteur permanent ?
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {(["oui", "non"] as const).map(v => (
+                            <button
+                              key={v}
+                              type="button"
+                              onClick={() => setDetecteurPermanent(v)}
+                              disabled={isLoading}
+                              className={`px-4 py-2.5 rounded-xl border-2 text-sm font-medium uppercase tracking-wider transition-all ${
+                                detecteurPermanent === v
+                                  ? "border-[#111] bg-[#111] text-white"
+                                  : "border-black/10 bg-white text-[#111] hover:border-black/30"
+                              }`}
+                            >
+                              {v}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
+                          Fuite détectée ?
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {(["oui", "non"] as const).map(v => (
+                            <button
+                              key={v}
+                              type="button"
+                              onClick={() => setFuiteDetectee(v)}
+                              disabled={isLoading}
+                              className={`px-4 py-2.5 rounded-xl border-2 text-sm font-medium uppercase tracking-wider transition-all ${
+                                fuiteDetectee === v
+                                  ? "border-[#111] bg-[#111] text-white"
+                                  : "border-black/10 bg-white text-[#111] hover:border-black/30"
+                              }`}
+                            >
+                              {v}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <AnimatePresence mode="wait">
+                        {fuiteDetectee === "oui" && (
+                          <motion.div
+                            key="fuite-details"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="overflow-hidden space-y-4"
+                          >
+                            <div>
+                              <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
+                                Localisation de la fuite
+                              </label>
+                              <input
+                                type="text"
+                                value={fuiteLocalisation}
+                                onChange={e => setFuiteLocalisation(e.target.value)}
+                                disabled={isLoading}
+                                placeholder="Ex: Raccord côté liquide unité extérieure"
+                                className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white text-base text-[#111] focus:outline-none focus:border-black/40 focus:bg-[#fafaf8] transition-all disabled:opacity-50"
+                              />
+                            </div>
+                            <div>
+                              <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
+                                Réparation
+                              </label>
+                              <div className="grid grid-cols-2 gap-2">
+                                {([
+                                  { v: "realisee", label: "Réalisée" },
+                                  { v: "a_faire", label: "À faire" },
+                                ] as const).map(opt => (
+                                  <button
+                                    key={opt.v}
+                                    type="button"
+                                    onClick={() => setFuiteReparee(opt.v)}
+                                    disabled={isLoading}
+                                    className={`px-4 py-2.5 rounded-xl border-2 text-sm font-medium uppercase tracking-wider transition-all ${
+                                      fuiteReparee === opt.v
+                                        ? "border-[#111] bg-[#111] text-white"
+                                        : "border-black/10 bg-white text-[#111] hover:border-black/30"
+                                    }`}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               {/* Fluide */}
               <div>
                 <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
-                  Fluide frigorigène récupéré
+                  Fluide frigorigène {needsBsff ? "récupéré" : "de l'équipement"}
                 </label>
                 <select
                   value={fluide}
@@ -164,42 +402,53 @@ export default function BsffPage() {
                 </select>
               </div>
 
-              {/* Quantité */}
-              <div>
-                <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
-                  Quantité récupérée (kg)
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0.1"
-                  required
-                  value={weight}
-                  onChange={e => setWeight(e.target.value)}
-                  disabled={isLoading}
-                  className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white text-base text-[#111] focus:outline-none focus:border-black/40 focus:bg-[#fafaf8] transition-all disabled:opacity-50"
-                />
-              </div>
-
-              {/* Numéro contenant */}
-              <div>
-                <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
-                  Numéro de bouteille / contenant
-                </label>
-                <input
-                  type="text"
-                  required
-                  pattern="[A-Za-z0-9]+"
-                  title="Alphanumérique uniquement, pas de tirets ni d'espaces"
-                  value={packagingNumero}
-                  onChange={e => setPackagingNumero(e.target.value.replace(/[^A-Za-z0-9]/g, ""))}
-                  disabled={isLoading}
-                  className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white text-base text-[#111] font-mono focus:outline-none focus:border-black/40 focus:bg-[#fafaf8] transition-all disabled:opacity-50"
-                />
-                <p className="mt-2 text-xs text-black/35 font-mono">
-                  Alphanumérique uniquement (TrackDéchets refuse tirets / espaces)
-                </p>
-              </div>
+              {/* Quantité + Contenant — uniquement si récupération (BSFF requis) */}
+              <AnimatePresence mode="wait">
+                {needsBsff && (
+                  <motion.div
+                    key="recup-fields"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                    className="overflow-hidden space-y-6"
+                  >
+                    <div>
+                      <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
+                        Quantité récupérée (kg)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0.1"
+                        required={needsBsff}
+                        value={weight}
+                        onChange={e => setWeight(e.target.value)}
+                        disabled={isLoading}
+                        className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white text-base text-[#111] focus:outline-none focus:border-black/40 focus:bg-[#fafaf8] transition-all disabled:opacity-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
+                        Numéro de bouteille / contenant
+                      </label>
+                      <input
+                        type="text"
+                        required={needsBsff}
+                        pattern="[A-Za-z0-9]+"
+                        title="Alphanumérique uniquement, pas de tirets ni d'espaces"
+                        value={packagingNumero}
+                        onChange={e => setPackagingNumero(e.target.value.replace(/[^A-Za-z0-9]/g, ""))}
+                        disabled={isLoading}
+                        className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white text-base text-[#111] font-mono focus:outline-none focus:border-black/40 focus:bg-[#fafaf8] transition-all disabled:opacity-50"
+                      />
+                      <p className="mt-2 text-xs text-black/35 font-mono">
+                        Alphanumérique uniquement (TrackDéchets refuse tirets / espaces)
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Client */}
               <div>
@@ -290,7 +539,7 @@ export default function BsffPage() {
                     <span>GÉNÉRATION EN COURS…</span>
                   </>
                 ) : (
-                  <span>GÉNÉRER BSFF + CERFA</span>
+                  <span>{needsBsff ? "GÉNÉRER BSFF + CERFA" : "GÉNÉRER CERFA 15497*04"}</span>
                 )}
               </button>
 
@@ -318,71 +567,107 @@ export default function BsffPage() {
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
               className="space-y-6"
             >
-              {/* Badge SIGNÉ */}
+              {/* Badge */}
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200">
                 <span className="relative flex w-2 h-2">
                   <span className="absolute inset-0 rounded-full bg-emerald-500 opacity-50 animate-ping" />
                   <span className="relative w-2 h-2 rounded-full bg-emerald-500" />
                 </span>
                 <span className="font-mono text-[11px] tracking-widest text-emerald-700">
-                  BSFF SIGNÉ · OFFICIEL
+                  {status.bsffId ? "BSFF SIGNÉ · OFFICIEL" : "CERFA 15497*04 GÉNÉRÉ"}
                 </span>
               </div>
 
               {/* Card résultat */}
               <div className="rounded-2xl border border-black/[0.08] bg-white p-8 space-y-5">
-                <div>
-                  <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/40 mb-1.5">
-                    Identifiant BSFF
-                  </div>
-                  <div className="text-lg font-mono text-[#111] break-all">{status.bsffId}</div>
-                </div>
-
-                <div className="h-px bg-black/[0.06]" />
-
-                <div>
-                  <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/40 mb-1.5">
-                    Signé le
-                  </div>
-                  <div className="text-sm text-black/80">
-                    {new Date(status.signedAt).toLocaleString("fr-FR", {
-                      dateStyle: "long",
-                      timeStyle: "short",
-                    })}
-                  </div>
-                </div>
-
-                <div className="h-px bg-black/[0.06]" />
-
-                <div>
-                  <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/40 mb-1.5">
-                    Source
-                  </div>
-                  <div className="text-sm text-black/80">
-                    TrackDéchets — Ministère de la Transition écologique
-                  </div>
-                </div>
+                {status.bsffId ? (
+                  <>
+                    <div>
+                      <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/40 mb-1.5">
+                        Identifiant BSFF
+                      </div>
+                      <div className="text-lg font-mono text-[#111] break-all">{status.bsffId}</div>
+                    </div>
+                    <div className="h-px bg-black/[0.06]" />
+                    <div>
+                      <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/40 mb-1.5">
+                        Signé le
+                      </div>
+                      <div className="text-sm text-black/80">
+                        {status.signedAt &&
+                          new Date(status.signedAt).toLocaleString("fr-FR", {
+                            dateStyle: "long",
+                            timeStyle: "short",
+                          })}
+                      </div>
+                    </div>
+                    <div className="h-px bg-black/[0.06]" />
+                    <div>
+                      <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/40 mb-1.5">
+                        Source
+                      </div>
+                      <div className="text-sm text-black/80">
+                        TrackDéchets — Ministère de la Transition écologique
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/40 mb-1.5">
+                        Document généré
+                      </div>
+                      <div className="text-lg text-[#111]">
+                        Fiche d&apos;intervention CERFA 15497*04
+                      </div>
+                    </div>
+                    <div className="h-px bg-black/[0.06]" />
+                    <div>
+                      <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/40 mb-1.5">
+                        BSFF
+                      </div>
+                      <div className="text-sm text-black/60">
+                        Pas requis pour ce type d&apos;intervention.
+                      </div>
+                    </div>
+                    <div className="h-px bg-black/[0.06]" />
+                    <div>
+                      <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/40 mb-1.5">
+                        Source
+                      </div>
+                      <div className="text-sm text-black/80">
+                        Formulaire officiel · Arrêté du 6 juillet 2024
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* CTAs téléchargement */}
               <div className="space-y-3">
-                <a
-                  href={status.pdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full px-8 py-4 bg-[#111] text-white text-sm tracking-widest font-medium rounded-xl hover:bg-[#333] transition-colors inline-flex items-center justify-center gap-3"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
-                  TÉLÉCHARGER LE BSFF OFFICIEL
-                </a>
+                {status.bsffId && status.pdfUrl && (
+                  <a
+                    href={status.pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full px-8 py-4 bg-[#111] text-white text-sm tracking-widest font-medium rounded-xl hover:bg-[#333] transition-colors inline-flex items-center justify-center gap-3"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    TÉLÉCHARGER LE BSFF OFFICIEL
+                  </a>
+                )}
                 <a
                   href={status.cerfaUrl}
-                  download={`CERFA_15497-04_${status.bsffId}.pdf`}
-                  className="w-full px-8 py-4 bg-white border-2 border-[#111] text-[#111] text-sm tracking-widest font-medium rounded-xl hover:bg-black/[0.03] transition-colors inline-flex items-center justify-center gap-3"
+                  download={`CERFA_15497-04_${status.bsffId ?? "intervention"}.pdf`}
+                  className={`w-full px-8 py-4 text-sm tracking-widest font-medium rounded-xl transition-colors inline-flex items-center justify-center gap-3 ${
+                    status.bsffId
+                      ? "bg-white border-2 border-[#111] text-[#111] hover:bg-black/[0.03]"
+                      : "bg-[#111] text-white hover:bg-[#333]"
+                  }`}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
