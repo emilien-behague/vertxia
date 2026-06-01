@@ -23,7 +23,7 @@ const FLUIDES: Fluide[] = [
 type Status =
   | { type: "idle" }
   | { type: "loading"; step: string }
-  | { type: "success"; bsffId: string; pdfUrl: string; signedAt: string }
+  | { type: "success"; bsffId: string; pdfUrl: string; signedAt: string; cerfaUrl: string }
   | { type: "error"; message: string };
 
 export default function BsffPage() {
@@ -31,14 +31,19 @@ export default function BsffPage() {
   const [weight, setWeight] = useState("2.5");
   const [packagingNumero, setPackagingNumero] = useState("B112026047");
   const [clientName, setClientName] = useState("");
+  const [modeleEquipement, setModeleEquipement] = useState("Daikin FTXM35M");
+  const [numeroSerieEquipement, setNumeroSerieEquipement] = useState("DK2024042587");
+  const [attestation, setAttestation] = useState("");
+  const [lieuIntervention, setLieuIntervention] = useState("");
   const [status, setStatus] = useState<Status>({ type: "idle" });
 
   const selectedFluide = FLUIDES.find(f => f.code === fluide) ?? FLUIDES[0];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setStatus({ type: "loading", step: "Création du bordereau…" });
+    setStatus({ type: "loading", step: "Création du bordereau BSFF…" });
     try {
+      // ÉTAPE 1 — BSFF officiel via TrackDéchets
       const res = await fetch("/api/bsff/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -54,11 +59,41 @@ export default function BsffPage() {
         setStatus({ type: "error", message: data.error || "Erreur inconnue" });
         return;
       }
+
+      // ÉTAPE 2 — CERFA 15497*04 PDF (en parallèle, lié au bsffId)
+      setStatus({ type: "loading", step: "Génération du CERFA 15497*04…" });
+      const cerfaRes = await fetch("/api/cerfa/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fluide: selectedFluide,
+          weight: parseFloat(weight),
+          packagingNumero,
+          clientName: clientName.trim() || null,
+          modeleEquipement: modeleEquipement.trim() || undefined,
+          numeroSerieEquipement: numeroSerieEquipement.trim() || undefined,
+          attestation: attestation.trim() || undefined,
+          lieuIntervention: lieuIntervention.trim() || undefined,
+          bsffId: data.bsffId,
+        }),
+      });
+      if (!cerfaRes.ok) {
+        const errJson = await cerfaRes.json().catch(() => ({}));
+        setStatus({
+          type: "error",
+          message: errJson.error || "Échec génération CERFA",
+        });
+        return;
+      }
+      const cerfaBlob = await cerfaRes.blob();
+      const cerfaUrl = URL.createObjectURL(cerfaBlob);
+
       setStatus({
         type: "success",
         bsffId: data.bsffId,
         pdfUrl: data.pdfUrl,
         signedAt: data.signedAt,
+        cerfaUrl,
       });
     } catch (err) {
       setStatus({
@@ -69,6 +104,7 @@ export default function BsffPage() {
   }
 
   function reset() {
+    if (status.type === "success") URL.revokeObjectURL(status.cerfaUrl);
     setStatus({ type: "idle" });
     setPackagingNumero(`B${Math.floor(Math.random() * 1_000_000_000)}`);
   }
@@ -168,16 +204,78 @@ export default function BsffPage() {
               {/* Client */}
               <div>
                 <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
-                  Client (optionnel — pour vos archives)
+                  Client / détenteur (optionnel)
                 </label>
                 <input
                   type="text"
                   value={clientName}
                   onChange={e => setClientName(e.target.value)}
                   disabled={isLoading}
-                  placeholder="Nom du client final"
+                  placeholder="Nom ou raison sociale du client final"
                   className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white text-base text-[#111] focus:outline-none focus:border-black/40 focus:bg-[#fafaf8] transition-all disabled:opacity-50"
                 />
+              </div>
+
+              {/* Bloc CERFA — informations équipement */}
+              <div className="pt-2">
+                <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/35 mb-3 flex items-center gap-2">
+                  <span className="w-1 h-1 rounded-full bg-black/25" />
+                  Informations CERFA 15497*04 (fiche d&apos;intervention)
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
+                      Modèle équipement
+                    </label>
+                    <input
+                      type="text"
+                      value={modeleEquipement}
+                      onChange={e => setModeleEquipement(e.target.value)}
+                      disabled={isLoading}
+                      placeholder="Ex: Daikin FTXM35M"
+                      className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white text-base text-[#111] focus:outline-none focus:border-black/40 focus:bg-[#fafaf8] transition-all disabled:opacity-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
+                      N° de série équipement
+                    </label>
+                    <input
+                      type="text"
+                      value={numeroSerieEquipement}
+                      onChange={e => setNumeroSerieEquipement(e.target.value)}
+                      disabled={isLoading}
+                      placeholder="Ex: DK2024042587"
+                      className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white text-base text-[#111] font-mono focus:outline-none focus:border-black/40 focus:bg-[#fafaf8] transition-all disabled:opacity-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
+                      Lieu d&apos;intervention (optionnel)
+                    </label>
+                    <input
+                      type="text"
+                      value={lieuIntervention}
+                      onChange={e => setLieuIntervention(e.target.value)}
+                      disabled={isLoading}
+                      placeholder="Adresse du chantier"
+                      className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white text-base text-[#111] focus:outline-none focus:border-black/40 focus:bg-[#fafaf8] transition-all disabled:opacity-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
+                      N° attestation Cat I (optionnel)
+                    </label>
+                    <input
+                      type="text"
+                      value={attestation}
+                      onChange={e => setAttestation(e.target.value)}
+                      disabled={isLoading}
+                      placeholder="Ex: FR-CAT1-XXXXX"
+                      className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white text-base text-[#111] font-mono focus:outline-none focus:border-black/40 focus:bg-[#fafaf8] transition-all disabled:opacity-50"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Submit */}
@@ -192,7 +290,7 @@ export default function BsffPage() {
                     <span>GÉNÉRATION EN COURS…</span>
                   </>
                 ) : (
-                  <span>GÉNÉRER LE BSFF OFFICIEL</span>
+                  <span>GÉNÉRER BSFF + CERFA</span>
                 )}
               </button>
 
@@ -266,20 +364,33 @@ export default function BsffPage() {
                 </div>
               </div>
 
-              {/* CTA téléchargement */}
-              <a
-                href={status.pdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full px-8 py-4 bg-[#111] text-white text-sm tracking-widest font-medium rounded-xl hover:bg-[#333] transition-colors inline-flex items-center justify-center gap-3"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                TÉLÉCHARGER LE PDF OFFICIEL
-              </a>
+              {/* CTAs téléchargement */}
+              <div className="space-y-3">
+                <a
+                  href={status.pdfUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full px-8 py-4 bg-[#111] text-white text-sm tracking-widest font-medium rounded-xl hover:bg-[#333] transition-colors inline-flex items-center justify-center gap-3"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  TÉLÉCHARGER LE BSFF OFFICIEL
+                </a>
+                <a
+                  href={status.cerfaUrl}
+                  download={`CERFA_15497-04_${status.bsffId}.pdf`}
+                  className="w-full px-8 py-4 bg-white border-2 border-[#111] text-[#111] text-sm tracking-widest font-medium rounded-xl hover:bg-black/[0.03] transition-colors inline-flex items-center justify-center gap-3"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                  </svg>
+                  TÉLÉCHARGER LE CERFA 15497*04
+                </a>
+              </div>
 
               <button
                 onClick={reset}

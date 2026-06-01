@@ -49,3 +49,4 @@ next-env.d.ts
 /data/scrapes/
 /data/sites/
 # data/briefs/ : tracke pour les briefs cures (Allbirds, Loom, etc.)
+.test-output/
