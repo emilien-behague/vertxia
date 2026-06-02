@@ -9,6 +9,7 @@ import { Suspense, useEffect, useRef, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection } from "@/components/mobile/inset-list";
+import { VoiceInput } from "@/components/mobile/voice-input";
 import { listEquipements } from "@/lib/equipement";
 import { saveIntervention } from "@/lib/intervention-storage";
 import { loadProfil } from "@/lib/profil";
@@ -78,6 +79,7 @@ function NouvelleInterventionContent() {
   const [detecteurPermanent, setDetecteurPermanent] = useState<"oui" | "non">("non");
   const [fuiteDetectee, setFuiteDetectee] = useState<"oui" | "non">("non");
   const [fuiteLocalisation, setFuiteLocalisation] = useState("");
+  const [notes, setNotes] = useState("");
 
   const [status, setStatus] = useState<Status>({ type: "idle" });
   const [eqContext, setEqContext] = useState<{ modele: string; clientName: string } | null>(null);
@@ -252,6 +254,7 @@ function NouvelleInterventionContent() {
                   fuiteDetectee === "oui" ? fuiteLocalisation.trim() || undefined : undefined,
               }
             : undefined,
+          notes: notes.trim() || undefined,
         });
       } catch {}
 
@@ -516,6 +519,35 @@ function NouvelleInterventionContent() {
           )}
         </InsetListSection>
       )}
+
+      {/* Notes + dictée vocale */}
+      <InsetListSection
+        title="Notes / Observations terrain"
+        footer="Tape ou DICTE — la dictée vocale utilise le moteur de reconnaissance natif de ton téléphone, marche en français."
+      >
+        <FormRow label="Notes libres">
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Ex : Vidange complète circuit secondaire, joint torique remplacé, vérification serrage. Toutes les liaisons OK après mise en pression azote."
+            rows={3}
+            disabled={isLoading}
+            className="input-mobile resize-none"
+          />
+        </FormRow>
+        <div className="px-4 py-3">
+          <VoiceInput
+            onTranscript={(text, isFinal) => {
+              if (isFinal) {
+                setNotes((prev) => (prev ? `${prev} ${text}`.trim() : text));
+              }
+            }}
+            mode="append"
+            label="🎤 Dicter mes observations"
+            hint="Tape pour parler · ta voix devient texte automatiquement"
+          />
+        </div>
+      </InsetListSection>
 
       {/* Submit */}
       <div className="px-4 mt-8 mb-4">

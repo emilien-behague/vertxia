@@ -34,6 +34,8 @@ export type StoredIntervention = {
   hasDetenteurSignature?: boolean;
   detenteurName?: string;
   detenteurQuality?: string;
+  /** Notes libres saisies ou dictées par le frigoriste (observations terrain) */
+  notes?: string;
 };
 
 function isBrowser(): boolean {
