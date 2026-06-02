@@ -1,0 +1,52 @@
+{
+  "url": "https://www.loewe.com/",
+  "startedAt": "2026-05-29T22:06:27.798Z",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "frames": [
+    {
+      "idx": 0,
+      "name": "00-top.jpg",
+      "scrollY": 0
+    },
+    {
+      "idx": 1,
+      "name": "01-scroll.jpg",
+      "scrollY": 1800
+    },
+    {
+      "idx": 2,
+      "name": "02-scroll.jpg",
+      "scrollY": 3600
+    },
+    {
+      "idx": 3,
+      "name": "03-scroll.jpg",
+      "scrollY": 5400
+    },
+    {
+      "idx": 4,
+      "name": "04-scroll.jpg",
+      "scrollY": 5415
+    },
+    {
+      "idx": 5,
+      "name": "05-scroll.jpg",
+      "scrollY": 5415
+    },
+    {
+      "idx": 6,
+      "name": "06-scroll.jpg",
+      "scrollY": 5415
+    },
+    {
+      "idx": 7,
+      "name": "07-end.jpg",
+      "scrollY": 5415
+    }
+  ],
+  "endedAt": "2026-05-29T22:06:43.024Z",
+  "totalFrames": 8
+}

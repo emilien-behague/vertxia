@@ -1,0 +1,190 @@
+{
+  "template_id": "brutalist-tech",
+  "visual_signature": "halftone-print",
+  "brand": {
+    "name": "Magic Spoon",
+    "category": "High-Protein Keto Cereal & Snacks",
+    "positioning_one_liner": "Le céréale qui refuse de choisir entre goûter comme un enfant et manger comme un adulte.",
+    "icp": "25–40 ans, actifs, health-conscious, nostalgiques du petit-déj sucré mais refusant les compromis nutritionnels — ils lisent les étiquettes mais rêvent encore de Chocapic et de Smacks. Consommateurs européens et francophones, habitués aux marques premium, qui savent que 'sans sucre ajouté' peut aussi rimer avec 'irrésistible'. Ils cherchent la permission de se faire plaisir sans mensonge sur l'étiquette.",
+    "voice": "Manifeste pop, décalé, percutant. Ton de marque qui éduque sans prêcher, qui célèbre sans culpabiliser. Phrases courtes. Énergie haute. Humour acide sur l'industrie agro — sans jamais tomber dans le prêchi-prêcha wellness. On parle à des adultes qui savent lire une liste d'ingrédients, pas à des convertis d'une secte healthy.",
+    "domain": "magicspoon.com"
+  },
+  "client_prompt_interpretation": "Le client veut un site qui claque comme un manifeste de contre-culture alimentaire — joyeux, saturé, combatif. Pas un site wellness aseptisé. Une déclaration de guerre aux céréales industrielles truffées de sucre, portée par une palette pop assumée, une typographie bold, et des copies qui ressemblent à des slogans de révolution. L'énergie est celle d'un fanzine punk qui aurait lu tous les travaux de nutrition de l'année. Le contexte est francophone et européen — les références culturelles doivent résonner à Paris autant qu'à Montréal, pas seulement à Brooklyn.",
+  "creative_direction": {
+    "mood": "Pop manifeste — couleurs saturées, joie agressive, nostalgie détournée. L'esthétique d'une affiche de concert des années 90 croisée avec un packaging healthy contemporain. Chaque section entre en scène comme une affiche collée sur un mur, avec des transitions qui simulent le papier arraché ou le tampon d'impression. Tout le monde sourit mais personne ne rigole des ingrédients.",
+    "reference_style": "Glossier campaign energy × Imprimé risographie années 90 × zine agit-prop militant. Grilles décalées, titres en caps lock, couleurs qui vibrent ensemble. Pas Kinfolk. Pas Monocle. Pas Vogue. Le genre d'affiche qu'on voit collée sur un Abribus à Belleville et qu'on ne peut pas ignorer.",
+    "narrative_arc": "Acte 1 : Le crime — pendant des décennies, on vous a vendu du sucre coloré en l'appelant petit-déjeuner. Acte 2 : La preuve — Magic Spoon réinvente les règles avec des chiffres qui n'ont pas besoin de mensonge pour convaincre. Acte 3 : L'engagement — chaque produit est un acte de gourmandise sans concession."
+  },
+  "visual_system": {
+    "palette": [
+      {
+        "name": "background",
+        "hex": "#FFF5E1"
+      },
+      {
+        "name": "foreground",
+        "hex": "#1A0A2E"
+      },
+      {
+        "name": "accent",
+        "hex": "#FF3D6B"
+      },
+      {
+        "name": "muted",
+        "hex": "#FFD166"
+      },
+      {
+        "name": "surface",
+        "hex": "#C8F5FF"
+      }
+    ],
+    "fonts": {
+      "serif": "Fraunces Black",
+      "sans": "Syne ExtraBold"
+    },
+    "spacing_density": "dense",
+    "imagery_treatment": "Photos produit sur fonds colorés saturés, ombres portées dures style offset print, trame halftone sur les images hero. Cercles de couleur comme débordements de packaging. Textures papier journal sous les sections manifeste. Animations de scroll en stagger cinétique — chaque bloc de texte et chaque image entrent en scène avec un décalage d'impression, comme un tampon posé successivement. Transitions entre sections simulant le papier arraché d'une affiche collée."
+  },
+  "hero": {
+    "kicker": "⚡ DEPUIS 1984, ON VOUS MENT AU PETIT-DEJ",
+    "headline": "Soixante ans de sucre. C'est fini.",
+    "subheadline": "14g de protéines. 4g de glucides nets. Zéro sucre ajouté. Les mêmes saveurs que dans vos souvenirs — sans la liste d'ingrédients que personne ne comprend.",
+    "primary_cta_label": "Prendre le contrôle",
+    "secondary_cta_label": "Lire le manifeste"
+  },
+  "site_structure": [
+    {
+      "section": "manifesto",
+      "section_role": "Brand statement — poser le conflit et la position radicale de la marque",
+      "headline": "PENDANT DES DÉCENNIES, ON VOUS A VENDU DU SUCRE COLORÉ EN L'APPELANT PETIT-DÉJEUNER.",
+      "body_paragraphs": [
+        "Les grandes marques ont mis soixante ans à perfectionner une chose : vous faire croire que des anneaux de maïs sucrés constituaient un repas équilibré. Smacks. Chocapic. Tresor. Des noms d'enfance collés à des étiquettes nutritionnelles que personne ne regardait — ou qu'on préférait ne pas voir.",
+        "Magic Spoon est née d'une obsession simple : recréer les saveurs de votre enfance avec des ingrédients que vous seriez fier de lire à voix haute dans un supermarché. Chaque boîte, chaque barre, chaque pastry est une réponse directe à cette industrie.",
+        "0g de sucre ajouté. Jusqu'à 14g de protéines complètes. Sans gluten. Keto-friendly. Et surtout — ça goûte exactement comme vous vous en souviendrez. En mieux.",
+        "Ce n'est pas un snack santé. C'est un snack qui ne vous ment pas."
+      ],
+      "pull_quote": "\"Le problème n'était pas votre appétit. C'était leur recette.\""
+    },
+    {
+      "section": "product-universe",
+      "section_role": "Présenter les 4 piliers de la gamme — Cereal, Treats, Granola, Pastries — avec assez de détail pour que chaque format soit désirable",
+      "headline": "QUATRE FORMATS. UN SEUL PRINCIPE : ZÉRO CONCESSION.",
+      "body_paragraphs": [
+        "Les Céréales : le matin qui ne vous crashe pas à 10h. 14g de protéines par bol, 4g de glucides nets, saveurs Fruity / Cocoa / Birthday Cake — votre cerveau de 8 ans et votre corps de 35 ans vont enfin s'entendre.",
+        "Les Treats : la barre protéinée qui ne goûte pas la craie. Chocolate Peanut Butter, Marshmallow, S'mores — 12g de protéines, une liste d'ingrédients courte et lisible, le genre de barre qu'on garde dans sa poche pour les vraies urgences.",
+        "Le Granola : pour ceux qui pensaient avoir abandonné le croquant pour de bonnes raisons. Apple Cinnamon, Blueberry Vanilla Almond — la preuve que le vrai goût n'a pas besoin de 40g de sucre pour exister.",
+        "Les Pastries : fondant, chaud, nostalgique. Frosted Strawberry, Cinnamon Brown Sugar, S'mores — 11g de protéines par portion. La pâtisserie du matin réinventée sans l'excuse de la qualité dégradée."
+      ],
+      "pull_quote": null
+    },
+    {
+      "section": "bundles-highlight",
+      "section_role": "Mettre en avant les bundles comme la smart option — valeur + découverte",
+      "headline": "LE MEILLEUR ARGUMENT : TOUT ESSAYER D'UN COUP.",
+      "body_paragraphs": [
+        "Nos bundles sont construits pour que vous trouviez votre nouvelle obsession. Céréales, Treats, Granola, Pastries — une box qui couvre tous vos moments, du petit-déjeuner au post-training, de la pause bureau au canapé du dimanche.",
+        "Hall of Fame Kit, All-Star Mix, Snack Time Favorites — des noms qui sonnent comme des playlists. Des boîtes qui goûtent comme des souvenirs améliorés.",
+        "Commandez une fois. Choisissez votre camp pour toujours."
+      ],
+      "pull_quote": null
+    },
+    {
+      "section": "ingredients-truth",
+      "section_role": "Section éditoriale — transparence radicale comme argument de marque central",
+      "headline": "ON AFFICHE TOUT. PARCE QU'ON N'A RIEN À DISSIMULER.",
+      "body_paragraphs": [
+        "4g de glucides nets. 14g de protéines complètes. Zéro arôme artificiel. Zéro sirop de glucose-fructose. Zéro sucre ajouté. Vous pouvez comparer avec ce qu'il y a dans vos placards — on vous y encourage sincèrement.",
+        "Les protéines viennent du lait et du lactosérum — des sources complètes qui contiennent les neuf acides aminés essentiels. La douceur vient de l'allulose et de la stévia, pas d'un laboratoire de chimie de synthèse. La couleur vient des ingrédients, pas d'un code FD&C.",
+        "Chaque ingrédient Magic Spoon a une raison d'être là. Pas une raison marketing. Une raison nutritionnelle, texturale, ou gustative — souvent les trois. C'est la différence entre une marque qui vous respecte et une marque qui espère que vous ne lirez jamais l'étiquette.",
+        "Prenez l'étiquette. Lisez-la à voix haute. Si vous ne comprenez pas un ingrédient, c'est un problème — et ce problème n'existe pas ici."
+      ],
+      "pull_quote": "\"Le petit-déjeuner de votre enfance. La nutrition de votre présent.\""
+    },
+    {
+      "section": "community-cta",
+      "section_role": "Clôture émotionnelle — appartenance à un choix lucide, pas à un acte d'achat",
+      "headline": "VOUS N'ACHETEZ PAS DES CÉRÉALES. VOUS CHOISISSEZ UN CAMP.",
+      "body_paragraphs": [
+        "Des milliers de personnes ont déjà décidé que le petit-déjeuner pouvait être à la fois délicieux et lucide. Elles ne reviendront pas en arrière. Bienvenue dans le bol."
+      ],
+      "pull_quote": "\"La gourmandise n'était pas le problème. Leurs ingrédients l'étaient.\""
+    }
+  ],
+  "featured_products": [
+    {
+      "handle": "hall-of-fame-kit",
+      "title": "Hall Of Fame Kit",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0081/3826/0542/files/1D_41551131-73cd-4494-b620-8870476798e4.webp?v=1772491480",
+      "price_eur": "74.99",
+      "editorial_caption": "L'expérience complète. Céréales, Treats, Granola, Pastries — tout ce que Magic Spoon a construit, dans une seule box.",
+      "video_prompt": "Top-down flat lay of the Hall of Fame Kit box opening in slow motion on a deep saturated violet surface, individual product boxes fanning out like a hand of cards, each box slides into frame with a sharp print-register offset, bold yellow and pink product colors pop against the dark background, final frame holds on the full lineup lit with hard directional studio light casting graphic shadows, halftone grain texture baked into the grade",
+      "video_engine_hint": "runway",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "vb-mix-6p-pastry-fro-cin-smo-treat-marsh-pb-sc",
+      "title": "Grab-and-Go Protein Bundle",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0081/3826/0542/files/Pastres_Treats_ce9d8c62-c47b-4c53-bc14-cc85a84e5b3d.webp?v=1772491579",
+      "price_eur": "62.49",
+      "editorial_caption": "12 Treats + 12 Pastries. Le bundle qui ne vous laissera jamais sans option pour manger juste.",
+      "video_prompt": "Rapid-fire sequence of hands reaching into an open bundle box pulling out protein bars and pastries one after another, each snack held up close to camera against a flat saturated cyan background before being swapped for the next, quick rhythmic cuts at 1 second each, bold on-screen counter '1... 2... 3...' stamps on each cut, energetic handheld camera, product textures crisp and tactile",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "vb-treat-3p-choco-peanut-butter-1-marshmallow-1-smores-1-tts",
+      "title": "Classics Bundle — Treats",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0081/3826/0542/files/MS_T_VARIETY_TTS_HERO_2x_ec80198e-e814-42b9-8bbe-348981cf3895.webp?v=1779824395",
+      "price_eur": "45",
+      "editorial_caption": "Chocolate Peanut Butter. Marshmallow. S'mores. Trois saveurs réhabilitées — 12g de protéines la barre.",
+      "video_prompt": "Three protein bars arranged on a deep purple surface, camera pushes in slowly while each wrapper peels back in sequence, chocolate drizzle catches hard studio light in glistening macro, marshmallow filling stretches in slow motion pull, graham cracker crumbs fall in sharp focus, final frame is a tight three-bar lineup with long graphic shadows, rich jewel-tone color grade",
+      "video_engine_hint": "hailuo",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "vb-pastry-3p-fro-1-cin-1-smo-2",
+      "title": "Pastry Sampler Pack",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0081/3826/0542/files/MS_PASTRIES_400536_HERO_1x_00a29c1c-e014-440e-9aa1-540346fd3867.webp?v=1772218350",
+      "price_eur": "32.49",
+      "editorial_caption": "Frosted Strawberry. Cinnamon Brown Sugar. S'mores. La pâtisserie du matin — avec de la vraie nutrition dedans.",
+      "video_prompt": "Soft-baked pastry broken cleanly in half on a warm saturated pink surface, steam curls upward in slow motion, strawberry filling oozes in thick ribbon toward camera, rack focus pulls back to reveal all three pastry flavors side by side under hard warm key light, long graphic shadows sweep across the surface, color grade is warm amber with saturated highlights, halftone grain overlay",
+      "video_engine_hint": "veo",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "snack-time-favorites",
+      "title": "Snack Time Favorites",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0081/3826/0542/files/MS_PASTRIES_400533_HERO_1x_a89838da-1757-46b5-bcd8-67ccadccda41.webp?v=1771360187",
+      "price_eur": "39",
+      "editorial_caption": "2 boîtes de Treats + 2 boîtes de Pastries. Quatre formats. Un seul critère : ça goûte ou ça goûte pas.",
+      "video_prompt": "Four product boxes dropped one by one onto a neon cyan surface from above, each landing with a sharp impact that sends a small shockwave of light across the surface, camera stays at low angle catching the boxes stacking and fanning toward lens, bold product colors collide in frame, final pull-back reveals the full four-box lineup with heavy halftone texture overlay baked into image",
+      "video_engine_hint": "higgsfield",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "vb-gran-2p-app-cin-1-blue-alm-1",
+      "title": "Apple Cinnamon & Blueberry Vanilla Almond Granola",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0081/3826/0542/files/MS_G_AC_BVA_UPSELL.webp?v=1775077574",
+      "price_eur": "19",
+      "editorial_caption": "Le granola qui prouve qu'on peut croquer dans quelque chose de sain et se dire : encore.",
+      "video_prompt": "Granola clusters cascade in slow motion into a white ceramic bowl on a saturated orange surface, individual blueberries and apple pieces fall separately like scattered confetti catching sharp studio light, cold milk poured from height in dramatic white stream breaks the surface in slow motion splash, overhead camera pulls up to reveal perfect bowl composition, warm saturated pop color grade with halftone grain",
+      "video_engine_hint": "runway",
+      "video_duration_s": 5
+    }
+  ],
+  "footer": {
+    "tagline": "MAGIC SPOON — ILS MISAIENT SUR VOTRE INATTENTION. MAUVAIS PARI.",
+    "closing_line": "Un bol lucide. Un snack sans excuses. C'est tout ce qu'on vous demande d'essayer."
+  },
+  "_meta": {
+    "model": "claude-sonnet-4-6",
+    "client_prompt": "pop punchy joyeux, manifeste contre les cereales chimiques, palette saturee assumee",
+    "source_json": "magicspoon.com_scrape.json",
+    "product_count_total": 50,
+    "featured_count": 6,
+    "generated_in_seconds": 101.5,
+    "multi_pass": true,
+    "pass_index": 3,
+    "audit_overall_v1": 3.2
+  }
+}

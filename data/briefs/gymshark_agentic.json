@@ -1,0 +1,174 @@
+{
+  "template_id": "agentic-hero",
+  "visual_signature": "none",
+  "brand": {
+    "name": "Gymshark",
+    "category": "Activewear premium",
+    "positioning_one_liner": "Des vêtements conçus pour ceux qui ne s'arrêtent jamais — entre la salle et la rue, entre la sueur et le style.",
+    "icp": "18-32 ans, gym-natif, conscient de son image, qui traite l'entraînement comme une identité et non comme une corvée.",
+    "voice": "manifeste",
+    "domain": "gymshark.com"
+  },
+  "client_prompt_interpretation": "Un univers visuel brut et cinétique — lumière de midi implacable, caméra portée instable, palette ardoise désaturée — qui traduit l'effort comme esthétique et la sueur comme signature.",
+  "creative_direction": {
+    "mood": "Midi. Bitume chauffé. La salle déborde sur le trottoir. Pas de mise en scène — juste la répétition, le mouvement, la preuve. Un documentaire sportif filmé à l'épaule où chaque tissu absorbe la lumière comme il absorbe l'effort.",
+    "reference_style": "Guerrilla Games 'Feel the Power' campaign 2023, Highsnobiety x Nike editorial 2022, Dazed & Confused sports specials — grain argentique, lumière surexposée, cadres instables assumés.",
+    "narrative_arc": "L'utilisateur entre dans la sueur, traverse la collection comme une séance d'entraînement, et repart avec la certitude que chaque pièce a été faite pour lui."
+  },
+  "visual_system": {
+    "palette": [
+      {
+        "name": "background",
+        "hex": "#1A1C1E"
+      },
+      {
+        "name": "foreground",
+        "hex": "#E8E4DC"
+      },
+      {
+        "name": "accent",
+        "hex": "#C0392B"
+      },
+      {
+        "name": "muted",
+        "hex": "#4A5056"
+      },
+      {
+        "name": "surface",
+        "hex": "#2C2F33"
+      }
+    ],
+    "fonts": {
+      "serif": "Fraunces",
+      "sans": "Inter"
+    },
+    "spacing_density": "dense",
+    "imagery_treatment": "Images produits converties en grade désaturé slate avec hautes lumières surexposées, vignette dure sur les bords, et grain 35mm appliqué — comme shootées sous un soleil de midi sans réflecteur."
+  },
+  "hero": {
+    "kicker": "Be a visionary.",
+    "headline": "L'effort\nn'attend pas\nla perfection.",
+    "subheadline": "Gymshark SS26 — des pièces construites pour le mouvement réel, pas pour la pose. Enfile. Bouge. Prouve.",
+    "primary_cta_label": "Explorer la collection",
+    "secondary_cta_label": "Voir les looks"
+  },
+  "site_structure": [
+    {
+      "section": "manifesto",
+      "section_role": "Poser l'intention de marque avec une voix de terrain — pas d'aspiration floue, mais une conviction musculaire.",
+      "headline": "On ne fait pas de vêtements pour les photos.",
+      "body_paragraphs": [
+        "On les fait pour les reps du fond. Pour la série que personne ne regarde. Pour le moment où ton tee-shirt doit tenir aussi fort que ta volonté.",
+        "Gymshark SS26 est né d'une idée simple : le meilleur vêtement de sport est celui que tu oublies d'avoir sur toi. Léger quand ça compte. Solide quand ça brûle. Toujours là.",
+        "Pas de storytelling creux. Pas de collab' pour faire le buzz. Juste des matières testées, des coupes pensées pour l'amplitude, et une esthétique qui assume d'où elle vient : la salle, le béton, la répétition."
+      ],
+      "pull_quote": "Le style ne s'arrête pas au vestiaire."
+    },
+    {
+      "section": "collection",
+      "section_role": "Présenter les pièces phares comme des outils de performance à identité visuelle forte — pas une boutique, un arsenal.",
+      "headline": "Les pièces qui font le travail.",
+      "body_paragraphs": [
+        "De la veste Script Embroidery aux joggers Pump Washed — chaque silhouette SS26 est construite autour d'un principe : couvrir le mouvement sans le brider.",
+        "Des couleurs assumées. Des graphiques porteurs de sens. Des matières heavyweight qui vieillissent comme un bon entraînement : en se bonifiant.",
+        "Parce que ce que tu portes avant et après la séance parle de toi autant que ta PR."
+      ],
+      "pull_quote": "Heavyweight fabric. Lightweight ego."
+    },
+    {
+      "section": "heritage",
+      "section_role": "Ancrer Gymshark dans une lignée — l'ère dorée du sport, réinterprétée pour les gym-natifs d'aujourd'hui.",
+      "headline": "Retro Collegiate : l'histoire qu'on réécrit.",
+      "body_paragraphs": [
+        "Le GSLC (Gymshark Lifters Collection) ne joue pas à être vintage. Il s'en empare. Wash délavé, wordmark collegiate, tissu 410gsm — une collection pensée pour ceux qui construisent leur propre ère dorée.",
+        "Pas de nostalgie passive. Une revendication active de l'heritage du sport de force, porté par une génération qui lève plus lourd et s'habille mieux que jamais."
+      ],
+      "pull_quote": null
+    },
+    {
+      "section": "closing",
+      "section_role": "Convertir l'énergie narrative en acte d'achat — dernière ligne droite, ton direct et CTA affirmé.",
+      "headline": "Ta séance commence maintenant.",
+      "body_paragraphs": [
+        "Gymshark SS26 est disponible en édition limitée. Les coloris partent. Les excuses aussi.",
+        "Choisis tes pièces. Trouve ton fit. Reviens plus fort."
+      ],
+      "pull_quote": "Visionary ou spectateur — tu choisis."
+    }
+  ],
+  "featured_products": [
+    {
+      "handle": "gymshark-pump-washed-zip-through-hoodie-carmine-red-soft-white-ss26",
+      "title": "Gymshark Pump Washed Zip Through Hoodie - Carmine Red/Soft White",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0156/6146/files/PumpSportyWashedZipThroughHoodieGSCarmineRedGSSoftWhiteWashB6B9H_RCGK_7010.jpg?v=1779802325",
+      "price_eur": "70",
+      "editorial_caption": "Un pump cover qui mérite autant d'attention que ce qu'il dissimule. Coton 400gsm, zip double entrée, washed fabric — la révélation fait partie du programme.",
+      "video_prompt": "Handheld camera follows athlete from behind through gym corridor, harsh midday overhead light bleaches shoulders of carmine red hoodie, slow zoom into zip pull detail, film grain heavy, shallow depth of field, slate concrete walls, no music just ambient weight rack sounds",
+      "video_engine_hint": "kling",
+      "video_duration_s": 8,
+      "video_url": "/lite/videos/gymshark_com/gymshark-pump-washed-zip-through-hoodie-carmine-red-soft-white-ss26.mp4"
+    },
+    {
+      "handle": "gymshark-retro-collegiate-graphic-wide-leg-pant-pants-black-ss26",
+      "title": "Gymshark Retro Collegiate Graphic Wide Leg Pants - Black",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0156/6146/files/RDRetroWideLegSweatPantGSBlackA5B1K_BB2J_0011.jpg?v=1779980387",
+      "price_eur": "56",
+      "editorial_caption": "L'ère dorée n'est pas derrière nous — elle est dans la coupe. Wide leg collegiate, tissu heavyweight 410gsm, wordmark qui descend le long de la jambe comme un titre.",
+      "video_prompt": "Low angle ground shot, athlete walks toward camera on sunlit cracked concrete, black wide leg pants catch direct noon light, collegiate wordmark reads in sharp focus, camera tilts up slowly, desaturated grade, strong vignette, grain overlay, cinematic anamorphic lens flare",
+      "video_engine_hint": "kling",
+      "video_duration_s": 8
+    },
+    {
+      "handle": "gymshark-pump-washed-straight-leg-joggers-carmine-red-soft-white-ss26",
+      "title": "Gymshark Pump Washed Straight Leg Joggers - Carmine Red/Soft White",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0156/6146/files/PumpSportyWashedStraightLegJoggerGSCarmineRedGSSoftWhiteWashB6B9G_RCGK_6960.jpg?v=1779800210",
+      "price_eur": "70",
+      "editorial_caption": "Tailleé pour ne pas gêner. Portée pour impressionner. La coupe straight leg qui survit à chaque deadlift — et à chaque regard dans la rue.",
+      "video_prompt": "Medium shot, athlete performs slow deliberate deadlift in raw industrial gym, carmine red joggers in focus, fabric tension visible at thigh, 35mm grain heavy, cold overhead fluorescent light mixed with harsh window daylight, handheld slight shake, rack focus from barbell to waistband",
+      "video_engine_hint": "kling",
+      "video_duration_s": 8
+    },
+    {
+      "handle": "gymshark-script-embroidery-full-zip-jacket-pullovers-purple-ss26",
+      "title": "Gymshark Script Embroidery Full Zip Jacket - Indigo Purple",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0156/6146/files/SummerFeelsUpdatedZipThroughGSIndigoPurpleB6C3H_PCKZ_0207.jpg?v=1779350875",
+      "price_eur": "54",
+      "editorial_caption": "Le graphique sur le dos ne cherche pas à convaincre — il affirme. Coupe oversized, col haut, broderie Script : un rest day qui a l'air d'avoir des ambitions.",
+      "video_prompt": "Tracking shot behind subject walking through urban stairwell, indigo purple jacket backlit by harsh skylight from above, script embroidery catches light on each step, camera slightly unstable handheld, film grain texture, cool slate tones, anamorphic bokeh on background steps",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "gymshark-retro-collegiate-3-4-sleeve-t-shirt-ls-tops-white-ss26",
+      "title": "Gymshark Retro Collegiate 3/4 Sleeve T-Shirt - Tinted White/Athletic Red",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0156/6146/files/RaglanBaseball34SleeveGSTintedWhiteGSAthleticRedA4C9C_WFPT_0057.jpg?v=1779978235",
+      "price_eur": "40",
+      "editorial_caption": "Le baseball tee qui efface la frontière entre le terrain et la ville. Lightly washed, 100% coton, color block rouge-blanc — une pièce qui porte son histoire sur ses manches.",
+      "video_prompt": "Close-up handheld of athlete stretching arms overhead, tinted white and athletic red raglan sleeves pull taut, harsh noon window light casts strong forearm shadow, slight camera drift, desaturated warm grade, grain heavy, background out of focus dark gym interior",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "gymshark-sleek-backpack-bags-grey-ss26",
+      "title": "Gymshark Sleek Backpack - Denim Grey",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0156/6146/files/images-SleekBackpackGSDenimGreyI1A8A_GCQS_0262.jpg?v=1777386155",
+      "price_eur": "62",
+      "editorial_caption": "23 litres de discipline organisée. Le Sleek Backpack passe de la salle au bureau sans effort — comme toi.",
+      "video_prompt": "Static then slow push-in on backpack placed on concrete bench, denim grey material lit by single harsh sidelight, branded webbing strap detail sharp in focus, shallow DOF, 35mm film grain, high contrast chiaroscuro, background slate wall texture, no movement except slight camera breathe",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5
+    }
+  ],
+  "footer": {
+    "tagline": "Lève. Porte. Recommence.",
+    "closing_line": "Gymshark SS26 — chaque pièce a été faite pour le moment où tu décides que c'est aujourd'hui."
+  },
+  "_meta": {
+    "model": "claude-sonnet-4-6",
+    "client_prompt": "Kinetic athletic energy, harsh midday light, slate palette, handheld camera",
+    "source_json": "gymshark.com_scrape.json",
+    "product_count_total": 50,
+    "featured_count": 6,
+    "generated_in_seconds": 68.4
+  }
+}

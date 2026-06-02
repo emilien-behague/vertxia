@@ -1,0 +1,7 @@
+file 'C:/Users/behag/Desktop/Vertxia/web/public/lite/trailers/gymshark_com/_tmp/intro.mp4'
+file 'C:/Users/behag/Desktop/Vertxia/web/public/lite/trailers/gymshark_com/_tmp/product_00.mp4'
+file 'C:/Users/behag/Desktop/Vertxia/web/public/lite/trailers/gymshark_com/_tmp/product_01.mp4'
+file 'C:/Users/behag/Desktop/Vertxia/web/public/lite/trailers/gymshark_com/_tmp/product_02.mp4'
+file 'C:/Users/behag/Desktop/Vertxia/web/public/lite/trailers/gymshark_com/_tmp/product_03.mp4'
+file 'C:/Users/behag/Desktop/Vertxia/web/public/lite/trailers/gymshark_com/_tmp/product_04.mp4'
+file 'C:/Users/behag/Desktop/Vertxia/web/public/lite/trailers/gymshark_com/_tmp/outro.mp4'

@@ -20,6 +20,7 @@
 import { updateJob, type Job } from "@/lib/jobs";
 import { scrapeShopify } from "./scraper";
 import { runBriefer } from "./briefer";
+import { runMultiPassBrief } from "./briefer-v2";
 import { runVideoGen } from "./videos";
 import { saveScrape, saveBrief, saveSite, readBrief } from "./storage";
 import type { CreativeBrief, ScrapeResult, SiteManifest, VideoAsset } from "./types";
@@ -161,7 +162,18 @@ async function buildBrief(
   }
 
   // 3. Vrai appel Claude — propage les erreurs au lieu de stub silencieux
+  // Route selon passCount : 1 = single-pass (rapide, $0.30) / 3 = multi-pass auto-critique ($0.46, +100s)
   try {
+    if (job.passCount === 3) {
+      // eslint-disable-next-line no-console
+      console.log(`[briefer-v2] Multi-pass (3) for ${job.slug}…`);
+      const result = await runMultiPassBrief(scrape, job.prompt, { passCount: 3 });
+      // eslint-disable-next-line no-console
+      console.log(
+        `[briefer-v2] ${job.slug} done — V1 audit ${result.audit?.overall_score}/5 (${result.audit?.verdict}), total ${result.metrics.total_seconds}s, ~$${result.metrics.cost_estimate_usd}`
+      );
+      return result.brief;
+    }
     return await runBriefer(scrape, job.prompt);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

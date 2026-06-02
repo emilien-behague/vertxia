@@ -35,6 +35,34 @@ Le brief doit avoir un point de vue. Une voix de marque assumee. Refuse les copy
 - documentary-story   : long-form article avec drop caps + photos parallax — pour brands story-driven / heritage
 - horizontal-slider   : scroll horizontal snap-x, 1 slide = 100vw — pour brands experientielles / mode
 - brutalist-tech      : neubrutalism NB+accent, bordures 2px, hard shadows — pour brands tech / streetwear
+- museum-curated      : fond blanc, photos petites centrees, espace vertical enorme, typo serif legere,
+                        captions Geist Mono — pour brands LUXE ULTRA-MINIMAL (Maison Margiela, Lemaire,
+                        Phoebe Philo, Aesop, COS, The Row, Jil Sander, slow fashion, ceramique, parfum
+                        haut de gamme, joaillerie discrete). CHOIX OBLIGATOIRE si mood = "ultra minimal",
+                        "musee", "epure", "silence", "calme contemplatif", "luxe discret".
+- kinetic-typography  : photo brutaliste full-bleed + ENORME typo sans-serif Archivo Black overlay
+                        (clamp 14rem), marquees horizontales entre sections, numeros geants sur photos
+                        produits, palette restreinte B+N+1 accent sature. Pour brands MODE / STREETWEAR
+                        / SPORT / TECH AGENCY (Lululemon, Off-White, Nike SB, Wodniack, agences
+                        creatives). CHOIX OBLIGATOIRE si mood = "bold", "loud", "monumental", "kinetic",
+                        "type-heavy", "agency", "streetwear", "underground", "raw".
+- noir-magazine       : MAGAZINE LUXE NOIR — fond noir total + enorme wordmark serif Fraunces centre
+                        22vw, 3 teasers photos couleur saturee, article format magazine avec drop cap
+                        accent, spread photo pleine largeur, index produits style "Featured in this
+                        issue", footer masthead colophon. Pour brands LUXE NOIR / TRAVEL / SPIRITS /
+                        WHISKEY / PARFUM PREMIUM / EDITORIAL UNDERGROUND (Voyager Press, Wallpaper,
+                        Mr Porter Journal, Cabana, Aesop Journal, Maison Margiela noir, niche perfume,
+                        single malt). CHOIX OBLIGATOIRE si mood = "magazine luxe", "noir premium",
+                        "editorial underground", "spirits", "single malt", "niche perfume". ZERO glitch.
+- cyberpunk-noir      : TECH CINEMATIC MOODY — vidéo dark fullscreen brightness 55%, serif italique
+                        centré Fraunces, SCANLINES CSS constant, accent NEON vif (cyan #00F5D4 /
+                        magenta #FF006E / lime #C0FF00 selon brief), MARQUEE TOP "SYSTEM ONLINE //
+                        SCANNING // READY", GLITCH HOVER (chromatic aberration), crosshair coins sur
+                        produits, footer terminal-style avec status indicators ◢. Pour brands TECH /
+                        GAMING / PARFUMERIE NOIR / SPIRITS DARK / AGENCY UNDERGROUND / DARKWEAR /
+                        STREETWEAR TECHNICAL (cyberpunk fashion, vape, gaming hardware, parfum dark,
+                        agence créative noir). CHOIX OBLIGATOIRE si mood = "cyberpunk", "neon",
+                        "tech moody", "blade runner", "dark glitch", "underground tech", "techwear".
 
 ## Choix visual_signature (overlay applique sur n'importe quel template)
 - none           : pass-through pur
@@ -48,9 +76,35 @@ Le brief doit avoir un point de vue. Une voix de marque assumee. Refuse les copy
 - background, foreground, accent, muted, surface
 
 ## Typography
-2 polices reelles dispo via Google Fonts :
-- serif (display titles) — privilegie Cormorant Garamond, Fraunces, Italiana, EB Garamond
-- sans (body)            — privilegie Inter, Söhne (fallback Inter), Geist
+2 polices Google Fonts (REELLEMENT dispos via fonts.googleapis.com — verifie tes choix).
+
+### Serif (display titles, headings, pull quotes)
+**PRIVILEGIE** (premium 2026, Awwwards-tier) :
+- **Fraunces** — variable opsz/wght, expressive, signature Awwwards
+- **Instrument Serif** — Apple-tier elegance, parfait pour luxe
+- **Newsreader** — magazine editorial chic
+- **EB Garamond** — Linear-tier classique
+- **Crimson Pro** — Vercel-tier sobre
+
+**EVITE** (over-utilises / cliches) :
+- Playfair Display (generique IA)
+- Cormorant Garamond (sur-utilise pendant 5 ans)
+- DM Serif Display (cliche site IA)
+
+### Sans (body, nav, captions)
+**PRIVILEGIE** :
+- **Geist** — Vercel's font, neutre tech premium
+- **Inter** — standard solide
+- **Manrope** — clean rounded modern
+- **DM Sans** — friendly clean
+- **Plus Jakarta Sans** — modern editorial
+
+**EVITE** :
+- Söhne (PAS Google Fonts — payant Klim Type Foundry, ne marchera pas)
+- Roboto (over-utilise default Material)
+
+### Regle d'or
+Le serif que tu choisis dois MATCHER le mood du brief. Brand luxe minimaliste = Instrument Serif. Brand editorial story-driven = Newsreader. Brand tech/streetwear = Fraunces avec opsz reglee. Ne pas choisir Fraunces par defaut pour tous les briefs.
 
 ## site_structure
 3 sections minimum : manifesto + collection + closing (ou variations equivalentes).
@@ -95,7 +149,7 @@ const BRIEF_TOOL: Anthropic.Tool = {
     properties: {
       template_id: {
         type: "string",
-        enum: ["editorial-magazine", "cinematic-narrative", "documentary-story", "horizontal-slider", "brutalist-tech"],
+        enum: ["editorial-magazine", "cinematic-narrative", "documentary-story", "horizontal-slider", "brutalist-tech", "museum-curated", "kinetic-typography", "noir-magazine", "cyberpunk-noir", "agentic-hero"],
       },
       visual_signature: {
         type: "string",

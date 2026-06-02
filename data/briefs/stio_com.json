@@ -1,0 +1,193 @@
+{
+  "template_id": "cinematic-narrative",
+  "visual_signature": "film-grain",
+  "brand": {
+    "name": "Stio",
+    "category": "Outdoor Apparel",
+    "positioning_one_liner": "Built for the mountain life — from the summit push to the fire-lit quiet after.",
+    "icp": "Active outdoor enthusiasts rooted in the mountain West, who value craft and understated performance over logo-driven hype.",
+    "voice": "Quiet confidence. Earned. No shouting — just gear that speaks through use. Poetic but grounded, like a Wyoming dawn."
+  },
+  "client_prompt_interpretation": "The brief calls for a cinematic experience rooted in Wyoming's high-altitude stillness — the Teton ridgelines, sage-brushed valleys, and the particular silence of alpine mornings. The mood is 'quiet-confidence-alpine': no bravado, no extreme sports energy. Just people who know the mountain, wearing gear that knows it too. The palette draws from earth and sky — granite grey, ochre clay, glacier blue, bone white. Film grain reinforces the analog warmth of lived-in mountain life. Products are framed not as purchases but as companions for both the epic traverse and the slow walk home.",
+  "creative_direction": {
+    "mood": "Still, earned, alpine-quiet. The mountain doesn't perform — neither does Stio. Every frame breathes cold air and warm craft.",
+    "reference_style": "Patagonia's early catalog poetry meets Filson's archival gravitas. Visually: Ansel Adams tonal range, Greg Von Doersten's outdoor editorial work, muted cinematic grade with lifted blacks.",
+    "narrative_arc": "Open on the landscape — vast, indifferent, beautiful. Introduce the person who chooses to be in it. Follow them through the layers: the fleece at the trailhead, the insulated jacket on the exposed ridge, the vest by the truck at dusk. Close on the stillness. Gear is never the hero — it's the enabler of presence."
+  },
+  "visual_system": {
+    "palette": [
+      {
+        "name": "background",
+        "hex": "#F2EDE6"
+      },
+      {
+        "name": "foreground",
+        "hex": "#1C1A17"
+      },
+      {
+        "name": "accent",
+        "hex": "#7B9BAD"
+      },
+      {
+        "name": "muted",
+        "hex": "#A89880"
+      },
+      {
+        "name": "surface",
+        "hex": "#E4DDD3"
+      }
+    ],
+    "fonts": {
+      "serif": "Freight Display Pro",
+      "sans": "Suisse Int'l"
+    },
+    "spacing_density": "spacious",
+    "imagery_treatment": "Desaturated earth tones with lifted blacks, slight film grain overlay, high contrast between sky and terrain. Portraits shot in natural flat light. No studio. No white backgrounds. Everything lives outside."
+  },
+  "hero": {
+    "kicker": "Second Turn. First Light.",
+    "headline": "The Mountain Doesn't Wait.",
+    "subheadline": "Stio Second Turn — premium pre-owned gear for the life you already live out there.",
+    "primary_cta_label": "Explore the Collection",
+    "secondary_cta_label": "Our Philosophy"
+  },
+  "site_structure": [
+    {
+      "section": "manifesto",
+      "section_role": "Brand voice anchor — sets the emotional and philosophical tone before any product is shown.",
+      "headline": "Wear It In. Not Out.",
+      "body_paragraphs": [
+        "Some gear gets broken in. Some gear gets broken. The difference is in how it was made — and who made it.",
+        "Stio Second Turn exists because great gear deserves more than one chapter. These are pieces built in Jackson Hole's shadow, worn on Wyoming's real terrain, and passed forward with full integrity.",
+        "Nothing generic. Nothing disposable. Just honest outerwear for people who'd rather be outside than talking about being outside."
+      ],
+      "pull_quote": "The mountain doesn't care what you paid. It cares what you brought."
+    },
+    {
+      "section": "mens-outerwear",
+      "section_role": "Primary product showcase — men's insulated and fleece layers.",
+      "headline": "Layers for What's Real",
+      "body_paragraphs": [
+        "From the Wilcox fleece pulled on at the truck to the Shot 7 Down zipped tight at treeline — each piece was chosen for the conditions Wyoming actually delivers.",
+        "Not aspirational. Functional. Built for the cold that bites and the warmth that holds."
+      ],
+      "pull_quote": null
+    },
+    {
+      "section": "womens-gear",
+      "section_role": "Women's product showcase — insulated and technical layers.",
+      "headline": "The Ridge Doesn't Distinguish",
+      "body_paragraphs": [
+        "The Rollick Hooded Jacket and Pinion Down Sweater weren't designed around a silhouette — they were designed around a mountain. Worn in, not worn out.",
+        "Performance that respects the body in it. Warmth that doesn't compromise movement."
+      ],
+      "pull_quote": null
+    },
+    {
+      "section": "kids-and-family",
+      "section_role": "Family narrative — next generation of outdoor lives.",
+      "headline": "Their First Mountain. Not Their Last.",
+      "body_paragraphs": [
+        "The best outdoor gear a kid wears is the one they forget they're wearing. The Turpin Fleece Hoodie and Rollick Jacket move with them, not against them.",
+        "Pass down the love for the mountain before you pass down the gear."
+      ],
+      "pull_quote": "Every summit starts somewhere small."
+    },
+    {
+      "section": "accessories-and-protection",
+      "section_role": "Accessories and closing brand statement — complete the kit, close the loop.",
+      "headline": "The Details That Don't Quit",
+      "body_paragraphs": [
+        "The Objective Insulated Mitt was built for the coldest days — GORE-TEX stormproof, PrimaLoft Gold warm, full-grain leather grip. Because your hands are your last line between you and the mountain.",
+        "Finish the kit. Protect the haul. The Whitebark Pinecone Hat and Stio Parcel Protection mean nothing leaves the mountain behind."
+      ],
+      "pull_quote": null
+    }
+  ],
+  "featured_products": [
+    {
+      "handle": "second-turn-mens-shot-7-down-jacket-md-0323",
+      "title": "Men's Shot 7 Down Jacket",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0023/9901/0881/files/200009-157.jpg?v=1694103259",
+      "price_eur": 324.5,
+      "editorial_caption": "At 3 oz. of pure warmth, the Shot 7 is the jacket you reach for when the ridge stops joking around.",
+      "video_prompt": "Cinematic slow-motion: a man in a dark navy down jacket stands at a high alpine ridgeline in Wyoming at golden hour, wind moving subtly through the collar, vast granite peaks and a slate-blue sky behind him. Film grain. No motion except the wind. He exhales — breath visible in cold air. Camera slowly pulls back to reveal the full mountain scale.",
+      "video_engine_hint": "runway",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "second-turn-mens-doublecharge-insulated-jacket-md-0511",
+      "title": "Men's Doublecharge Insulated Jacket",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0023/9901/0881/files/200309-264_876113ae-c8ee-4b35-8d5f-1e5a91c264ed.jpg?v=1738874196",
+      "price_eur": 269.4,
+      "editorial_caption": "Double the insulation. Half the hesitation. The Doublecharge is built for days you don't reschedule.",
+      "video_prompt": "Cinematic: close-up on a man's hands zipping up an olive insulated jacket in the pre-dawn dark beside a pickup truck, headlamp on, frost on the windshield. Cut to wide shot — he walks toward a snow-dusted trailhead, mountains barely visible against a deep indigo sky. Film grain overlay. Quiet, purposeful movement.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "second-turn-mens-wilcox-fleece-jacket-md-0511-2",
+      "title": "Men's Wilcox Fleece Jacket",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0023/9901/0881/files/200049-510_8e248f1e-dce9-4c04-8070-172dbc0ef16c.jpg?v=1734034461",
+      "price_eur": 89.4,
+      "editorial_caption": "The first layer on. The last layer off. The Wilcox earns its place in every rotation.",
+      "video_prompt": "Soft cinematic: a man in a warm fleece jacket sits on a tailgate at dusk, steam rising from a camp mug, Wyoming sage flats stretching behind him in the fading ochre light. Camera holds still. He looks at the mountain. Nothing is rushed. Film grain. Muted earth palette.",
+      "video_engine_hint": "hailuo",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "second-turn-womens-rollick-hooded-jacket-sm-0323-1",
+      "title": "Women's Rollick Hooded Jacket",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0023/9901/0881/files/100363-102_c4c191fd-c333-47e0-a942-a9a9772f1696.jpg?v=1735840058",
+      "price_eur": 101.4,
+      "editorial_caption": "Designed for the ridge. Just as at home on the way back down.",
+      "video_prompt": "Cinematic: a woman in a hooded jacket descends a rocky alpine trail through low morning clouds, Tetons visible in breaks of mist. Her pace is measured, confident. Camera tracks her from slightly below, sky above. Muted teal and bone palette. Film grain. No music implied — just presence.",
+      "video_engine_hint": "runway",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "objective-insulated-mitt",
+      "title": "Objective Insulated Mitt",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0023/9901/0881/files/400456-050_22418200-b0c4-4d2d-8656-ae77366ff02d.jpg?v=1759170307",
+      "price_eur": 189,
+      "editorial_caption": "GORE-TEX. PrimaLoft Gold. Full-grain leather. On the coldest days, your hands deserve the full argument.",
+      "video_prompt": "Extreme close-up cinematic: a gloved hand grips a ski pole grip against a blurred field of deep powder snow, Wyoming treeline blurred in background. Light is flat and cold — overcast alpine. The leather palm catches what little light exists. Breath visible at frame edge. Film grain. Slow, deliberate movement of the hand releasing and re-gripping.",
+      "video_engine_hint": "veo",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "second-turn-kids-turpin-fleece-hoodie-sm-0211-1",
+      "title": "Kids' Turpin Fleece Hoodie",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0023/9901/0881/files/300128-301.jpg?v=1722543823",
+      "price_eur": 35.4,
+      "editorial_caption": "Their mountain too. The Turpin Fleece grows into the adventure — never out of it.",
+      "video_prompt": "Warm cinematic: a child in a bright fleece hoodie scrambles over a low boulder in an alpine meadow, wildflowers blurred in foreground, parents' silhouettes visible far in the background against a blue Wyoming sky. Joyful but quiet energy. Camera follows at child's eye level. Film grain. Late afternoon golden light.",
+      "video_engine_hint": "higgsfield",
+      "video_duration_s": 5
+    }
+  ],
+  "footer": {
+    "tagline": "Stio. Built in the Mountain West. Worn everywhere it matters.",
+    "closing_line": "Second Turn gear is inspected, authenticated, and priced for the life ahead of it — not the one behind it."
+  },
+  "_meta": {
+    "model": "claude-sonnet-4-6",
+    "client_prompt": "outdoor mountain Wyoming, mood quiet-confidence-alpine, palette earth-sky",
+    "source_json": "stio.com_scrape.json",
+    "product_count_total": 50,
+    "featured_count": 6,
+    "generated_in_seconds": 0,
+    "usage": {
+      "input_tokens": 4308,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 3052,
+      "service_tier": "standard",
+      "inference_geo": "global"
+    }
+  }
+}

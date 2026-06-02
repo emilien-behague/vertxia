@@ -10,7 +10,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection } from "@/components/mobile/inset-list";
 import { VoiceInput } from "@/components/mobile/voice-input";
-import { WhisperInput } from "@/components/mobile/whisper-input";
 import { SignaturePad } from "@/components/mobile/signature-pad";
 import { listEquipements } from "@/lib/equipement";
 import { saveIntervention } from "@/lib/intervention-storage";
@@ -568,7 +567,7 @@ function NouvelleInterventionContent() {
             className="input-mobile resize-none"
           />
         </FormRow>
-        <div className="px-4 py-3 space-y-3">
+        <div className="px-4 py-3">
           <VoiceInput
             onTranscript={(text, isFinal) => {
               if (isFinal) {
@@ -576,17 +575,8 @@ function NouvelleInterventionContent() {
               }
             }}
             mode="append"
-            label="🎤 Dicter (rapide · nécessite réseau)"
+            label="🎤 Dicter au lieu de taper"
             hint="Reconnaissance vocale native iPhone"
-          />
-          <div className="text-center text-[10px] font-mono tracking-widest uppercase text-black/30">
-            ou — 100 % offline
-          </div>
-          <WhisperInput
-            onTranscript={(text) => {
-              setNotes((prev) => (prev ? `${prev} ${text}`.trim() : text));
-            }}
-            label="🎙️ Dicter offline (Whisper on-device)"
           />
         </div>
       </InsetListSection>

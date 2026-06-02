@@ -1,0 +1,197 @@
+{
+  "template_id": "editorial-magazine",
+  "visual_signature": "film-grain",
+  "brand": {
+    "name": "True Classic",
+    "category": "Menswear Essentials",
+    "positioning_one_liner": "Butter-soft, premium-fitted tees that make every man look and feel like the best version of himself — without the luxury markup.",
+    "icp": "Men 25–40 who want to look put-together effortlessly. They dress for confidence, not fashion. They buy quality basics that do the heavy lifting.",
+    "voice": "Direct, grounded, quietly confident. No hype. No fluff. Just honest menswear with a backbone."
+  },
+  "client_prompt_interpretation": "The client wants a premium menswear essentials experience rooted in confidence and accessibility. The mood is calm, assured, and editorial — not streetwear loud, not luxury cold. Neutral tones anchor a visual system that feels like a well-worn wardrobe: intentional, reliable, elevated. The copy voice should feel like a trusted friend who happens to dress extremely well. The site should communicate that looking good is simpler than you think, and True Classic is the reason why.",
+  "creative_direction": {
+    "mood": "Quiet confidence. The feeling of putting on a perfectly fitted tee and knowing you're ready for anything. Warm neutrals, natural light, unhurried. The man in these clothes isn't trying — he's arrived.",
+    "reference_style": "Todd Snyder editorial meets SSENSE product calm. Clean grid, generous white space, purposeful typography. Think GQ Essentials issue shot on 35mm film with a muted color grade.",
+    "narrative_arc": "Open on the premise: your wardrobe is too complicated. Introduce the tee as the answer — the one piece that anchors everything. Walk through fit, fabric, and versatility as a story, not a spec sheet. Close with the value proposition: this is what confidence looks like, and it costs less than you think."
+  },
+  "visual_system": {
+    "palette": [
+      {
+        "name": "background",
+        "hex": "#F5F2EE"
+      },
+      {
+        "name": "foreground",
+        "hex": "#1A1A18"
+      },
+      {
+        "name": "accent",
+        "hex": "#8B6F47"
+      },
+      {
+        "name": "muted",
+        "hex": "#C4BAB0"
+      },
+      {
+        "name": "surface",
+        "hex": "#EDE8E2"
+      }
+    ],
+    "fonts": {
+      "serif": "Freight Display Pro",
+      "sans": "Neue Haas Grotesk"
+    },
+    "spacing_density": "spacious",
+    "imagery_treatment": "Warm-toned, slightly desaturated. Film grain overlay at 18% opacity. Natural light sources only. Models photographed in motion or at ease — never posed stiffly. Slight vignette on hero shots to draw the eye inward."
+  },
+  "hero": {
+    "kicker": "The Wardrobe Reset",
+    "headline": "One Tee. Every Room You Walk Into.",
+    "subheadline": "True Classic engineers the fitted essential that works harder than anything else in your closet — date night, gym, couch, boardroom-adjacent. Butter-soft. Built for your body. Under 30€.",
+    "primary_cta_label": "Shop Essentials",
+    "secondary_cta_label": "Find Your Fit"
+  },
+  "site_structure": [
+    {
+      "section": "manifesto",
+      "section_role": "Brand philosophy — establish the point of view before selling anything",
+      "headline": "Your Wardrobe Doesn't Need More. It Needs Better.",
+      "body_paragraphs": [
+        "Most men own too many shirts that fit almost right. The collar gaps. The fabric pills after three washes. The sleeves drape instead of define. You keep them because getting rid of them feels like admitting something.",
+        "True Classic was built on a single obsession: a tee that fits the way a tee should. Snug across the shoulders. Clean through the chest. Soft enough to wear against skin all day without thinking about it.",
+        "No gimmicks. No drops. No hype. Just the kind of quality that makes you reach for the same shirt again and again — until you own six of them."
+      ],
+      "pull_quote": "The best outfit is the one you stop thinking about."
+    },
+    {
+      "section": "fit-story",
+      "section_role": "Product education — communicate the athletic/contemporary cut as a feature, not just a stat",
+      "headline": "Fit Is the Feature.",
+      "body_paragraphs": [
+        "Every True Classic piece is cut on a contemporary-athletic pattern. That means it follows your arms, shoulders, and chest without pulling at the seams or ballooning at the waist.",
+        "The fabric tells the rest of the story. Combed ringspun cotton blended with polyester gives you softness that doesn't sacrifice structure. It moves when you move. It holds its shape after wash fifty.",
+        "Whether you're 5'9\" or 6'3\", 170lbs or 230lbs — there's a True Classic that fits the body you have, not the body the size chart assumes you have."
+      ],
+      "pull_quote": null
+    },
+    {
+      "section": "versatility",
+      "section_role": "Use-case storytelling — prove the one-tee-many-occasions thesis",
+      "headline": "From 7am to Last Call. No Change Required.",
+      "body_paragraphs": [
+        "A True Classic tee under a blazer is a business casual outfit. The same tee with shorts is a Saturday. Layer it, style it, sweat in it — the fabric handles all of it without broadcasting the effort.",
+        "The Active Crew wicks moisture and blocks UV. The Pima blend drapes like silk and breathes like linen. The Stretch Oxford crosses the line between casual and polished without asking permission.",
+        "This is what a versatile wardrobe actually looks like: fewer decisions, more confidence, zero compromises."
+      ],
+      "pull_quote": "Wear it to dinner. Wear it to the gym. Wear it on the couch. That's not laziness — that's intelligence."
+    },
+    {
+      "section": "value-story",
+      "section_role": "Overcome price objection with premium framing — justify multi-packs as the smart buy",
+      "headline": "Premium Doesn't Have to Mean Painful.",
+      "body_paragraphs": [
+        "A well-made tee shouldn't cost what a flight does. True Classic believes quality and affordability aren't opposites — they're the whole point.",
+        "Our multi-packs are designed for the man who's done replacing the same shirt every six months. Buy once, buy right, wear forever. Starting at 9.99€ per tee when you pack smart.",
+        "This is wardrobe math that actually works."
+      ],
+      "pull_quote": null
+    },
+    {
+      "section": "social-proof",
+      "section_role": "Trust and credibility — voice of the customer, peer validation",
+      "headline": "Worn by Men Who Have Better Things to Think About.",
+      "body_paragraphs": [
+        "Hundreds of thousands of men have rebuilt their basic wardrobe around True Classic. Not because they were told to — because one tee changed what they expected from the rest.",
+        "The fit speaks first. The softness closes the deal. The price makes it a no-brainer to stock up.",
+        "Join the reset."
+      ],
+      "pull_quote": "\"I threw out every other tee I owned. I'm not exaggerating.\""
+    }
+  ],
+  "featured_products": [
+    {
+      "handle": "fiord-short-sleeve-crew-neck-tee",
+      "title": "Fiord Classic Crew Neck",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0220/4008/4552/files/Short_Sleeve_Crew_Neck_Fiord_2_1.jpg?v=1762284000",
+      "price_eur": 24.99,
+      "editorial_caption": "The one that started the obsession. A crew neck so well-fitted, you'll wonder what you were wearing before.",
+      "video_prompt": "A man in his early 30s wearing a fitted fiord-blue crew neck tee walks through a sun-drenched urban courtyard in the early morning. Slow motion capture of fabric movement as he rolls up his sleeves. Warm golden light rakes across the texture of the cotton. Mood: unhurried confidence. Camera drifts laterally at shoulder height.",
+      "video_engine_hint": "runway",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "classic-curved-hem-crew-neck-tees-6-pack",
+      "title": "Classic Curved Hem Crew Neck 6-Pack",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0220/4008/4552/files/TCT4030-Curved-Hem-Crew-6-Pack.jpg?v=1779756592",
+      "price_eur": 128,
+      "editorial_caption": "The full reset. Six colors, one fit that adds length to your torso and intention to every outfit.",
+      "video_prompt": "A flat lay of six neatly folded crew neck tees in muted neutral tones arranged on a warm linen surface. A hand reaches in and lifts one, shaking it gently open — the curved hem falls perfectly. Soft natural window light. Macro detail on the fabric weave. Mood: considered, minimal, domestic luxury.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "black-white-classic-henley-2-pack",
+      "title": "Black & White Classic Henley 2-Pack",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0220/4008/4552/files/TCT4203-2-Packblackwhite.jpg?v=1771437714",
+      "price_eur": 86,
+      "editorial_caption": "Two henleys. Two moods. One cut that does everything a man could ask of a long sleeve.",
+      "video_prompt": "A man buttons the top button of a white henley in front of a dimly lit mirror, then transitions to wearing the black version outdoors at dusk against a concrete wall. Cut between the two with a match-on-action edit. Mood: dual identity, evening readiness. Film grain, warm shadows.",
+      "video_engine_hint": "higgsfield",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "steel-stripe-stretch-oxford-2-0",
+      "title": "Steel Stripe Stretch Oxford 2.0",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0220/4008/4552/files/TCT_4241_LS-Modern-Oxford-2.0_WHITE_STEEL_M_Ecomm_2025_JULY_LD_2_e4742dab-2328-43c7-a38e-94eb0cc5b417.jpg?v=1754094680",
+      "price_eur": 22.95,
+      "editorial_caption": "Business casual, finally fixed. Four-way stretch, moisture-wicking, wrinkle-resistant. Looks sharp. Feels like nothing.",
+      "video_prompt": "A man in his late 20s wearing a steel stripe oxford walks briskly through a glass-walled office lobby, transitions to leaning casually at a bar counter after work — same shirt, same confidence. Shallow depth of field. Crisp natural office light transitions to warm amber bar light. Mood: effortless professional.",
+      "video_engine_hint": "veo",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "active-crew-tee-6-pack",
+      "title": "Active Crew 6-Pack",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0220/4008/4552/files/TCT4003-Active-Crew-6-Pack.jpg?v=1779756556",
+      "price_eur": 160,
+      "editorial_caption": "Performance built in. Posturing left out. Six active crews for the man who doesn't separate his lifestyle from his wardrobe.",
+      "video_prompt": "A man in an active crew tee stretches in a bright minimalist apartment, then transitions to jogging on a quiet tree-lined street at golden hour. Fabric close-up shows the stretch and recovery of the material. Moisture-wicking effect subtly visible. Mood: athletic ease, not gym-bro intensity. Warm morning tones.",
+      "video_engine_hint": "hailuo",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "all-grove-pima-cotton-blend-crew-2-pack",
+      "title": "All Grove Pima Cotton Blend Crew 2-Pack",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0220/4008/4552/files/4040menssspimacrew3.02packgrove.jpg?v=1778030339",
+      "price_eur": 75,
+      "editorial_caption": "50% Pima. 100% the tee you'll reach for first. The grove colorway that makes every skin tone look right.",
+      "video_prompt": "Extreme close-up of Pima cotton fabric surface, fingertips gently pressing into the weave to show softness. Pull back slowly to reveal a man wearing the grove crew in a sun-filled room with warm wooden furniture. He smiles naturally — not at camera. Mood: tactile luxury, relaxed weekend morning.",
+      "video_engine_hint": "runway",
+      "video_duration_s": 5
+    }
+  ],
+  "footer": {
+    "tagline": "Dress less. Look more.",
+    "closing_line": "True Classic. The tee that ended the search."
+  },
+  "_meta": {
+    "model": "claude-sonnet-4-6",
+    "client_prompt": "menswear essentials, mood confidence accessible, palette neutral premium",
+    "source_json": "trueclassic.com_scrape.json",
+    "product_count_total": 50,
+    "featured_count": 6,
+    "generated_in_seconds": 0,
+    "usage": {
+      "input_tokens": 6127,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 3290,
+      "service_tier": "standard",
+      "inference_geo": "global"
+    }
+  }
+}

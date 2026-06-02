@@ -1,0 +1,131 @@
+{
+  "curated": true,
+  "template_id": "museum-curated",
+  "visual_signature": "none",
+  "brand": {
+    "name": "Loom",
+    "domain": "loom.fr",
+    "category": "Vestiaire homme responsable",
+    "positioning_one_liner": "Des vêtements conçus pour durer, pensés contre l'excès.",
+    "icp": "Homme 28-45 ans, urbain et discret, qui achète moins mais mieux, sensible à la matière et allergique au marketing.",
+    "voice": "manifeste"
+  },
+  "client_prompt_interpretation": "Le client veut un site immersif pleine page, un produit par écran, dans une esthétique monochrome ecru-charcoal, avec un discours anti-consommation assumé et une narration en français.",
+  "creative_direction": {
+    "mood": "Silence contemplatif d'un atelier le matin — lumière diffuse, matière brute, rien de superflu.",
+    "reference_style": "Lemaire lookbooks 2022, Beaubien editorial restraint, Aesop brand manifestos",
+    "narrative_arc": "L'utilisateur descend lentement d'une promesse philosophique vers trois pièces qui incarnent chacune une vertu du vestiaire juste — légèreté, présence, durée."
+  },
+  "visual_system": {
+    "palette": [
+      {
+        "name": "background",
+        "hex": "#F0EDE6"
+      },
+      {
+        "name": "foreground",
+        "hex": "#1C1C1A"
+      },
+      {
+        "name": "accent",
+        "hex": "#3D3B36"
+      },
+      {
+        "name": "muted",
+        "hex": "#B5B0A6"
+      },
+      {
+        "name": "surface",
+        "hex": "#E4E0D8"
+      }
+    ],
+    "fonts": {
+      "serif": "Newsreader",
+      "sans": "Inter"
+    },
+    "spacing_density": "spacious",
+    "imagery_treatment": "Photographies pleine hauteur, non recadrées, fond neutre intégré — les produits respirent dans l'espace sans mise en scène artificielle."
+  },
+  "hero": {
+    "kicker": "Vestiaire homme · 2025",
+    "headline": "Porter moins.\nPorter mieux.\nPorter longtemps.",
+    "subheadline": "Loom ne fait pas de saisons. Loom fait des pièces. Trois d'entre elles méritent qu'on s'arrête — pas pour les acheter tout de suite, mais pour comprendre pourquoi elles existent encore demain.",
+    "primary_cta_label": "Découvrir",
+    "secondary_cta_label": null
+  },
+  "site_structure": [
+    {
+      "section": "manifesto",
+      "section_role": "Poser le socle philosophique anti-consommation avant toute présentation produit",
+      "headline": "Le vestiaire n'est pas une saison",
+      "body_paragraphs": [
+        "Nous avons appris à consommer des vêtements comme on consomme des nouvelles — vite, beaucoup, sans mémoire. Chaque printemps efface l'hiver. Chaque collection rend la précédente obsolète. Cette logique nous épuise. Elle épuise la terre. Loom a été fondé pour en sortir.",
+        "Ce que vous allez voir n'est pas une collection. Ce sont trois pièces. Chacune a une raison précise d'exister dans votre armoire. Pas pour remplir un vide — pour occuper une place juste, longtemps, sans jamais avoir besoin d'être remplacée."
+      ],
+      "pull_quote": "Un vêtement bien conçu n'a pas de saison. Il a une histoire."
+    },
+    {
+      "section": "collection",
+      "section_role": "Transition éditoriale entre le manifeste et les produits individuels",
+      "headline": "Trois pièces. Aucun compromis.",
+      "body_paragraphs": [
+        "Le short, le polo, la veste. Trois silhouettes qui ne cherchent pas à séduire au premier regard. Elles travaillent autrement — par la matière qu'on touche, le tombé qu'on ressent, la durée qu'on finit par reconnaître. Ce sont des vêtements qui se méritent dans le temps."
+      ],
+      "pull_quote": null
+    },
+    {
+      "section": "closing",
+      "section_role": "Refermer la narration sur l'intention de marque, sans appel à l'achat agressif",
+      "headline": "Ce n'est pas du shopping. C'est un choix.",
+      "body_paragraphs": [
+        "Acheter une pièce Loom, c'est décider d'acheter moins ailleurs. C'est un arbitrage conscient, pas une impulsion. Nous ne faisons pas de promotions flash. Nous ne créons pas d'urgence artificielle. Nous fabriquons des vêtements en espérant qu'ils vous outlive — ou presque.",
+        "Si vous êtes arrivé jusqu'ici, vous avez peut-être déjà compris ce que nous essayons de faire. Le reste appartient à votre armoire."
+      ],
+      "pull_quote": "Moins, mais vraiment."
+    }
+  ],
+  "featured_products": [
+    {
+      "handle": "le-short-relax",
+      "title": "Le short relax",
+      "video_prompt": "Slow dolly-in on a folded beige cotton short resting on a raw concrete surface. Morning side light from a single window, long shadows, matte textile grain visible. No movement except a slight breath of air lifting one edge. 16mm film grain, desaturated ecru palette, contemplative silence.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5,
+      "editorial_caption": "Un short taillé dans un coton bio brossé, coupé pour ne pas contraindre. L'élastique à la ceinture n'est pas une concession — c'est une décision.",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/1355/7899/files/SLIDESHOWIMAGE4_47749f08-4d1b-41e0-b379-4538f3ca7fbe.jpg?v=1777363113",
+      "price_eur": "80.00"
+    },
+    {
+      "handle": "le-polo-en-maille",
+      "title": "Le polo en maille",
+      "video_prompt": "Slow orbit around a knitted ecru polo hanging on a minimal wooden hanger against a bare plaster wall. Diffuse northern light, soft shadows highlighting the knit texture. Camera moves at breathing pace, never rushing. 35mm film aesthetic, warm grain, palette of sand and shadow.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5,
+      "editorial_caption": "La maille tricotée, pas assemblée. Le polo en maille Loom tient sa forme parce qu'il est construit, pas collé. Il vieillit avec vous — ce n'est pas un défaut, c'est le point.",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/1355/7899/files/SLIDESHOWIMAGE2_08bd4ae3-0cdc-435b-b1fb-e1525daf9ddc.jpg?v=1777282886",
+      "price_eur": "75.00"
+    },
+    {
+      "handle": "la-veste",
+      "title": "La veste",
+      "video_prompt": "Cinematic push-in toward a khaki canvas overshirt draped over the back of a worn wooden chair in a sparse workshop. Raking late-afternoon light reveals every thread of the heavy canvas weave. Dust particles catch the light. Camera holds, then slowly advances. Kodak Vision3 film look, warm charcoal shadows.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5,
+      "editorial_caption": "Une veste de travail réinterprétée sans ironie. Le canevas épais, les poches fonctionnelles, la coupe droite — rien n'est décoratif ici. Tout est là pour durer.",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/1355/7899/files/IMAGE5_9d2241ed-f8a5-4d71-b930-4f58a18838d9.jpg?v=1779286139",
+      "price_eur": "110.00"
+    }
+  ],
+  "footer": {
+    "tagline": "Loom — moins, mais vraiment bien.",
+    "closing_line": "Fabriqué pour résister au temps, pas aux tendances."
+  },
+  "_meta": {
+    "model": "claude-sonnet-4-6",
+    "client_prompt": "Site cinematic immersif, mood luxe contemplative, focus 3 pieces signature vestiaire homme, 1 produit = 1 ecran pleine page, palette monochrome ecru/charcoal, ton manifeste anti-consommation. Tous les textes en francais.",
+    "source_json": "www.loom.fr_hero.json",
+    "product_count_total": 20,
+    "featured_count": 3,
+    "generated_in_seconds": 41.4
+  }
+}

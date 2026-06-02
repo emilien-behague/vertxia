@@ -39,6 +39,10 @@ Le brief doit avoir un point de vue. Une voix de marque assumee. Refuse les copy
 - documentary-story   : long-form article avec drop caps + photos parallax
 - horizontal-slider   : scroll horizontal snap-x, 1 slide = 100vw
 - brutalist-tech      : neubrutalism NB+accent, bordures 2px, hard shadows
+- museum-curated      : fond blanc, photos petites centrees, vide vertical, typo serif legere — luxe ultra-minimal (Margiela/Lemaire/Aesop)
+- kinetic-typography  : photo brutaliste full-bleed + ENORME typo overlay + marquees — mode/streetwear/sport (Lululemon/Off-White/Wodniack)
+- noir-magazine       : fond noir + enorme wordmark serif Fraunces + 3 teasers couleur + drop cap — luxe noir / spirits / niche perfume / travel premium (Voyager Press, Wallpaper, Mr Porter Journal)
+- cyberpunk-noir      : video dark fullscreen + serif italique + scanlines + accent neon vif + glitch hover + terminal footer — tech moody / cyberpunk / techwear / gaming / vape (Sarah Mitchell / Blade Runner)
 
 ## Choix visual_signature
 - none, film-grain, halftone-print, glitch-vhs, neon-noir
@@ -53,7 +57,7 @@ const BRIEF_TOOL = {
     properties: {
       template_id: {
         type: "string",
-        enum: ["editorial-magazine", "cinematic-narrative", "documentary-story", "horizontal-slider", "brutalist-tech"],
+        enum: ["editorial-magazine", "cinematic-narrative", "documentary-story", "horizontal-slider", "brutalist-tech", "museum-curated", "kinetic-typography", "noir-magazine", "cyberpunk-noir"],
       },
       visual_signature: {
         type: "string",

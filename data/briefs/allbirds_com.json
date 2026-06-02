@@ -20,31 +20,27 @@
     "palette": [
       {
         "name": "background",
-        "hex": "#F5EFE0"
+        "hex": "#3B2E28"
       },
       {
         "name": "foreground",
-        "hex": "#2B2620"
+        "hex": "#F5EEE5"
       },
       {
         "name": "accent",
-        "hex": "#E05C1A"
+        "hex": "#C85A2C"
       },
       {
         "name": "muted",
-        "hex": "#8A9E85"
+        "hex": "#8B6B5C"
       },
       {
         "name": "surface",
-        "hex": "#EDE4CC"
-      },
-      {
-        "name": "warm-mid",
-        "hex": "#C9A96E"
+        "hex": "#4A3D35"
       }
     ],
     "fonts": {
-      "serif": "Playfair Display",
+      "serif": "Instrument Serif",
       "sans": "DM Sans"
     },
     "spacing_density": "spacious",
