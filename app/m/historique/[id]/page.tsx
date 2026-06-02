@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection } from "@/components/mobile/inset-list";
@@ -52,12 +52,18 @@ export default function MobileInterventionDetailPage() {
   const [bsffStatus, setBsffStatus] = useState<BsffStatus | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [lastFetchAt, setLastFetchAt] = useState<number | null>(null);
+  const [nowTick, setNowTick] = useState<number>(() => 0);
+  // Refs pour éviter de recréer l'interval polling à chaque changement de state
+  const bsffStatusRef = useRef<BsffStatus | null>(null);
+  bsffStatusRef.current = bsffStatus;
+  const bsffIdRef = useRef<string | undefined>(undefined);
 
   // Signature transport (cas où le frigoriste = transporteur)
   const [transportSigning, setTransportSigning] = useState(false);
   const [transportError, setTransportError] = useState<string | null>(null);
 
-  // Refresh statut BSFF — appelé au mount + après signature transport
+  // Refresh statut BSFF — appelé au mount + après signature transport + polling
   async function refreshBsffStatus(bsffId: string) {
     setStatusError(null);
     setStatusLoading(true);
@@ -69,6 +75,7 @@ export default function MobileInterventionDetailPage() {
       }
       const data = (await res.json()) as BsffStatus;
       setBsffStatus(data);
+      setLastFetchAt(Date.now());
     } catch (e) {
       setStatusError(e instanceof Error ? e.message : "Erreur");
     } finally {
@@ -76,11 +83,57 @@ export default function MobileInterventionDetailPage() {
     }
   }
 
+  // Auto-refresh : polling 30s + visibility change + tick "il y a Xs"
   useEffect(() => {
-    if (intervention?.bsffId) {
-      refreshBsffStatus(intervention.bsffId);
-    }
+    if (!intervention?.bsffId) return;
+    bsffIdRef.current = intervention.bsffId;
+    refreshBsffStatus(intervention.bsffId);
+
+    // Statuts finaux où on arrête de poller (le BSFF est terminé)
+    const isTerminal = (s?: string | null) =>
+      s === "PROCESSED" || s === "REFUSED";
+
+    // Polling 30s tant que pas terminal ET que l'onglet est visible
+    const interval = window.setInterval(() => {
+      const id = bsffIdRef.current;
+      if (!id) return;
+      if (isTerminal(bsffStatusRef.current?.status)) return;
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+      refreshBsffStatus(id);
+    }, 30_000);
+
+    // Refresh quand l'onglet redevient visible (retour depuis fond / autre onglet)
+    const onVisibility = () => {
+      const id = bsffIdRef.current;
+      if (!id) return;
+      if (document.visibilityState === "visible" && !isTerminal(bsffStatusRef.current?.status)) {
+        refreshBsffStatus(id);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    // Tick 1s pour afficher "Mis à jour il y a Xs" en temps réel
+    const tick = window.setInterval(() => setNowTick((n) => n + 1), 1000);
+
+    return () => {
+      window.clearInterval(interval);
+      window.clearInterval(tick);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [intervention?.bsffId]);
+
+  // Format relatif "il y a Xs / Xm / Xh"
+  function fmtAgo(ms: number): string {
+    const seconds = Math.floor(ms / 1000);
+    if (seconds < 5) return "à l'instant";
+    if (seconds < 60) return `il y a ${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `il y a ${minutes}min`;
+    const hours = Math.floor(minutes / 60);
+    return `il y a ${hours}h`;
+  }
+  // Référence nowTick pour forcer le re-render de l'indicateur "il y a Xs"
+  void nowTick;
 
   async function handleSignTransport() {
     if (!intervention?.bsffId) return;
@@ -362,25 +415,57 @@ export default function MobileInterventionDetailPage() {
               </div>
             </div>
           )}
-          {statusLoading && (
-            <div className="px-4 pb-3 text-[11px] text-black/40 text-center">
-              Mise à jour du statut…
-            </div>
-          )}
-          {statusError && !statusLoading && (
-            <div className="px-4 pb-3 flex items-center justify-center gap-3">
-              <span className="text-[11px] text-amber-700">{statusError}</span>
-              {i.bsffId && (
-                <button
-                  type="button"
-                  onClick={() => i.bsffId && refreshBsffStatus(i.bsffId)}
-                  className="text-[11px] underline text-black/60 active:text-black/90"
-                >
-                  Réessayer
-                </button>
+          {/* Barre de statut "live" : indicateur pulse + dernière maj + refresh manuel */}
+          <div className="px-4 pb-3 flex items-center justify-between gap-2 border-t border-black/[0.04] pt-3">
+            <div className="flex items-center gap-2 min-w-0">
+              {statusLoading ? (
+                <>
+                  <span className="relative flex w-2 h-2 shrink-0">
+                    <span className="absolute inset-0 rounded-full bg-blue-500 opacity-60 animate-ping" />
+                    <span className="relative w-2 h-2 rounded-full bg-blue-500" />
+                  </span>
+                  <span className="text-[11px] text-blue-700 truncate">Mise à jour…</span>
+                </>
+              ) : bsffStatus?.status === "PROCESSED" ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="text-[11px] text-emerald-700 truncate">
+                    Traitement terminé · suivi clôturé
+                  </span>
+                </>
+              ) : bsffStatus?.status === "REFUSED" ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                  <span className="text-[11px] text-red-700 truncate">Bouteille refusée</span>
+                </>
+              ) : statusError ? (
+                <span className="text-[11px] text-amber-700 truncate">{statusError}</span>
+              ) : lastFetchAt ? (
+                <>
+                  <span className="relative flex w-2 h-2 shrink-0">
+                    <span className="absolute inset-0 rounded-full bg-emerald-500 opacity-40 animate-ping" />
+                    <span className="relative w-2 h-2 rounded-full bg-emerald-500" />
+                  </span>
+                  <span className="text-[11px] text-black/55 truncate">
+                    En direct · maj {fmtAgo(Date.now() - lastFetchAt)}
+                  </span>
+                </>
+              ) : (
+                <span className="text-[11px] text-black/40 truncate">Connexion…</span>
               )}
             </div>
-          )}
+            {i.bsffId && (
+              <button
+                type="button"
+                onClick={() => i.bsffId && refreshBsffStatus(i.bsffId)}
+                disabled={statusLoading}
+                className="text-[11px] px-2.5 py-1 rounded-full bg-black/[0.05] text-black/70 active:bg-black/[0.1] disabled:opacity-50 shrink-0"
+                style={{ WebkitTapHighlightColor: "transparent" }}
+              >
+                ↻ Actualiser
+              </button>
+            )}
+          </div>
         </InsetListSection>
       )}
 
