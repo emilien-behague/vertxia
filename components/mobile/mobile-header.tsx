@@ -37,9 +37,12 @@ export function MobileHeader({ title, backHref, rightAction, largeTitle }: Mobil
           )}
         </div>
 
-        <h1 className="absolute left-1/2 -translate-x-1/2 text-[17px] font-semibold text-[#111] truncate max-w-[55%] text-center">
-          {title}
-        </h1>
+        {/* Titre dans la nav bar compacte — masqué si largeTitle (pattern iOS) */}
+        {!largeTitle && (
+          <h1 className="absolute left-1/2 -translate-x-1/2 text-[17px] font-semibold text-[#111] truncate max-w-[55%] text-center">
+            {title}
+          </h1>
+        )}
 
         <div className="w-16 flex items-center justify-end">
           {rightAction && (
