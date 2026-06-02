@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import SignatureCanvas from "react-signature-canvas";
 import {
   loadProfil,
   saveProfil,
@@ -19,7 +20,6 @@ const CATEGORIES: { value: CategorieAttestation; label: string; desc: string }[]
 ];
 
 const MAX_LOGO_SIZE = 500 * 1024; // 500 KB
-const MAX_SIGNATURE_SIZE = 200 * 1024; // 200 KB
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -35,6 +35,8 @@ export default function ProfilPage() {
   const [profil, setProfil] = useState<Profil>(loadProfil());
   const [savedFlash, setSavedFlash] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [signing, setSigning] = useState(false);
+  const sigRef = useRef<SignatureCanvas | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -65,24 +67,29 @@ export default function ProfilPage() {
     }
   }
 
-  async function handleSignatureUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  function handleSignatureValidate() {
+    const canvas = sigRef.current;
+    if (!canvas) return;
+    if (canvas.isEmpty()) {
+      setUploadError("La signature est vide. Trace-la d'abord.");
+      return;
+    }
     setUploadError(null);
-    if (file.size > MAX_SIGNATURE_SIZE) {
-      setUploadError(`Signature trop lourde (${(file.size / 1024).toFixed(0)} KB). Max 200 KB.`);
-      return;
-    }
-    if (!file.type.startsWith("image/")) {
-      setUploadError("La signature doit être une image (PNG, JPG).");
-      return;
-    }
-    try {
-      const dataUrl = await readFileAsDataUrl(file);
-      update("signatureDataUrl", dataUrl);
-    } catch {
-      setUploadError("Impossible de lire le fichier.");
-    }
+    // toDataURL("image/png") sur le getCanvas() évite le bug "white background"
+    // du wrapper getTrimmedCanvas qui modifie l'aspect ratio.
+    const dataUrl = canvas.getCanvas().toDataURL("image/png");
+    update("signatureDataUrl", dataUrl);
+    setSigning(false);
+  }
+
+  function handleSignatureClear() {
+    sigRef.current?.clear();
+    setUploadError(null);
+  }
+
+  function handleSignatureReset() {
+    update("signatureDataUrl", undefined);
+    setSigning(true);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -361,42 +368,79 @@ export default function ProfilPage() {
                 </div>
               </Field>
 
-              <Field label="Signature scannée (PNG/JPG, max 200 KB)">
+              <Field label="Signature du gérant — trace-la directement">
                 <div className="space-y-3">
-                  {profil.signatureDataUrl ? (
-                    <div className="rounded-xl border border-black/10 bg-white p-4 flex items-center justify-center min-h-[120px]">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={profil.signatureDataUrl}
-                        alt="Signature gérant"
-                        className="max-h-24 max-w-full object-contain"
-                      />
-                    </div>
+                  {profil.signatureDataUrl && !signing ? (
+                    <>
+                      <div className="rounded-xl border border-black/10 bg-white p-4 flex items-center justify-center min-h-[180px]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={profil.signatureDataUrl}
+                          alt="Signature gérant"
+                          className="max-h-32 max-w-full object-contain"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleSignatureReset}
+                          className="px-4 py-2 rounded-lg bg-white border border-black/10 hover:border-black/30 text-xs font-mono tracking-widest uppercase transition-colors"
+                        >
+                          Re-signer
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => update("signatureDataUrl", undefined)}
+                          className="px-3 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-xs font-mono tracking-widest uppercase transition-colors"
+                        >
+                          Retirer
+                        </button>
+                      </div>
+                    </>
                   ) : (
-                    <div className="rounded-xl border border-dashed border-black/15 bg-white/40 p-6 text-center min-h-[120px] flex items-center justify-center">
-                      <span className="text-xs text-black/40">Aucune signature</span>
-                    </div>
+                    <>
+                      <div className="border-2 border-black/15 rounded-xl bg-white overflow-hidden">
+                        <SignatureCanvas
+                          ref={sigRef}
+                          penColor="#111"
+                          canvasProps={{
+                            width: 460,
+                            height: 180,
+                            className: "w-full h-[180px] touch-none cursor-crosshair",
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleSignatureValidate}
+                          className="px-4 py-2 rounded-lg bg-[#111] hover:bg-[#333] text-white text-xs font-mono tracking-widest uppercase transition-colors"
+                        >
+                          Enregistrer la signature
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSignatureClear}
+                          className="px-3 py-2 rounded-lg bg-white border border-black/10 hover:border-black/30 text-xs font-mono tracking-widest uppercase transition-colors"
+                        >
+                          Effacer
+                        </button>
+                        {profil.signatureDataUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setSigning(false)}
+                            className="px-3 py-2 rounded-lg bg-black/[0.04] hover:bg-black/[0.08] text-xs font-mono tracking-widest uppercase transition-colors"
+                          >
+                            Annuler
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-black/40 leading-relaxed">
+                        Signe au doigt sur mobile / tablette ou à la souris.
+                        Cette signature sera apposée automatiquement sur les rapports d&apos;intervention.
+                      </p>
+                    </>
                   )}
-                  <div className="flex items-center gap-2">
-                    <label className="cursor-pointer px-4 py-2 rounded-lg bg-white border border-black/10 hover:border-black/30 text-xs font-mono tracking-widest uppercase transition-colors">
-                      Choisir une signature
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleSignatureUpload}
-                        className="sr-only"
-                      />
-                    </label>
-                    {profil.signatureDataUrl && (
-                      <button
-                        type="button"
-                        onClick={() => update("signatureDataUrl", undefined)}
-                        className="px-3 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-xs font-mono tracking-widest uppercase transition-colors"
-                      >
-                        Retirer
-                      </button>
-                    )}
-                  </div>
                 </div>
               </Field>
             </div>
