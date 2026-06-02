@@ -20,6 +20,8 @@ type RequestBody = {
   weight: number;
   packagingNumero: string;
   clientName: string | null;
+  /** Immatriculation du véhicule transporteur (depuis profil). Fallback "AB123CD" si absent. */
+  immatriculation?: string;
 };
 
 async function gql(token: string, query: string, variables: Record<string, unknown> = {}) {
@@ -58,7 +60,7 @@ export async function POST(req: Request) {
     return badRequest("Corps de requête invalide");
   }
 
-  const { fluide, weight, packagingNumero, clientName } = body;
+  const { fluide, weight, packagingNumero, clientName, immatriculation } = body;
   if (!fluide?.code || !weight || !packagingNumero) {
     return badRequest("Champs requis manquants : fluide, weight, packagingNumero");
   }
@@ -90,7 +92,10 @@ export async function POST(req: Request) {
     ],
     transporter: {
       company: VERTXIA_COMPANY,
-      transport: { mode: "ROAD", plates: ["AB123CD"] },
+      transport: {
+        mode: "ROAD",
+        plates: [immatriculation?.trim() || "AB123CD"],
+      },
       recepisse: { isExempted: true },
     },
     destination: {

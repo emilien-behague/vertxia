@@ -40,6 +40,9 @@ export type Profil = {
 
   // Transport de déchets dangereux (pour BSFF — facultatif si pas transporteur)
   numeroRecepisseTransport?: string;
+  /** Immatriculation du véhicule utilisé pour transporter les bouteilles
+   *  vers le centre de traitement. Pré-rempli dans la section [7] du BSFF. */
+  immatriculationVehicule?: string;
 
   // Visuel (data URLs base64)
   /** Logo PNG/JPEG en data URL — affiché sur tous les livrables PDF */
@@ -65,6 +68,7 @@ export const EMPTY_PROFIL: Profil = {
   organismeAgree: "",
   dateExpirationAttestation: "",
   numeroRecepisseTransport: "",
+  immatriculationVehicule: "",
   logoDataUrl: undefined,
   signatureDataUrl: undefined,
   updatedAt: new Date(0).toISOString(),

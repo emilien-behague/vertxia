@@ -208,6 +208,7 @@ function NouvelleInterventionContent() {
     try {
       if (config.needsBsff) {
         setStatus({ type: "loading", step: "Création du bordereau BSFF officiel…" });
+        const profilTransport = loadProfil();
         const res = await fetch("/api/bsff/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -216,6 +217,7 @@ function NouvelleInterventionContent() {
             weight: parseFloat(weight),
             packagingNumero,
             clientName: clientName.trim() || null,
+            immatriculation: profilTransport.immatriculationVehicule || undefined,
           }),
         });
         const data = await res.json();

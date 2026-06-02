@@ -288,6 +288,18 @@ export default function MobileProfilPage() {
               className="input-mobile font-mono"
             />
           </FormRow>
+          <FormRow label="Immatriculation véhicule">
+            <input
+              type="text"
+              value={profil.immatriculationVehicule || ""}
+              onChange={(e) =>
+                update("immatriculationVehicule", e.target.value.toUpperCase().replace(/\s+/g, ""))
+              }
+              placeholder="AB-123-CD"
+              maxLength={10}
+              className="input-mobile font-mono"
+            />
+          </FormRow>
         </InsetListSection>
 
         {/* Submit + lien désktop pour signature */}

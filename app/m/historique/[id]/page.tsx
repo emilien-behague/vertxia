@@ -11,6 +11,16 @@ import {
 } from "@/lib/intervention-storage";
 import { loadProfil } from "@/lib/profil";
 
+type BsffStatus = {
+  bsffId: string;
+  status: string;
+  emission: { author: string; date: string } | null;
+  transport: { author: string; date: string } | null;
+  reception: { author: string; date: string } | null;
+  operation: { author: string; date: string } | null;
+  operationCode: string | null;
+};
+
 const TYPE_LABELS: Record<string, string> = {
   recuperation: "Récupération de fluide",
   demantelement: "Démantèlement",
@@ -37,6 +47,64 @@ export default function MobileInterventionDetailPage() {
   const [loaded, setLoaded] = useState(false);
   const [cerfaLoading, setCerfaLoading] = useState(false);
   const [cerfaError, setCerfaError] = useState<string | null>(null);
+
+  // Suivi BSFF — statut des 4 signatures TrackDéchets
+  const [bsffStatus, setBsffStatus] = useState<BsffStatus | null>(null);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
+
+  // Signature transport (cas où le frigoriste = transporteur)
+  const [transportSigning, setTransportSigning] = useState(false);
+  const [transportError, setTransportError] = useState<string | null>(null);
+
+  // Refresh statut BSFF — appelé au mount + après signature transport
+  async function refreshBsffStatus(bsffId: string) {
+    setStatusError(null);
+    setStatusLoading(true);
+    try {
+      const res = await fetch(`/api/bsff/status/${encodeURIComponent(bsffId)}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Statut indisponible");
+      }
+      const data = (await res.json()) as BsffStatus;
+      setBsffStatus(data);
+    } catch (e) {
+      setStatusError(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setStatusLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (intervention?.bsffId) {
+      refreshBsffStatus(intervention.bsffId);
+    }
+  }, [intervention?.bsffId]);
+
+  async function handleSignTransport() {
+    if (!intervention?.bsffId) return;
+    const profil = loadProfil();
+    const author = (profil.raisonSociale || "Frigoriste").trim();
+    setTransportError(null);
+    setTransportSigning(true);
+    try {
+      const res = await fetch("/api/bsff/sign-transport", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bsffId: intervention.bsffId, author }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Échec signature transport");
+      }
+      await refreshBsffStatus(intervention.bsffId);
+    } catch (e) {
+      setTransportError(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setTransportSigning(false);
+    }
+  }
 
   useEffect(() => {
     if (!params?.id) return;
@@ -225,6 +293,97 @@ export default function MobileInterventionDetailPage() {
         </InsetListSection>
       )}
 
+      {/* Timeline suivi BSFF — 4 étapes réglementaires TrackDéchets */}
+      {i.bsffId && (
+        <InsetListSection
+          title="Suivi BSFF officiel"
+          footer="Le BSFF passe par 4 signatures : émetteur (toi), transporteur, réception centre, traitement centre. Tu peux signer le transport ici si tu apportes toi-même la bouteille au centre."
+        >
+          <div className="px-4 py-3 space-y-3">
+            <BsffStep
+              order={1}
+              label="Émis"
+              actor="par toi"
+              done={Boolean(bsffStatus?.emission)}
+              date={bsffStatus?.emission?.date}
+            />
+            <BsffStep
+              order={2}
+              label="Prise en charge transport"
+              actor={bsffStatus?.transport ? "par " + bsffStatus.transport.author : "par le transporteur"}
+              done={Boolean(bsffStatus?.transport)}
+              date={bsffStatus?.transport?.date}
+            />
+            <BsffStep
+              order={3}
+              label="Réception au centre"
+              actor={bsffStatus?.reception ? "par " + bsffStatus.reception.author : "par le centre de traitement"}
+              done={Boolean(bsffStatus?.reception)}
+              date={bsffStatus?.reception?.date}
+            />
+            <BsffStep
+              order={4}
+              label="Traitement effectué"
+              actor={
+                bsffStatus?.operation
+                  ? `par ${bsffStatus.operation.author}${bsffStatus.operationCode ? ` · ${bsffStatus.operationCode}` : ""}`
+                  : "par le centre de traitement"
+              }
+              done={Boolean(bsffStatus?.operation)}
+              date={bsffStatus?.operation?.date}
+            />
+          </div>
+          {!bsffStatus?.transport && bsffStatus?.emission && (
+            <div className="px-4 pb-4">
+              <button
+                type="button"
+                onClick={handleSignTransport}
+                disabled={transportSigning}
+                className="w-full px-4 py-3 rounded-2xl bg-[#A16207] text-white text-[14px] font-medium active:bg-[#8a5206] transition-colors disabled:opacity-60"
+                style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+              >
+                {transportSigning ? (
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    Signature en cours…
+                  </span>
+                ) : (
+                  "✍ Signer la prise en charge transport"
+                )}
+              </button>
+              {transportError && (
+                <div className="mt-2 px-3 py-2 rounded-xl bg-red-50 ring-1 ring-red-200 text-[12px] text-red-700">
+                  {transportError}
+                </div>
+              )}
+              <div className="mt-2 text-[11px] text-black/45 leading-relaxed">
+                Signe ici quand tu mets la bouteille dans ton utilitaire pour
+                l&apos;apporter au centre de traitement.
+              </div>
+            </div>
+          )}
+          {statusLoading && (
+            <div className="px-4 pb-3 text-[11px] text-black/40 text-center">
+              Mise à jour du statut…
+            </div>
+          )}
+          {statusError && !statusLoading && (
+            <div className="px-4 pb-3 flex items-center justify-center gap-3">
+              <span className="text-[11px] text-amber-700">{statusError}</span>
+              {i.bsffId && (
+                <button
+                  type="button"
+                  onClick={() => i.bsffId && refreshBsffStatus(i.bsffId)}
+                  className="text-[11px] underline text-black/60 active:text-black/90"
+                >
+                  Réessayer
+                </button>
+              )}
+            </div>
+          )}
+        </InsetListSection>
+      )}
+
       {/* Détails intervention */}
       <InsetListSection title="Détails intervention">
         <DetailRow label="Type" value={TYPE_LABELS[i.typeIntervention] || i.typeIntervention} />
@@ -310,6 +469,55 @@ function DetailRow({ label, value }: { label: string; value: string }) {
     <div className="px-4 py-3 flex items-start gap-4">
       <div className="text-[13px] text-black/50 min-w-[100px] shrink-0">{label}</div>
       <div className="text-[14px] text-[#111] flex-1 break-words">{value}</div>
+    </div>
+  );
+}
+
+function BsffStep({
+  order,
+  label,
+  actor,
+  done,
+  date,
+}: {
+  order: number;
+  label: string;
+  actor: string;
+  done: boolean;
+  date?: string;
+}) {
+  const dateFmt = date
+    ? new Date(date).toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
+  return (
+    <div className="flex items-start gap-3">
+      <div
+        className={`relative shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-semibold ${
+          done
+            ? "bg-emerald-500 text-white"
+            : "bg-black/[0.06] text-black/40 ring-1 ring-black/10"
+        }`}
+      >
+        {done ? "✓" : order}
+      </div>
+      <div className="flex-1 min-w-0 pt-0.5">
+        <div className={`text-[14px] font-medium ${done ? "text-[#111]" : "text-black/55"}`}>
+          {label}
+        </div>
+        <div className="text-[12px] text-black/45 mt-0.5">{actor}</div>
+        {dateFmt && (
+          <div className="text-[11px] text-emerald-700 mt-1 font-mono">{dateFmt}</div>
+        )}
+        {!done && (
+          <div className="text-[11px] text-black/35 mt-1">En attente</div>
+        )}
+      </div>
     </div>
   );
 }
