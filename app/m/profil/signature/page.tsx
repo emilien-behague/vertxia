@@ -16,8 +16,10 @@ export default function MobileSignaturePage() {
     isDrawing: boolean;
     lastX: number;
     lastY: number;
+    lastMidX: number;
+    lastMidY: number;
     hasContent: boolean;
-  }>({ isDrawing: false, lastX: 0, lastY: 0, hasContent: false });
+  }>({ isDrawing: false, lastX: 0, lastY: 0, lastMidX: 0, lastMidY: 0, hasContent: false });
   const [hasContent, setHasContent] = useState(false);
   const [saving, setSaving] = useState(false);
   const [existingSignature, setExistingSignature] = useState<string | undefined>(undefined);
@@ -82,6 +84,15 @@ export default function MobileSignaturePage() {
       drawingRef.current.isDrawing = true;
       drawingRef.current.lastX = x;
       drawingRef.current.lastY = y;
+      // Le point initial sert AUSSI de premier "midpoint" pour démarrer la chaîne
+      drawingRef.current.lastMidX = x;
+      drawingRef.current.lastMidY = y;
+      // Dépose un petit point pour qu'un tap simple soit visible
+      if (!ctx) return;
+      ctx.beginPath();
+      ctx.arc(x, y, ctx.lineWidth / 2.4, 0, Math.PI * 2);
+      ctx.fillStyle = ctx.strokeStyle as string;
+      ctx.fill();
     }
 
     function move(e: TouchEvent | MouseEvent) {
@@ -90,15 +101,22 @@ export default function MobileSignaturePage() {
       const { x, y } = getEventCoords(e);
       if (!ctx) return;
 
-      // Lissage mid-point
+      // Mid-point smoothing propre :
+      // - on relie le PRÉCÉDENT midpoint au NOUVEAU midpoint
+      // - le point brut sert de control point (donne la courbure)
+      // - aucun gap entre segments → tracé continu sans pointillés
       const midX = (drawingRef.current.lastX + x) / 2;
       const midY = (drawingRef.current.lastY + y) / 2;
       ctx.beginPath();
-      ctx.moveTo(drawingRef.current.lastX, drawingRef.current.lastY);
+      ctx.moveTo(drawingRef.current.lastMidX, drawingRef.current.lastMidY);
       ctx.quadraticCurveTo(drawingRef.current.lastX, drawingRef.current.lastY, midX, midY);
       ctx.stroke();
+
       drawingRef.current.lastX = x;
       drawingRef.current.lastY = y;
+      drawingRef.current.lastMidX = midX;
+      drawingRef.current.lastMidY = midY;
+
       if (!drawingRef.current.hasContent) {
         drawingRef.current.hasContent = true;
         setHasContent(true);
@@ -109,6 +127,12 @@ export default function MobileSignaturePage() {
       if (!drawingRef.current.isDrawing) return;
       e.preventDefault();
       drawingRef.current.isDrawing = false;
+      // Termine proprement le tracé jusqu'au dernier point brut
+      if (!ctx) return;
+      ctx.beginPath();
+      ctx.moveTo(drawingRef.current.lastMidX, drawingRef.current.lastMidY);
+      ctx.lineTo(drawingRef.current.lastX, drawingRef.current.lastY);
+      ctx.stroke();
     }
 
     // Touch events (priorité iOS)
