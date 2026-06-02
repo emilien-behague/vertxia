@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+// useSearchParams = obligatoire de wrap dans <Suspense> en Next.js 16 (cf bug
+// déjà rencontré sur /m/intervention/nouvelle, commit bde449a).
+export const dynamic = "force-dynamic";
+
+import { Suspense, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection, InsetRow } from "@/components/mobile/inset-list";
 import {
@@ -8,6 +14,7 @@ import {
   getStats,
   type StoredIntervention,
 } from "@/lib/intervention-storage";
+import { listEquipements, type StoredEquipement } from "@/lib/equipement";
 
 const TYPE_LABELS: Record<string, string> = {
   recuperation: "Récupération",
@@ -16,6 +23,8 @@ const TYPE_LABELS: Record<string, string> = {
   controle_non_periodique: "Contrôle suite fuite",
   mise_service: "Mise en service",
   maintenance: "Maintenance",
+  assemblage: "Assemblage",
+  modification: "Modification",
 };
 
 function fmtDate(iso: string): string {
@@ -26,12 +35,31 @@ function fmtTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
 
-export default function MobileHistoriquePage() {
-  const [interventions, setInterventions] = useState<StoredIntervention[]>([]);
+function HistoriqueContent() {
+  const searchParams = useSearchParams();
+  const eqIdParam = searchParams.get("equipement");
+
+  const [allInterventions, setAllInterventions] = useState<StoredIntervention[]>([]);
+  const [equipement, setEquipement] = useState<StoredEquipement | null>(null);
 
   useEffect(() => {
-    setInterventions(listInterventions());
-  }, []);
+    setAllInterventions(listInterventions());
+    if (eqIdParam) {
+      const eq = listEquipements().find((e) => e.id === eqIdParam);
+      setEquipement(eq ?? null);
+    } else {
+      setEquipement(null);
+    }
+  }, [eqIdParam]);
+
+  // Filtre par numéro de série de l'équipement (lien : intervention.numeroSerieEquipement)
+  const interventions = useMemo(() => {
+    if (!equipement) return allInterventions;
+    const target = equipement.numeroSerie.trim().toLowerCase();
+    return allInterventions.filter(
+      (i) => i.numeroSerieEquipement?.trim().toLowerCase() === target
+    );
+  }, [allInterventions, equipement]);
 
   const stats = useMemo(() => getStats(interventions), [interventions]);
 
@@ -50,9 +78,39 @@ export default function MobileHistoriquePage() {
     return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
   }
 
+  // Retour : si on est en mode filtré, retour sur la fiche équipement
+  const backHref = equipement ? `/eq/${equipement.id}` : "/m";
+  const title = equipement ? "Historique équipement" : "Historique";
+
   return (
     <>
-      <MobileHeader title="Historique" largeTitle backHref="/m" />
+      <MobileHeader title={title} largeTitle backHref={backHref} />
+
+      {/* Bandeau contexte équipement si filtré */}
+      {equipement && (
+        <div className="mx-4 mt-2 mb-3 px-4 py-3 rounded-2xl bg-[#A16207]/8 ring-1 ring-[#A16207]/15">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-[#A16207]">
+                Filtré sur cet équipement
+              </div>
+              <div className="mt-1 text-[14px] font-medium text-[#111] truncate">
+                {equipement.modele}
+              </div>
+              <div className="text-[12px] text-black/55 truncate">
+                {equipement.clientName} · SN {equipement.numeroSerie}
+              </div>
+            </div>
+          </div>
+          <Link
+            href="/m/historique"
+            className="mt-2 inline-block text-[11px] text-[#A16207] underline active:opacity-70"
+            style={{ WebkitTapHighlightColor: "transparent" }}
+          >
+            Voir tout l&apos;historique →
+          </Link>
+        </div>
+      )}
 
       {/* Stats inline */}
       <section className="px-4 mt-2">
@@ -71,7 +129,20 @@ export default function MobileHistoriquePage() {
               <polyline points="12 7 12 12 15 14" />
             </svg>
           </div>
-          <div className="text-[15px] text-black/55">Aucune intervention enregistrée</div>
+          <div className="text-[15px] text-black/55">
+            {equipement
+              ? "Aucune intervention sur cet équipement"
+              : "Aucune intervention enregistrée"}
+          </div>
+          {equipement && (
+            <Link
+              href={`/m/intervention/nouvelle?equipement=${equipement.id}`}
+              className="inline-block mt-4 px-5 py-3 rounded-2xl bg-[#111] text-white text-[14px] font-medium active:bg-black/90"
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            >
+              + Créer la première intervention
+            </Link>
+          )}
         </div>
       ) : (
         byMonth.map(([month, items]) => (
@@ -108,6 +179,20 @@ export default function MobileHistoriquePage() {
         ))
       )}
     </>
+  );
+}
+
+export default function MobileHistoriquePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="px-5 py-20 text-center">
+          <div className="inline-block w-8 h-8 border-2 border-black/15 border-t-[#111] rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <HistoriqueContent />
+    </Suspense>
   );
 }
 
