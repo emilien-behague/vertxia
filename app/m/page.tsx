@@ -168,6 +168,13 @@ export default function MobileHomePage() {
 
           {/* Quick actions */}
           <InsetListSection title="Actions rapides">
+            <InsetRow
+              href="/m/scan"
+              leading={<ActionIcon name="qr" />}
+              label="Scanner QR équipement"
+              sublabel="Caméra → fiche en 1 sec"
+              showChevron
+            />
             <InsetRow href="/m/intervention" leading={<ActionIcon name="plus" />} label="Nouvelle intervention" showChevron />
             <InsetRow
               href="/m/equipements"
@@ -274,12 +281,13 @@ function InterventionIcon({ type }: { type: string }) {
   );
 }
 
-function ActionIcon({ name }: { name: "plus" | "list" | "doc" | "warning" }) {
+function ActionIcon({ name }: { name: "plus" | "list" | "doc" | "warning" | "qr" }) {
   const colors = {
     plus: "bg-[#111] text-white",
     list: "bg-blue-50 text-blue-700",
     doc: "bg-purple-50 text-purple-700",
     warning: "bg-amber-50 text-amber-700",
+    qr: "bg-[#A16207]/10 text-[#A16207]",
   };
   const paths = {
     plus: <path d="M12 5v14M5 12h14" />,
@@ -304,6 +312,14 @@ function ActionIcon({ name }: { name: "plus" | "list" | "doc" | "warning" }) {
         <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
         <line x1="12" y1="9" x2="12" y2="13" />
         <line x1="12" y1="17" x2="12.01" y2="17" />
+      </>
+    ),
+    qr: (
+      <>
+        <rect x="3" y="3" width="7" height="7" />
+        <rect x="14" y="3" width="7" height="7" />
+        <rect x="3" y="14" width="7" height="7" />
+        <path d="M14 14h3v3h-3zM18 18h3v3h-3z" />
       </>
     ),
   };

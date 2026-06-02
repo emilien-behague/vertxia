@@ -11,8 +11,8 @@ import { MobileHeader } from "@/components/mobile/mobile-header";
 //   → on affiche une instruction fallback vers l'app Appareil photo iPhone (qui scan en natif).
 
 type State =
+  | { type: "idle" } // En attente du tap utilisateur (user gesture iOS)
   | { type: "loading" }
-  | { type: "ready" }
   | { type: "scanning" }
   | { type: "found"; id: string }
   | { type: "denied" }
@@ -44,87 +44,91 @@ export default function MobileScanPage() {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const scannerRef = useRef<{ stop: () => void; destroy: () => void } | null>(null);
-  const [state, setState] = useState<State>({ type: "loading" });
+  const [state, setState] = useState<State>({ type: "idle" });
 
+  // Check secure context au mount — sur HTTP IP locale Safari iOS bloque getUserMedia
   useEffect(() => {
-    // Check secure context : sur HTTP IP locale Safari iOS bloque la caméra.
     if (typeof window !== "undefined" && !window.isSecureContext && window.location.hostname !== "localhost") {
       setState({ type: "insecure_context" });
-      return;
     }
+    return () => {
+      const s = scannerRef.current;
+      if (s) {
+        try {
+          s.stop();
+          s.destroy();
+        } catch {
+          /* */
+        }
+        scannerRef.current = null;
+      }
+    };
+  }, []);
 
-    let mounted = true;
+  // Démarrage explicite via user gesture (iOS Safari l'exige pour getUserMedia)
+  async function startScanner() {
+    const video = videoRef.current;
+    if (!video) return;
+    setState({ type: "loading" });
 
-    async function startScanner() {
-      const video = videoRef.current;
-      if (!video) return;
+    try {
+      const { default: QrScanner } = await import("qr-scanner");
+
+      const hasCamera = await QrScanner.hasCamera();
+      if (!hasCamera) {
+        setState({ type: "no_camera" });
+        return;
+      }
+
+      const scanner = new QrScanner(
+        video,
+        (result) => {
+          const id = extractEquipementId(result.data);
+          if (!id) return;
+          setState({ type: "found", id });
+          try {
+            scanner.stop();
+          } catch {
+            /* */
+          }
+          // Petit délai pour montrer le ✓ avant de naviguer
+          setTimeout(() => router.push(`/eq/${id}`), 350);
+        },
+        {
+          preferredCamera: "environment",
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+          returnDetailedScanResult: true,
+          maxScansPerSecond: 5,
+        }
+      );
+
+      scannerRef.current = scanner;
 
       try {
-        const { default: QrScanner } = await import("qr-scanner");
-
-        const hasCamera = await QrScanner.hasCamera();
-        if (!hasCamera) {
-          if (mounted) setState({ type: "no_camera" });
-          return;
-        }
-
-        const scanner = new QrScanner(
-          video,
-          (result) => {
-            const id = extractEquipementId(result.data);
-            if (!id) return;
-            setState({ type: "found", id });
-            scanner.stop();
-            // Petit délai pour montrer le ✓ avant de naviguer
-            setTimeout(() => router.push(`/eq/${id}`), 350);
-          },
-          {
-            preferredCamera: "environment", // caméra arrière
-            highlightScanRegion: true,
-            highlightCodeOutline: true,
-            returnDetailedScanResult: true,
-            maxScansPerSecond: 5,
-          }
-        );
-
-        scannerRef.current = scanner;
-
-        try {
-          await scanner.start();
-          if (mounted) setState({ type: "scanning" });
-        } catch (e) {
-          // Permission refusée par l'utilisateur ou bloquée par Safari
-          if (mounted) {
-            const msg = e instanceof Error ? e.message.toLowerCase() : String(e);
-            if (msg.includes("denied") || msg.includes("permission")) {
-              setState({ type: "denied" });
-            } else {
-              setState({ type: "error", message: e instanceof Error ? e.message : String(e) });
-            }
-          }
-        }
+        await scanner.start();
+        setState({ type: "scanning" });
       } catch (e) {
-        if (mounted) {
+        const msg = e instanceof Error ? e.message.toLowerCase() : String(e);
+        if (msg.includes("denied") || msg.includes("permission") || msg.includes("notallowed")) {
+          setState({ type: "denied" });
+        } else if (msg.includes("notreadable") || msg.includes("inuse")) {
+          setState({
+            type: "error",
+            message: "La caméra est utilisée par une autre app. Ferme-la et réessaie.",
+          });
+        } else {
           setState({ type: "error", message: e instanceof Error ? e.message : String(e) });
         }
       }
+    } catch (e) {
+      setState({ type: "error", message: e instanceof Error ? e.message : String(e) });
     }
-
-    startScanner();
-
-    return () => {
-      mounted = false;
-      const s = scannerRef.current;
-      if (s) {
-        s.stop();
-        s.destroy();
-      }
-    };
-  }, [router]);
+  }
 
   return (
     <>
-      <MobileHeader title="Scanner QR" backHref="/m/intervention" />
+      <MobileHeader title="Scanner QR" backHref="/m" />
 
       {/* Vidéo plein écran — visible seulement quand scanner actif */}
       <div className="relative mx-4 mt-2 rounded-3xl overflow-hidden bg-black aspect-[3/4]">
@@ -137,6 +141,34 @@ export default function MobileScanPage() {
 
         {/* Overlay viseur stylé */}
         {state.type === "scanning" && <ViseurOverlay />}
+
+        {/* État initial — bouton pour user gesture iOS */}
+        {state.type === "idle" && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black text-white px-6">
+            <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mb-5">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+                <path d="M14 14h7v7h-7z" />
+              </svg>
+            </div>
+            <div className="text-[16px] font-semibold text-center mb-1.5">
+              Scanner un équipement
+            </div>
+            <div className="text-[12px] text-white/65 text-center leading-relaxed mb-6 max-w-[240px]">
+              Pointez l&apos;étiquette QR Vertxia. La fiche s&apos;ouvre instantanément.
+            </div>
+            <button
+              type="button"
+              onClick={startScanner}
+              className="px-6 py-3 rounded-2xl bg-white text-black text-[14px] font-medium active:bg-white/90"
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            >
+              📷 Activer la caméra
+            </button>
+          </div>
+        )}
 
         {/* Loading state */}
         {state.type === "loading" && (
@@ -184,6 +216,16 @@ export default function MobileScanPage() {
                   "Safari iOS bloque la caméra sur HTTP. Ouvre l'app Appareil photo iPhone et pointe le QR — iOS te proposera d'ouvrir le lien directement."}
                 {state.type === "error" && state.message}
               </div>
+              {state.type === "error" && (
+                <button
+                  type="button"
+                  onClick={startScanner}
+                  className="mt-4 px-4 py-2 rounded-2xl bg-white text-black text-[13px] font-medium active:bg-white/90"
+                  style={{ WebkitTapHighlightColor: "transparent" }}
+                >
+                  Réessayer
+                </button>
+              )}
             </div>
           </div>
         )}
