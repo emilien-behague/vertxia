@@ -59,7 +59,7 @@ export function MobileHeader({ title, backHref, rightAction, largeTitle }: Mobil
 
       {largeTitle && (
         <div className="max-w-md mx-auto px-5 pb-3 pt-1">
-          <h2 className="text-[34px] font-bold tracking-tight text-[#111] leading-none">
+          <h2 className="text-[34px] font-bold tracking-tight text-[#111] leading-none text-center">
             {title}
           </h2>
         </div>
