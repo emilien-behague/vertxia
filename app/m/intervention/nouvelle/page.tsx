@@ -60,7 +60,16 @@ const FLUIDES = [
 type Status =
   | { type: "idle" }
   | { type: "loading"; step: string }
-  | { type: "success"; bsffId?: string; cerfaUrl: string }
+  | {
+      type: "success";
+      bsffId?: string;
+      cerfaUrl: string;
+      /** Email du client final si renseigné (pour bouton 'Envoyer au client') */
+      clientEmail?: string;
+      clientName?: string;
+      typeIntervention: string;
+      modeleEquipement?: string;
+    }
   | { type: "error"; message: string };
 
 function NouvelleInterventionContent() {
@@ -358,7 +367,21 @@ function NouvelleInterventionContent() {
         });
       } catch {}
 
-      setStatus({ type: "success", bsffId, cerfaUrl });
+      // Récupère email client depuis l'équipement source si lié (pour bouton 'Envoyer au client')
+      let resolvedClientEmail: string | undefined;
+      if (eqIdParam) {
+        const eq = listEquipements().find((e) => e.id === eqIdParam);
+        if (eq?.clientEmail) resolvedClientEmail = eq.clientEmail;
+      }
+      setStatus({
+        type: "success",
+        bsffId,
+        cerfaUrl,
+        clientEmail: resolvedClientEmail,
+        clientName: clientName.trim() || undefined,
+        typeIntervention,
+        modeleEquipement: modeleEquipement.trim() || undefined,
+      });
     } catch (e) {
       setStatus({ type: "error", message: e instanceof Error ? e.message : "Erreur" });
     }
@@ -991,11 +1014,71 @@ function ChoiceRow<T extends string>({
   );
 }
 
+const TYPE_INTERVENTION_LABELS_MAIL: Record<string, string> = {
+  recuperation: "récupération de fluide frigorigène",
+  demantelement: "démantèlement avec récupération",
+  controle_periodique: "contrôle d'étanchéité périodique",
+  controle_non_periodique: "contrôle d'étanchéité suite fuite",
+  mise_service: "mise en service",
+  maintenance: "maintenance",
+  assemblage: "assemblage d'équipement",
+  modification: "modification d'équipement",
+};
+
+function buildClientMailto(status: {
+  bsffId?: string;
+  clientEmail?: string;
+  clientName?: string;
+  typeIntervention: string;
+  modeleEquipement?: string;
+}): string {
+  const dateFR = new Date().toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+  const labelType =
+    TYPE_INTERVENTION_LABELS_MAIL[status.typeIntervention] ||
+    status.typeIntervention;
+  const subject = `Attestation F-Gas — ${labelType} du ${dateFR}`;
+
+  const lines: string[] = [];
+  lines.push(`Bonjour${status.clientName ? " " + status.clientName : ""},`);
+  lines.push("");
+  lines.push(
+    `Suite à mon intervention du ${dateFR}${status.modeleEquipement ? " sur votre " + status.modeleEquipement : ""}, vous trouverez ci-joint votre attestation officielle CERFA 15497*04.`
+  );
+  if (status.bsffId) {
+    lines.push("");
+    lines.push(
+      `Le bordereau de suivi de déchets (BSFF) associé est référencé sous le numéro ${status.bsffId} et a été enregistré auprès du Ministère de la Transition écologique via TrackDéchets.`
+    );
+  }
+  lines.push("");
+  lines.push(
+    "Conservez ces documents au moins 5 ans, conformément à l'article R. 543-82 du Code de l'environnement."
+  );
+  lines.push("");
+  lines.push("À votre disposition pour toute question.");
+  lines.push("");
+  lines.push("Cordialement,");
+
+  return `mailto:${encodeURIComponent(status.clientEmail || "")}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join("\n"))}`;
+}
+
 function SuccessView({
   status,
   onReset,
 }: {
-  status: { type: "success"; bsffId?: string; cerfaUrl: string };
+  status: {
+    type: "success";
+    bsffId?: string;
+    cerfaUrl: string;
+    clientEmail?: string;
+    clientName?: string;
+    typeIntervention: string;
+    modeleEquipement?: string;
+  };
   onReset: () => void;
 }) {
   return (
@@ -1056,6 +1139,23 @@ function SuccessView({
           ⬇ Télécharger le CERFA 15497*04
         </a>
       </div>
+
+      {/* Bouton 'Envoyer au client' — email pré-rempli avec contexte intervention */}
+      {status.clientEmail && (
+        <div className="px-4 mt-3">
+          <a
+            href={buildClientMailto(status)}
+            className="block w-full px-6 py-4 rounded-2xl bg-[#A16207] text-white text-[15px] font-medium text-center active:bg-[#8a5206] transition-colors"
+            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+          >
+            ✉️ Envoyer au client ({status.clientEmail})
+          </a>
+          <div className="mt-2 text-[11px] text-black/50 leading-relaxed text-center">
+            Ouvre Mail iOS avec objet + corps pré-remplis.<br />
+            Pense à attacher le CERFA téléchargé juste avant.
+          </div>
+        </div>
+      )}
 
       <div className="px-4 mt-6 mb-4">
         <button
