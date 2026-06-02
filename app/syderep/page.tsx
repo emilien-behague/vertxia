@@ -101,7 +101,7 @@ export default function SyderepPage() {
 
   if (!mounted) return null;
 
-  const submissionWindow = `1ᵉʳ février → 31 mars ${year + 1}`;
+  const submissionWindow = `1er février → 31 mars ${year + 1}`;
   const isCurrentYear = year === currentYear();
 
   return (
@@ -244,7 +244,7 @@ export default function SyderepPage() {
             { label: "Interventions", value: decl.nbInterventions.toString() },
             { label: "Chargé en équipement", value: `${fmtKg(decl.totalChargeKg)} kg` },
             { label: "Récupéré", value: `${fmtKg(decl.totalRecupereKg)} kg` },
-            { label: "Eq. CO₂", value: fmtCO2(decl.totalCO2eq) },
+            { label: "Eq. CO2", value: fmtCO2(decl.totalCO2eq) },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -289,9 +289,9 @@ export default function SyderepPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15 }}
-            className="rounded-2xl border border-black/[0.08] bg-white overflow-hidden print:rounded-none print:border-black/20"
+            className="rounded-2xl border border-black/[0.08] bg-white overflow-hidden print:rounded-none print:border-black/20 print:overflow-visible"
           >
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto print:overflow-visible">
               <table className="w-full text-sm">
                 <thead className="bg-black/[0.03] border-b border-black/[0.08]">
                   <tr>
@@ -446,7 +446,7 @@ export default function SyderepPage() {
                 <a href={SYDEREP_URL} target="_blank" rel="noopener noreferrer" className="underline">
                   syderep.ademe.fr
                 </a>{" "}
-                entre le 1ᵉʳ février et le 31 mars {year + 1}.
+                entre le 1er février et le 31 mars {year + 1}.
               </li>
               <li>
                 Soit vous reportez les valeurs ligne par ligne dans le formulaire web (mode IHM),
@@ -469,18 +469,65 @@ export default function SyderepPage() {
         </div>
       </div>
 
-      {/* Print styles pour version PDF */}
+      {/* Print styles pour version PDF — paysage A4, tableau full-width */}
       <style jsx global>{`
+        @page {
+          size: A4 landscape;
+          margin: 1cm;
+        }
         @media print {
-          body { background: white !important; }
+          html, body {
+            background: white !important;
+            font-size: 10pt;
+          }
+          /* Tableau : zéro scroll, tout doit rentrer dans la page paysage */
+          table {
+            width: 100% !important;
+            font-size: 9pt !important;
+            page-break-inside: avoid;
+          }
+          table th, table td {
+            padding: 4px 6px !important;
+            white-space: nowrap;
+          }
+          /* Sub-labels "à saisir / auto / calculé" : compact */
+          table th span {
+            display: inline-block;
+            margin-left: 4px;
+          }
+          table th br {
+            display: none;
+          }
+          /* Inputs de saisie deviennent du texte propre */
           input[type="number"] {
             -webkit-appearance: none !important;
             appearance: none !important;
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            width: auto !important;
+            min-width: 40px;
+            text-align: right;
+            color: #111 !important;
+            font-family: ui-monospace, monospace !important;
           }
           input[type="number"]::-webkit-outer-spin-button,
           input[type="number"]::-webkit-inner-spin-button {
             -webkit-appearance: none !important;
             margin: 0 !important;
+          }
+          /* Stats grid : 4 colonnes mais compactes en print */
+          .grid {
+            page-break-inside: avoid;
+          }
+          h1 {
+            font-size: 22pt !important;
+          }
+          /* Forcer le conteneur principal à prendre toute la largeur paysage */
+          .max-w-5xl {
+            max-width: 100% !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
           }
         }
       `}</style>
