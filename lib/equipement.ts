@@ -352,6 +352,7 @@ export function buildRelanceMailto(args: {
 
 const STATUT_LABELS: Record<ControleStatut, string> = {
   en_retard: "EN RETARD",
+  a_relancer: "RELANCE CLIENT",
   a_programmer: "A PROGRAMMER",
   jamais: "JAMAIS CONTROLE",
   ok: "A JOUR",

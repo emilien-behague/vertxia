@@ -16,6 +16,12 @@ import {
   type EquipementWithStatus,
   type ControleStatut,
 } from "@/lib/equipement";
+import {
+  qrSvgFor,
+  equipementUrl,
+  downloadQrPng,
+  downloadStickerSheet,
+} from "@/lib/qrcode-client";
 
 // Liste des fluides courants en France pour la sélection rapide.
 // GWP issus du Règlement (UE) 2024/573 annexe I.
@@ -42,6 +48,13 @@ const STATUT_CONFIG: Record<
     bg: "bg-red-50",
     ring: "border-red-300",
     dot: "bg-red-500",
+  },
+  a_relancer: {
+    label: "RELANCE CLIENT",
+    color: "text-orange-700",
+    bg: "bg-orange-50",
+    ring: "border-orange-300",
+    dot: "bg-orange-500",
   },
   a_programmer: {
     label: "À PROGRAMMER",
@@ -135,6 +148,38 @@ export default function EquipementsPage() {
   }, []);
 
   const stats = useMemo(() => getEquipementStats(items), [items]);
+
+  // QR Code modale — affiche le QR + URL + actions download.
+  const [qrModalEq, setQrModalEq] = useState<EquipementWithStatus | null>(null);
+  const [qrSvg, setQrSvg] = useState<string>("");
+  const [stickersLoading, setStickersLoading] = useState(false);
+  useEffect(() => {
+    if (!qrModalEq) {
+      setQrSvg("");
+      return;
+    }
+    let cancelled = false;
+    qrSvgFor(qrModalEq.id, 8).then((svg) => {
+      if (!cancelled) setQrSvg(svg);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [qrModalEq]);
+
+  async function handleDownloadAllStickers() {
+    if (items.length === 0) return;
+    setStickersLoading(true);
+    try {
+      await downloadStickerSheet(
+        items.map((e) => ({ id: e.id, modele: e.modele, numeroSerie: e.numeroSerie }))
+      );
+    } catch (e) {
+      console.error("[stickers]", e);
+    } finally {
+      setStickersLoading(false);
+    }
+  }
 
   function openNewForm() {
     setEditingId(null);
@@ -310,6 +355,29 @@ export default function EquipementsPage() {
               EXPORT CSV
             </button>
             <button
+              onClick={handleDownloadAllStickers}
+              disabled={items.length === 0 || stickersLoading}
+              className="px-4 py-2.5 rounded-xl bg-white border border-black/10 text-xs font-mono tracking-widest uppercase hover:border-black/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
+              title="PDF A4 — 8 stickers QR par feuille, à découper et coller sur les équipements"
+            >
+              {stickersLoading ? (
+                <>
+                  <span className="inline-block w-3 h-3 rounded-full border-2 border-black/20 border-t-black/60 animate-spin" />
+                  GÉNÉRATION…
+                </>
+              ) : (
+                <>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                  </svg>
+                  STICKERS QR PDF
+                </>
+              )}
+            </button>
+            <button
               onClick={openNewForm}
               className="px-5 py-2.5 rounded-xl bg-[#111] text-white text-xs font-mono tracking-widest uppercase hover:bg-[#333] transition-colors inline-flex items-center gap-2"
             >
@@ -432,6 +500,20 @@ export default function EquipementsPage() {
                         </svg>
                         Intervention
                       </a>
+                      <button
+                        onClick={() => setQrModalEq(eq)}
+                        className="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-mono tracking-widest uppercase transition-colors inline-flex items-center gap-1.5"
+                        title="Voir / télécharger le QR Code de cet équipement"
+                      >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="3" width="7" height="7" />
+                          <rect x="14" y="3" width="7" height="7" />
+                          <rect x="3" y="14" width="7" height="7" />
+                          <rect x="14" y="14" width="3" height="3" />
+                          <path d="M21 14h-3v3M18 21h3v-3" />
+                        </svg>
+                        QR
+                      </button>
                       <button
                         onClick={() => openEditForm(eq)}
                         className="px-3 py-1.5 rounded-lg bg-black/[0.04] hover:bg-black/[0.08] text-xs font-mono tracking-widest uppercase transition-colors md:opacity-0 md:group-hover:opacity-100 transition-opacity"
@@ -617,6 +699,138 @@ export default function EquipementsPage() {
                     </button>
                   </div>
                 </form>
+              </motion.div>
+            </motion.div>
+          </AnimatePresence>,
+          document.body
+        )}
+
+      {/* QR Code modale — sticker à coller sur l'équipement */}
+      {qrModalEq &&
+        createPortal(
+          <AnimatePresence>
+            <motion.div
+              key="qr-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+              onClick={() => setQrModalEq(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.96, y: 8, opacity: 0 }}
+                animate={{ scale: 1, y: 0, opacity: 1 }}
+                exit={{ scale: 0.96, y: 8, opacity: 0 }}
+                transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                className="bg-[#F5F4F0] rounded-2xl shadow-2xl max-w-md w-full p-6 md:p-8 space-y-5"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="min-w-0">
+                    <div className="font-mono text-[10px] tracking-[0.25em] uppercase text-black/40">
+                      QR Code équipement
+                    </div>
+                    <h2 className="mt-1 text-xl font-light tracking-tight text-[#111] truncate">
+                      {qrModalEq.modele}
+                    </h2>
+                    <div className="text-xs text-black/55 mt-0.5 truncate">
+                      {qrModalEq.clientName} · S/N {qrModalEq.numeroSerie}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setQrModalEq(null)}
+                    className="text-black/40 hover:text-black/80 text-2xl leading-none shrink-0 ml-3"
+                    aria-label="Fermer"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {/* QR Code grand */}
+                <div className="bg-white rounded-2xl p-6 ring-1 ring-black/[0.06] flex items-center justify-center">
+                  {qrSvg ? (
+                    <div
+                      className="w-[240px] h-[240px] [&>svg]:w-full [&>svg]:h-full"
+                      dangerouslySetInnerHTML={{ __html: qrSvg }}
+                    />
+                  ) : (
+                    <div className="w-[240px] h-[240px] flex items-center justify-center">
+                      <span className="inline-block w-5 h-5 rounded-full border-2 border-black/15 border-t-black/60 animate-spin" />
+                    </div>
+                  )}
+                </div>
+
+                {/* URL */}
+                <div className="rounded-xl bg-white ring-1 ring-black/[0.06] px-4 py-3">
+                  <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/40 mb-1">
+                    URL encodée
+                  </div>
+                  <a
+                    href={equipementUrl(qrModalEq.id)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-mono text-[#111] break-all hover:text-amber-700 transition-colors"
+                  >
+                    {equipementUrl(qrModalEq.id)}
+                  </a>
+                </div>
+
+                {/* Actions */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      downloadQrPng(
+                        qrModalEq.id,
+                        `vertxia_qr_${qrModalEq.numeroSerie || qrModalEq.id.slice(0, 8)}`
+                      )
+                    }
+                    className="px-4 py-3 rounded-xl bg-[#111] text-white text-xs font-mono tracking-widest uppercase hover:bg-[#333] active:bg-black/90 transition-colors inline-flex items-center justify-center gap-2"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    PNG
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(equipementUrl(qrModalEq.id));
+                      } catch (e) {
+                        console.warn("[clipboard]", e);
+                      }
+                    }}
+                    className="px-4 py-3 rounded-xl bg-white ring-1 ring-black/10 text-[#111] text-xs font-mono tracking-widest uppercase hover:bg-black/[0.03] transition-colors inline-flex items-center justify-center gap-2"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                    Copier URL
+                  </button>
+                </div>
+
+                <a
+                  href={equipementUrl(qrModalEq.id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full px-4 py-3 rounded-xl bg-white ring-1 border border-dashed border-black/20 text-[#111] text-xs font-mono tracking-widest uppercase text-center hover:border-black/40 hover:bg-black/[0.02] transition-all inline-flex items-center justify-center gap-2"
+                >
+                  Tester le scan dans un nouvel onglet
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M7 17 17 7M7 7h10v10" />
+                  </svg>
+                </a>
+
+                <p className="text-[11px] text-black/40 leading-relaxed text-center pt-1">
+                  Collez ce QR Code sur l&apos;équipement. Quand un frigoriste le scanne,
+                  il accède directement à la fiche pour démarrer une intervention.
+                </p>
               </motion.div>
             </motion.div>
           </AnimatePresence>,
