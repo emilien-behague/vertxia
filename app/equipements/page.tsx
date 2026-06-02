@@ -222,6 +222,9 @@ export default function EquipementsPage() {
               <a href="/syderep" className="font-mono text-xs tracking-[0.25em] text-black/50 hover:text-black/80 transition-colors">
                 SYDEREP
               </a>
+              <a href="/profil" className="font-mono text-xs tracking-[0.25em] text-black/50 hover:text-black/80 transition-colors">
+                PROFIL
+              </a>
               <a href="/bsff" className="font-mono text-xs tracking-[0.25em] text-black/50 hover:text-black/80 transition-colors inline-flex items-center gap-2">
                 NOUVELLE INTERVENTION
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

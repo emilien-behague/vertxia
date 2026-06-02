@@ -14,6 +14,7 @@ import {
   type EquipementWithStatus,
 } from "@/lib/equipement";
 import { aggregateForYear, loadManualInputs } from "@/lib/syderep";
+import { loadProfil, isProfilComplete, type Profil } from "@/lib/profil";
 import type { TypeIntervention } from "@/lib/cerfa";
 
 const TYPE_LABELS: Record<TypeIntervention, string> = {
@@ -49,13 +50,17 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
   const [interventions, setInterventions] = useState<StoredIntervention[]>([]);
   const [equipements, setEquipements] = useState<EquipementWithStatus[]>([]);
+  const [profil, setProfil] = useState<Profil | null>(null);
 
   useEffect(() => {
     setMounted(true);
     const ints = listInterventions();
     setInterventions(ints);
     setEquipements(computeAllStatus(listEquipements(), ints));
+    setProfil(loadProfil());
   }, []);
+
+  const profilComplete = profil ? isProfilComplete(profil) : false;
 
   const interventionsStats = useMemo(() => getStats(interventions), [interventions]);
   const equipementsStats = useMemo(() => getEquipementStats(equipements), [equipements]);
@@ -102,6 +107,9 @@ export default function DashboardPage() {
             <a href="/syderep" className="font-mono text-xs tracking-[0.25em] text-black/50 hover:text-black/80 transition-colors">
               SYDEREP
             </a>
+            <a href="/profil" className="font-mono text-xs tracking-[0.25em] text-black/50 hover:text-black/80 transition-colors">
+              PROFIL
+            </a>
           </div>
         </motion.div>
 
@@ -136,6 +144,31 @@ export default function DashboardPage() {
             </svg>
           </a>
         </motion.div>
+
+        {/* Profil incomplet — nudge */}
+        {!profilComplete && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-4 rounded-xl border border-amber-200 bg-amber-50/60 p-4 flex items-start justify-between gap-4"
+          >
+            <div>
+              <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-amber-800 mb-0.5">
+                Profil entreprise incomplet
+              </div>
+              <div className="text-sm text-amber-900">
+                Renseignez votre raison sociale, SIRET, adresse et attestation F-Gas pour que vos PDF affichent votre identité au lieu de rester génériques.
+              </div>
+            </div>
+            <a
+              href="/profil"
+              className="shrink-0 px-4 py-2 rounded-lg bg-amber-900 hover:bg-amber-800 text-amber-50 text-xs font-mono tracking-widest uppercase transition-colors"
+            >
+              COMPLÉTER
+            </a>
+          </motion.div>
+        )}
 
         {/* Alerte critique en retard */}
         {controlesEnRetard.length > 0 && (
