@@ -134,6 +134,9 @@ export default function HistoriquePage() {
               ← VERTXIA
             </a>
             <div className="flex items-center gap-5">
+              <a href="/dashboard" className="font-mono text-xs tracking-[0.25em] text-black/50 hover:text-black/80 transition-colors">
+                TABLEAU DE BORD
+              </a>
               <a href="/equipements" className="font-mono text-xs tracking-[0.25em] text-black/50 hover:text-black/80 transition-colors">
                 PARC ÉQUIPEMENTS
               </a>
