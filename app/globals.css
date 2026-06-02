@@ -120,11 +120,25 @@
 
 html,
 body {
-  background: var(--color-background);
-  color: var(--color-foreground);
+  /* Vertxia F-Gas = light par défaut (cream warm).
+     Les pages legacy /preview/* /lite/* /heurebleue surchargent localement
+     leur fond si elles veulent du dark. Ce fix résout le "tout noir" sur iPhone
+     quand le container ne remplit pas tout l'écran (safe-area, min-h-screen bugs iOS). */
+  background: #F5F4F0;
+  color: #111;
   font-family: var(--font-sans), "Inter", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Pages F-Gas : tous les éléments cliquables doivent l'être sur iOS (action principale).
+   Safari iOS exige role="button" ou cursor:pointer + touch-action manipulation
+   pour rendre les éléments tactiles fiables. */
+button,
+[role="button"],
+a {
+  touch-action: manipulation;
 }
 
 html {
@@ -179,9 +193,7 @@ html {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
+  /* body bg/text — désactivé ici, géré directement plus haut en #F5F4F0 light */
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
   }

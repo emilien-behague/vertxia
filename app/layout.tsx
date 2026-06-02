@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Calistoga, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -56,6 +56,34 @@ export const metadata: Metadata = {
   verification: {
     google: "e6dk6nKVPO5uBOexyYXzdxC8JZ775dLnashkXOnipss",
   },
+  // PWA — comportement "vraie app" quand l'utilisateur fait "Ajouter à l'écran d'accueil".
+  // appleWebApp produit les meta tags Safari iOS (statusBarStyle, capable, title).
+  // manifest pointe vers app/manifest.ts (Next.js le résout en /manifest.webmanifest).
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Vertxia",
+    statusBarStyle: "black-translucent",
+  },
+  applicationName: "Vertxia",
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+// Viewport — themeColor pour la barre de statut iOS/Android quand l'app est installée.
+// viewportFit "cover" permet à l'UI de s'étendre sous le notch iPhone (env(safe-area-inset-*)).
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#F5F4F0" },
+    { media: "(prefers-color-scheme: dark)", color: "#111111" },
+  ],
+  colorScheme: "light",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -68,9 +96,9 @@ export default function RootLayout({
       lang="fr"
       className={cn("h-full antialiased font-sans", calistoga.variable, inter.variable, jetbrainsMono.variable)}
     >
-      <body className="min-h-full bg-background text-foreground">
-        {children}
-      </body>
+      {/* Body sans bg/text classes — laisse globals.css forcer #F5F4F0 light
+          (résout le "tout noir sur iPhone" causé par --color-background dark) */}
+      <body className="min-h-full">{children}</body>
     </html>
   );
 }

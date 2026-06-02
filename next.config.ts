@@ -53,6 +53,11 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Next.js 16 bloque par défaut les requêtes cross-origin vers les ressources de dev
+  // (chunks JS, HMR, etc.). Cette config autorise l'iPhone à charger les bundles via
+  // l'IP locale du PC — indispensable pour tester PWA / mobile sur réseau local.
+  // À retirer en prod (Vercel gère ça automatiquement).
+  allowedDevOrigins: ["192.168.1.42", "localhost"],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
