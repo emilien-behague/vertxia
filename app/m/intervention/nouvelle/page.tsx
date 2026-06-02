@@ -1,11 +1,11 @@
 "use client";
 
 // Page dynamique : useSearchParams lit ?equipement=ID&type=X qui ne sont connus
-// qu'au runtime. force-dynamic désactive le static prerendering (sinon Next.js 15
-// râle "useSearchParams should be wrapped in Suspense" pendant le build).
+// qu'au runtime. Next.js 16 exige un <Suspense> boundary explicite, même avec
+// force-dynamic. On wrap le composant interne dans Suspense (cf. default export en bas).
 export const dynamic = "force-dynamic";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { Suspense, useEffect, useRef, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection } from "@/components/mobile/inset-list";
@@ -57,7 +57,7 @@ type Status =
   | { type: "success"; bsffId?: string; cerfaUrl: string }
   | { type: "error"; message: string };
 
-export default function MobileNouvelleInterventionPage() {
+function NouvelleInterventionContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const typeParam = searchParams.get("type") as TypeIntervention | null;
@@ -556,6 +556,23 @@ export default function MobileNouvelleInterventionPage() {
         }
       `}</style>
     </>
+  );
+}
+
+// Default export — wrap obligatoire en Suspense pour Next.js 16
+// (useSearchParams ne peut pas être rendu statiquement).
+export default function MobileNouvelleInterventionPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="px-5 py-20 text-center">
+          <div className="inline-block w-8 h-8 border-2 border-black/15 border-t-[#111] rounded-full animate-spin" />
+          <div className="mt-3 text-[13px] text-black/45">Chargement…</div>
+        </div>
+      }
+    >
+      <NouvelleInterventionContent />
+    </Suspense>
   );
 }
 
