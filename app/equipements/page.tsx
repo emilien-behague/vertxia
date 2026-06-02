@@ -392,16 +392,26 @@ export default function EquipementsPage() {
                         <div className="text-xs text-black/50 italic pt-1">{eq.notes}</div>
                       )}
                     </div>
-                    <div className="flex md:flex-col gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                    <div className="flex md:flex-col gap-2 shrink-0">
+                      <a
+                        href={`/bsff?equipement=${eq.id}`}
+                        className="px-3 py-1.5 rounded-lg bg-[#111] hover:bg-[#333] text-white text-xs font-mono tracking-widest uppercase transition-colors inline-flex items-center gap-1.5"
+                        title="Démarrer une intervention sur cet équipement (formulaire pré-rempli)"
+                      >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 5v14M5 12h14" />
+                        </svg>
+                        Intervention
+                      </a>
                       <button
                         onClick={() => openEditForm(eq)}
-                        className="px-3 py-1.5 rounded-lg bg-black/[0.04] hover:bg-black/[0.08] text-xs font-mono tracking-widest uppercase transition-colors"
+                        className="px-3 py-1.5 rounded-lg bg-black/[0.04] hover:bg-black/[0.08] text-xs font-mono tracking-widest uppercase transition-colors md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                       >
                         Éditer
                       </button>
                       <button
                         onClick={() => handleDelete(eq.id)}
-                        className="px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-xs font-mono tracking-widest uppercase transition-colors"
+                        className="px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-xs font-mono tracking-widest uppercase transition-colors md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                       >
                         Suppr.
                       </button>

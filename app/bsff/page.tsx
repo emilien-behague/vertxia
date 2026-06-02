@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import SignatureCanvas from "react-signature-canvas";
 import { saveIntervention } from "@/lib/intervention-storage";
 import { loadProfil } from "@/lib/profil";
+import { listEquipements } from "@/lib/equipement";
 
 type Fluide = {
   code: string;
@@ -72,6 +73,36 @@ export default function BsffPage() {
   const [numeroSerieEquipement, setNumeroSerieEquipement] = useState("DK2024042587");
   const [attestation, setAttestation] = useState("");
   const [lieuIntervention, setLieuIntervention] = useState("");
+
+  // Pré-remplissage depuis ?equipement=<id> — navigation depuis /equipements
+  // pour démarrer une intervention sur un équipement déjà au parc.
+  const [equipementContext, setEquipementContext] = useState<{
+    modele: string;
+    clientName: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const eqId = params.get("equipement");
+    if (!eqId) return;
+    const eq = listEquipements().find((e) => e.id === eqId);
+    if (!eq) return;
+    setClientName(eq.clientName);
+    setModeleEquipement(eq.modele);
+    setNumeroSerieEquipement(eq.numeroSerie);
+    if (eq.siteAdresse) setLieuIntervention(eq.siteAdresse);
+    // Match fluide par code dans la liste FLUIDES connue, sinon garde le défaut.
+    if (FLUIDES.some((f) => f.code === eq.fluide.code)) {
+      setFluide(eq.fluide.code);
+    }
+    // Pour récup : on suggère la charge nominale comme quantité par défaut.
+    // L'opérateur peut la modifier (récup partielle, par exemple).
+    if (eq.chargeKg > 0) {
+      setWeight(eq.chargeKg.toFixed(2));
+    }
+    setEquipementContext({ modele: eq.modele, clientName: eq.clientName });
+  }, []);
 
   // Wizard "Type d'intervention" — débloque les sections 5-10 du CERFA.
   const [typeIntervention, setTypeIntervention] = useState<TypeIntervention>("recuperation");
@@ -493,6 +524,22 @@ export default function BsffPage() {
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
               className="space-y-6"
             >
+              {/* Bandeau contextuel si on vient depuis /equipements */}
+              {equipementContext && (
+                <div className="rounded-xl border border-emerald-200/60 bg-emerald-50/60 px-5 py-4">
+                  <div className="flex items-start gap-3">
+                    <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-emerald-800 mt-0.5">
+                      Intervention sur équipement
+                    </span>
+                  </div>
+                  <div className="mt-1 text-sm text-emerald-900">
+                    <strong>{equipementContext.modele}</strong> · chez{" "}
+                    <strong>{equipementContext.clientName}</strong>
+                    <span className="text-emerald-800/60"> · formulaire pré-rempli</span>
+                  </div>
+                </div>
+              )}
+
               {/* Wizard — Type d'intervention */}
               <div>
                 <label className="block font-mono text-[10px] tracking-[0.2em] uppercase text-black/45 mb-2">
