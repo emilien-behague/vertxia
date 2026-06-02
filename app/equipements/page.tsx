@@ -11,6 +11,7 @@ import {
   deleteEquipement,
   computeAllStatus,
   getEquipementStats,
+  equipementsToCsv,
   type StoredEquipement,
   type EquipementWithStatus,
   type ControleStatut,
@@ -281,12 +282,40 @@ export default function EquipementsPage() {
             </a>
             . Calcul de fréquence basé sur les seuils HFC en tCO₂eq.
           </p>
-          <button
-            onClick={openNewForm}
-            className="px-5 py-2.5 rounded-xl bg-[#111] text-white text-xs font-mono tracking-widest uppercase hover:bg-[#333] transition-colors inline-flex items-center gap-2"
-          >
-            + AJOUTER UN ÉQUIPEMENT
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                if (items.length === 0) return;
+                const csv = equipementsToCsv(items);
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                const date = new Date().toISOString().slice(0, 10);
+                a.href = url;
+                a.download = `vertxia_parc_equipements_${date}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              }}
+              disabled={items.length === 0}
+              className="px-4 py-2.5 rounded-xl bg-white border border-black/10 text-xs font-mono tracking-widest uppercase hover:border-black/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
+              title="Exporter le parc complet en CSV (compatible Excel FR)"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              EXPORT CSV
+            </button>
+            <button
+              onClick={openNewForm}
+              className="px-5 py-2.5 rounded-xl bg-[#111] text-white text-xs font-mono tracking-widest uppercase hover:bg-[#333] transition-colors inline-flex items-center gap-2"
+            >
+              + AJOUTER UN ÉQUIPEMENT
+            </button>
+          </div>
         </div>
 
         {/* Liste */}

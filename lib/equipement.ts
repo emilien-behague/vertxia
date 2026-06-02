@@ -227,3 +227,79 @@ export function getEquipementStats(items: EquipementWithStatus[]): EquipementSta
     exempt: items.filter((i) => i.statut === "exempt").length,
   };
 }
+
+const STATUT_LABELS: Record<ControleStatut, string> = {
+  en_retard: "EN RETARD",
+  a_programmer: "A PROGRAMMER",
+  jamais: "JAMAIS CONTROLE",
+  ok: "A JOUR",
+  exempt: "EXEMPTE",
+};
+
+function escapeCsv(s: string): string {
+  // Si la valeur contient ;, ", ou newline → wrap dans des guillemets et double les guillemets
+  if (/[;"\n\r]/.test(s)) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+function fmtIsoDateFR(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+}
+
+/**
+ * Export CSV du parc équipements — format français (séparateur `;`).
+ * Compatible Excel FR avec BOM UTF-8.
+ * Inclut tous les champs métier + statut calculé + planning contrôles.
+ */
+export function equipementsToCsv(items: EquipementWithStatus[]): string {
+  const sep = ";";
+  const headers = [
+    "Client",
+    "Site / Adresse",
+    "Modele",
+    "N° de serie",
+    "Fluide",
+    "GWP",
+    "Charge (kg)",
+    "Eq. CO2 (tonnes)",
+    "Detecteur fixe",
+    "Frequence controle (mois)",
+    "Dernier controle",
+    "Prochain controle",
+    "Jours avant controle",
+    "Statut",
+    "Notes",
+    "Date d'ajout",
+  ];
+
+  const lines = [headers.join(sep)];
+
+  for (const eq of items) {
+    const row = [
+      escapeCsv(eq.clientName),
+      escapeCsv(eq.siteAdresse ?? ""),
+      escapeCsv(eq.modele),
+      escapeCsv(eq.numeroSerie),
+      eq.fluide.code,
+      eq.fluide.gwp.toString(),
+      eq.chargeKg.toFixed(2).replace(".", ","),
+      eq.tCO2eq.toFixed(3).replace(".", ","),
+      eq.detecteurFixe ? "OUI" : "NON",
+      eq.frequenceMois !== null ? eq.frequenceMois.toString() : "",
+      fmtIsoDateFR(eq.dernierControleISO),
+      fmtIsoDateFR(eq.prochainControleISO),
+      eq.joursAvantControle !== null ? eq.joursAvantControle.toString() : "",
+      STATUT_LABELS[eq.statut],
+      escapeCsv(eq.notes ?? ""),
+      fmtIsoDateFR(eq.createdAt),
+    ];
+    lines.push(row.join(sep));
+  }
+
+  // BOM UTF-8 pour qu'Excel ouvre directement en UTF-8 (évite les é cassés)
+  return "﻿" + lines.join("\n") + "\n";
+}
