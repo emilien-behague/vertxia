@@ -95,6 +95,8 @@ export default function BsffPage() {
   const sigRef = useRef<SignatureCanvas | null>(null);
   // Payload CERFA mémorisé pour pouvoir re-générer après signature
   const [lastCerfaPayload, setLastCerfaPayload] = useState<Record<string, unknown> | null>(null);
+  const [rapportLoading, setRapportLoading] = useState(false);
+  const [rapportError, setRapportError] = useState<string | null>(null);
 
   // Portal mount : la modale signature est rendue dans document.body pour
   // échapper aux stacking contexts créés par framer-motion sur les parents.
@@ -110,6 +112,50 @@ export default function BsffPage() {
   function fluideExists(code: string | null): boolean {
     if (!code) return false;
     return FLUIDES.some(f => f.code === code);
+  }
+
+  async function handleDownloadRapport() {
+    if (!lastCerfaPayload) {
+      setRapportError("Pas de payload d'intervention disponible. Génère d'abord BSFF + CERFA.");
+      return;
+    }
+    setRapportLoading(true);
+    setRapportError(null);
+    try {
+      const profil = loadProfil();
+      if (!profil.raisonSociale) {
+        setRapportError(
+          "Profil entreprise vide. Renseigne ta raison sociale + adresse sur /profil d'abord."
+        );
+        setRapportLoading(false);
+        return;
+      }
+      const payload = { ...lastCerfaPayload, profil };
+      const res = await fetch("/api/rapport/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setRapportError(err.error || `Échec génération rapport (${res.status})`);
+        setRapportLoading(false);
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Rapport_intervention_${Date.now()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setRapportError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setRapportLoading(false);
+    }
   }
 
   async function handlePlaqueScan(e: React.ChangeEvent<HTMLInputElement>) {
@@ -959,6 +1005,34 @@ export default function BsffPage() {
                   </svg>
                   TÉLÉCHARGER LE CERFA 15497*04
                 </a>
+                <button
+                  onClick={handleDownloadRapport}
+                  disabled={rapportLoading}
+                  className="w-full px-8 py-4 bg-emerald-700 hover:bg-emerald-800 text-white text-sm tracking-widest font-medium rounded-xl transition-colors disabled:opacity-60 disabled:cursor-wait inline-flex items-center justify-center gap-3"
+                  title="Rapport pour ton client final (entête entreprise + logo + ta signature + détails)"
+                >
+                  {rapportLoading ? (
+                    <>
+                      <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      <span>GÉNÉRATION DU RAPPORT…</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                      </svg>
+                      RAPPORT POUR LE CLIENT FINAL
+                    </>
+                  )}
+                </button>
+                {rapportError && (
+                  <div className="px-5 py-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800">
+                    {rapportError}
+                  </div>
+                )}
               </div>
 
               {/* Approche C — Bouton signature client */}

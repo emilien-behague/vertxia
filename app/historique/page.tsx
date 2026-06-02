@@ -8,6 +8,7 @@ import {
   getStats,
   type StoredIntervention,
 } from "@/lib/intervention-storage";
+import { loadProfil } from "@/lib/profil";
 import type { TypeIntervention } from "@/lib/cerfa";
 
 const TYPE_LABELS: Record<TypeIntervention, string> = {
@@ -53,6 +54,7 @@ export default function HistoriquePage() {
   const [items, setItems] = useState<StoredIntervention[]>([]);
   const [filter, setFilter] = useState<typeof TYPE_FILTERS[number]["v"]>("all");
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
+  const [rapportId, setRapportId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -66,6 +68,58 @@ export default function HistoriquePage() {
     () => items.filter(i => matchesFilter(i, filter)),
     [items, filter]
   );
+
+  async function handleDownloadRapport(intervention: StoredIntervention) {
+    setRapportId(intervention.id);
+    setError(null);
+    try {
+      const profil = loadProfil();
+      if (!profil.raisonSociale) {
+        setError(
+          "Profil entreprise vide. Renseigne ta raison sociale + adresse sur /profil d'abord."
+        );
+        return;
+      }
+      const payload = {
+        fluide: intervention.fluide,
+        weight: intervention.weight,
+        packagingNumero: intervention.packagingNumero,
+        clientName: intervention.clientName,
+        modeleEquipement: intervention.modeleEquipement,
+        numeroSerieEquipement: intervention.numeroSerieEquipement,
+        attestation: intervention.attestation,
+        lieuIntervention: intervention.lieuIntervention,
+        bsffId: intervention.bsffId,
+        destination: intervention.destination,
+        typeIntervention: intervention.typeIntervention,
+        controleDetails: intervention.controleDetails,
+        profil,
+      };
+      const res = await fetch("/api/rapport/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        setError(errJson.error || "Échec génération rapport");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Rapport_intervention_${intervention.id.slice(0, 8)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setRapportId(null);
+    }
+  }
 
   async function handleRegenerateCerfa(intervention: StoredIntervention) {
     setRegeneratingId(intervention.id);
@@ -287,6 +341,28 @@ export default function HistoriquePage() {
                             <line x1="12" y1="15" x2="12" y2="3" />
                           </svg>
                           CERFA
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleDownloadRapport(it)}
+                      disabled={rapportId === it.id}
+                      className="px-4 py-2 bg-emerald-700 text-white text-xs tracking-widest font-medium rounded-lg hover:bg-emerald-800 transition-colors disabled:opacity-60 disabled:cursor-wait inline-flex items-center gap-2"
+                      title="Rapport client final (entête entreprise + signature)"
+                    >
+                      {rapportId === it.id ? (
+                        <>
+                          <span className="inline-block w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                          <span>…</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                          </svg>
+                          RAPPORT
                         </>
                       )}
                     </button>
