@@ -388,11 +388,16 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
 
   // ─── Signature détenteur (Approche C — canvas tactile) ───────────────────
   // Embed après flatten pour que l'image apparaisse PAR-DESSUS la zone signature.
-  // Coords zone signature détenteur (inspection acroField) :
-  //   Nom    : x=345.2, y=92.9, w=208.0, h=9.5
-  //   Qualité: x=345.2, y=73.8, w=208.0, h=9.5
-  //   Date   : x=345.2, y=43.7, w=208.3, h=19.7
-  // Zone signature manuscrite au-dessus des 3 champs : y=110 à y=150 (h=40).
+  //
+  // Coords des 3 champs détenteur (inspection acroField) :
+  //   Nom    : x=345.2, y=92.9,  w=208.0, h=9.5
+  //   Qualité: x=345.2, y=73.8,  w=208.0, h=9.5
+  //   Date   : x=345.2, y=43.7,  w=208.3, h=19.7
+  //
+  // Le PDF officiel n'a PAS de case signature dédiée séparée — la convention
+  // est d'apposer la signature manuscrite à droite de la Date (effet "signé le").
+  // Position : moitié droite de la zone Date, taille réduite pour ne pas masquer
+  // le texte de date (aligné à gauche).
   if (input.detenteurSignature?.dataUrl) {
     const base64 = input.detenteurSignature.dataUrl.replace(
       /^data:image\/png;base64,/,
@@ -400,11 +405,11 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
     );
     const pngBytes = Buffer.from(base64, "base64");
     const sigImg = await pdf.embedPng(pngBytes);
-    const scaled = sigImg.scaleToFit(200, 35);
+    const scaled = sigImg.scaleToFit(120, 18);
     const page = pdf.getPage(0);
     page.drawImage(sigImg, {
-      x: 350,
-      y: 110,
+      x: 440,
+      y: 45,
       width: scaled.width,
       height: scaled.height,
     });
