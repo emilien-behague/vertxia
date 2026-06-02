@@ -14,6 +14,9 @@ const API_ENDPOINT = "https://api.sandbox.trackdechets.beta.gouv.fr/";
 type RequestBody = {
   bsffId: string;
   author: string;
+  /** Date ISO de prise en charge effective de la bouteille par le transporteur.
+   *  Si absent : maintenant. Format ISO 8601 (ex : 2026-06-02T23:50:00.000Z). */
+  takenOverAt?: string;
 };
 
 async function gql(
@@ -49,7 +52,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Corps invalide" }, { status: 400 });
   }
 
-  const { bsffId, author } = body;
+  const { bsffId, author, takenOverAt } = body;
   if (!bsffId || !author?.trim()) {
     return NextResponse.json(
       { error: "Champs requis : bsffId, author" },
@@ -57,6 +60,31 @@ export async function POST(req: Request) {
     );
   }
 
+  // ÉTAPE 1 — updateBsff pour set la date de prise en charge sur transporter.transport.
+  // Sans ça, la section 7 du PDF BSFF reste "Date de prise en charge : __/__/____"
+  // même après signature transport.
+  const takenOverIso = (takenOverAt && new Date(takenOverAt).toISOString()) || new Date().toISOString();
+  const update = await gql(
+    token,
+    `mutation UpdateBsff($id: ID!, $input: BsffInput!) {
+       updateBsff(id: $id, input: $input) {
+         id
+         transporter { transport { takenOverAt } }
+       }
+     }`,
+    {
+      id: bsffId,
+      input: { transporter: { transport: { takenOverAt: takenOverIso } } },
+    }
+  );
+  if (update.errors) {
+    return NextResponse.json(
+      { error: "Échec mise à jour date prise en charge", details: update.errors },
+      { status: 400 }
+    );
+  }
+
+  // ÉTAPE 2 — signBsff TRANSPORT (fige les données transport, BSFF passe en SENT)
   const r = await gql(
     token,
     `mutation SignBsffTransport($id: ID!, $input: BsffSignatureInput!) {
@@ -65,6 +93,7 @@ export async function POST(req: Request) {
          status
          transporter {
            transport {
+             takenOverAt
              signature { author date }
            }
          }
@@ -85,10 +114,13 @@ export async function POST(req: Request) {
 
   const signedAt: string | undefined =
     r.data?.signBsff?.transporter?.transport?.signature?.date;
+  const taken: string | undefined =
+    r.data?.signBsff?.transporter?.transport?.takenOverAt;
 
   return NextResponse.json({
     bsffId: r.data?.signBsff?.id,
     status: r.data?.signBsff?.status,
     transportSignedAt: signedAt ?? new Date().toISOString(),
+    takenOverAt: taken ?? takenOverIso,
   });
 }

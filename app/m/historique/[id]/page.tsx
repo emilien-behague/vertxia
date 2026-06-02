@@ -62,6 +62,17 @@ export default function MobileInterventionDetailPage() {
   // Signature transport (cas où le frigoriste = transporteur)
   const [transportSigning, setTransportSigning] = useState(false);
   const [transportError, setTransportError] = useState<string | null>(null);
+  // Date de prise en charge — initialisée lazy au moment où l'utilisateur déplie
+  // le formulaire (évite SSR mismatch sur new Date())
+  const [takenOverAt, setTakenOverAt] = useState<string>("");
+  const [showSignForm, setShowSignForm] = useState(false);
+
+  function nowDatetimeLocal(): string {
+    // Format datetime-local : YYYY-MM-DDTHH:mm en heure LOCALE (pas UTC)
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
 
   // Refresh statut BSFF — appelé au mount + après signature transport + polling
   async function refreshBsffStatus(bsffId: string) {
@@ -142,21 +153,33 @@ export default function MobileInterventionDetailPage() {
     setTransportError(null);
     setTransportSigning(true);
     try {
+      // Convertit l'input datetime-local en ISO UTC pour l'API GraphQL
+      const isoTaken = takenOverAt ? new Date(takenOverAt).toISOString() : new Date().toISOString();
       const res = await fetch("/api/bsff/sign-transport", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bsffId: intervention.bsffId, author }),
+        body: JSON.stringify({
+          bsffId: intervention.bsffId,
+          author,
+          takenOverAt: isoTaken,
+        }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Échec signature transport");
       }
       await refreshBsffStatus(intervention.bsffId);
+      setShowSignForm(false);
     } catch (e) {
       setTransportError(e instanceof Error ? e.message : "Erreur");
     } finally {
       setTransportSigning(false);
     }
+  }
+
+  function openSignForm() {
+    if (!takenOverAt) setTakenOverAt(nowDatetimeLocal());
+    setShowSignForm(true);
   }
 
   useEffect(() => {
@@ -388,31 +411,73 @@ export default function MobileInterventionDetailPage() {
           </div>
           {!bsffStatus?.transport && bsffStatus?.emission && (
             <div className="px-4 pb-4">
-              <button
-                type="button"
-                onClick={handleSignTransport}
-                disabled={transportSigning}
-                className="w-full px-4 py-3 rounded-2xl bg-[#A16207] text-white text-[14px] font-medium active:bg-[#8a5206] transition-colors disabled:opacity-60"
-                style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-              >
-                {transportSigning ? (
-                  <span className="inline-flex items-center justify-center gap-2">
-                    <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                    Signature en cours…
-                  </span>
-                ) : (
-                  "✍ Signer la prise en charge transport"
-                )}
-              </button>
+              {!showSignForm ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={openSignForm}
+                    className="w-full px-4 py-3 rounded-2xl bg-[#A16207] text-white text-[14px] font-medium active:bg-[#8a5206] transition-colors"
+                    style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                  >
+                    ✍ Signer la prise en charge transport
+                  </button>
+                  <div className="mt-2 text-[11px] text-black/45 leading-relaxed">
+                    Signe ici quand tu mets la bouteille dans ton utilitaire pour
+                    l&apos;apporter au centre de traitement.
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-2xl bg-amber-50 ring-1 ring-amber-200 p-4">
+                  <div className="text-[12px] font-medium text-amber-900 mb-3">
+                    Date et heure de prise en charge
+                  </div>
+                  <input
+                    type="datetime-local"
+                    value={takenOverAt}
+                    onChange={(e) => setTakenOverAt(e.target.value)}
+                    disabled={transportSigning}
+                    className="w-full px-3 py-2.5 rounded-xl bg-white ring-1 ring-amber-200 text-[14px] text-[#111] font-mono"
+                    style={{ WebkitTapHighlightColor: "transparent" }}
+                  />
+                  <div className="mt-2 text-[11px] text-amber-800/80 leading-relaxed">
+                    Cette date sera inscrite en section [7] du BSFF officiel.
+                    Tu peux la modifier si tu as pris la bouteille à un autre
+                    moment que maintenant.
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowSignForm(false)}
+                      disabled={transportSigning}
+                      className="px-4 py-3 rounded-2xl bg-white ring-1 ring-black/10 text-[14px] font-medium text-black/70 active:bg-black/[0.03] disabled:opacity-50"
+                      style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSignTransport}
+                      disabled={transportSigning || !takenOverAt}
+                      className="px-4 py-3 rounded-2xl bg-[#A16207] text-white text-[14px] font-medium active:bg-[#8a5206] disabled:opacity-50"
+                      style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                    >
+                      {transportSigning ? (
+                        <span className="inline-flex items-center justify-center gap-2">
+                          <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                          Signature…
+                        </span>
+                      ) : (
+                        "Signer"
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
               {transportError && (
                 <div className="mt-2 px-3 py-2 rounded-xl bg-red-50 ring-1 ring-red-200 text-[12px] text-red-700">
                   {transportError}
                 </div>
               )}
-              <div className="mt-2 text-[11px] text-black/45 leading-relaxed">
-                Signe ici quand tu mets la bouteille dans ton utilitaire pour
-                l&apos;apporter au centre de traitement.
-              </div>
             </div>
           )}
           {/* Barre de statut "live" : indicateur pulse + dernière maj + refresh manuel */}
