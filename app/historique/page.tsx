@@ -53,6 +53,7 @@ function matchesFilter(
 export default function HistoriquePage() {
   const [items, setItems] = useState<StoredIntervention[]>([]);
   const [filter, setFilter] = useState<typeof TYPE_FILTERS[number]["v"]>("all");
+  const [search, setSearch] = useState("");
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
   const [rapportId, setRapportId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -64,10 +65,22 @@ export default function HistoriquePage() {
   }, []);
 
   const stats = useMemo(() => getStats(items), [items]);
-  const filtered = useMemo(
-    () => items.filter(i => matchesFilter(i, filter)),
-    [items, filter]
-  );
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return items.filter((i) => {
+      if (!matchesFilter(i, filter)) return false;
+      if (!q) return true;
+      // Recherche par client, modèle, n° série, n° BSFF, fluide
+      return (
+        (i.clientName ?? "").toLowerCase().includes(q) ||
+        (i.modeleEquipement ?? "").toLowerCase().includes(q) ||
+        (i.numeroSerieEquipement ?? "").toLowerCase().includes(q) ||
+        (i.bsffId ?? "").toLowerCase().includes(q) ||
+        i.fluide.code.toLowerCase().includes(q) ||
+        (i.lieuIntervention ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [items, filter, search]);
 
   async function handleDownloadRapport(intervention: StoredIntervention) {
     setRapportId(intervention.id);
@@ -235,6 +248,51 @@ export default function HistoriquePage() {
             </div>
           ))}
         </motion.div>
+
+        {/* Barre de recherche */}
+        <div className="mb-4">
+          <div className="relative">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 pointer-events-none"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher par client, modèle, n° série, n° BSFF, fluide…"
+              className="w-full pl-11 pr-12 py-3 rounded-xl border border-black/10 bg-white text-sm text-[#111] placeholder:text-black/35 focus:outline-none focus:border-black/40 transition-colors"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-black/40 hover:text-black/80 transition-colors p-1"
+                title="Effacer la recherche"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            )}
+          </div>
+          {search && (
+            <p className="mt-2 font-mono text-[10px] tracking-[0.15em] uppercase text-black/40">
+              {filtered.length} résultat{filtered.length > 1 ? "s" : ""} pour &laquo; {search} &raquo;
+            </p>
+          )}
+        </div>
 
         {/* Filtres */}
         <div className="flex flex-wrap gap-2 mb-6">
