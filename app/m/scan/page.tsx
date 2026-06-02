@@ -15,6 +15,7 @@ type State =
   | { type: "loading" }
   | { type: "scanning" }
   | { type: "found"; id: string }
+  | { type: "unknown_qr"; content: string } // QR détecté mais format inconnu
   | { type: "denied" }
   | { type: "no_camera" }
   | { type: "insecure_context" }
@@ -74,6 +75,12 @@ export default function MobileScanPage() {
     try {
       const { default: QrScanner } = await import("qr-scanner");
 
+      // Set explicit worker path — sinon Turbopack/Next.js 16 ne bundle pas
+      // le worker depuis node_modules et le scan échoue silencieusement.
+      // Le fichier est copié dans public/qr-scanner-worker.min.js.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (QrScanner as any).WORKER_PATH = "/qr-scanner-worker.min.js";
+
       const hasCamera = await QrScanner.hasCamera();
       if (!hasCamera) {
         setState({ type: "no_camera" });
@@ -84,7 +91,17 @@ export default function MobileScanPage() {
         video,
         (result) => {
           const id = extractEquipementId(result.data);
-          if (!id) return;
+          if (!id) {
+            // QR détecté mais pas un équipement Vertxia → on affiche le contenu
+            // brut au lieu d'ignorer silencieusement.
+            setState({ type: "unknown_qr", content: result.data });
+            try {
+              scanner.stop();
+            } catch {
+              /* */
+            }
+            return;
+          }
           setState({ type: "found", id });
           try {
             scanner.stop();
@@ -195,6 +212,33 @@ export default function MobileScanPage() {
           </div>
         )}
 
+        {/* QR détecté mais pas un équipement Vertxia (URL externe, texte brut, etc.) */}
+        {state.type === "unknown_qr" && (
+          <div className="absolute inset-0 flex items-center justify-center bg-amber-500/90 text-white px-6">
+            <div className="flex flex-col items-center gap-3 text-center max-w-xs">
+              <div className="w-14 h-14 rounded-full bg-white text-amber-600 flex items-center justify-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              </div>
+              <div className="text-[14px] font-medium">QR détecté, mais pas un équipement Vertxia</div>
+              <div className="text-[10px] font-mono bg-black/30 px-3 py-2 rounded break-all max-h-24 overflow-y-auto">
+                {state.content}
+              </div>
+              <button
+                type="button"
+                onClick={startScanner}
+                className="px-4 py-2 rounded-full bg-white text-amber-700 text-[13px] font-medium active:bg-white/90"
+                style={{ WebkitTapHighlightColor: "transparent" }}
+              >
+                Rescanner
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Error states inside the camera area */}
         {(state.type === "denied" || state.type === "no_camera" || state.type === "insecure_context" || state.type === "error") && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-white px-6">
@@ -290,8 +334,12 @@ function ViseurOverlay() {
       </div>
 
       <div className="absolute bottom-4 left-0 right-0 text-center">
-        <span className="inline-block px-3 py-1.5 rounded-full bg-black/60 backdrop-blur text-white text-[11px] font-mono tracking-widest uppercase">
-          Recherche QR…
+        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur text-white text-[11px] font-mono tracking-widest uppercase">
+          <span className="relative flex w-1.5 h-1.5">
+            <span className="absolute inset-0 rounded-full bg-emerald-400 opacity-70 animate-ping" />
+            <span className="relative w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          </span>
+          Caméra active · cherche QR
         </span>
       </div>
     </div>
