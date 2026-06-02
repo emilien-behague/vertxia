@@ -301,11 +301,11 @@ export default function MobileProfilPage() {
           </button>
           {!profil.signatureDataUrl && (
             <a
-              href="/profil"
+              href="/m/profil/signature"
               className="block w-full px-6 py-3 rounded-2xl bg-white border border-black/10 text-black/70 text-[13px] font-medium text-center active:bg-black/[0.03] transition-colors"
               style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
             >
-              + Ajouter ma signature (mode desktop)
+              ✍️ Ajouter ma signature
             </a>
           )}
         </div>
@@ -322,7 +322,7 @@ export default function MobileProfilPage() {
                 className="max-h-[60px] object-contain"
               />
               <a
-                href="/profil"
+                href="/m/profil/signature"
                 className="inline-block mt-2 text-[12px] text-[#A16207] active:opacity-60"
                 style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
               >
