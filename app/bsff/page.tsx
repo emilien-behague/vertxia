@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import SignatureCanvas from "react-signature-canvas";
 import { saveIntervention } from "@/lib/intervention-storage";
+import { loadProfil } from "@/lib/profil";
 
 type Fluide = {
   code: string;
@@ -219,6 +220,20 @@ export default function BsffPage() {
 
       // ÉTAPE 2 — CERFA 15497*04 PDF (toujours généré)
       setStatus({ type: "loading", step: "Génération du CERFA 15497*04…" });
+
+      // Profil entreprise du frigoriste (depuis localStorage /profil).
+      // Si vide → fallback démo "Emilien Behague / Frigoriste Cat. I" côté serveur.
+      const profil = loadProfil();
+      const operateur = profil.raisonSociale
+        ? {
+            name: profil.raisonSociale,
+            quality: profil.categorieAttestation
+              ? `Frigoriste Cat. ${profil.categorieAttestation}`
+              : "Frigoriste",
+            signatureDataUrl: profil.signatureDataUrl,
+          }
+        : undefined;
+
       const cerfaPayload: Record<string, unknown> = {
         fluide: selectedFluide,
         weight: needsBsff ? parseFloat(weight) : 0,
@@ -231,6 +246,7 @@ export default function BsffPage() {
         bsffId,
         destination,
         typeIntervention,
+        operateur,
         controleDetails: aFaitControle
           ? {
               detecteurId: detecteurId.trim() || undefined,

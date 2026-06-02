@@ -38,6 +38,15 @@ export type SignatureDetenteur = {
   dataUrl: string;
 };
 
+export type OperateurInfo = {
+  /** Nom du frigoriste / opérateur F-Gas (depuis le profil entreprise) */
+  name: string;
+  /** Qualité — typiquement "Frigoriste Cat. I/II/III/IV/V" */
+  quality: string;
+  /** Signature manuscrite de l'opérateur (data URL PNG, depuis le profil). Optionnel. */
+  signatureDataUrl?: string;
+};
+
 export type CerfaInput = {
   fluide: { code: string; label: string; gwp: number };
   weight: number;
@@ -59,6 +68,11 @@ export type CerfaInput = {
    *  Si présente : remplit Sign_Detenteur_Nom/Qualite/Date + embed l'image
    *  PNG dans la zone signature détenteur du PDF officiel. */
   detenteurSignature?: SignatureDetenteur | null;
+  /** Infos de l'opérateur (frigoriste) depuis son profil entreprise Vertxia.
+   *  Si présent : remplit Sign_Operateur_Nom/Qualite/Date + appose la signature
+   *  manuscrite du frigoriste si signatureDataUrl est fournie.
+   *  Si absent : fallback "Emilien Behague / Frigoriste Cat. I" (mode démo). */
+  operateur?: OperateurInfo | null;
 };
 
 // Famille chimique du fluide (paliers HFC/HFO/HCFC du Règlement UE 2024/573).
@@ -365,8 +379,12 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
   setText("14_Observations", observationsParts.join(" "), 7);
 
   // ─── 15. Signatures ───────────────────────────────────────────────────────
-  setText("Sign_Operateur_Nom", "Emilien Behague", 8);
-  setText("Sign_Operateur_Qualite", "Frigoriste Cat. I", 8);
+  // Côté opérateur : valeurs issues du profil entreprise Vertxia si fourni,
+  // sinon fallback démo (Emilien — c'est le compte SIRET sandbox).
+  const opName = input.operateur?.name || "Emilien Behague";
+  const opQuality = input.operateur?.quality || "Frigoriste Cat. I";
+  setText("Sign_Operateur_Nom", opName, 8);
+  setText("Sign_Operateur_Qualite", opQuality, 8);
   setText("Sign_Operateur_Date", dateFR, 8);
   if (input.detenteurSignature) {
     setText("Sign_Detenteur_Nom", input.detenteurSignature.name, 8);
@@ -409,6 +427,27 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
     const page = pdf.getPage(0);
     page.drawImage(sigImg, {
       x: 440,
+      y: 45,
+      width: scaled.width,
+      height: scaled.height,
+    });
+  }
+
+  // ─── Signature opérateur (frigoriste, depuis le profil Vertxia) ─────────
+  // Même convention que côté détenteur, mais position miroir à GAUCHE.
+  // Sign_Operateur_Date va de x=127.5 à x=337.3, y=44.9 à y=63.4.
+  // Signature apposée moitié droite de cette zone.
+  if (input.operateur?.signatureDataUrl) {
+    const base64 = input.operateur.signatureDataUrl.replace(
+      /^data:image\/png;base64,/,
+      ""
+    );
+    const pngBytes = Buffer.from(base64, "base64");
+    const sigImg = await pdf.embedPng(pngBytes);
+    const scaled = sigImg.scaleToFit(120, 18);
+    const page = pdf.getPage(0);
+    page.drawImage(sigImg, {
+      x: 220,
       y: 45,
       width: scaled.width,
       height: scaled.height,
