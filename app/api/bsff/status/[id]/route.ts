@@ -50,6 +50,9 @@ export async function GET(
     return NextResponse.json({ error: "ID BSFF manquant" }, { status: 400 });
   }
 
+  // Le schéma TrackDéchets place l'opération de traitement sur CHAQUE packaging
+  // individuellement (BsffPackagingOperation), pas sur destination. On prend le
+  // premier packaging (cas mono-bouteille = 99% des récupérations frigoristes).
   const r = await gql(
     token,
     `query BsffStatus($id: ID!) {
@@ -63,10 +66,14 @@ export async function GET(
            transport { signature { author date } }
          }
          destination {
-           reception { signature { author date } }
+           reception { date signature { author date } }
+         }
+         packagings {
+           numero
            operation {
              code
              description
+             date
              signature { author date }
            }
          }
@@ -87,13 +94,19 @@ export async function GET(
     return NextResponse.json({ error: "BSFF introuvable" }, { status: 404 });
   }
 
+  // Premier packaging (mono-bouteille). En multi-packaging on prendrait le
+  // plus récent traité.
+  const firstPackaging = bsff.packagings?.[0];
+  const opSignature = firstPackaging?.operation?.signature ?? null;
+  const opCode = firstPackaging?.operation?.code ?? null;
+
   return NextResponse.json({
     bsffId: bsff.id,
     status: bsff.status,
     emission: bsff.emitter?.emission?.signature ?? null,
     transport: bsff.transporter?.transport?.signature ?? null,
     reception: bsff.destination?.reception?.signature ?? null,
-    operation: bsff.destination?.operation?.signature ?? null,
-    operationCode: bsff.destination?.operation?.code ?? null,
+    operation: opSignature,
+    operationCode: opCode,
   });
 }
