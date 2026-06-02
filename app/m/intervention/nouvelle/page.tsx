@@ -92,6 +92,8 @@ function NouvelleInterventionContent() {
   // Détenteur — info légale en plus du clientName
   const [clientSiret, setClientSiret] = useState("");
   const [clientAdresse, setClientAdresse] = useState("");
+  // Email du client final — sert au bouton 'Envoyer au client' post-validation
+  const [clientEmail, setClientEmail] = useState("");
 
   const [detecteurId, setDetecteurId] = useState("");
   const [detecteurPermanent, setDetecteurPermanent] = useState<"oui" | "non">("non");
@@ -140,6 +142,7 @@ function NouvelleInterventionContent() {
     setClientName(eq.clientName);
     setModeleEquipement(eq.modele);
     setNumeroSerieEquipement(eq.numeroSerie);
+    if (eq.clientEmail) setClientEmail(eq.clientEmail);
     if (eq.siteAdresse) {
       setLieuIntervention(eq.siteAdresse);
       // L'adresse du détenteur = par défaut l'adresse du site d'intervention
@@ -367,17 +370,11 @@ function NouvelleInterventionContent() {
         });
       } catch {}
 
-      // Récupère email client depuis l'équipement source si lié (pour bouton 'Envoyer au client')
-      let resolvedClientEmail: string | undefined;
-      if (eqIdParam) {
-        const eq = listEquipements().find((e) => e.id === eqIdParam);
-        if (eq?.clientEmail) resolvedClientEmail = eq.clientEmail;
-      }
       setStatus({
         type: "success",
         bsffId,
         cerfaUrl,
-        clientEmail: resolvedClientEmail,
+        clientEmail: clientEmail.trim() || undefined,
         clientName: clientName.trim() || undefined,
         typeIntervention,
         modeleEquipement: modeleEquipement.trim() || undefined,
@@ -548,6 +545,18 @@ function NouvelleInterventionContent() {
             placeholder="Nom ou raison sociale"
             disabled={isLoading}
             className="input-mobile"
+          />
+        </FormRow>
+        <FormRow label="Email du client (optionnel)">
+          <input
+            type="email"
+            value={clientEmail}
+            onChange={(e) => setClientEmail(e.target.value)}
+            placeholder="Pour l'envoi auto du CERFA"
+            disabled={isLoading}
+            className="input-mobile"
+            autoComplete="off"
+            autoCapitalize="off"
           />
         </FormRow>
         <FormRow label="SIRET détenteur (optionnel)">
@@ -1140,22 +1149,23 @@ function SuccessView({
         </a>
       </div>
 
-      {/* Bouton 'Envoyer au client' — email pré-rempli avec contexte intervention */}
-      {status.clientEmail && (
-        <div className="px-4 mt-3">
-          <a
-            href={buildClientMailto(status)}
-            className="block w-full px-6 py-4 rounded-2xl bg-[#A16207] text-white text-[15px] font-medium text-center active:bg-[#8a5206] transition-colors"
-            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-          >
-            ✉️ Envoyer au client ({status.clientEmail})
-          </a>
-          <div className="mt-2 text-[11px] text-black/50 leading-relaxed text-center">
-            Ouvre Mail iOS avec objet + corps pré-remplis.<br />
-            Pense à attacher le CERFA téléchargé juste avant.
-          </div>
+      {/* Bouton 'Envoyer au client' — toujours visible, mailto pré-rempli */}
+      <div className="px-4 mt-3">
+        <a
+          href={buildClientMailto(status)}
+          className="block w-full px-6 py-4 rounded-2xl bg-[#A16207] text-white text-[15px] font-medium text-center active:bg-[#8a5206] transition-colors"
+          style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+        >
+          ✉️ Envoyer au client{status.clientEmail ? ` (${status.clientEmail})` : ""}
+        </a>
+        <div className="mt-2 text-[11px] text-black/50 leading-relaxed text-center">
+          {status.clientEmail
+            ? "Ouvre Mail iOS avec destinataire + objet + corps pré-remplis."
+            : "Ouvre Mail iOS avec objet + corps pré-remplis — tape juste l'adresse du client."}
+          <br />
+          Pense à attacher le CERFA téléchargé juste avant.
         </div>
-      )}
+      </div>
 
       <div className="px-4 mt-6 mb-4">
         <button
