@@ -113,10 +113,18 @@ export default function MobileScanPage() {
         },
         {
           preferredCamera: "environment",
-          highlightScanRegion: true,
+          highlightScanRegion: false, // pas de cadre auto qui restreint
           highlightCodeOutline: true,
           returnDetailedScanResult: true,
-          maxScansPerSecond: 5,
+          maxScansPerSecond: 10, // doublé pour réactivité
+          // PLEIN écran : par défaut qr-scanner restreint à ~60% du centre,
+          // ce qui rate les QR grands ou pas pile centrés.
+          calculateScanRegion: (video: HTMLVideoElement) => ({
+            x: 0,
+            y: 0,
+            width: video.videoWidth || 640,
+            height: video.videoHeight || 480,
+          }),
         }
       );
 
