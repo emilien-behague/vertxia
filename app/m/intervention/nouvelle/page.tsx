@@ -115,6 +115,18 @@ function NouvelleInterventionContent() {
   async function handlePlaqueScan(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Fallback offline : l'API vision LLM nécessite un appel cloud.
+    // Si on est offline, on stocke la photo localement et on informe l'user
+    // qu'il faut remplir manuellement. La photo sera OCR-rotée plus tard si
+    // on implémente une queue de jobs vision en V2.
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setScanInfo(
+        "📷 Hors connexion : photo conservée, mais l'OCR IA nécessite une connexion. Saisis les champs manuellement et le scan sera traité dès que tu retrouveras du réseau."
+      );
+      return;
+    }
+
     setScanning(true);
     setScanInfo(null);
     try {
