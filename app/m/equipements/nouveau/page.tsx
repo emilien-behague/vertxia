@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection } from "@/components/mobile/inset-list";
+import { VoiceInput } from "@/components/mobile/voice-input";
 import {
   saveEquipement,
   UNITE_INTERIEURE_LABELS,
@@ -65,6 +66,67 @@ export default function MobileAjoutEquipementPage() {
     numeroSerie: "",
     emplacement: "",
   });
+
+  // Scan plaque signalétique — IA vision pré-remplit modèle, n° série, fluide, charge
+  const [scanning, setScanning] = useState(false);
+  const [scanInfo, setScanInfo] = useState<string | null>(null);
+  const scanInputRef = useRef<HTMLInputElement | null>(null);
+
+  async function handlePlaqueScan(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Fallback offline : OCR IA nécessite réseau
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setScanInfo(
+        "📷 Hors connexion : photo conservée mais l'OCR IA nécessite du réseau. Remplis les champs manuellement."
+      );
+      return;
+    }
+    setScanning(true);
+    setScanInfo(null);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("Lecture échouée"));
+        reader.readAsDataURL(file);
+      });
+      const res = await fetch("/api/vision/plaque", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageDataUrl: dataUrl }),
+      });
+      if (!res.ok) {
+        setScanInfo("❌ Échec analyse. Réessaie avec une photo plus nette.");
+        return;
+      }
+      const plaque = await res.json();
+      const found: string[] = [];
+      if (plaque.modele) {
+        const fullModele = [plaque.marque, plaque.modele].filter(Boolean).join(" ").trim();
+        update("modele", fullModele);
+        found.push("modèle");
+      }
+      if (plaque.numeroSerie) {
+        update("numeroSerie", plaque.numeroSerie);
+        found.push("n° série");
+      }
+      if (plaque.fluide && FLUIDES.some((f) => f.code === plaque.fluide)) {
+        update("fluideCode", plaque.fluide);
+        found.push("fluide");
+      }
+      if (typeof plaque.chargeNominaleKg === "number" && plaque.chargeNominaleKg > 0) {
+        update("chargeKg", String(plaque.chargeNominaleKg));
+        found.push("charge");
+      }
+      setScanInfo(found.length ? `✅ Détecté : ${found.join(", ")}` : "❌ Rien détecté");
+    } catch (e) {
+      setScanInfo("❌ Erreur : " + (e instanceof Error ? e.message : "réseau"));
+    } finally {
+      setScanning(false);
+      if (scanInputRef.current) scanInputRef.current.value = "";
+    }
+  }
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -141,6 +203,58 @@ export default function MobileAjoutEquipementPage() {
       <MobileHeader title="Nouvel équipement" largeTitle backHref="/m/equipements" />
 
       <form onSubmit={handleSubmit}>
+        {/* Scan plaque signalétique — pré-remplit modèle, n° série, fluide, charge */}
+        <InsetListSection
+          title="Scan rapide (optionnel)"
+          footer="Vise la plaque signalétique de l'unité extérieure. L'IA détecte modèle, n° série, fluide et charge nominale automatiquement."
+        >
+          <div className="px-4 py-3">
+            <input
+              ref={scanInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handlePlaqueScan}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => scanInputRef.current?.click()}
+              disabled={scanning || busy}
+              className="w-full px-5 py-3.5 rounded-2xl bg-[#A16207] text-white text-[14px] font-medium active:bg-[#8a5206] transition-colors disabled:opacity-60 inline-flex items-center justify-center gap-2.5"
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            >
+              {scanning ? (
+                <>
+                  <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  <span>Analyse IA en cours…</span>
+                </>
+              ) : (
+                <>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                  </svg>
+                  <span>📷 Scanner la plaque signalétique</span>
+                </>
+              )}
+            </button>
+            {scanInfo && (
+              <div
+                className={`mt-2 px-3 py-2 rounded-xl text-[12px] leading-relaxed ${
+                  scanInfo.startsWith("✅")
+                    ? "bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800"
+                    : scanInfo.startsWith("📷")
+                      ? "bg-amber-50 ring-1 ring-amber-200 text-amber-800"
+                      : "bg-red-50 ring-1 ring-red-200 text-red-700"
+                }`}
+              >
+                {scanInfo}
+              </div>
+            )}
+          </div>
+        </InsetListSection>
+
         {/* Client */}
         <InsetListSection
           title="Client"
@@ -395,11 +509,23 @@ export default function MobileAjoutEquipementPage() {
             <textarea
               value={form.notes}
               onChange={(e) => update("notes", e.target.value)}
-              rows={2}
-              placeholder="Ex : VRV salle de réunion 1er étage"
+              rows={3}
+              placeholder="Ex : VRV salle de réunion 1er étage, accès toit par échelle côté nord"
               className="input-mobile resize-none"
             />
           </FormRow>
+          <div className="px-4 py-3">
+            <VoiceInput
+              onTranscript={(text, isFinal) => {
+                if (isFinal) {
+                  update("notes", form.notes ? `${form.notes} ${text}`.trim() : text);
+                }
+              }}
+              mode="append"
+              label="🎤 Dicter au lieu de taper"
+              hint="Reconnaissance vocale native iPhone"
+            />
+          </div>
         </InsetListSection>
 
         {error && (
