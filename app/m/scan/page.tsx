@@ -113,18 +113,24 @@ export default function MobileScanPage() {
         },
         {
           preferredCamera: "environment",
-          highlightScanRegion: false, // pas de cadre auto qui restreint
-          highlightCodeOutline: true,
+          highlightScanRegion: true, // cadre jaune autour de la zone scan
+          highlightCodeOutline: true, // contour jaune du QR détecté
           returnDetailedScanResult: true,
-          maxScansPerSecond: 10, // doublé pour réactivité
-          // PLEIN écran : par défaut qr-scanner restreint à ~60% du centre,
-          // ce qui rate les QR grands ou pas pile centrés.
-          calculateScanRegion: (video: HTMLVideoElement) => ({
-            x: 0,
-            y: 0,
-            width: video.videoWidth || 640,
-            height: video.videoHeight || 480,
-          }),
+          maxScansPerSecond: 10,
+          // 85% de la plus petite dimension, centré — large pour ne pas
+          // rater les QR (default 60% trop restrictif) mais avec une zone
+          // visible jaune via highlightScanRegion.
+          calculateScanRegion: (video: HTMLVideoElement) => {
+            const w = video.videoWidth || 640;
+            const h = video.videoHeight || 480;
+            const size = Math.round(0.85 * Math.min(w, h));
+            return {
+              x: Math.round((w - size) / 2),
+              y: Math.round((h - size) / 2),
+              width: size,
+              height: size,
+            };
+          },
         }
       );
 
