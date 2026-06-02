@@ -25,7 +25,9 @@ type TypeIntervention =
   | "controle_periodique"
   | "controle_non_periodique"
   | "mise_service"
-  | "maintenance";
+  | "maintenance"
+  | "assemblage"
+  | "modification";
 
 const INTERVENTIONS: {
   v: TypeIntervention;
@@ -40,6 +42,8 @@ const INTERVENTIONS: {
   { v: "controle_non_periodique", label: "Contrôle (suite fuite)", desc: "Suite à fuite ou réparation", needsBsff: false, needsControle: true },
   { v: "mise_service", label: "Mise en service", desc: "Première mise en route", needsBsff: false, needsControle: false },
   { v: "maintenance", label: "Maintenance", desc: "Entretien préventif", needsBsff: false, needsControle: false },
+  { v: "assemblage", label: "Assemblage", desc: "Montage initial de l'équipement", needsBsff: false, needsControle: false },
+  { v: "modification", label: "Modification", desc: "Modification d'un équipement existant", needsBsff: false, needsControle: false },
 ];
 
 const FLUIDES = [
@@ -76,11 +80,25 @@ function NouvelleInterventionContent() {
   const [numeroSerieEquipement, setNumeroSerieEquipement] = useState("");
   const [lieuIntervention, setLieuIntervention] = useState("");
 
+  // Détenteur — info légale en plus du clientName
+  const [clientSiret, setClientSiret] = useState("");
+  const [clientAdresse, setClientAdresse] = useState("");
+
   const [detecteurId, setDetecteurId] = useState("");
   const [detecteurPermanent, setDetecteurPermanent] = useState<"oui" | "non">("non");
   const [fuiteDetectee, setFuiteDetectee] = useState<"oui" | "non">("non");
-  const [fuiteLocalisation, setFuiteLocalisation] = useState("");
+  // Multi-fuites — jusqu'à 3 lignes sur le CERFA officiel
+  type FuiteForm = { localisation: string; reparee: "" | "realisee" | "a_faire" };
+  const [fuites, setFuites] = useState<FuiteForm[]>([{ localisation: "", reparee: "" }]);
   const [notes, setNotes] = useState("");
+
+  // Section [11] décomposition du fluide manipulé (optionnelle, conformité audit)
+  const [showFluideDecompose, setShowFluideDecompose] = useState(false);
+  const [fluideVierge, setFluideVierge] = useState("");
+  const [fluideRecycle, setFluideRecycle] = useState("");
+  const [fluideRegenere, setFluideRegenere] = useState("");
+  const [fluideTraitement, setFluideTraitement] = useState("");
+  const [fluideReutilisation, setFluideReutilisation] = useState("");
 
   // Signature client (détenteur) — capturée sur canvas tactile en fin d'intervention
   const [detenteurName, setDetenteurName] = useState("");
@@ -113,7 +131,11 @@ function NouvelleInterventionContent() {
     setClientName(eq.clientName);
     setModeleEquipement(eq.modele);
     setNumeroSerieEquipement(eq.numeroSerie);
-    if (eq.siteAdresse) setLieuIntervention(eq.siteAdresse);
+    if (eq.siteAdresse) {
+      setLieuIntervention(eq.siteAdresse);
+      // L'adresse du détenteur = par défaut l'adresse du site d'intervention
+      setClientAdresse(eq.siteAdresse);
+    }
     if (FLUIDES.some((f) => f.code === eq.fluide.code)) setFluide(eq.fluide.code);
     if (eq.chargeKg > 0) setWeight(eq.chargeKg.toFixed(2));
     setEqContext({ modele: eq.modele, clientName: eq.clientName });
@@ -226,6 +248,45 @@ function NouvelleInterventionContent() {
             }
           : null;
 
+      const detenteurInfoPayload =
+        clientSiret.trim() || clientAdresse.trim()
+          ? {
+              siret: clientSiret.trim() || undefined,
+              adresse: clientAdresse.trim() || undefined,
+            }
+          : undefined;
+
+      // Multi-fuites : ne garde que les fuites avec une localisation non vide
+      const fuitesPayload =
+        config.needsControle && fuiteDetectee === "oui"
+          ? fuites
+              .filter((f) => f.localisation.trim())
+              .slice(0, 3)
+              .map((f) => ({
+                localisation: f.localisation.trim(),
+                reparee: f.reparee === "" ? undefined : f.reparee,
+              }))
+          : undefined;
+
+      // Décomposition fluide A/B/C/D/E — seulement si activée et au moins 1 valeur fournie
+      const parseKg = (s: string): number | undefined => {
+        const v = parseFloat(s.replace(",", "."));
+        return Number.isFinite(v) && v > 0 ? v : undefined;
+      };
+      const fluideManipulePayload =
+        config.needsBsff && showFluideDecompose
+          ? (() => {
+              const fm = {
+                vierge: parseKg(fluideVierge),
+                recycle: parseKg(fluideRecycle),
+                regenere: parseKg(fluideRegenere),
+                recupereTraitement: parseKg(fluideTraitement),
+                recupereReutilisation: parseKg(fluideReutilisation),
+              };
+              return Object.values(fm).some((v) => v !== undefined) ? fm : undefined;
+            })()
+          : undefined;
+
       const cerfaPayload: Record<string, unknown> = {
         fluide: selectedFluide,
         weight: config.needsBsff ? parseFloat(weight) : 0,
@@ -238,14 +299,16 @@ function NouvelleInterventionContent() {
         destination,
         typeIntervention,
         operateur,
+        detenteur: detenteurInfoPayload,
         detenteurSignature: detenteurSignaturePayload,
+        fluideManipule: fluideManipulePayload,
+        observationsLibres: notes.trim() || undefined,
         controleDetails: config.needsControle
           ? {
               detecteurId: detecteurId.trim() || undefined,
               detecteurPermanent: detecteurPermanent === "oui",
               fuiteDetectee: fuiteDetectee === "oui",
-              fuiteLocalisation:
-                fuiteDetectee === "oui" ? fuiteLocalisation.trim() || undefined : undefined,
+              fuites: fuitesPayload && fuitesPayload.length > 0 ? fuitesPayload : undefined,
             }
           : undefined,
       };
@@ -279,8 +342,11 @@ function NouvelleInterventionContent() {
                 detecteurId: detecteurId.trim() || undefined,
                 detecteurPermanent: detecteurPermanent === "oui",
                 fuiteDetectee: fuiteDetectee === "oui",
+                // Rétrocompat : on stocke la 1ère localisation dans le champ legacy
                 fuiteLocalisation:
-                  fuiteDetectee === "oui" ? fuiteLocalisation.trim() || undefined : undefined,
+                  fuitesPayload && fuitesPayload.length > 0
+                    ? fuitesPayload.map((f) => f.localisation).join(" | ")
+                    : undefined,
               }
             : undefined,
           notes: notes.trim() || undefined,
@@ -459,6 +525,27 @@ function NouvelleInterventionContent() {
             className="input-mobile"
           />
         </FormRow>
+        <FormRow label="SIRET détenteur (optionnel)">
+          <input
+            type="text"
+            inputMode="numeric"
+            value={clientSiret}
+            onChange={(e) => setClientSiret(e.target.value)}
+            placeholder="14 chiffres si entreprise"
+            disabled={isLoading}
+            className="input-mobile font-mono"
+          />
+        </FormRow>
+        <FormRow label="Adresse détenteur (optionnel)">
+          <input
+            type="text"
+            value={clientAdresse}
+            onChange={(e) => setClientAdresse(e.target.value)}
+            placeholder="Si différente du lieu d'intervention"
+            disabled={isLoading}
+            className="input-mobile"
+          />
+        </FormRow>
       </InsetListSection>
 
       {/* Fluide */}
@@ -506,6 +593,107 @@ function NouvelleInterventionContent() {
         )}
       </InsetListSection>
 
+      {/* Décomposition fluide manipulé [11] — optionnelle, pour audit DREAL/DREETS */}
+      {config.needsBsff && (
+        <InsetListSection
+          title="Décomposition fluide (optionnel)"
+          footer="Pour les contrôles audit DREAL/DREETS, tu peux détailler la part de fluide vierge, recyclé, régénéré chargée et la part destinée au traitement vs réutilisation. Si tu laisses vide, tout est considéré comme récupéré pour réutilisation."
+        >
+          <div className="px-4 py-3">
+            <button
+              type="button"
+              onClick={() => setShowFluideDecompose((v) => !v)}
+              className="w-full px-4 py-2.5 rounded-xl bg-black/[0.04] text-[13px] font-medium text-black/70 active:bg-black/[0.08] flex items-center justify-center gap-2"
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            >
+              <span>{showFluideDecompose ? "Masquer le détail" : "Détailler A+B+C / D+E"}</span>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ transform: showFluideDecompose ? "rotate(180deg)" : "none" }}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          </div>
+          {showFluideDecompose && (
+            <>
+              <FormRow label="A — Fluide vierge chargé (kg)">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  inputMode="decimal"
+                  value={fluideVierge}
+                  onChange={(e) => setFluideVierge(e.target.value)}
+                  placeholder="0.00"
+                  disabled={isLoading}
+                  className="input-mobile"
+                />
+              </FormRow>
+              <FormRow label="B — Fluide recyclé chargé (kg)">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  inputMode="decimal"
+                  value={fluideRecycle}
+                  onChange={(e) => setFluideRecycle(e.target.value)}
+                  placeholder="0.00"
+                  disabled={isLoading}
+                  className="input-mobile"
+                />
+              </FormRow>
+              <FormRow label="C — Fluide régénéré chargé (kg)">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  inputMode="decimal"
+                  value={fluideRegenere}
+                  onChange={(e) => setFluideRegenere(e.target.value)}
+                  placeholder="0.00"
+                  disabled={isLoading}
+                  className="input-mobile"
+                />
+              </FormRow>
+              <FormRow label="D — Récupéré pour traitement (kg)">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  inputMode="decimal"
+                  value={fluideTraitement}
+                  onChange={(e) => setFluideTraitement(e.target.value)}
+                  placeholder="0.00"
+                  disabled={isLoading}
+                  className="input-mobile"
+                />
+              </FormRow>
+              <FormRow label="E — Récupéré pour réutilisation (kg)">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  inputMode="decimal"
+                  value={fluideReutilisation}
+                  onChange={(e) => setFluideReutilisation(e.target.value)}
+                  placeholder="0.00"
+                  disabled={isLoading}
+                  className="input-mobile"
+                />
+              </FormRow>
+            </>
+          )}
+        </InsetListSection>
+      )}
+
       {/* Contrôle d'étanchéité */}
       {config.needsControle && (
         <InsetListSection title="Contrôle d'étanchéité">
@@ -538,16 +726,89 @@ function NouvelleInterventionContent() {
             ]}
           />
           {fuiteDetectee === "oui" && (
-            <FormRow label="Localisation de la fuite">
-              <input
-                type="text"
-                value={fuiteLocalisation}
-                onChange={(e) => setFuiteLocalisation(e.target.value)}
-                placeholder="Ex : Raccord côté liquide unité ext."
-                disabled={isLoading}
-                className="input-mobile"
-              />
-            </FormRow>
+            <>
+              {fuites.map((fuite, idx) => (
+                <div key={idx} className="px-4 py-3 border-t border-black/[0.04] first:border-t-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-[11px] font-medium text-black/45 uppercase tracking-wide">
+                      Fuite {idx + 1}
+                    </div>
+                    {fuites.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFuites((prev) => prev.filter((_, i) => i !== idx))
+                        }
+                        className="text-[11px] text-red-600 active:underline"
+                        style={{ WebkitTapHighlightColor: "transparent" }}
+                      >
+                        Supprimer
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={fuite.localisation}
+                    onChange={(e) =>
+                      setFuites((prev) =>
+                        prev.map((f, i) => (i === idx ? { ...f, localisation: e.target.value } : f))
+                      )
+                    }
+                    placeholder="Ex : Raccord côté liquide unité ext."
+                    disabled={isLoading}
+                    className="input-mobile"
+                  />
+                  <div className="mt-3">
+                    <div className="text-[11px] font-medium text-black/45 uppercase tracking-wide mb-2">
+                      Réparation
+                    </div>
+                    <div className="flex bg-black/[0.05] rounded-xl p-1">
+                      {[
+                        { v: "", label: "—" },
+                        { v: "realisee", label: "Réalisée" },
+                        { v: "a_faire", label: "À faire" },
+                      ].map((opt) => (
+                        <button
+                          key={opt.v}
+                          type="button"
+                          onClick={() =>
+                            setFuites((prev) =>
+                              prev.map((f, i) =>
+                                i === idx
+                                  ? { ...f, reparee: opt.v as "" | "realisee" | "a_faire" }
+                                  : f
+                              )
+                            )
+                          }
+                          className={`flex-1 px-2 py-2 rounded-lg text-[13px] font-medium transition-all ${
+                            fuite.reparee === opt.v
+                              ? "bg-white text-[#111] shadow-sm shadow-black/[0.06]"
+                              : "text-black/60 active:text-black/90"
+                          }`}
+                          style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {fuites.length < 3 && (
+                <div className="px-4 py-3 border-t border-black/[0.04]">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFuites((prev) => [...prev, { localisation: "", reparee: "" }])
+                    }
+                    className="w-full px-4 py-2.5 rounded-xl bg-black/[0.04] text-[13px] font-medium text-black/70 active:bg-black/[0.08]"
+                    style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                  >
+                    + Ajouter une fuite ({fuites.length}/3)
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </InsetListSection>
       )}
@@ -555,7 +816,7 @@ function NouvelleInterventionContent() {
       {/* Notes + dictée vocale */}
       <InsetListSection
         title="Notes / Observations terrain"
-        footer="Tape ou DICTE — la dictée vocale utilise le moteur de reconnaissance natif de ton téléphone, marche en français."
+        footer="Tape ou DICTE — ces observations sont intégrées à la case [14] Observations du CERFA officiel 15497*04."
       >
         <FormRow label="Notes libres">
           <textarea

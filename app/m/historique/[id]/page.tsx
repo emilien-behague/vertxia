@@ -72,6 +72,7 @@ export default function MobileInterventionDetailPage() {
         destination: intervention.destination ?? null,
         typeIntervention: intervention.typeIntervention,
         operateur,
+        observationsLibres: intervention.notes,
         controleDetails: intervention.controleDetails,
         // Note : on n'a pas stocké la dataURL signature détenteur (trop lourde).
         // Si présente à l'origine, on remet nom + qualité mais sans image.

@@ -22,6 +22,8 @@ const TYPE_LABELS: Record<TypeIntervention, string> = {
   controle_non_periodique: "Contrôle d'étanchéité non périodique",
   mise_service: "Mise en service / Première charge",
   maintenance: "Maintenance / Recharge",
+  assemblage: "Assemblage de l'équipement",
+  modification: "Modification de l'équipement",
 };
 
 // Couleurs Vertxia

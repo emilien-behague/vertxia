@@ -24,6 +24,8 @@ const TYPE_LABELS: Record<TypeIntervention, string> = {
   controle_non_periodique: "Contrôle non périodique",
   mise_service: "Mise en service",
   maintenance: "Maintenance",
+  assemblage: "Assemblage",
+  modification: "Modification",
 };
 
 function fmtDateTime(iso: string): string {
