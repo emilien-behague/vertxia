@@ -53,6 +53,9 @@ export const metadata: Metadata = {
     description:
       "Photo + voix → BSFF officiel signé Ministère en quelques secondes. Pour frigoristes, climaticiens, installateurs PAC.",
   },
+  verification: {
+    google: "e6dk6nKVPO5uBOexyYXzdxC8JZ775dLnashkXOnipss",
+  },
 };
 
 export default function RootLayout({
