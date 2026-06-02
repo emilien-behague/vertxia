@@ -11,6 +11,7 @@ import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection } from "@/components/mobile/inset-list";
 import { VoiceInput } from "@/components/mobile/voice-input";
 import { WhisperInput } from "@/components/mobile/whisper-input";
+import { SignaturePad } from "@/components/mobile/signature-pad";
 import { listEquipements } from "@/lib/equipement";
 import { saveIntervention } from "@/lib/intervention-storage";
 import { loadProfil } from "@/lib/profil";
@@ -81,6 +82,12 @@ function NouvelleInterventionContent() {
   const [fuiteDetectee, setFuiteDetectee] = useState<"oui" | "non">("non");
   const [fuiteLocalisation, setFuiteLocalisation] = useState("");
   const [notes, setNotes] = useState("");
+
+  // Signature client (détenteur) — capturée sur canvas tactile en fin d'intervention
+  const [detenteurName, setDetenteurName] = useState("");
+  const [detenteurQuality, setDetenteurQuality] = useState("");
+  const [detenteurSignatureDataUrl, setDetenteurSignatureDataUrl] = useState<string | null>(null);
+  const [signatureClearKey, setSignatureClearKey] = useState(0);
 
   const [status, setStatus] = useState<Status>({ type: "idle" });
   const [eqContext, setEqContext] = useState<{ modele: string; clientName: string } | null>(null);
@@ -211,6 +218,15 @@ function NouvelleInterventionContent() {
           }
         : undefined;
 
+      const detenteurSignaturePayload =
+        detenteurSignatureDataUrl && detenteurName.trim()
+          ? {
+              name: detenteurName.trim(),
+              quality: detenteurQuality.trim() || undefined,
+              dataUrl: detenteurSignatureDataUrl,
+            }
+          : null;
+
       const cerfaPayload: Record<string, unknown> = {
         fluide: selectedFluide,
         weight: config.needsBsff ? parseFloat(weight) : 0,
@@ -223,6 +239,7 @@ function NouvelleInterventionContent() {
         destination,
         typeIntervention,
         operateur,
+        detenteurSignature: detenteurSignaturePayload,
         controleDetails: config.needsControle
           ? {
               detecteurId: detecteurId.trim() || undefined,
@@ -268,6 +285,9 @@ function NouvelleInterventionContent() {
               }
             : undefined,
           notes: notes.trim() || undefined,
+          hasDetenteurSignature: Boolean(detenteurSignaturePayload),
+          detenteurName: detenteurSignaturePayload ? detenteurSignaturePayload.name : undefined,
+          detenteurQuality: detenteurSignaturePayload?.quality,
         });
       } catch {}
 
@@ -568,6 +588,46 @@ function NouvelleInterventionContent() {
             }}
             label="🎙️ Dicter offline (Whisper on-device)"
           />
+        </div>
+      </InsetListSection>
+
+      {/* Signature client (détenteur) */}
+      <InsetListSection
+        title="Signature client"
+        footer="Le client signe directement sur ton téléphone — sa signature est intégrée au CERFA officiel. Recommandé pour la conformité, mais pas bloquant."
+      >
+        <FormRow label="Nom du signataire">
+          <input
+            type="text"
+            value={detenteurName}
+            onChange={(e) => setDetenteurName(e.target.value)}
+            placeholder="Ex : Jean Dupont"
+            disabled={isLoading}
+            className="input-mobile"
+          />
+        </FormRow>
+        <FormRow label="Qualité">
+          <input
+            type="text"
+            value={detenteurQuality}
+            onChange={(e) => setDetenteurQuality(e.target.value)}
+            placeholder="Ex : Gérant, Propriétaire, Responsable maintenance…"
+            disabled={isLoading}
+            className="input-mobile"
+          />
+        </FormRow>
+        <div className="px-4 py-3">
+          <SignaturePad
+            onChange={(dataUrl) => setDetenteurSignatureDataUrl(dataUrl)}
+            clearKey={signatureClearKey}
+            height={180}
+            label="SIGNATURE CLIENT"
+          />
+          {detenteurSignatureDataUrl && !detenteurName.trim() && (
+            <div className="mt-2 text-[11px] text-amber-700 bg-amber-50 ring-1 ring-amber-200 rounded-lg px-3 py-2">
+              ⚠️ Renseigne le nom du signataire pour que la signature soit incluse au CERFA.
+            </div>
+          )}
         </div>
       </InsetListSection>
 
