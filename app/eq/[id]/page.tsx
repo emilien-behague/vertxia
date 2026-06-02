@@ -304,6 +304,86 @@ export default function EquipementScannedPage({
           </div>
         </a>
 
+        {/* Coordonnées client — toujours affiché si au moins un contact renseigné */}
+        {(eq.clientEmail || eq.clientTelephone || eq.siteAdresse) && (
+          <div className="rounded-2xl bg-white ring-1 ring-black/[0.06] mb-3 overflow-hidden">
+            <div className="px-5 pt-4 pb-2 flex items-baseline justify-between">
+              <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/45">
+                Coordonnées client
+              </div>
+              <div className="text-[11px] font-medium text-black/55 truncate ml-3 min-w-0">
+                {eq.clientName}
+              </div>
+            </div>
+            <div className="divide-y divide-black/[0.05]">
+              {eq.clientEmail && (
+                <a
+                  href={`mailto:${eq.clientEmail}`}
+                  className="px-5 py-3 flex items-center gap-3 active:bg-black/[0.03] transition-colors"
+                  style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                >
+                  <span className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-700">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                      <polyline points="22,6 12,13 2,6" />
+                    </svg>
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[11px] text-black/45 uppercase tracking-wide">Email</div>
+                    <div className="text-[14px] text-[#111] truncate">{eq.clientEmail}</div>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                </a>
+              )}
+              {eq.clientTelephone && (
+                <a
+                  href={`tel:${eq.clientTelephone.replace(/\s/g, "")}`}
+                  className="px-5 py-3 flex items-center gap-3 active:bg-black/[0.03] transition-colors"
+                  style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                >
+                  <span className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 text-emerald-700">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[11px] text-black/45 uppercase tracking-wide">Téléphone</div>
+                    <div className="text-[14px] text-[#111] truncate">{eq.clientTelephone}</div>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                </a>
+              )}
+              {eq.siteAdresse && (
+                <a
+                  href={`https://maps.apple.com/?q=${encodeURIComponent(eq.siteAdresse)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-5 py-3 flex items-center gap-3 active:bg-black/[0.03] transition-colors"
+                  style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                >
+                  <span className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-50 text-amber-700">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[11px] text-black/45 uppercase tracking-wide">Adresse du site</div>
+                    <div className="text-[14px] text-[#111]">{eq.siteAdresse}</div>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Specs équipement — grid mobile */}
         <div className="rounded-2xl bg-white ring-1 ring-black/[0.06] divide-y divide-black/[0.06] mb-3">
           <SpecRow label="Fluide" value={`${eq.fluide.code} · GWP ${eq.fluide.gwp.toLocaleString("fr-FR")}`} />
