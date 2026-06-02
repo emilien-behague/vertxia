@@ -471,7 +471,7 @@ export default function EquipementScannedPage({
             <div className="mt-1 text-xs font-medium text-black/75">Interventions</div>
           </a>
           <a
-            href="/dashboard"
+            href="/m"
             className="rounded-xl bg-white ring-1 ring-black/[0.06] px-3 py-3 text-center hover:bg-black/[0.02] active:bg-black/[0.04] transition-colors"
           >
             <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/40">
