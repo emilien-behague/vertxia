@@ -168,7 +168,7 @@ export function computeStatus(
     const jours = daysBetween(new Date(), prochain);
     joursAvantControle = jours;
     if (jours < 0) statut = "en_retard";
-    else if (jours <= 30) statut = "a_programmer";
+    else if (jours <= 90) statut = "a_programmer";
     else statut = "ok";
   }
 

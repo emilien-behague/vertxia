@@ -199,7 +199,7 @@ export default function DashboardPage() {
           <StatTile
             label="À programmer"
             value={equipementsStats.aProgrammer}
-            sub="< 30 jours"
+            sub="< 90 jours"
             accent={equipementsStats.aProgrammer > 0 ? "text-amber-700" : "text-black/30"}
           />
           <StatTile
