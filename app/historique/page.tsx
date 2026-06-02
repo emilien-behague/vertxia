@@ -290,12 +290,13 @@ export default function HistoriquePage() {
                         </>
                       )}
                     </button>
-                    {it.bsffPdfUrl && (
+                    {it.bsffId && (
                       <a
-                        href={it.bsffPdfUrl}
+                        href={`/api/bsff/download/${it.bsffId}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="px-4 py-2 border border-black/15 text-[#111] text-xs tracking-widest font-medium rounded-lg hover:bg-black/[0.03] transition-colors inline-flex items-center gap-2"
+                        title="Télécharger le BSFF officiel TrackDéchets (lien regénéré à la volée)"
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
