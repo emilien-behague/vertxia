@@ -1,5 +1,10 @@
 "use client";
 
+// Page dynamique : useSearchParams lit ?equipement=ID&type=X qui ne sont connus
+// qu'au runtime. force-dynamic désactive le static prerendering (sinon Next.js 15
+// râle "useSearchParams should be wrapped in Suspense" pendant le build).
+export const dynamic = "force-dynamic";
+
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/mobile-header";
