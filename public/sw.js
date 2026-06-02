@@ -5,8 +5,8 @@
 //  - Routes API : pas de cache, network-only (le caller gère le offline via offline-queue.ts)
 //  - Autres pages : network-first avec fallback cache
 
-const CACHE_VERSION = "vertxia-v1";
-const STATIC_CACHE = "vertxia-static-v1";
+const CACHE_VERSION = "vertxia-v2";
+const STATIC_CACHE = "vertxia-static-v2";
 
 self.addEventListener("install", (event) => {
   // Active immédiatement la nouvelle version sans attendre que tous les onglets soient fermés
@@ -60,7 +60,7 @@ self.addEventListener("fetch", (event) => {
     url.pathname.startsWith("/eq/") ||
     url.pathname === "/manifest.webmanifest"
   ) {
-    event.respondWith(staleWhileRevalidate(request));
+    event.respondWith(staleWhileRevalidate(event, request));
     return;
   }
 
@@ -83,7 +83,7 @@ async function cacheFirst(request) {
   }
 }
 
-async function staleWhileRevalidate(request) {
+async function staleWhileRevalidate(event, request) {
   const cache = await caches.open(CACHE_VERSION);
   const cached = await cache.match(request);
   const fetchPromise = fetch(request)
@@ -95,8 +95,10 @@ async function staleWhileRevalidate(request) {
 
   // Renvoie le cache immédiatement si dispo, sinon attend le network
   if (cached) {
-    // En arrière-plan, on revalide
-    event.waitUntil?.(fetchPromise);
+    // En arrière-plan, on revalide (event peut être absent si appel direct)
+    if (event && typeof event.waitUntil === "function") {
+      event.waitUntil(fetchPromise);
+    }
     return cached;
   }
   const networkResponse = await fetchPromise;
