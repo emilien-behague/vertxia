@@ -11,6 +11,7 @@ import {
 } from "@/lib/equipement";
 import { listInterventions } from "@/lib/intervention-storage";
 import { loadProfil, type Profil } from "@/lib/profil";
+import { generateQrLabel } from "@/lib/qr-label";
 
 // Page mobile premium — affichée quand un frigoriste scanne le QR Code collé sur
 // un équipement. Doit s'afficher SANS bug sur Safari iOS (zéro animation initial:opacity:0
@@ -99,6 +100,8 @@ export default function EquipementScannedPage({
   const [mounted, setMounted] = useState(false);
   const [eq, setEq] = useState<EquipementWithStatus | null>(null);
   const [profil, setProfil] = useState<Profil | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrError, setQrError] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -125,6 +128,32 @@ export default function EquipementScannedPage({
       frigoristeTelephone: profil?.telephone || undefined,
     });
   }, [eq, profil]);
+
+  async function handleGenerateQr() {
+    if (!eq) return;
+    setQrError(null);
+    setQrLoading(true);
+    try {
+      const blob = await generateQrLabel(eq, window.location.origin);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const filenameSafe = (eq.modele || "equipement")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 40);
+      a.href = url;
+      a.download = `etiquette-qr-${filenameSafe}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      setQrError(e instanceof Error ? e.message : "Erreur génération QR");
+    } finally {
+      setQrLoading(false);
+    }
+  }
 
   if (!mounted) return <LoadingState />;
   if (!eq || !visual) return <NotFoundState id={id} />;
@@ -337,19 +366,33 @@ export default function EquipementScannedPage({
         )}
 
         {/* Actions secondaires */}
-        <div className="grid grid-cols-2 gap-3 mt-4">
+        <div className="grid grid-cols-3 gap-3 mt-4">
+          <button
+            type="button"
+            onClick={handleGenerateQr}
+            disabled={qrLoading}
+            className="rounded-xl bg-white ring-1 ring-black/[0.06] px-3 py-3 text-center hover:bg-black/[0.02] active:bg-black/[0.04] transition-colors disabled:opacity-60"
+            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+          >
+            <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/40">
+              QR Code
+            </div>
+            <div className="mt-1 text-xs font-medium text-black/75">
+              {qrLoading ? "Génération…" : "Étiquette PDF"}
+            </div>
+          </button>
           <a
             href="/m/historique"
-            className="rounded-xl bg-white ring-1 ring-black/[0.06] px-4 py-3 text-center hover:bg-black/[0.02] active:bg-black/[0.04] transition-colors"
+            className="rounded-xl bg-white ring-1 ring-black/[0.06] px-3 py-3 text-center hover:bg-black/[0.02] active:bg-black/[0.04] transition-colors"
           >
             <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/40">
               Historique
             </div>
-            <div className="mt-1 text-xs font-medium text-black/75">Voir interventions</div>
+            <div className="mt-1 text-xs font-medium text-black/75">Interventions</div>
           </a>
           <a
             href="/dashboard"
-            className="rounded-xl bg-white ring-1 ring-black/[0.06] px-4 py-3 text-center hover:bg-black/[0.02] active:bg-black/[0.04] transition-colors"
+            className="rounded-xl bg-white ring-1 ring-black/[0.06] px-3 py-3 text-center hover:bg-black/[0.02] active:bg-black/[0.04] transition-colors"
           >
             <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/40">
               Vue
@@ -357,6 +400,11 @@ export default function EquipementScannedPage({
             <div className="mt-1 text-xs font-medium text-black/75">Tableau de bord</div>
           </a>
         </div>
+        {qrError && (
+          <div className="mt-2 px-4 py-2 rounded-xl bg-red-50 ring-1 ring-red-200 text-[12px] text-red-700 text-center">
+            {qrError}
+          </div>
+        )}
 
         {/* Footer minimal */}
         <div className="mt-10 text-center opacity-60">
