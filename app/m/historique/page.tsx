@@ -79,6 +79,8 @@ export default function MobileHistoriquePage() {
             {items.map((i) => (
               <InsetRow
                 key={i.id}
+                href={`/m/historique/${i.id}`}
+                showChevron
                 label={TYPE_LABELS[i.typeIntervention] || i.typeIntervention}
                 sublabel={`${i.clientName ?? "Sans client"} · ${fmtDate(i.createdAt)} · ${fmtTime(i.createdAt)}`}
                 leading={
