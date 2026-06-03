@@ -1,18 +1,29 @@
 // Proxy server-side vers Supabase pour la lecture publique d'un équipement.
 //
-// IMPORTANT — Stratégie de visibilité (3 niveaux) :
-// 1. Visiteur NON authentifié (client, contrôleur, anonyme) → mode "public"
-//    = vue épurée : modèle, n°série, fluide (code), statut, contact pro.
-//    ✗ Pas de coordonnées client, charge, GWP, historique, notes.
-// 2. Confrère AUTHENTIFIÉ non-owner → mode "full" mais isOwner=false
-//    = vue complète (consultation pleine) MAIS pas d'actions d'édition.
-//    Sert la collaboration inter-frigoristes (sous-traitance, dépannage).
-// 3. Owner AUTHENTIFIÉ → mode "full" + isOwner=true
-//    = vue complète + actions d'édition (démarrer intervention, relance, etc.).
+// IMPORTANT — Stratégie de visibilité (4 niveaux d'accès) :
 //
-// Objectif business : viralité préservée pour les visiteurs anonymes
-// (client scan → il voit qu'un pro s'occupe) + collaboration entre pros
-// Vertxia (création de compte = ticket d'entrée pour voir le détail).
+// 1. Visiteur ANONYME (pas de compte) → mode "public"
+//    = vue épurée : modèle, n°série, fluide (code SEUL), statut, contact pro.
+//    ✗ Pas de charge, GWP, dernier contrôle, unités, client, notes, historique.
+//
+// 2. Confrère d'une AUTRE boîte (compte Vertxia, jamais intervenu) → mode "confrere"
+//    = vue épurée + données TECHNIQUES OBJECTIVES de la machine :
+//    ✓ modèle, n°série, fluide complet (code+GWP), charge, dernier contrôle,
+//      détecteur, unités intérieures, contact pro
+//    ✗ PAS de client (nom/email/tel/adresse), PAS de notes, PAS d'historique
+//    Permet de reprendre une machine techniquement sans voler la donnée
+//    commerciale du frigoriste précédent.
+//
+// 3. Technicien AYANT DÉJÀ INTERVENU sur cet eq → mode "full"
+//    = vue complète (le pro a déjà été "admis" par une 1ère intervention).
+//    Peut démarrer de nouvelles interventions.
+//
+// 4. Owner (créateur de l'eq) → mode "full" + isOwner=true
+//    = vue complète + toutes actions (relance client, QR PDF, etc.).
+//
+// Objectif business : un concurrent qui scanne ne peut pas voler les clients
+// du frigoriste owner. Mais il peut techniquement reprendre la machine si
+// l'owner l'admet via une 1ère intervention.
 
 import { NextResponse } from "next/server";
 import { createClient as createCookieClient } from "@/lib/supabase/server";
@@ -52,38 +63,85 @@ export async function GET(
     const isAuth = Boolean(user);
     const isOwner = isAuth && user!.id === data.user_id;
 
+    // Récupération du contact pro (owner Vertxia) — visible dans tous les
+    // modes sauf "full owner" (l'owner connaît déjà ses propres coordonnées).
+    const { data: ownerProfil } = await anon
+      .from("profils")
+      .select("raison_sociale, telephone, email, numero_attestation")
+      .eq("user_id", data.user_id)
+      .maybeSingle();
+
+    const ownerPublic = ownerProfil
+      ? {
+          raisonSociale: ownerProfil.raison_sociale || null,
+          telephone: ownerProfil.telephone || null,
+          email: ownerProfil.email || null,
+          numeroAttestation: ownerProfil.numero_attestation || null,
+        }
+      : null;
+
     if (isAuth) {
-      // Mode FULL : authentifié (owner OU confrère) → toutes les données.
-      // isReadOnly = false uniquement pour le owner (= peut éditer la fiche).
-      //
-      // canCreateIntervention = peut démarrer une NOUVELLE intervention sur
-      // cet équipement. Vrai si :
-      //   - owner (toujours)
-      //   - OU technicien ayant déjà fait au moins 1 intervention sur l'eq
-      // (un frigoriste tiers qui n'a jamais touché à la machine ne peut pas
-      //  créer une intervention dessus — il doit d'abord être "admis" via une
-      //  première intervention de prise en charge initiée par l'owner).
-      let canCreateIntervention = isOwner;
+      // Vérification : ce technicien a-t-il déjà fait une intervention sur cet eq ?
+      // Si oui → mode "full" (il est "admis", voit tout). Sinon → mode "confrere".
+      let hasIntervened = false;
       if (!isOwner) {
         const { count: prevCount } = await anon
           .from("interventions")
           .select("id", { count: "exact", head: true })
           .eq("equipement_id", data.id)
           .eq("user_id", user!.id);
-        canCreateIntervention = (prevCount ?? 0) > 0;
+        hasIntervened = (prevCount ?? 0) > 0;
       }
+
+      const canCreateIntervention = isOwner || hasIntervened;
+
+      if (isOwner || hasIntervened) {
+        // Mode FULL : voit TOUT (client, notes, historique, etc.)
+        return NextResponse.json(
+          {
+            data,
+            mode: "full",
+            isOwner,
+            isReadOnly: !isOwner,
+            canCreateIntervention,
+            ownerPublic: isOwner ? null : ownerPublic, // owner connaît ses propres infos
+          },
+          { status: 200 }
+        );
+      }
+
+      // Mode CONFRERE : confrère authentifié d'une autre boîte qui n'a jamais
+      // intervenu. Voit la donnée TECHNIQUE objective de la machine + contact
+      // pro, MAIS pas la donnée commerciale (client, notes, historique).
+      const confrereData = {
+        id: data.id,
+        created_at: data.created_at,
+        modele: data.modele,
+        numero_serie: data.numero_serie,
+        fluide_code: data.fluide_code,
+        fluide_label: data.fluide_label,
+        fluide_gwp: data.fluide_gwp,
+        charge_kg: data.charge_kg,
+        detecteur_fixe: data.detecteur_fixe,
+        dernier_controle_iso: data.dernier_controle_iso,
+        unites_interieures: data.unites_interieures ?? [],
+        user_id: data.user_id,
+        // ❌ client_name, client_email, client_telephone, site_adresse, notes
+      };
       return NextResponse.json(
-        { data, mode: "full", isOwner, isReadOnly: !isOwner, canCreateIntervention },
+        {
+          data: confrereData,
+          mode: "confrere",
+          isOwner: false,
+          isReadOnly: true,
+          canCreateIntervention: false,
+          ownerPublic,
+        },
         { status: 200 }
       );
     }
 
-    // Mode PUBLIC : visiteur NON authentifié → vue épurée + contact pro
-    const { data: ownerProfil } = await anon
-      .from("profils")
-      .select("raison_sociale, telephone, email, numero_attestation")
-      .eq("user_id", data.user_id)
-      .maybeSingle();
+    // Mode PUBLIC : visiteur NON authentifié → vue épurée pure
 
     const publicData = {
       id: data.id,
@@ -106,15 +164,6 @@ export async function GET(
       // ❌ Pas de notes
       // ❌ Pas de unites_interieures détaillées
     };
-
-    const ownerPublic = ownerProfil
-      ? {
-          raisonSociale: ownerProfil.raison_sociale || null,
-          telephone: ownerProfil.telephone || null,
-          email: ownerProfil.email || null,
-          numeroAttestation: ownerProfil.numero_attestation || null,
-        }
-      : null;
 
     return NextResponse.json(
       {

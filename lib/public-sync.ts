@@ -70,8 +70,11 @@ export type PublicEquipement = StoredEquipement & {
    *  Owner = toujours. Confrère = uniquement s'il a déjà au moins 1 intervention
    *  sur cet équipement (= il a déjà été "admis" par une prise en charge). */
   canCreateIntervention: boolean;
-  /** "full" = authentifié, toutes données visibles. "public" = vue épurée (visiteur anonyme). */
-  mode: "full" | "public";
+  /** Niveaux de visibilité :
+   *  - "public" : visiteur anonyme → vue épurée pure
+   *  - "confrere" : pro Vertxia d'une autre boîte → vue technique sans données commerciales
+   *  - "full" : owner ou technicien ayant déjà intervenu → tout visible */
+  mode: "full" | "public" | "confrere";
   /** Présent UNIQUEMENT en mode "public" : coordonnées du frigoriste référent. */
   ownerPublic?: {
     raisonSociale: string | null;
@@ -119,7 +122,7 @@ export async function fetchPublicEquipement(id: string): Promise<PublicEquipemen
     }
     const json = (await res.json()) as {
       data: Record<string, unknown> | null;
-      mode?: "full" | "public";
+      mode?: "full" | "public" | "confrere";
       isOwner?: boolean;
       isReadOnly: boolean;
       canCreateIntervention?: boolean;
@@ -142,15 +145,17 @@ export async function fetchPublicEquipement(id: string): Promise<PublicEquipemen
       rowCount: 1,
       searchedId: id,
     };
-    // En mode "public", clientName n'existe pas — on met un placeholder neutre.
-    const isPublic = mode === "public";
+    // Les champs commerciaux (client, notes) ne sont présents dans la
+    // réponse API qu'en mode "full". En "public" ou "confrere" ils sont
+    // absents — on met des placeholders neutres.
+    const isFullMode = mode === "full";
     return {
       id: data.id as string,
       createdAt: data.created_at as string,
-      clientName: isPublic ? "" : ((data.client_name as string) ?? ""),
-      clientEmail: isPublic ? undefined : ((data.client_email as string) ?? undefined),
-      clientTelephone: isPublic ? undefined : ((data.client_telephone as string) ?? undefined),
-      siteAdresse: isPublic ? undefined : ((data.site_adresse as string) ?? undefined),
+      clientName: isFullMode ? ((data.client_name as string) ?? "") : "",
+      clientEmail: isFullMode ? ((data.client_email as string) ?? undefined) : undefined,
+      clientTelephone: isFullMode ? ((data.client_telephone as string) ?? undefined) : undefined,
+      siteAdresse: isFullMode ? ((data.site_adresse as string) ?? undefined) : undefined,
       modele: data.modele as string,
       numeroSerie: data.numero_serie as string,
       fluide: {
@@ -161,8 +166,12 @@ export async function fetchPublicEquipement(id: string): Promise<PublicEquipemen
       chargeKg: Number(data.charge_kg) || 0,
       detecteurFixe: Boolean(data.detecteur_fixe),
       dernierControleISO: (data.dernier_controle_iso as string) ?? undefined,
-      unitesInterieures: isPublic ? undefined : ((data.unites_interieures as UniteInterieure[]) ?? undefined),
-      notes: isPublic ? undefined : ((data.notes as string) ?? undefined),
+      // unites_interieures détaillées en mode "full" et "confrere" (technique objective)
+      unitesInterieures: mode !== "public"
+        ? ((data.unites_interieures as UniteInterieure[]) ?? undefined)
+        : undefined,
+      // notes uniquement en "full" (donnée commerciale)
+      notes: isFullMode ? ((data.notes as string) ?? undefined) : undefined,
       ownerUserId: data.user_id as string,
       isReadOnly: json.isReadOnly,
       isOwner: json.isOwner ?? !json.isReadOnly,

@@ -111,7 +111,7 @@ export default function EquipementScannedPage({
   const [, setIsReadOnly] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [canCreateIntervention, setCanCreateIntervention] = useState(false);
-  const [mode, setMode] = useState<"full" | "public">("full");
+  const [mode, setMode] = useState<"full" | "public" | "confrere">("full");
   const [ownerPublic, setOwnerPublic] = useState<PublicEquipement["ownerPublic"]>(null);
   const [fetching, setFetching] = useState(false);
 
@@ -145,12 +145,12 @@ export default function EquipementScannedPage({
         setFetching(false);
         return;
       }
-      // L'historique est fetch UNIQUEMENT si on est authentifié (mode "full").
-      // En mode "public" (visiteur anonyme) on ne charge pas l'historique pour
-      // ne pas exposer les données aux non-connectés.
-      const remoteInterventions = remote.mode === "public"
-        ? []
-        : await fetchPublicInterventions(id);
+      // L'historique est fetch UNIQUEMENT en mode "full" (owner ou technicien
+      // ayant déjà intervenu). En mode "public" et "confrere", on n'expose pas
+      // l'historique d'interventions — donnée commerciale du frigoriste.
+      const remoteInterventions = remote.mode === "full"
+        ? await fetchPublicInterventions(id)
+        : [];
       if (cancelled) return;
       setEq(computeStatus(remote, remoteInterventions));
       setIsReadOnly(remote.isReadOnly);
@@ -218,18 +218,42 @@ export default function EquipementScannedPage({
       }}
     >
       <div className="max-w-md mx-auto px-5 py-6">
-        {/* Bandeau "Confrère Vertxia" — visible quand l'utilisateur est
-            authentifié mais ce n'est pas SON équipement. Léger, juste pour
-            éviter qu'il pense que c'est dans son parc. */}
+        {/* Bandeau "Technicien admis" — utilisateur authentifié qui a déjà
+            au moins 1 intervention sur cet eq mais qui n'est pas owner.
+            Voit tout, peut intervenir de nouveau. */}
         {mode === "full" && !isOwner && (
           <div className="mb-4 px-4 py-2.5 rounded-2xl bg-black/[0.04] ring-1 ring-black/10">
             <div className="flex items-center gap-2.5">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.45)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                <path d="M9 12l2 2 4-4" />
                 <circle cx="12" cy="12" r="10" />
-                <path d="M12 16v-4M12 8h.01" />
               </svg>
               <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/55">
-                Équipement d&apos;un confrère Vertxia · Lecture
+                Technicien admis · Installation suivie
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bandeau "Confrère Vertxia" — pro Vertxia d'une autre boîte qui n'a
+            jamais intervenu sur cette installation. Voit la donnée technique
+            objective MAIS PAS la donnée commerciale du frigoriste owner. */}
+        {mode === "confrere" && (
+          <div className="mb-4 px-4 py-3 rounded-2xl bg-amber-50 ring-1 ring-amber-200">
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 w-8 h-8 rounded-full bg-white flex items-center justify-center text-amber-700">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 8v4M12 16h.01" />
+                  <circle cx="12" cy="12" r="10" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] tracking-widest uppercase font-mono text-amber-800 mb-0.5">
+                  · Confrère Vertxia · Vue technique
+                </div>
+                <div className="text-[12px] text-amber-900/80 leading-relaxed">
+                  Cette installation est suivie par un autre opérateur. Les données techniques sont visibles mais la fiche client et l&apos;historique d&apos;interventions restent privés. Contacte le pro référent (en bas) pour une reprise officielle.
+                </div>
               </div>
             </div>
           </div>
@@ -258,9 +282,10 @@ export default function EquipementScannedPage({
         )}
 
         {/* Header compact — la nav vers /m/equipements (PARC) est cachée
-            pour les visiteurs anonymes (pas de compte = pas d'accès au parc). */}
+            pour les visiteurs anonymes (pas de compte = pas d'accès au parc).
+            Confrère authentifié = a accès à son parc. */}
         <div className="flex items-center justify-between mb-6">
-          {mode === "full" ? (
+          {mode !== "public" ? (
             <a
               href="/m/equipements"
               className="font-mono text-[10px] tracking-[0.25em] text-black/45 hover:text-black/80 transition-colors inline-flex items-center gap-2"
@@ -402,8 +427,11 @@ export default function EquipementScannedPage({
           </a>
         )}
 
-        {/* Bloc "Contacter votre frigoriste référent" — visiteur anonyme uniquement */}
-        {mode === "public" && ownerPublic && (ownerPublic.telephone || ownerPublic.email) && (
+        {/* Bloc "Contacter le frigoriste référent" — visible pour visiteur
+            anonyme ET pour confrère Vertxia (qui veut prendre contact pour
+            reprise officielle). Caché pour owner (connaît ses propres infos)
+            et pour technicien admis (déjà en contact). */}
+        {(mode === "public" || mode === "confrere") && ownerPublic && (ownerPublic.telephone || ownerPublic.email) && (
           <div className="rounded-2xl bg-[#111] text-white mb-3 overflow-hidden shadow-lg shadow-black/15">
             <div className="px-5 py-4">
               <div className="font-mono text-[9px] tracking-[0.3em] uppercase text-white/55 mb-1">
@@ -546,13 +574,15 @@ export default function EquipementScannedPage({
           </div>
         )}
 
-        {/* Specs équipement — données techniques cachées au visiteur anonyme. */}
+        {/* Specs équipement — données techniques objectives visibles dès
+            qu'on est authentifié (confrere ou full). Notes et histoire
+            restent privées (mode "full" uniquement). */}
         <div className="rounded-2xl bg-white ring-1 ring-black/[0.06] divide-y divide-black/[0.06] mb-3">
           <SpecRow
             label="Fluide"
             value={mode === "public" ? eq.fluide.code : `${eq.fluide.code} · GWP ${eq.fluide.gwp.toLocaleString("fr-FR")}`}
           />
-          {mode === "full" && (
+          {mode !== "public" && (
             <>
               <SpecRow label="Charge nominale" value={`${eq.chargeKg.toFixed(2).replace(".", ",")} kg`} />
               <SpecRow
@@ -563,10 +593,10 @@ export default function EquipementScannedPage({
             </>
           )}
           <SpecRow label="Numéro de série" value={eq.numeroSerie} mono />
-          {mode === "full" && eq.detecteurFixe && (
+          {mode !== "public" && eq.detecteurFixe && (
             <SpecRow label="Détecteur fixe" value="Oui — fréquence × 2" valueClass="text-purple-700" />
           )}
-          {mode === "full" && (
+          {mode !== "public" && (
             <SpecRow label="Dernier contrôle" value={fmtDateLong(eq.dernierControleISO)} />
           )}
           {mode === "public" && eq.frequenceMois && (
@@ -586,9 +616,10 @@ export default function EquipementScannedPage({
           </div>
         )}
 
-        {/* Unités intérieures rattachées — visibles pour authentifiés.
-            Le visiteur anonyme ne voit pas la topologie. */}
-        {mode === "full" && eq.unitesInterieures && eq.unitesInterieures.length > 0 && (
+        {/* Unités intérieures rattachées — visibles pour tous les authentifiés
+            (topologie = donnée technique objective de la machine, pas commerciale).
+            Le visiteur anonyme ne voit pas. */}
+        {mode !== "public" && eq.unitesInterieures && eq.unitesInterieures.length > 0 && (
           <div className="rounded-2xl bg-white ring-1 ring-black/[0.06] mb-3 overflow-hidden">
             <div className="px-5 pt-4 pb-2 flex items-baseline justify-between">
               <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/45">
