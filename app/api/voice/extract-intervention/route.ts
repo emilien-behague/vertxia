@@ -32,6 +32,7 @@ Schéma attendu (utilise null pour les champs non mentionnés) :
   "fluideReutilisation": number | null,
   "notes": string | null,
   "clientName": string | null,
+  "clientQuality": string | null,
   "clientAdresse": string | null,
   "lieuIntervention": string | null,
   "confiance": "haute" | "moyenne" | "basse"
@@ -74,10 +75,15 @@ Décomposition fluide (section [11] CERFA) :
 - "fuite à reprendre", "à réparer plus tard" → reparee="a_faire"
 - "détecteur permanent installé", "système de détection fuite" → detecteurPermanent="oui"
 
-Client / lieu :
-- "le client c'est Martin Dupont" → clientName="Martin Dupont"
-- "j'interviens chez M. Durand au 15 rue de la République à Toulon" → clientName="M. Durand", lieuIntervention="15 rue de la République, Toulon"
+Client / lieu / qualité signataire :
+- "le client c'est Martin Dupont" → clientName="Martin Dupont", clientQuality=null
+- "Martin Dupont gérant de la SARL" → clientName="Martin Dupont", clientQuality="Gérant"
+- "M. Durand le propriétaire" → clientName="M. Durand", clientQuality="Propriétaire"
+- "Mme Martin la locataire" → clientName="Mme Martin", clientQuality="Locataire"
+- "le responsable maintenance c'est Jean" → clientName="Jean", clientQuality="Responsable maintenance"
+- "j'interviens chez M. Durand au 15 rue de la République à Toulon" → clientName="M. Durand", lieuIntervention="15 rue de la République, Toulon", clientQuality=null
 - Adresse si dictée → clientAdresse aussi (même valeur)
+- Qualité par défaut si non précisée → null (le frontend mettra "Détenteur")
 
 Notes :
 - Ce qui ne rentre dans aucun champ structuré → notes (ex: "ventilateur intérieur fait du bruit, à surveiller")
@@ -121,6 +127,7 @@ type Extraction = {
   fluideReutilisation: number | null;
   notes: string | null;
   clientName: string | null;
+  clientQuality: string | null;
   clientAdresse: string | null;
   lieuIntervention: string | null;
   confiance: "haute" | "moyenne" | "basse";

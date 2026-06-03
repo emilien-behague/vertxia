@@ -53,6 +53,7 @@ export type ExtractionResult = {
   fluideReutilisation: number | null;
   notes: string | null;
   clientName: string | null;
+  clientQuality: string | null;
   clientAdresse: string | null;
   lieuIntervention: string | null;
   confiance: "haute" | "moyenne" | "basse";

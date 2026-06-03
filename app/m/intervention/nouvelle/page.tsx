@@ -306,6 +306,24 @@ function NouvelleInterventionContent() {
       setClientName(extraction.clientName);
       filled.add("clientName");
       filledLabels.push("client");
+
+      // Propage vers le signataire CERFA case [2] : 99% du temps,
+      // le client EST le détenteur signataire. Si déjà rempli manuellement,
+      // on respecte. L'utilisateur peut toujours override avant signature.
+      if (!detenteurName.trim()) {
+        setDetenteurName(extraction.clientName);
+        filled.add("detenteurName");
+      }
+    }
+    // Qualité signataire : "gérant", "propriétaire", "locataire"…
+    // Si non dictée, on met "Détenteur" par défaut (valeur conforme CERFA).
+    if (!detenteurQuality.trim()) {
+      const quality = extraction.clientQuality?.trim() || (extraction.clientName ? "Détenteur" : "");
+      if (quality) {
+        setDetenteurQuality(quality);
+        filled.add("detenteurQuality");
+        if (extraction.clientQuality?.trim()) filledLabels.push("qualité signataire");
+      }
     }
     if (extraction.clientAdresse && !clientAdresse.trim()) {
       setClientAdresse(extraction.clientAdresse);
