@@ -12,6 +12,7 @@ import {
 } from "@/lib/equipement";
 import { listInterventions, type StoredIntervention } from "@/lib/intervention-storage";
 import { loadProfil, type Profil } from "@/lib/profil";
+import { useUser } from "@/lib/supabase/use-user";
 
 // Dashboard mobile — l'écran d'accueil de l'app Vertxia.
 // 3 sections : KPIs grid 2x2 / Équipements urgents / Dernières interventions.
@@ -70,10 +71,58 @@ export default function MobileHomePage() {
   const recentes = useMemo(() => interventions.slice(0, 3), [interventions]);
 
   const isEmpty = ready && equipements.length === 0 && interventions.length === 0;
+  const { user, signOut, configured } = useUser();
 
   return (
     <>
       <MobileHeader title="Vertxia" largeTitle />
+
+      {/* Bandeau compte — affiché uniquement si Supabase est configuré */}
+      {configured && (
+      <div className="px-4 mt-2 mb-2">
+        {user ? (
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="inline-flex w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 items-center justify-center text-[12px] font-semibold shrink-0">
+                {(user.email?.[0] ?? "?").toUpperCase()}
+              </span>
+              <div className="min-w-0">
+                <div className="text-[10px] tracking-widest uppercase font-mono text-emerald-700">
+                  Compte connecté
+                </div>
+                <div className="text-[12px] text-emerald-900 truncate">{user.email}</div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={signOut}
+              className="text-[11px] text-emerald-700 underline shrink-0"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+            >
+              Déconnexion
+            </button>
+          </div>
+        ) : (
+          <Link
+            href="/m/login"
+            className="block px-4 py-2.5 rounded-2xl bg-black/[0.03] border border-black/[0.07] active:bg-black/[0.05] transition-colors"
+            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-[10px] tracking-widest uppercase font-mono text-black/45">
+                  Mode démo · données locales
+                </div>
+                <div className="text-[12px] text-[#111] mt-0.5">
+                  Se connecter pour synchroniser →
+                </div>
+              </div>
+              <span className="text-[#A16207] text-[14px]">→</span>
+            </div>
+          </Link>
+        )}
+      </div>
+      )}
 
       {isEmpty && <EmptyState />}
 

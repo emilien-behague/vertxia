@@ -1,34 +1,49 @@
 /**
- * Middleware Vertxia V0.8 — protection des routes authentifiees.
+ * Middleware Vertxia.
  *
- * Strategie : on check uniquement la PRESENCE du cookie `vertxia_session`
- * (sans valider le contenu — la validation se fait dans les routes server).
- * Si absent sur une route /app/*, redirect vers /login.
- *
- * On ne touche pas aux routes /api (chaque route fait son propre check via getSession).
- * On laisse /login et /pricing libres (sinon, infinite redirect / churn UX).
+ * 1. Rafraîchit la session Supabase Auth sur CHAQUE requête (impératif SSR
+ *    pour ne pas perdre le refresh_token).
+ * 2. Protège les routes /app/* (ancien système v0.8 cookie maison) :
+ *    redirige vers /login si pas de cookie `vertxia_session`.
+ * 3. /m/* (app mobile démo) reste accessible SANS login (mode hybride :
+ *    localStorage si pas connecté, sync DB si connecté).
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { updateSession } from "@/lib/supabase/middleware";
 
 const PROTECTED_PREFIXES = ["/app"];
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
+  // 1. Rafraîchit la session Supabase Auth (toutes les routes)
+  const supabaseResponse = await updateSession(req);
+
+  // 2. Protection ancien système /app/* (cookie maison)
   const pathname = req.nextUrl.pathname;
   const isProtected = PROTECTED_PREFIXES.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`)
   );
-  if (!isProtected) return NextResponse.next();
+  if (isProtected) {
+    const sessionCookie = req.cookies.get("vertxia_session");
+    if (!sessionCookie?.value) {
+      const loginUrl = new URL("/login", req.url);
+      loginUrl.searchParams.set("from", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
 
-  const sessionCookie = req.cookies.get("vertxia_session");
-  if (sessionCookie?.value) return NextResponse.next();
-
-  const loginUrl = new URL("/login", req.url);
-  loginUrl.searchParams.set("from", pathname);
-  return NextResponse.redirect(loginUrl);
+  return supabaseResponse;
 }
 
 export const config = {
-  // Match toutes les routes /app/* (UI). Exclus assets et routes API.
-  matcher: ["/app/:path*"],
+  matcher: [
+    /*
+     * Match toutes les routes SAUF :
+     * - _next/static (assets statiques)
+     * - _next/image (optimisation images)
+     * - favicon.ico, opengraph-image.png, apple-icon, manifest.webmanifest, sw.js
+     * - fichiers avec extension (.png .jpg .svg .ico .webp .glb .mp4 .pdf etc.)
+     */
+    "/((?!_next/static|_next/image|favicon.ico|opengraph-image|apple-icon|manifest|sw.js|.*\\.[a-zA-Z0-9]+$).*)",
+  ],
 };
