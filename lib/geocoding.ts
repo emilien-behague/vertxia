@@ -50,9 +50,81 @@ function normalize(address: string): string {
  * Retourne null si l'adresse n'a pas été trouvée.
  *
  * Respecte un délai de 1100ms entre 2 requêtes réseau (TOS Nominatim).
+ *
+ * Stratégie tolérante : si l'adresse complète n'est pas trouvée, on retente
+ * avec des variantes simplifiées :
+ *   1. adresse complète
+ *   2. adresse sans le numéro de rue de tête (ex "14 avenue..." → "avenue...")
+ *   3. partie après la dernière virgule (souvent = ville)
+ *   4. dernier segment de mots après séparation par virgules ou tirets
+ * On stoppe au premier hit. Cache uniquement le résultat final (par adresse
+ * originale), donc si tu corriges l'adresse plus tard, on regéocode.
  */
 let lastRequestTs = 0;
 const MIN_INTERVAL_MS = 1100;
+
+async function queryNominatim(query: string): Promise<GeoPoint | null> {
+  // Throttle pour respecter le TOS Nominatim (1 req/s max)
+  const elapsed = Date.now() - lastRequestTs;
+  if (elapsed < MIN_INTERVAL_MS) {
+    await new Promise((r) => setTimeout(r, MIN_INTERVAL_MS - elapsed));
+  }
+  lastRequestTs = Date.now();
+
+  try {
+    const params = new URLSearchParams({
+      q: query,
+      format: "json",
+      limit: "1",
+      countrycodes: "fr",
+    });
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
+      headers: { "Accept-Language": "fr" },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as Array<{ lat: string; lon: string }>;
+    const first = data[0];
+    if (!first) return null;
+    return { lat: parseFloat(first.lat), lng: parseFloat(first.lon) };
+  } catch {
+    return null;
+  }
+}
+
+function buildAddressVariants(address: string): string[] {
+  const variants: string[] = [];
+  const seen = new Set<string>();
+  const push = (s: string) => {
+    const v = s.trim();
+    if (v && !seen.has(v.toLowerCase())) {
+      seen.add(v.toLowerCase());
+      variants.push(v);
+    }
+  };
+
+  // 1. Adresse brute
+  push(address);
+
+  // 2. Sans le numéro de rue de tête (ex: "14 avenue de la République")
+  const noNumber = address.replace(/^\s*\d+\s*(bis|ter)?\s*,?\s*/i, "");
+  push(noNumber);
+
+  // 3. Partie après la dernière virgule (souvent la ville)
+  const parts = address.split(",").map((p) => p.trim()).filter(Boolean);
+  if (parts.length > 1) {
+    push(parts[parts.length - 1]);
+    // 4. Combinaison ville + département/code postal si présent
+    push(parts.slice(-2).join(", "));
+  }
+
+  // 5. Si l'adresse contient un code postal (5 chiffres) + texte, on extrait
+  const cpMatch = address.match(/\b(\d{5})\b\s*([A-Za-zÀ-ÿ\s'-]+)/);
+  if (cpMatch) {
+    push(`${cpMatch[1]} ${cpMatch[2]}`.trim());
+  }
+
+  return variants;
+}
 
 export async function geocodeAddress(address: string): Promise<GeoPoint | null> {
   const norm = normalize(address);
@@ -64,48 +136,19 @@ export async function geocodeAddress(address: string): Promise<GeoPoint | null> 
     return entry.point;
   }
 
-  // Throttle pour respecter le TOS Nominatim
-  const elapsed = Date.now() - lastRequestTs;
-  if (elapsed < MIN_INTERVAL_MS) {
-    await new Promise((r) => setTimeout(r, MIN_INTERVAL_MS - elapsed));
+  for (const variant of buildAddressVariants(address)) {
+    const point = await queryNominatim(variant);
+    if (point) {
+      cache[norm] = { point, ts: Date.now() };
+      saveCache(cache);
+      return point;
+    }
   }
-  lastRequestTs = Date.now();
 
-  try {
-    const params = new URLSearchParams({
-      q: address,
-      format: "json",
-      limit: "1",
-      countrycodes: "fr",
-    });
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
-      headers: {
-        // Nominatim demande un User-Agent identifiant l'app
-        "Accept-Language": "fr",
-      },
-    });
-    if (!res.ok) {
-      cache[norm] = { point: null, ts: Date.now() };
-      saveCache(cache);
-      return null;
-    }
-    const data = (await res.json()) as Array<{ lat: string; lon: string }>;
-    const first = data[0];
-    if (!first) {
-      cache[norm] = { point: null, ts: Date.now() };
-      saveCache(cache);
-      return null;
-    }
-    const point: GeoPoint = {
-      lat: parseFloat(first.lat),
-      lng: parseFloat(first.lon),
-    };
-    cache[norm] = { point, ts: Date.now() };
-    saveCache(cache);
-    return point;
-  } catch {
-    return null;
-  }
+  // Aucune variante n'a marché → on cache l'échec pour ne pas re-tester
+  cache[norm] = { point: null, ts: Date.now() };
+  saveCache(cache);
+  return null;
 }
 
 /**

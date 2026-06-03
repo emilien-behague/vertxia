@@ -127,6 +127,7 @@ export default function PlanningPage() {
     done: number;
     found: number;
   }>({ total: 0, done: 0, found: 0 });
+  const [failedEquipements, setFailedEquipements] = useState<EquipementWithStatus[]>([]);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -167,7 +168,9 @@ export default function PlanningPage() {
       // fur et à mesure pour qu'on voie les markers apparaître.
       const equipementsAvecAdresse = equipements.filter((e) => e.siteAdresse?.trim());
       setGeocodingStatus({ total: equipementsAvecAdresse.length, done: 0, found: 0 });
+      setFailedEquipements([]);
       const points: { eq: EquipementWithStatus; point: GeoPoint }[] = [];
+      const failed: EquipementWithStatus[] = [];
 
       for (let i = 0; i < equipementsAvecAdresse.length; i++) {
         if (cancelled) break;
@@ -179,7 +182,11 @@ export default function PlanningPage() {
           done: s.done + 1,
           found: point ? s.found + 1 : s.found,
         }));
-        if (!point) continue;
+        if (!point) {
+          failed.push(eq);
+          setFailedEquipements([...failed]);
+          continue;
+        }
         points.push({ eq, point });
 
         // Couleur du marker selon le statut
@@ -448,6 +455,48 @@ export default function PlanningPage() {
           Aucun équipement n&apos;a d&apos;adresse renseignée. Ajoute l&apos;adresse du site dans la fiche
           de chaque équipement pour les voir sur la carte.
         </div>
+      )}
+
+      {/* Adresses introuvables — l'user doit les corriger */}
+      {failedEquipements.length > 0 && (
+        <>
+          <div className="px-5 mt-6 text-[13px] font-medium text-black/45 uppercase tracking-wide mb-2">
+            Adresses à corriger ({failedEquipements.length})
+          </div>
+          <div className="mx-4 rounded-2xl bg-amber-50 ring-1 ring-amber-200 overflow-hidden">
+            <div className="px-4 py-3 text-[12px] text-amber-900 leading-relaxed border-b border-amber-200/60">
+              Ces adresses n&apos;ont pas pu être localisées sur la carte. Ajoute le code postal,
+              la ville, ou précise le numéro et le nom de rue.
+              <br />
+              <span className="text-[11px] text-amber-800/70">
+                Exemple qui marche : <em>« 14 avenue de la République, 83000 Toulon »</em>
+              </span>
+            </div>
+            <div className="divide-y divide-amber-200/50">
+              {failedEquipements.map((eq) => (
+                <Link
+                  key={eq.id}
+                  href={`/eq/${eq.id}`}
+                  className="flex items-center gap-3 px-4 py-3 active:bg-amber-100/60"
+                  style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[14px] text-amber-950 truncate">{eq.clientName}</div>
+                    <div className="text-[12px] text-amber-800/70 truncate italic">
+                      « {eq.siteAdresse} »
+                    </div>
+                  </div>
+                  <span className="text-[11px] text-amber-700 font-medium shrink-0">
+                    Corriger
+                  </span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(146,64,14,0.5)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </>
       )}
     </>
   );
