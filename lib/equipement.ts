@@ -98,7 +98,12 @@ export type EquipementWithStatus = StoredEquipement & {
   isHFO: boolean;
 };
 
-const STORAGE_KEY = "vertxia:equipements";
+import { scopedKey } from "@/lib/user-scope";
+
+const STORAGE_KEY_BASE = "vertxia:equipements";
+function storageKey(): string {
+  return scopedKey(STORAGE_KEY_BASE);
+}
 
 function isBrowser(): boolean {
   return typeof window !== "undefined" && typeof localStorage !== "undefined";
@@ -107,7 +112,7 @@ function isBrowser(): boolean {
 export function listEquipements(): StoredEquipement[] {
   if (!isBrowser()) return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey());
     if (!raw) return [];
     const parsed = JSON.parse(raw) as StoredEquipement[];
     if (!Array.isArray(parsed)) return [];
@@ -128,7 +133,7 @@ export function saveEquipement(
   };
   const all = listEquipements();
   all.unshift(entry);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  localStorage.setItem(storageKey(), JSON.stringify(all));
   // Sync background vers Supabase pour partage public (scan QR)
   // Import dynamique pour éviter cycles d'import + lazy load Supabase client
   import("@/lib/public-sync")
@@ -140,7 +145,7 @@ export function saveEquipement(
 export function updateEquipement(id: string, patch: Partial<StoredEquipement>): void {
   if (!isBrowser()) return;
   const all = listEquipements().map((e) => (e.id === id ? { ...e, ...patch } : e));
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  localStorage.setItem(storageKey(), JSON.stringify(all));
   const updated = all.find((e) => e.id === id);
   if (updated) {
     import("@/lib/public-sync")
@@ -152,7 +157,7 @@ export function updateEquipement(id: string, patch: Partial<StoredEquipement>): 
 export function deleteEquipement(id: string): void {
   if (!isBrowser()) return;
   const filtered = listEquipements().filter((e) => e.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+  localStorage.setItem(storageKey(), JSON.stringify(filtered));
 }
 
 /**

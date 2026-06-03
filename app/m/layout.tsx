@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { BottomTabBar } from "@/components/mobile/bottom-tab-bar";
 import { NetworkIndicator } from "@/components/mobile/network-indicator";
 import { ServiceWorkerRegister } from "@/components/mobile/service-worker-register";
+import { AuthSync } from "@/components/mobile/auth-sync";
 
 // Layout app mobile — wrapper minimal qui ajoute la BottomTabBar fixée en bas
 // + le badge réseau (NetworkIndicator) en haut + l'enregistrement Service Worker
@@ -12,6 +13,7 @@ import { ServiceWorkerRegister } from "@/components/mobile/service-worker-regist
 export default function MobileAppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-[#F5F4F0] text-[#111] font-sans antialiased">
+      <AuthSync />
       <ServiceWorkerRegister />
       <NetworkIndicator />
       <main className="max-w-md mx-auto" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }}>

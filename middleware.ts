@@ -17,6 +17,31 @@ const PROTECTED_LEGACY_PREFIXES = ["/app"];
 const PROTECTED_MOBILE_PREFIXES = ["/m"];
 const MOBILE_PUBLIC_PATHS = ["/m/login"];
 
+/**
+ * Copie les cookies set par Supabase (auth-token refresh) depuis le
+ * response du middleware Supabase vers une nouvelle response (redirect).
+ *
+ * CRITIQUE : sans ça, quand le middleware redirect, les cookies sb-* fraîchement
+ * refreshed sont PERDUS. L'utilisateur se retrouve avec une session morte
+ * (ex: "le refresh me déconnecte").
+ */
+function preserveCookies(source: NextResponse, target: NextResponse): NextResponse {
+  source.cookies.getAll().forEach((c) => {
+    target.cookies.set({
+      name: c.name,
+      value: c.value,
+      path: c.path,
+      domain: c.domain,
+      maxAge: c.maxAge,
+      expires: c.expires,
+      httpOnly: c.httpOnly,
+      sameSite: c.sameSite,
+      secure: c.secure,
+    });
+  });
+  return target;
+}
+
 export async function middleware(req: NextRequest) {
   // 1. Rafraîchit la session Supabase Auth (toutes les routes)
   const { response: supabaseResponse, user } = await updateSession(req);
@@ -32,7 +57,7 @@ export async function middleware(req: NextRequest) {
     if (!sessionCookie?.value) {
       const loginUrl = new URL("/login", req.url);
       loginUrl.searchParams.set("from", pathname);
-      return NextResponse.redirect(loginUrl);
+      return preserveCookies(supabaseResponse, NextResponse.redirect(loginUrl));
     }
   }
 
@@ -46,7 +71,7 @@ export async function middleware(req: NextRequest) {
     // Supabase configuré ET pas d'user → redirect vers /m/login
     const loginUrl = new URL("/m/login", req.url);
     if (pathname !== "/m") loginUrl.searchParams.set("from", pathname);
-    return NextResponse.redirect(loginUrl);
+    return preserveCookies(supabaseResponse, NextResponse.redirect(loginUrl));
   }
 
   return supabaseResponse;

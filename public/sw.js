@@ -7,8 +7,8 @@
 //  - Workers .js dans public/ : network-only (content-type strict)
 //  - Autres pages : network-first avec fallback cache
 
-const CACHE_VERSION = "vertxia-v4";
-const STATIC_CACHE = "vertxia-static-v4";
+const CACHE_VERSION = "vertxia-v5";
+const STATIC_CACHE = "vertxia-static-v5";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -72,12 +72,25 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Pages /m/* et /eq/* (l'app mobile) + page racine : stale-while-revalidate
+  // Pages /m/* : NETWORK-FIRST (pas stale-while-revalidate).
+  // Raison : ces pages dépendent de la session Supabase. Si le SW sert
+  // une version cachée HTML, le state cookie côté serveur peut ne pas
+  // correspondre à ce que la page affiche (ex: "tu te déconnectes au
+  // refresh" car le HTML cached ne déclenche pas updateSession middleware).
+  // Network-first garantit que chaque navigation passe par le middleware
+  // Next.js et donc rafraîchit les cookies de session.
+  if (
+    url.pathname.startsWith("/m") ||
+    url.pathname === "/manifest.webmanifest"
+  ) {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  // /eq/* : stale-while-revalidate OK car c'est lecture pure (pas de session)
   if (
     url.pathname === "/" ||
-    url.pathname.startsWith("/m") ||
-    url.pathname.startsWith("/eq/") ||
-    url.pathname === "/manifest.webmanifest"
+    url.pathname.startsWith("/eq/")
   ) {
     event.respondWith(staleWhileRevalidate(event, request));
     return;
