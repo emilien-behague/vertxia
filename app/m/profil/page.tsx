@@ -40,11 +40,45 @@ export default function MobileProfilPage() {
   const [savedFlash, setSavedFlash] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [tdJustConnected, setTdJustConnected] = useState(false);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     setProfil(loadProfil());
   }, []);
+
+  // Détection retour OAuth TrackDéchets (?td_connected=1 injecté par /callback)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("td_connected") === "1") {
+      setTdJustConnected(true);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("td_connected");
+      window.history.replaceState({}, "", url.toString());
+      // Recharge le profil pour récupérer le token + entreprise injectés par /callback
+      setProfil(loadProfil());
+      const t = setTimeout(() => setTdJustConnected(false), 4000);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
+  function handleConnectTrackDechets() {
+    // Sauve les modifs en cours du profil pour pas les perdre pendant
+    // la navigation OAuth (le user va quitter la page vers TrackDéchets).
+    saveProfil({ ...profil, trackdechetsMode: "production" });
+    window.location.href = "/api/trackdechets/oauth/start";
+  }
+
+  function handleDisconnectTrackDechets() {
+    const ok = window.confirm(
+      "Déconnecter ton compte TrackDéchets ?\n\nTu pourras te reconnecter à tout moment via le même bouton."
+    );
+    if (!ok) return;
+    const next: Profil = { ...profil, trackdechetsToken: "", trackdechetsMode: "sandbox" };
+    setProfil(next);
+    saveProfil(next);
+  }
 
   async function handleSignOut() {
     if (signingOut) return;
@@ -96,6 +130,19 @@ export default function MobileProfilPage() {
   return (
     <>
       <MobileHeader title="Profil" largeTitle backHref="/m" />
+
+      {tdJustConnected && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mx-4 mb-3 px-4 py-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[13px] font-medium flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+          <span>Connecté à TrackDéchets. Tes BSFF sont maintenant officiels.</span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         {/* Logo */}
@@ -346,30 +393,53 @@ export default function MobileProfilPage() {
           </div>
           {profil.trackdechetsMode === "production" && (
             <>
-              <FormRow label="Mon token TrackDéchets">
-                <input
-                  type="password"
-                  value={profil.trackdechetsToken || ""}
-                  onChange={(e) => update("trackdechetsToken", e.target.value)}
-                  placeholder="eyJhbGc..."
-                  autoComplete="off"
-                  spellCheck={false}
-                  className="input-mobile font-mono text-[12px]"
-                />
-                <div className="text-[11px] text-black/45 mt-1 leading-relaxed">
-                  Connecte-toi sur{" "}
-                  <a
-                    href="https://app.trackdechets.beta.gouv.fr/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#A16207] underline"
-                  >
-                    app.trackdechets.beta.gouv.fr
-                  </a>
-                  {" "}→ <em>Mon Compte</em> → <em>Intégration API</em> → <em>Générer une clé</em>.
-                  Stocké uniquement sur ton appareil (jamais en cloud).
-                </div>
-              </FormRow>
+              {/* OAuth2 TrackDéchets — bouton Connect / état Connecté */}
+              <div className="px-4 py-3 border-b border-black/[0.04]">
+                {profil.trackdechetsToken ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-[13px] font-medium text-emerald-700">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                      Connecté à TrackDéchets
+                    </div>
+                    {(profil.raisonSociale || profil.siret) && (
+                      <div className="text-[12px] text-black/55 leading-snug">
+                        {profil.raisonSociale}
+                        {profil.raisonSociale && profil.siret && " · "}
+                        {profil.siret && `SIRET ${profil.siret}`}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleDisconnectTrackDechets}
+                      className="text-[12px] text-red-600 underline active:opacity-60"
+                      style={{ WebkitTapHighlightColor: "transparent" }}
+                    >
+                      Déconnecter
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={handleConnectTrackDechets}
+                      className="w-full px-4 py-3 rounded-xl bg-[#A16207] text-white text-[14px] font-medium active:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                      style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M15 3h6v6" />
+                        <path d="M10 14L21 3" />
+                        <path d="M21 14v7H3V3h7" />
+                      </svg>
+                      Connecter mon compte TrackDéchets
+                    </button>
+                    <div className="text-[11px] text-black/45 leading-relaxed">
+                      Tu seras redirigé vers app.trackdechets.beta.gouv.fr pour autoriser Vertxia. Aucun copier-coller de token, l&apos;identité de ton entreprise est récupérée automatiquement.
+                    </div>
+                  </div>
+                )}
+              </div>
               <FormRow label="Centre destination — SIRET">
                 <input
                   type="text"
