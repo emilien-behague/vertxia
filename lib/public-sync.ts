@@ -207,23 +207,20 @@ export async function countPublicEquipements(): Promise<number | { error: string
   let lastError: string | null = null;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const res = await fetch(`${url}/rest/v1/equipements?select=id&limit=1`, {
-        method: "HEAD",
-        headers: {
-          apikey: key,
-          Authorization: `Bearer ${key}`,
-          Prefer: "count=exact",
-        },
-      });
+      // GET (au lieu de HEAD) + apikey en query string (au lieu de header)
+      // pour éviter le CORS preflight OPTIONS qui peut être bloqué par Safari
+      // sur certaines configurations Supabase.
+      const reqUrl = `${url}/rest/v1/equipements?select=id&limit=1&apikey=${encodeURIComponent(key)}`;
+      const res = await fetch(reqUrl, { method: "GET" });
       if (!res.ok) {
         lastError = `HTTP ${res.status} ${res.statusText}`;
         await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
         continue;
       }
-      // Le count est dans le header Content-Range : "0-0/N" ou "*/N"
-      const range = res.headers.get("content-range") || "";
-      const match = range.match(/\/(\d+)$/);
-      return match ? parseInt(match[1], 10) : 0;
+      const rows = (await res.json()) as unknown[];
+      // Pour avoir le count exact il faudrait Prefer:count=exact, mais ça
+      // déclenche preflight. On retourne juste "au moins 1" vs 0.
+      return rows.length > 0 ? rows.length : 0;
     } catch (e) {
       lastError = e instanceof Error ? e.message : String(e);
       await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
