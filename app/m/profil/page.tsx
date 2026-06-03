@@ -81,6 +81,43 @@ export default function MobileProfilPage() {
     saveProfil(next);
   }
 
+  // ─── Lookup SIRET utilisateur (auto-fill raison sociale + adresse) ─────
+  const [userLookupBusy, setUserLookupBusy] = useState(false);
+  const [userLookupError, setUserLookupError] = useState<string | null>(null);
+  const [userLookupOk, setUserLookupOk] = useState(false);
+
+  async function handleLookupUserSiret() {
+    const siret = (profil.siret || "").replace(/\D+/g, "");
+    setUserLookupError(null);
+    setUserLookupOk(false);
+    if (!isValidSiretFormat(siret)) {
+      setUserLookupError("SIRET invalide : 14 chiffres attendus.");
+      return;
+    }
+    setUserLookupBusy(true);
+    try {
+      const result = await lookupSiret(siret);
+      if (!result) {
+        setUserLookupError("Aucun établissement trouvé pour ce SIRET dans l'annuaire officiel.");
+        return;
+      }
+      setProfil((p) => ({
+        ...p,
+        siret: result.siret,
+        raisonSociale: result.raisonSociale,
+        adresseRue: result.adresseRue,
+        adresseCp: result.codePostal,
+        adresseVille: result.commune,
+      }));
+      setUserLookupOk(true);
+      setTimeout(() => setUserLookupOk(false), 3000);
+    } catch (e) {
+      setUserLookupError(e instanceof Error ? e.message : "Erreur de connexion à l'annuaire.");
+    } finally {
+      setUserLookupBusy(false);
+    }
+  }
+
   // ─── Lookup SIRET destination (auto-fill nom + adresse via data.gouv) ──
   const [destLookupBusy, setDestLookupBusy] = useState(false);
   const [destLookupError, setDestLookupError] = useState<string | null>(null);
@@ -231,7 +268,47 @@ export default function MobileProfilPage() {
         </InsetListSection>
 
         {/* Identité légale */}
-        <InsetListSection title="Identité légale" footer="Sera pré-rempli depuis TrackDéchets quand l'OAuth2 sera connecté.">
+        <InsetListSection
+          title="Identité légale"
+          footer="Tape ton SIRET et clique Rechercher : raison sociale + adresse pré-remplies automatiquement depuis l'annuaire officiel gouv.fr."
+        >
+          <FormRow label="SIRET">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={profil.siret}
+                onChange={(e) => {
+                  setUserLookupError(null);
+                  setUserLookupOk(false);
+                  update("siret", e.target.value.replace(/\s+/g, "").slice(0, 14));
+                }}
+                placeholder="14 chiffres"
+                inputMode="numeric"
+                maxLength={14}
+                className="input-mobile font-mono flex-1 min-w-0"
+              />
+              <button
+                type="button"
+                onClick={handleLookupUserSiret}
+                disabled={userLookupBusy || !profil.siret}
+                className="px-3 py-2 rounded-xl bg-[#A16207] text-white text-[13px] font-medium active:opacity-90 disabled:opacity-40 disabled:active:opacity-40 transition-opacity shrink-0"
+                style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+              >
+                {userLookupBusy ? "…" : "Rechercher"}
+              </button>
+            </div>
+            {userLookupOk && (
+              <div className="mt-1.5 text-[11px] text-emerald-700 font-medium flex items-center gap-1">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                Trouvé — raison sociale et adresse pré-remplies.
+              </div>
+            )}
+            {userLookupError && (
+              <div className="mt-1.5 text-[11px] text-red-600 leading-snug">
+                {userLookupError}
+              </div>
+            )}
+          </FormRow>
           <FormRow label="Raison sociale">
             <input
               type="text"
@@ -239,16 +316,6 @@ export default function MobileProfilPage() {
               onChange={(e) => update("raisonSociale", e.target.value)}
               placeholder="Ex : Vertxia Frigorifique"
               className="input-mobile"
-            />
-          </FormRow>
-          <FormRow label="SIRET">
-            <input
-              type="text"
-              value={profil.siret}
-              onChange={(e) => update("siret", e.target.value)}
-              placeholder="14 chiffres"
-              inputMode="numeric"
-              className="input-mobile font-mono"
             />
           </FormRow>
         </InsetListSection>
