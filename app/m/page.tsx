@@ -175,6 +175,13 @@ export default function MobileHomePage() {
             />
             <InsetRow href="/m/intervention" leading={<ActionIcon name="plus" />} label="Nouvelle intervention" showChevron />
             <InsetRow
+              href="/m/planning"
+              leading={<ActionIcon name="calendar" />}
+              label="Planning + carte"
+              sublabel="Calendrier mensuel + lieux des installations"
+              showChevron
+            />
+            <InsetRow
               href="/m/equipements"
               leading={<ActionIcon name="list" />}
               label="Voir tout le parc"
@@ -291,13 +298,14 @@ function InterventionIcon({ type }: { type: string }) {
   );
 }
 
-function ActionIcon({ name }: { name: "plus" | "list" | "doc" | "warning" | "qr" }) {
+function ActionIcon({ name }: { name: "plus" | "list" | "doc" | "warning" | "qr" | "calendar" }) {
   const colors = {
     plus: "bg-[#111] text-white",
     list: "bg-blue-50 text-blue-700",
     doc: "bg-purple-50 text-purple-700",
     warning: "bg-amber-50 text-amber-700",
     qr: "bg-[#A16207]/10 text-[#A16207]",
+    calendar: "bg-emerald-50 text-emerald-700",
   };
   const paths = {
     plus: <path d="M12 5v14M5 12h14" />,
@@ -330,6 +338,14 @@ function ActionIcon({ name }: { name: "plus" | "list" | "doc" | "warning" | "qr"
         <rect x="14" y="3" width="7" height="7" />
         <rect x="3" y="14" width="7" height="7" />
         <path d="M14 14h3v3h-3zM18 18h3v3h-3z" />
+      </>
+    ),
+    calendar: (
+      <>
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <line x1="16" y1="2" x2="16" y2="6" />
+        <line x1="8" y1="2" x2="8" y2="6" />
+        <line x1="3" y1="10" x2="21" y2="10" />
       </>
     ),
   };
