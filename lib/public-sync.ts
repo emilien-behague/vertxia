@@ -194,20 +194,42 @@ export async function fetchPublicEquipement(id: string): Promise<PublicEquipemen
 }
 
 /** Compte total d'équipements dans Supabase (visibles publiquement).
- *  Pour debug : si 0 → le sync n'a jamais marché. Si > 0 → bug fetch ID. */
-export async function countPublicEquipements(): Promise<number | null> {
+ *  Pour debug : si 0 → le sync n'a jamais marché. Si > 0 → bug fetch ID.
+ *  Utilise fetch() direct au lieu du client Supabase pour isoler les
+ *  bugs (TypeError: Load failed = réseau, pas client Supabase). */
+export async function countPublicEquipements(): Promise<number | { error: string } | null> {
   if (typeof window === "undefined") return null;
   if (!isSupabaseConfigured()) return null;
-  try {
-    const supabase = createClient();
-    const { count, error } = await supabase
-      .from("equipements")
-      .select("*", { count: "exact", head: true });
-    if (error) return null;
-    return count ?? 0;
-  } catch {
-    return null;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
+  // 3 tentatives avec backoff (Safari iOS peut throw "Load failed"
+  // temporairement quand l'onglet vient de revenir au premier plan)
+  let lastError: string | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(`${url}/rest/v1/equipements?select=id&limit=1`, {
+        method: "HEAD",
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+          Prefer: "count=exact",
+        },
+      });
+      if (!res.ok) {
+        lastError = `HTTP ${res.status} ${res.statusText}`;
+        await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
+        continue;
+      }
+      // Le count est dans le header Content-Range : "0-0/N" ou "*/N"
+      const range = res.headers.get("content-range") || "";
+      const match = range.match(/\/(\d+)$/);
+      return match ? parseInt(match[1], 10) : 0;
+    } catch (e) {
+      lastError = e instanceof Error ? e.message : String(e);
+      await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
+    }
   }
+  return { error: `${lastError} (3 retries)` };
 }
 
 export type PublicIntervention = StoredIntervention;

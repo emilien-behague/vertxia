@@ -594,9 +594,9 @@ function LoadingState() {
 }
 
 function NotFoundState({ id, debug }: { id: string; debug: import("@/lib/public-sync").FetchDebug | null }) {
-  const [count, setCount] = useState<number | null | "loading">("loading");
+  const [count, setCount] = useState<number | { error: string } | null | "loading">("loading");
   useEffect(() => {
-    countPublicEquipements().then(setCount);
+    countPublicEquipements().then((r) => setCount(r));
   }, []);
 
   return (
@@ -642,6 +642,9 @@ function NotFoundState({ id, debug }: { id: string; debug: import("@/lib/public-
                 Total équipements dans Supabase : {
                   count === "loading" ? "…" :
                   count === null ? "erreur fetch" :
+                  typeof count === "object" && "error" in count ? (
+                    <span className="text-red-600">ÉCHEC : {count.error}</span>
+                  ) :
                   count
                 }
               </div>
@@ -650,9 +653,14 @@ function NotFoundState({ id, debug }: { id: string; debug: import("@/lib/public-
                   → La table Supabase est VIDE. Le sync n&apos;a jamais fonctionné. Crée un équipement et reviens ici.
                 </div>
               )}
-              {count !== null && count !== "loading" && count > 0 && debug?.rowCount === 0 && (
+              {typeof count === "number" && count > 0 && debug?.rowCount === 0 && (
                 <div className="text-amber-700 mt-2">
                   → Il y a {count} équipement(s) dans Supabase mais pas celui-ci. Soit l&apos;ID est faux, soit cet équipement a été créé avant le sync.
+                </div>
+              )}
+              {typeof count === "object" && count !== null && "error" in count && (
+                <div className="text-red-600 mt-2 break-all">
+                  → Erreur réseau pour atteindre Supabase. Vérifie ta connexion ou ré-essaie. Si persistant : problème CORS ou env vars.
                 </div>
               )}
             </div>
