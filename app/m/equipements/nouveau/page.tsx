@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection } from "@/components/mobile/inset-list";
 import { VoiceInput } from "@/components/mobile/voice-input";
@@ -56,7 +56,17 @@ const UNITE_TYPES: UniteInterieureType[] = [
   "chambre_froide_negative",
 ];
 
+// Wrapper Suspense — useSearchParams() doit être dans un Suspense boundary
+// pour que Next.js puisse pre-render la page (sinon erreur build prod).
 export default function MobileAjoutEquipementPage() {
+  return (
+    <Suspense fallback={null}>
+      <MobileAjoutEquipementContent />
+    </Suspense>
+  );
+}
+
+function MobileAjoutEquipementContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [busy, setBusy] = useState(false);

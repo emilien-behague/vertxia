@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { MobileHeader } from "@/components/mobile/mobile-header";
@@ -46,7 +46,17 @@ function extractEquipementId(rawUrl: string): string | null {
   return null;
 }
 
+// Wrapper Suspense — useSearchParams() doit être dans un Suspense boundary
+// pour le build prod Next.js.
 export default function MobileScanPage() {
+  return (
+    <Suspense fallback={null}>
+      <MobileScanContent />
+    </Suspense>
+  );
+}
+
+function MobileScanContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // Si returnTo est fourni (ex: depuis /m/equipements/nouveau), on redirige
