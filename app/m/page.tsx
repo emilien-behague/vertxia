@@ -184,6 +184,20 @@ export default function MobileHomePage() {
               showChevron
             />
             <InsetRow
+              href="/m/bouteilles"
+              leading={<ActionIcon name="list" />}
+              label="Mes bouteilles"
+              sublabel="Stock recharge + récupération"
+              showChevron
+            />
+            <InsetRow
+              href="/m/registre"
+              leading={<ActionIcon name="doc" />}
+              label="Registre fluides (PDF)"
+              sublabel="Traçabilité attestation F-Gas"
+              showChevron
+            />
+            <InsetRow
               href="/m/syderep"
               leading={<ActionIcon name="doc" />}
               label="Déclaration SYDEREP"
