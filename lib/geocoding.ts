@@ -9,7 +9,10 @@ import { scopedKey } from "@/lib/user-scope";
 
 export type GeoPoint = { lat: number; lng: number };
 
-const CACHE_KEY_BASE = "vertxia:geocache";
+// v2 du cache : les anciens caches v1 stockaient des null longue durée, ce qui
+// empêchait le geocoding tolérant (introduit le 04/06/2026) de retenter. On
+// change la clé pour invalider tout l'ancien cache.
+const CACHE_KEY_BASE = "vertxia:geocache:v2";
 function cacheKey(): string {
   return scopedKey(CACHE_KEY_BASE);
 }
@@ -19,7 +22,8 @@ type CacheEntry = {
   ts: number;
 };
 
-const TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 jours
+const TTL_SUCCESS_MS = 30 * 24 * 60 * 60 * 1000; // 30 jours pour les hits
+const TTL_FAILURE_MS = 60 * 60 * 1000; // 1 heure pour les misses (l'user peut corriger l'adresse)
 
 function loadCache(): Record<string, CacheEntry> {
   if (typeof window === "undefined") return {};
@@ -132,8 +136,11 @@ export async function geocodeAddress(address: string): Promise<GeoPoint | null> 
 
   const cache = loadCache();
   const entry = cache[norm];
-  if (entry && Date.now() - entry.ts < TTL_MS) {
-    return entry.point;
+  if (entry) {
+    const ttl = entry.point ? TTL_SUCCESS_MS : TTL_FAILURE_MS;
+    if (Date.now() - entry.ts < ttl) {
+      return entry.point;
+    }
   }
 
   for (const variant of buildAddressVariants(address)) {
@@ -145,7 +152,8 @@ export async function geocodeAddress(address: string): Promise<GeoPoint | null> 
     }
   }
 
-  // Aucune variante n'a marché → on cache l'échec pour ne pas re-tester
+  // Aucune variante n'a marché → cache court (1h) pour ne pas re-spammer
+  // Nominatim mais permettre re-tentative rapide si l'user corrige l'adresse
   cache[norm] = { point: null, ts: Date.now() };
   saveCache(cache);
   return null;
