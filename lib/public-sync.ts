@@ -113,33 +113,33 @@ export let lastFetchDebug: FetchDebug | null = null;
 
 export async function fetchPublicEquipement(id: string): Promise<PublicEquipement | null> {
   if (typeof window === "undefined") return null;
-  if (!isSupabaseConfigured()) {
-    lastFetchDebug = {
-      supabaseConfigured: false,
-      fetched: false,
-      errorMessage: "Supabase env vars absentes",
-      searchedId: id,
-    };
-    return null;
-  }
+  // On passe désormais par une route API server-side qui parle à Supabase
+  // côté Node.js. Côté client, c'est un fetch same-origin → pas de CORS,
+  // pas d'ITP Safari iOS, pas de "Load failed" sur les domaines tiers.
   try {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("equipements")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
-    if (error) {
+    const res = await fetch(`/api/public/equipement/${encodeURIComponent(id)}`, {
+      method: "GET",
+      headers: { "cache-control": "no-store" },
+    });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try {
+        const j = await res.json();
+        if (j?.error) msg = j.error;
+      } catch {}
       lastFetchDebug = {
         supabaseConfigured: true,
         fetched: true,
-        errorMessage: error.message,
-        errorCode: error.code,
+        errorMessage: msg,
         searchedId: id,
       };
       return null;
     }
-    if (!data) {
+    const json = (await res.json()) as {
+      data: Record<string, unknown> | null;
+      isReadOnly: boolean;
+    };
+    if (!json.data) {
       lastFetchDebug = {
         supabaseConfigured: true,
         fetched: true,
@@ -148,11 +148,7 @@ export async function fetchPublicEquipement(id: string): Promise<PublicEquipemen
       };
       return null;
     }
-
-    // Check si le visiteur est le owner
-    const { data: { user } } = await supabase.auth.getUser();
-    const isReadOnly = !user || user.id !== data.user_id;
-
+    const data = json.data;
     lastFetchDebug = {
       supabaseConfigured: true,
       fetched: true,
@@ -160,26 +156,26 @@ export async function fetchPublicEquipement(id: string): Promise<PublicEquipemen
       searchedId: id,
     };
     return {
-      id: data.id,
-      createdAt: data.created_at,
-      clientName: data.client_name,
-      clientEmail: data.client_email ?? undefined,
-      clientTelephone: data.client_telephone ?? undefined,
-      siteAdresse: data.site_adresse ?? undefined,
-      modele: data.modele,
-      numeroSerie: data.numero_serie,
+      id: data.id as string,
+      createdAt: data.created_at as string,
+      clientName: data.client_name as string,
+      clientEmail: (data.client_email as string) ?? undefined,
+      clientTelephone: (data.client_telephone as string) ?? undefined,
+      siteAdresse: (data.site_adresse as string) ?? undefined,
+      modele: data.modele as string,
+      numeroSerie: data.numero_serie as string,
       fluide: {
-        code: data.fluide_code,
-        label: data.fluide_label ?? data.fluide_code,
-        gwp: data.fluide_gwp ?? 0,
+        code: data.fluide_code as string,
+        label: (data.fluide_label as string) ?? (data.fluide_code as string),
+        gwp: (data.fluide_gwp as number) ?? 0,
       },
       chargeKg: Number(data.charge_kg) || 0,
       detecteurFixe: Boolean(data.detecteur_fixe),
-      dernierControleISO: data.dernier_controle_iso ?? undefined,
+      dernierControleISO: (data.dernier_controle_iso as string) ?? undefined,
       unitesInterieures: (data.unites_interieures as UniteInterieure[]) ?? undefined,
-      notes: data.notes ?? undefined,
-      ownerUserId: data.user_id,
-      isReadOnly,
+      notes: (data.notes as string) ?? undefined,
+      ownerUserId: data.user_id as string,
+      isReadOnly: json.isReadOnly,
     };
   } catch (e) {
     console.warn("[public-sync] fetchPublicEquipement failed:", e);
@@ -195,75 +191,62 @@ export async function fetchPublicEquipement(id: string): Promise<PublicEquipemen
 
 /** Compte total d'équipements dans Supabase (visibles publiquement).
  *  Pour debug : si 0 → le sync n'a jamais marché. Si > 0 → bug fetch ID.
- *  Utilise fetch() direct au lieu du client Supabase pour isoler les
- *  bugs (TypeError: Load failed = réseau, pas client Supabase). */
+ *  Passe par la route API server-side (same-origin, pas de CORS). */
 export async function countPublicEquipements(): Promise<number | { error: string } | null> {
   if (typeof window === "undefined") return null;
-  if (!isSupabaseConfigured()) return null;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
-  // 3 tentatives avec backoff (Safari iOS peut throw "Load failed"
-  // temporairement quand l'onglet vient de revenir au premier plan)
-  let lastError: string | null = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      // GET (au lieu de HEAD) + apikey en query string (au lieu de header)
-      // pour éviter le CORS preflight OPTIONS qui peut être bloqué par Safari
-      // sur certaines configurations Supabase.
-      const reqUrl = `${url}/rest/v1/equipements?select=id&limit=1&apikey=${encodeURIComponent(key)}`;
-      const res = await fetch(reqUrl, { method: "GET" });
-      if (!res.ok) {
-        lastError = `HTTP ${res.status} ${res.statusText}`;
-        await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
-        continue;
-      }
-      const rows = (await res.json()) as unknown[];
-      // Pour avoir le count exact il faudrait Prefer:count=exact, mais ça
-      // déclenche preflight. On retourne juste "au moins 1" vs 0.
-      return rows.length > 0 ? rows.length : 0;
-    } catch (e) {
-      lastError = e instanceof Error ? e.message : String(e);
-      await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
+  try {
+    const res = await fetch("/api/public/count", {
+      method: "GET",
+      headers: { "cache-control": "no-store" },
+    });
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`;
+      try {
+        const j = await res.json();
+        if (j?.error) msg = j.error;
+      } catch {}
+      return { error: msg };
     }
+    const j = (await res.json()) as { count: number };
+    return j.count ?? 0;
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : String(e) };
   }
-  return { error: `${lastError} (3 retries)` };
 }
 
 export type PublicIntervention = StoredIntervention;
 
 export async function fetchPublicInterventions(equipementId: string): Promise<PublicIntervention[]> {
   if (typeof window === "undefined") return [];
-  if (!isSupabaseConfigured()) return [];
   try {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("interventions")
-      .select("*")
-      .eq("equipement_id", equipementId)
-      .order("date_iso", { ascending: false });
-    if (error || !data) return [];
-
-    return data.map((row) => ({
-      id: row.id,
-      createdAt: row.date_iso,
-      typeIntervention: row.type_intervention,
+    const res = await fetch(
+      `/api/public/interventions?equipementId=${encodeURIComponent(equipementId)}`,
+      { method: "GET", headers: { "cache-control": "no-store" } }
+    );
+    if (!res.ok) return [];
+    const json = (await res.json()) as { data: Record<string, unknown>[] };
+    if (!json.data) return [];
+    return json.data.map((row) => ({
+      id: row.id as string,
+      createdAt: row.date_iso as string,
+      typeIntervention: row.type_intervention as PublicIntervention["typeIntervention"],
       fluide: {
-        code: row.fluide_code,
-        label: row.fluide_label ?? row.fluide_code,
-        gwp: row.fluide_gwp ?? 0,
+        code: row.fluide_code as string,
+        label: (row.fluide_label as string) ?? (row.fluide_code as string),
+        gwp: (row.fluide_gwp as number) ?? 0,
       },
       weight: Number(row.weight_kg) || 0,
-      packagingNumero: row.packaging_numero ?? "",
-      clientName: row.client_name ?? null,
-      modeleEquipement: row.modele_equipement ?? undefined,
-      numeroSerieEquipement: row.numero_serie_equipement ?? undefined,
-      lieuIntervention: row.lieu_intervention ?? undefined,
-      bsffId: row.bsff_id ?? undefined,
-      controleDetails: row.controle_details ?? undefined,
-      notes: row.notes ?? undefined,
+      packagingNumero: (row.packaging_numero as string) ?? "",
+      clientName: (row.client_name as string) ?? null,
+      modeleEquipement: (row.modele_equipement as string) ?? undefined,
+      numeroSerieEquipement: (row.numero_serie_equipement as string) ?? undefined,
+      lieuIntervention: (row.lieu_intervention as string) ?? undefined,
+      bsffId: (row.bsff_id as string) ?? undefined,
+      controleDetails: (row.controle_details as PublicIntervention["controleDetails"]) ?? undefined,
+      notes: (row.notes as string) ?? undefined,
       hasDetenteurSignature: Boolean(row.has_detenteur_signature),
-      detenteurName: row.detenteur_name ?? undefined,
-      detenteurQuality: row.detenteur_quality ?? undefined,
+      detenteurName: (row.detenteur_name as string) ?? undefined,
+      detenteurQuality: (row.detenteur_quality as PublicIntervention["detenteurQuality"]) ?? undefined,
     }));
   } catch (e) {
     console.warn("[public-sync] fetchPublicInterventions failed:", e);
