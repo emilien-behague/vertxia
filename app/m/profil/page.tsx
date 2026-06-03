@@ -387,8 +387,8 @@ export default function MobileProfilPage() {
               }
               className="input-mobile mt-1 w-full"
             >
-              <option value="sandbox">🧪 Démo Vertxia (sandbox, sans valeur légale)</option>
-              <option value="production">⚖️ Officiel Ministère (production)</option>
+              <option value="sandbox">🧪 Démo (sandbox)</option>
+              <option value="production">⚖️ Officiel Ministère</option>
             </select>
           </div>
           {profil.trackdechetsMode === "production" && (
