@@ -30,16 +30,25 @@ export function useUser() {
 
     let mounted = true;
 
-    supabase.auth.getUser().then(({ data }) => {
+    // getSession() est INSTANTANÉ (lit le storage local synchrone-ish),
+    // contrairement à getUser() qui fait un round-trip serveur lent.
+    // Avant : au mount post-login, getUser() async = user=null pendant
+    // ~500ms = "Non connecté" affiché. Quand l'onglet se réveille
+    // (déverrouillage iPhone), onAuthStateChange fire et corrige.
+    // Maintenant : getSession() résout en ~10ms = user dispo immédiatement.
+    supabase.auth.getSession().then(({ data }) => {
       if (mounted) {
-        setUser(data.user ?? null);
+        setUser(data.session?.user ?? null);
         setLoading(false);
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        if (mounted) setUser(session?.user ?? null);
+        if (mounted) {
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
       }
     );
 
