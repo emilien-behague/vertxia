@@ -639,6 +639,36 @@ export default function EquipementScannedPage({
           </div>
         )}
 
+        {/* CTA acquisition virale — visible UNIQUEMENT en mode public (visiteur).
+            Le wording cible explicitement les pros du froid → le client final
+            et le contrôleur passent leur chemin. Le concurrent ou un pro qui
+            scanne par curiosité est un lead chaud. */}
+        {isReadOnly && (
+          <div className="mt-8 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/40 ring-1 ring-amber-200/60 p-5">
+            <div className="font-mono text-[9px] tracking-[0.3em] uppercase text-amber-800/70">
+              · Pour les professionnels du froid
+            </div>
+            <div className="mt-2 text-base font-medium text-[#111] leading-tight">
+              Suivez votre parc F-Gas en 30 secondes par installation
+            </div>
+            <div className="mt-1 text-[12px] text-black/60 leading-relaxed">
+              Contrôles d&apos;étanchéité, registre, CERFA, BSFF — Vertxia automatise toute la paperasse réglementaire pour les frigoristes, climaticiens et techniciens du froid.
+            </div>
+            <a
+              href="https://vertxia.com/frigoriste"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#111] text-white text-[13px] font-medium active:bg-black/90 transition-colors"
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            >
+              Découvrir Vertxia
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M7 17 17 7M7 7h10v10" />
+              </svg>
+            </a>
+          </div>
+        )}
+
         {/* Footer minimal */}
         <div className="mt-10 text-center opacity-60">
           <div className="font-mono text-[9px] tracking-[0.3em] text-black/35">
