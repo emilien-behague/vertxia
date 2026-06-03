@@ -55,6 +55,12 @@ self.addEventListener("fetch", (event) => {
     return; // pas de respondWith → fetch direct du navigateur
   }
 
+  // Page de reset SW : JAMAIS cachée, sinon elle ne peut pas se mettre
+  // à jour pour exécuter ses dernières instructions de nettoyage.
+  if (url.pathname === "/reset-app.html") {
+    return;
+  }
+
   // Assets statiques Next.js : cache-first (immutables, hash dans le nom)
   if (
     url.pathname.startsWith("/_next/static/") ||

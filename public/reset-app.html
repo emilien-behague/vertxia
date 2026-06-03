@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Réinitialisation Vertxia</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+    margin: 0;
+    padding: 40px 24px;
+    background: #F5F4F0;
+    color: #111;
+    -webkit-font-smoothing: antialiased;
+  }
+  .card {
+    max-width: 420px;
+    margin: 40px auto;
+    padding: 28px 24px;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  }
+  h1 { font-size: 22px; margin: 0 0 8px; font-weight: 600; letter-spacing: -0.01em; }
+  p { font-size: 14px; line-height: 1.5; color: #555; margin: 0 0 16px; }
+  .status {
+    margin: 20px 0;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #F0EEE9;
+    font-family: monospace;
+    font-size: 12px;
+    color: #333;
+    white-space: pre-wrap;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: #111;
+    color: white;
+    text-decoration: none;
+    text-align: center;
+    border-radius: 16px;
+    font-size: 15px;
+    font-weight: 500;
+    border: none;
+    margin-top: 12px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-secondary { background: white; color: #111; border: 1px solid rgba(0,0,0,0.1); }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Réinitialisation Vertxia</h1>
+  <p>Cette page nettoie complètement le cache local et le Service Worker. Utile pour forcer le téléchargement de la dernière version de l'app.</p>
+  <div id="status" class="status">En cours…</div>
+  <a class="btn" href="/m/scan">Aller au scanner QR</a>
+  <a class="btn btn-secondary" href="/m">Retour à l'app</a>
+</div>
+<script>
+(async function() {
+  const out = document.getElementById('status');
+  const log = (msg) => { out.textContent += '\n' + msg; };
+  out.textContent = '· Démarrage du nettoyage…';
+
+  try {
+    // 1. Unregister tous les Service Workers
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      log('· ' + regs.length + ' Service Worker(s) trouvé(s)');
+      for (const r of regs) {
+        try {
+          const scope = r.scope;
+          await r.unregister();
+          log('  ✓ unregister ' + scope);
+        } catch (e) {
+          log('  ✗ unregister error: ' + (e.message || e));
+        }
+      }
+    } else {
+      log('· serviceWorker API indisponible');
+    }
+  } catch (e) {
+    log('· SW err: ' + (e.message || e));
+  }
+
+  try {
+    // 2. Supprimer tous les caches
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      log('· ' + keys.length + ' cache(s) trouvé(s)');
+      for (const k of keys) {
+        try {
+          await caches.delete(k);
+          log('  ✓ delete ' + k);
+        } catch (e) {
+          log('  ✗ cache delete error: ' + (e.message || e));
+        }
+      }
+    } else {
+      log('· caches API indisponible');
+    }
+  } catch (e) {
+    log('· caches err: ' + (e.message || e));
+  }
+
+  try {
+    // 3. Tenter de vider localStorage uniquement pour les clés SW debug
+    // (on garde les données utilisateur pour ne pas tout perdre)
+    log('· localStorage préservé (données utilisateur)');
+  } catch (e) {
+    log('· ls err: ' + (e.message || e));
+  }
+
+  log('\n✓ Nettoyage terminé. Cliquez "Aller au scanner QR" pour tester.');
+})();
+</script>
+</body>
+</html>

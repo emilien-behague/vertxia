@@ -13,7 +13,7 @@ import { MobileHeader } from "@/components/mobile/mobile-header";
 // Tag de build visible dans l'UI → permet de vérifier que la version
 // servie par le SW correspond au dernier déploiement. À bumper à chaque
 // refacto majeure du scanner.
-const BUILD_TAG = "zxing-constraints-2026-06-03b";
+const BUILD_TAG = "jsqr-2026-06-03c";
 
 type State =
   | { type: "idle" } // En attente du tap utilisateur (user gesture iOS)
@@ -164,82 +164,110 @@ export default function MobileScanPage() {
       log("BarcodeDetector indispo → worker");
     }
 
-    // PATH FALLBACK : @zxing/browser via decodeFromConstraints.
-    // Cette méthode gère TOUT : getUserMedia + binding video + play + scan.
-    // On NE doit PAS set video.srcObject nous-mêmes avant : decodeFromVideoElement
-    // a une vérif interne qui throw "e.includes" si le video est déjà lié.
+    // PATH FALLBACK : jsQR — lib pure JS sans worker, sans OffscreenCanvas.
+    // Marche sur toutes versions Safari iOS depuis 2018. Boucle manuelle
+    // requestAnimationFrame : on capte une frame, on l'envoie à jsQR, on
+    // affiche le résultat.
     try {
-      const { BrowserQRCodeReader } = await import("@zxing/browser");
-      log("zxing importé");
+      const { default: jsQR } = await import("jsqr");
+      log("jsqr importé");
 
-      const codeReader = new BrowserQRCodeReader();
-
-      // S'assurer que le video n'a PAS de srcObject pré-existant
+      // Acquisition caméra
+      let stream: MediaStream;
       try {
-        const old = video.srcObject as MediaStream | null;
-        if (old) {
-          old.getTracks().forEach((t) => t.stop());
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+          audio: false,
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message.toLowerCase() : String(e);
+        if (msg.includes("denied") || msg.includes("permission") || msg.includes("notallowed")) {
+          setState({ type: "denied" });
+        } else if (msg.includes("notreadable") || msg.includes("inuse")) {
+          setState({
+            type: "error",
+            message: "La caméra est utilisée par une autre app. Ferme-la et réessaie.",
+          });
+        } else {
+          setState({ type: "error", message: e instanceof Error ? e.message : String(e) });
         }
-        video.srcObject = null;
-      } catch {}
+        return;
+      }
+      video.srcObject = stream;
+      // playsInline est déjà sur l'élément, mais on call play() explicitement
+      // pour le user gesture iOS
+      try {
+        await video.play();
+      } catch (e) {
+        log(`play err: ${e instanceof Error ? e.message : String(e)}`);
+      }
+      log(`video ${video.videoWidth}x${video.videoHeight}`);
+
+      // Canvas offscreen pour capturer les frames
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) {
+        log("ctx 2d indispo");
+        setState({ type: "error", message: "Canvas 2D indisponible" });
+        return;
+      }
 
       let stopped = false;
       let scanAttempts = 0;
 
-      const controls = await codeReader.decodeFromConstraints(
-        { video: { facingMode: "environment" }, audio: false },
-        video,
-        (result, err) => {
-          if (stopped) return;
-          if (result) {
-            const raw = result.getText();
-            log(`zxing hit: ${raw.slice(0, 60)}`);
-            const id = extractEquipementId(raw);
+      const cleanup = () => {
+        stopped = true;
+        try { stream.getTracks().forEach((t) => t.stop()); } catch {}
+      };
+      scannerRef.current = { stop: cleanup, destroy: cleanup };
+      setState({ type: "scanning" });
+      log("jsqr loop start");
+
+      const tick = () => {
+        if (stopped) return;
+        if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+          requestAnimationFrame(tick);
+          return;
+        }
+        const w = video.videoWidth;
+        const h = video.videoHeight;
+        if (w === 0 || h === 0) {
+          requestAnimationFrame(tick);
+          return;
+        }
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(video, 0, 0, w, h);
+        try {
+          const imageData = ctx.getImageData(0, 0, w, h);
+          const code = jsQR(imageData.data, w, h, { inversionAttempts: "dontInvert" });
+          if (code && code.data) {
+            log(`jsqr hit: ${code.data.slice(0, 60)}`);
+            const id = extractEquipementId(code.data);
             if (!id) {
-              setState({ type: "unknown_qr", content: raw });
-              try { controls.stop(); } catch {}
+              setState({ type: "unknown_qr", content: code.data });
+              cleanup();
               return;
             }
             setState({ type: "found", id });
-            try { controls.stop(); } catch {}
+            cleanup();
             setTimeout(() => router.push(`/eq/${id}`), 350);
             return;
           }
-          if (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            // NotFoundException à chaque frame sans QR — normal
-            if (msg.includes("NotFound") || msg.includes("No MultiFormat Readers")) {
-              scanAttempts++;
-              if (scanAttempts === 30 || scanAttempts === 100) {
-                log(`scan vide #${scanAttempts} (cam OK)`);
-              }
-              return;
-            }
-            log(`zxing err: ${msg.slice(0, 80)}`);
+          scanAttempts++;
+          if (scanAttempts === 60 || scanAttempts === 180) {
+            log(`scan vide #${scanAttempts} (cam OK)`);
           }
+        } catch (e) {
+          log(`tick err: ${e instanceof Error ? e.message : String(e)}`);
         }
-      );
-
-      log(`zxing OK · video ${video.videoWidth}x${video.videoHeight}`);
-      scannerRef.current = {
-        stop: () => { stopped = true; try { controls.stop(); } catch {} },
-        destroy: () => { stopped = true; try { controls.stop(); } catch {} },
+        requestAnimationFrame(tick);
       };
-      setState({ type: "scanning" });
+      requestAnimationFrame(tick);
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       log(`init err: ${errMsg.slice(0, 100)}`);
-      const lower = errMsg.toLowerCase();
-      if (lower.includes("denied") || lower.includes("permission") || lower.includes("notallowed")) {
-        setState({ type: "denied" });
-      } else if (lower.includes("notreadable") || lower.includes("inuse")) {
-        setState({
-          type: "error",
-          message: "La caméra est utilisée par une autre app. Ferme-la et réessaie.",
-        });
-      } else {
-        setState({ type: "error", message: errMsg });
-      }
+      setState({ type: "error", message: errMsg });
     }
   }
 
