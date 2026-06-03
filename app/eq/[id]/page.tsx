@@ -12,7 +12,7 @@ import {
 import { listInterventions } from "@/lib/intervention-storage";
 import { loadProfil, type Profil } from "@/lib/profil";
 import { generateQrLabel } from "@/lib/qr-label";
-import { fetchPublicEquipement, fetchPublicInterventions, countPublicEquipements, lastFetchDebug } from "@/lib/public-sync";
+import { fetchPublicEquipement, fetchPublicInterventions, lastFetchDebug } from "@/lib/public-sync";
 
 // Page mobile premium — affichée quand un frigoriste scanne le QR Code collé sur
 // un équipement. Doit s'afficher SANS bug sur Safari iOS (zéro animation initial:opacity:0
@@ -593,11 +593,36 @@ function LoadingState() {
   );
 }
 
+type FullDiag = {
+  env?: {
+    SUPABASE_URL_set: boolean;
+    SUPABASE_PUBLISHABLE_KEY_set: boolean;
+    SUPABASE_SERVICE_ROLE_KEY_set: boolean;
+    SUPABASE_URL_host: string | null;
+  };
+  anonCount?: number | null;
+  anonCountError?: string | null;
+  anonSample?: Array<{ id: string; user_id: string; modele: string }> | null;
+  anonSampleError?: string | null;
+  anonProbe?: { id: string; user_id: string; modele: string } | null;
+  anonProbeError?: string | null;
+  anonClientCrash?: string;
+  visitor?: { id: string; email: string | null } | null;
+  visitorError?: string;
+};
+
 function NotFoundState({ id, debug }: { id: string; debug: import("@/lib/public-sync").FetchDebug | null }) {
-  const [count, setCount] = useState<number | { error: string } | null | "loading">("loading");
+  const [diag, setDiag] = useState<FullDiag | "loading" | "error">("loading");
+
   useEffect(() => {
-    countPublicEquipements().then((r) => setCount(r));
-  }, []);
+    fetch(`/api/public/diag?id=${encodeURIComponent(id)}`, {
+      method: "GET",
+      headers: { "cache-control": "no-store" },
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+      .then((j: FullDiag) => setDiag(j))
+      .catch(() => setDiag("error"));
+  }, [id]);
 
   return (
     <div
@@ -619,49 +644,107 @@ function NotFoundState({ id, debug }: { id: string; debug: import("@/lib/public-
           <div className="mt-1 text-[10px] font-mono text-black/30">ID : {id.slice(0, 8)}…</div>
         </div>
 
-        {/* Diagnostic technique du fetch Supabase (debug partage Niveau 1) */}
+        {/* Diagnostic technique COMPLET via /api/public/diag */}
         <div className="mt-4 rounded-2xl bg-black/[0.04] ring-1 ring-black/10 px-4 py-3">
-          <details>
+          <details open>
             <summary className="text-[11px] font-mono tracking-widest uppercase text-black/55 cursor-pointer">
               · Diagnostic technique
             </summary>
-            <div className="mt-3 text-[11px] font-mono text-black/70 leading-relaxed space-y-1">
-              <div>ID recherché : {id}</div>
-              <div>Supabase configuré : {debug?.supabaseConfigured ? "✓ oui" : "✗ non"}</div>
-              <div>Fetch effectué : {debug?.fetched ? "✓ oui" : "✗ non"}</div>
-              {debug?.errorMessage && (
-                <div className="text-red-600">Erreur : {debug.errorMessage}</div>
-              )}
-              {debug?.errorCode && (
-                <div className="text-red-600">Code : {debug.errorCode}</div>
-              )}
-              {typeof debug?.rowCount === "number" && (
-                <div>Ligne trouvée : {debug.rowCount}</div>
-              )}
-              <div className="pt-2 border-t border-black/10 mt-2">
-                Total équipements dans Supabase : {
-                  count === "loading" ? "…" :
-                  count === null ? "erreur fetch" :
-                  typeof count === "object" && "error" in count ? (
-                    <span className="text-red-600">ÉCHEC : {count.error}</span>
-                  ) :
-                  count
-                }
+            <div className="mt-3 text-[10px] font-mono text-black/70 leading-relaxed space-y-2">
+              <div>
+                <div className="text-black/90 font-semibold mb-1">CLIENT (Safari) :</div>
+                <div>· ID recherché : {id}</div>
+                {debug?.errorMessage && (
+                  <div className="text-red-600">· Erreur fetch : {debug.errorMessage}</div>
+                )}
+                {typeof debug?.rowCount === "number" && (
+                  <div>· Lignes reçues : {debug.rowCount}</div>
+                )}
               </div>
-              {count === 0 && (
-                <div className="text-amber-700 mt-2">
-                  → La table Supabase est VIDE. Le sync n&apos;a jamais fonctionné. Crée un équipement et reviens ici.
+
+              {diag === "loading" && <div className="text-black/40">Chargement diagnostic serveur…</div>}
+              {diag === "error" && (
+                <div className="text-red-600">
+                  Impossible de joindre /api/public/diag. Le serveur Next.js ne répond pas — vérifier le déploiement Vercel.
                 </div>
               )}
-              {typeof count === "number" && count > 0 && debug?.rowCount === 0 && (
-                <div className="text-amber-700 mt-2">
-                  → Il y a {count} équipement(s) dans Supabase mais pas celui-ci. Soit l&apos;ID est faux, soit cet équipement a été créé avant le sync.
-                </div>
-              )}
-              {typeof count === "object" && count !== null && "error" in count && (
-                <div className="text-red-600 mt-2 break-all">
-                  → Erreur réseau pour atteindre Supabase. Vérifie ta connexion ou ré-essaie. Si persistant : problème CORS ou env vars.
-                </div>
+              {typeof diag === "object" && (
+                <>
+                  <div>
+                    <div className="text-black/90 font-semibold mb-1 mt-2">SERVEUR (Vercel) :</div>
+                    <div>· SUPABASE_URL : {diag.env?.SUPABASE_URL_set ? `✓ ${diag.env.SUPABASE_URL_host}` : "✗ ABSENT"}</div>
+                    <div>· PUBLISHABLE_KEY : {diag.env?.SUPABASE_PUBLISHABLE_KEY_set ? "✓ set" : "✗ ABSENT"}</div>
+                    <div>· SERVICE_ROLE_KEY : {diag.env?.SUPABASE_SERVICE_ROLE_KEY_set ? "✓ set" : "(optionnel, absent)"}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-black/90 font-semibold mb-1 mt-2">LECTURE ANON :</div>
+                    {diag.anonClientCrash && (
+                      <div className="text-red-600">· Crash : {diag.anonClientCrash}</div>
+                    )}
+                    <div>· Count total : {diag.anonCount ?? "null"}</div>
+                    {diag.anonCountError && (
+                      <div className="text-red-600">· Count error : {diag.anonCountError}</div>
+                    )}
+                    <div>· Sample (3 premiers) : {diag.anonSample?.length ?? 0} ligne(s)</div>
+                    {diag.anonSample?.map((s, i) => (
+                      <div key={i} className="text-black/50 pl-3">
+                        - {s.id.slice(0, 8)} · {s.modele}
+                      </div>
+                    ))}
+                    {diag.anonSampleError && (
+                      <div className="text-red-600">· Sample error : {diag.anonSampleError}</div>
+                    )}
+                    <div className="mt-1">
+                      · Probe ID = {id.slice(0, 8)}… :{" "}
+                      {diag.anonProbe ? (
+                        <span className="text-emerald-700">✓ TROUVÉ (owner {diag.anonProbe.user_id.slice(0, 8)}…)</span>
+                      ) : (
+                        <span className="text-red-600">✗ pas de row visible</span>
+                      )}
+                    </div>
+                    {diag.anonProbeError && (
+                      <div className="text-red-600">· Probe error : {diag.anonProbeError}</div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-black/90 font-semibold mb-1 mt-2">VISITEUR :</div>
+                    <div>· Connecté : {diag.visitor ? `✓ ${diag.visitor.email ?? diag.visitor.id.slice(0, 8)}…` : "✗ non"}</div>
+                    {diag.visitorError && (
+                      <div className="text-red-600">· Error : {diag.visitorError}</div>
+                    )}
+                  </div>
+
+                  {/* Verdict */}
+                  <div className="mt-3 pt-2 border-t border-black/10">
+                    {!diag.env?.SUPABASE_URL_set || !diag.env?.SUPABASE_PUBLISHABLE_KEY_set ? (
+                      <div className="text-red-700">
+                        → ENV VARS MANQUANTES côté serveur. Configurer dans Vercel → Project Settings → Environment Variables (cocher PREVIEW), puis redeploy.
+                      </div>
+                    ) : diag.anonCount === 0 ? (
+                      <div className="text-amber-700">
+                        → Table VIDE en mode anon. Soit aucun équipement créé, soit policy publique non appliquée dans Supabase. Coller dans SQL Editor :
+                        <pre className="mt-1 p-2 bg-black/5 rounded text-[9px] whitespace-pre-wrap break-all">
+{`drop policy if exists "equipements_select_public" on public.equipements;
+create policy "equipements_select_public" on public.equipements
+  for select to anon, authenticated using (true);
+drop policy if exists "interventions_select_public" on public.interventions;
+create policy "interventions_select_public" on public.interventions
+  for select to anon, authenticated using (true);`}
+                        </pre>
+                      </div>
+                    ) : diag.anonProbe ? (
+                      <div className="text-emerald-700">
+                        → Row trouvée mais loadée en local échoue. Bug code, à investiguer.
+                      </div>
+                    ) : (
+                      <div className="text-amber-700">
+                        → Sample contient {diag.anonSample?.length ?? 0} rows mais pas l&apos;ID demandé. Soit ID inconnu, soit policy ne couvre pas cet ID.
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           </details>
