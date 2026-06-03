@@ -6,11 +6,28 @@ import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection } from "@/components/mobile/inset-list";
 import { VoiceInput } from "@/components/mobile/voice-input";
 import {
+  VoiceFullDictationEquipement,
+  type EquipementExtractionResult,
+} from "@/components/mobile/voice-full-dictation-equipement";
+import {
   saveEquipement,
   UNITE_INTERIEURE_LABELS,
   type UniteInterieure,
   type UniteInterieureType,
 } from "@/lib/equipement";
+
+const VALID_UNITE_TYPES = new Set<UniteInterieureType>([
+  "cassette_plafond",
+  "cassette_4_voies",
+  "cassette_1_voie",
+  "murale",
+  "gainable",
+  "plafonnier",
+  "console",
+  "vitrine_murale",
+  "chambre_froide_positive",
+  "chambre_froide_negative",
+]);
 
 const FLUIDES = [
   { code: "R-32", label: "R-32 (HFC)", gwp: 675 },
@@ -71,6 +88,85 @@ export default function MobileAjoutEquipementPage() {
   const [scanning, setScanning] = useState(false);
   const [scanInfo, setScanInfo] = useState<string | null>(null);
   const scanInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Dictée vocale plein écran — IA extrait tout l'équipement d'un coup
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [voiceInfo, setVoiceInfo] = useState<string | null>(null);
+
+  function handleVoiceExtraction(ex: EquipementExtractionResult) {
+    const filled: string[] = [];
+
+    setForm((prev) => {
+      const next = { ...prev };
+      if (ex.clientName?.trim()) {
+        next.clientName = ex.clientName.trim();
+        filled.push("client");
+      }
+      if (ex.clientEmail?.trim()) {
+        next.clientEmail = ex.clientEmail.trim().toLowerCase();
+        filled.push("email");
+      }
+      if (ex.clientTelephone?.trim()) {
+        next.clientTelephone = ex.clientTelephone.trim();
+        filled.push("téléphone");
+      }
+      if (ex.siteAdresse?.trim()) {
+        next.siteAdresse = ex.siteAdresse.trim();
+        filled.push("adresse");
+      }
+      if (ex.modele?.trim()) {
+        next.modele = ex.modele.trim();
+        filled.push("modèle");
+      }
+      if (ex.numeroSerie?.trim()) {
+        next.numeroSerie = ex.numeroSerie.trim();
+        filled.push("n° série");
+      }
+      if (ex.fluideCode && FLUIDES.some((f) => f.code === ex.fluideCode)) {
+        next.fluideCode = ex.fluideCode;
+        filled.push("fluide");
+      }
+      if (typeof ex.chargeKg === "number" && ex.chargeKg > 0) {
+        next.chargeKg = String(ex.chargeKg);
+        filled.push("charge");
+      }
+      if (typeof ex.detecteurFixe === "boolean") {
+        next.detecteurFixe = ex.detecteurFixe;
+        if (ex.detecteurFixe) filled.push("détecteur");
+      }
+      if (ex.dernierControle && /^\d{4}-\d{2}-\d{2}$/.test(ex.dernierControle)) {
+        next.dernierControle = ex.dernierControle;
+        filled.push("dernier contrôle");
+      }
+      if (ex.notes?.trim()) {
+        next.notes = ex.notes.trim();
+        filled.push("notes");
+      }
+      return next;
+    });
+
+    if (Array.isArray(ex.unitesInterieures) && ex.unitesInterieures.length > 0) {
+      const validUnites: UniteInterieure[] = ex.unitesInterieures
+        .filter((u) => VALID_UNITE_TYPES.has(u.type as UniteInterieureType))
+        .map((u) => ({
+          type: u.type as UniteInterieureType,
+          modele: u.modele?.trim() || "À compléter",
+          numeroSerie: u.numeroSerie?.trim() || "À compléter",
+          emplacement: u.emplacement?.trim() || undefined,
+        }));
+      if (validUnites.length > 0) {
+        setUnites((prev) => [...prev, ...validUnites]);
+        filled.push(`${validUnites.length} unité${validUnites.length > 1 ? "s" : ""} intérieure${validUnites.length > 1 ? "s" : ""}`);
+      }
+    }
+
+    setVoiceInfo(
+      filled.length > 0
+        ? `✅ ${filled.length} champ${filled.length > 1 ? "s" : ""} rempli${filled.length > 1 ? "s" : ""} : ${filled.join(", ")}`
+        : "❌ Rien détecté — réessaie en parlant plus précisément"
+    );
+    setVoiceOpen(false);
+  }
 
   async function handlePlaqueScan(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -203,6 +299,43 @@ export default function MobileAjoutEquipementPage() {
       <MobileHeader title="Nouvel équipement" largeTitle backHref="/m/equipements" />
 
       <form onSubmit={handleSubmit}>
+        {/* Dictée vocale — IA extrait tout l'équipement (client + machine + unités) d'un coup */}
+        <InsetListSection
+          title="Dictée vocale (recommandée)"
+          footer="Décris à voix haute ton équipement complet (client, modèle, fluide, charge, unités intérieures). L'IA range tout dans les bonnes cases — tu n'as plus qu'à valider."
+        >
+          <div className="px-4 py-3">
+            <button
+              type="button"
+              onClick={() => {
+                setVoiceInfo(null);
+                setVoiceOpen(true);
+              }}
+              disabled={busy || scanning}
+              className="w-full px-5 py-3.5 rounded-2xl bg-[#111] text-white text-[14px] font-medium active:bg-black/90 transition-colors disabled:opacity-60 inline-flex items-center justify-center gap-2.5"
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="22" />
+              </svg>
+              <span>🎤 Dicter tout l&apos;équipement</span>
+            </button>
+            {voiceInfo && (
+              <div
+                className={`mt-2 px-3 py-2 rounded-xl text-[12px] leading-relaxed ${
+                  voiceInfo.startsWith("✅")
+                    ? "bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800"
+                    : "bg-red-50 ring-1 ring-red-200 text-red-700"
+                }`}
+              >
+                {voiceInfo}
+              </div>
+            )}
+          </div>
+        </InsetListSection>
+
         {/* Scan plaque signalétique — pré-remplit modèle, n° série, fluide, charge */}
         <InsetListSection
           title="Scan rapide (optionnel)"
@@ -554,6 +687,13 @@ export default function MobileAjoutEquipementPage() {
           </button>
         </div>
       </form>
+
+      {/* Modal plein écran dictée IA */}
+      <VoiceFullDictationEquipement
+        open={voiceOpen}
+        onClose={() => setVoiceOpen(false)}
+        onExtraction={handleVoiceExtraction}
+      />
 
       <style jsx global>{`
         .input-mobile {
