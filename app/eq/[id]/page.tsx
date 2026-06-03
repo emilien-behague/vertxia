@@ -5,6 +5,7 @@ import {
   listEquipements,
   computeStatus,
   upsertEquipementInPark,
+  deleteEquipement,
   UNITE_INTERIEURE_LABELS,
   buildRelanceMailto,
   type EquipementWithStatus,
@@ -126,6 +127,11 @@ export default function EquipementScannedPage({
   const [redeemError, setRedeemError] = useState<string | null>(null);
   const [grantExpiresAt, setGrantExpiresAt] = useState<string | null>(null);
   const [serverDebug, setServerDebug] = useState<PublicEquipement["debug"]>(null);
+  // Modal "Supprimer l'équipement" (owner uniquement)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   // Détection ?grant=<token> au mount — consomme le lien magique pour
   // accorder l'accès "full" à ce visiteur sur cet équipement.
@@ -324,6 +330,33 @@ export default function EquipementScannedPage({
       setTimeout(() => setGrantCopied(false), 2000);
     } catch {
       // fallback : sélection manuelle
+    }
+  }
+
+  // Suppression de l'équipement — owner uniquement, action IRRÉVERSIBLE.
+  // Supprime côté Supabase (eq + interventions liées + grants) ET en local.
+  async function handleDeleteEquipement() {
+    if (!eq) return;
+    setDeleteError(null);
+    setDeleteBusy(true);
+    try {
+      const res = await fetch(
+        `/api/public/equipement/${encodeURIComponent(eq.id)}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setDeleteError(j?.error ?? `HTTP ${res.status}`);
+        setDeleteBusy(false);
+        return;
+      }
+      // OK côté serveur → on retire aussi du localStorage du device
+      deleteEquipement(eq.id);
+      // Redirige vers le parc — l'eq disparaît partout
+      window.location.href = "/m/equipements";
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "réseau");
+      setDeleteBusy(false);
     }
   }
 
@@ -912,6 +945,37 @@ export default function EquipementScannedPage({
           </div>
         )}
 
+        {/* Danger zone — owner uniquement */}
+        {isOwner && (
+          <div className="mt-8 rounded-2xl bg-red-50/40 ring-1 ring-red-200/60 p-4">
+            <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-red-700/70">
+              · Zone sensible
+            </div>
+            <div className="mt-1 text-[13px] text-red-900/85 leading-relaxed">
+              Supprime définitivement cet équipement de ton parc, son QR code et
+              toutes les interventions liées. Action irréversible.
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setDeleteModalOpen(true);
+                setDeleteConfirmText("");
+                setDeleteError(null);
+              }}
+              className="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 text-white text-[13px] font-medium active:bg-red-700"
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                <line x1="10" y1="11" x2="10" y2="17" />
+                <line x1="14" y1="11" x2="14" y2="17" />
+              </svg>
+              Supprimer cet équipement
+            </button>
+          </div>
+        )}
+
         {/* CTA acquisition virale — visible UNIQUEMENT pour visiteur anonyme.
             Le wording cible explicitement les pros du froid. */}
         {mode === "public" && (
@@ -1029,6 +1093,95 @@ export default function EquipementScannedPage({
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal "Supprimer l'équipement" — owner uniquement, confirmation
+          forte par saisie du texte "SUPPRIMER" pour éviter le tap accidentel */}
+      {deleteModalOpen && eq && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => !deleteBusy && setDeleteModalOpen(false)}
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          <div
+            className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="min-w-0 flex-1 pr-3">
+                <div className="font-mono text-[9px] tracking-[0.3em] uppercase text-red-700/80">
+                  Suppression définitive
+                </div>
+                <div className="mt-1 text-lg font-medium tracking-tight text-[#111]">
+                  Supprimer cet équipement
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeleteModalOpen(false)}
+                disabled={deleteBusy}
+                className="shrink-0 w-9 h-9 rounded-full bg-black/[0.04] flex items-center justify-center active:bg-black/[0.08] disabled:opacity-50"
+                aria-label="Fermer"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="rounded-xl bg-red-50 ring-1 ring-red-200 p-4 mb-4">
+              <div className="text-[13px] text-red-900 leading-relaxed">
+                <strong>{eq.modele}</strong> chez <strong>{eq.clientName}</strong> (n° série {eq.numeroSerie}).
+                <br />
+                Toutes les interventions liées + le QR code + les liens magiques actifs seront aussi supprimés.
+                <br />
+                <strong>Cette action est irréversible.</strong>
+              </div>
+            </div>
+
+            <label className="block text-[12px] text-black/65 mb-1.5">
+              Pour confirmer, tape <span className="font-mono font-semibold">SUPPRIMER</span> :
+            </label>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="SUPPRIMER"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+              disabled={deleteBusy}
+              className="w-full px-3 py-2.5 rounded-xl ring-1 ring-black/15 bg-white text-[14px] text-[#111] font-mono mb-3 disabled:opacity-50"
+            />
+
+            {deleteError && (
+              <div className="px-4 py-3 rounded-xl bg-red-50 ring-1 ring-red-200 text-[12px] text-red-700 mb-3">
+                ❌ {deleteError}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteModalOpen(false)}
+                disabled={deleteBusy}
+                className="px-4 py-3 rounded-xl ring-1 ring-black/15 text-black/75 text-[14px] font-medium active:bg-black/[0.04] disabled:opacity-50"
+                style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteEquipement}
+                disabled={deleteBusy || deleteConfirmText.trim().toUpperCase() !== "SUPPRIMER"}
+                className="px-4 py-3 rounded-xl bg-red-600 text-white text-[14px] font-semibold active:bg-red-700 disabled:opacity-40 disabled:active:bg-red-600"
+                style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+              >
+                {deleteBusy ? "Suppression…" : "Supprimer"}
+              </button>
+            </div>
           </div>
         </div>
       )}

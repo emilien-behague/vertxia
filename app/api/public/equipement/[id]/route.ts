@@ -205,3 +205,72 @@ export async function GET(
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
+
+/**
+ * Suppression d'un équipement — owner uniquement.
+ *
+ * DELETE /api/public/equipement/[id]
+ * → { ok: true } ou { error }
+ *
+ * Cascade :
+ *   - Les interventions liées (equipement_id FK) sont supprimées si la
+ *     contrainte ON DELETE CASCADE est posée (schema.sql).
+ *   - Les grants liés (equipement_id FK) idem.
+ * En l'absence de CASCADE, on les supprime explicitement avant l'eq.
+ */
+export async function DELETE(
+  _req: Request,
+  ctx: { params: Promise<{ id: string }> }
+) {
+  const { id } = await ctx.params;
+  if (!id) {
+    return NextResponse.json({ error: "missing id" }, { status: 400 });
+  }
+
+  try {
+    const cookieClient = await createCookieClient();
+    const { data: { user } } = await cookieClient.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "not authenticated" }, { status: 401 });
+    }
+
+    const anon = createAnonClient();
+    const { data: eq, error: eqError } = await anon
+      .from("equipements")
+      .select("id, user_id")
+      .eq("id", id)
+      .maybeSingle();
+    if (eqError) {
+      return NextResponse.json({ error: eqError.message }, { status: 500 });
+    }
+    if (!eq) {
+      // Idempotent : si déjà supprimé côté serveur, on renvoie OK
+      return NextResponse.json({ ok: true, alreadyDeleted: true }, { status: 200 });
+    }
+    if (eq.user_id !== user.id) {
+      return NextResponse.json(
+        { error: "only owner can delete this equipement" },
+        { status: 403 }
+      );
+    }
+
+    // Suppression explicite des dépendances pour éviter les FK errors si
+    // ON DELETE CASCADE n'est pas configuré côté schema. Idempotent.
+    await anon.from("interventions").delete().eq("equipement_id", id);
+    await anon.from("equipement_grants").delete().eq("equipement_id", id);
+
+    const { error: deleteError } = await anon
+      .from("equipements")
+      .delete()
+      .eq("id", id);
+
+    if (deleteError) {
+      return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true }, { status: 200 });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
