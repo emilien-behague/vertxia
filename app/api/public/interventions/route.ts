@@ -1,8 +1,8 @@
 // Proxy server-side vers Supabase pour la lecture publique des interventions
-// liées à un équipement.
+// liées à un équipement. Client anon (sans cookies) pour bypass RLS user-scope.
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAnonClient } from "@/lib/supabase/anon";
 
 export const runtime = "nodejs";
 
@@ -14,8 +14,8 @@ export async function GET(req: Request) {
   }
 
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
+    const anon = createAnonClient();
+    const { data, error } = await anon
       .from("interventions")
       .select("*")
       .eq("equipement_id", equipementId)

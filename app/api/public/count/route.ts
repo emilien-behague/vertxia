@@ -1,15 +1,16 @@
 // Proxy server-side : compte le nombre d'équipements visibles dans Supabase.
-// Sert au diagnostic dans /eq/[id] quand un équipement est introuvable.
+// Client anon (sans cookies) → la policy "select_public" autorise le rôle
+// anon, sans filtrer par auth.uid().
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAnonClient } from "@/lib/supabase/anon";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const supabase = await createClient();
-    const { count, error } = await supabase
+    const anon = createAnonClient();
+    const { count, error } = await anon
       .from("equipements")
       .select("id", { count: "exact", head: true });
 
