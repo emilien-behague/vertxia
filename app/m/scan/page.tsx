@@ -159,94 +159,21 @@ export default function MobileScanPage() {
       log("BarcodeDetector indispo → worker");
     }
 
+    // PATH FALLBACK : @zxing/browser (lib mature pour Safari iOS, pas de
+    // worker externe, pas d'OffscreenCanvas qui pose problème sur certains iOS).
     try {
-      const { default: QrScanner } = await import("qr-scanner");
+      const { BrowserQRCodeReader } = await import("@zxing/browser");
+      log("zxing importé");
 
-      // Set explicit worker path — sinon Turbopack/Next.js 16 ne bundle pas
-      // le worker depuis node_modules et le scan échoue silencieusement.
-      // Le fichier est copié dans public/qr-scanner-worker.min.js.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (QrScanner as any).WORKER_PATH = "/qr-scanner-worker.min.js";
-      log("qr-scanner importé");
+      const codeReader = new BrowserQRCodeReader();
 
-      const hasCamera = await QrScanner.hasCamera();
-      log(`hasCamera=${hasCamera}`);
-      if (!hasCamera) {
-        setState({ type: "no_camera" });
-        return;
-      }
-
-      // Pré-instancier l'engine (worker ou BarcodeDetector) AVANT le scanner
-      // pour s'assurer qu'il est bien créé et utilisable. Si throw ici,
-      // on voit la vraie erreur dans le debug overlay.
+      // Acquisition caméra
+      let stream: MediaStream;
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const engine = await (QrScanner as any).createQrEngine("/qr-scanner-worker.min.js");
-        const isWorker = typeof Worker !== "undefined" && engine instanceof Worker;
-        log(`engine créé : ${isWorker ? "Worker" : "BarcodeDetector"}`);
-      } catch (e) {
-        log(`createQrEngine err: ${e instanceof Error ? e.message : String(e)}`);
-      }
-
-      let scanCount = 0;
-      let errCount = 0;
-      const scanner = new QrScanner(
-        video,
-        (result) => {
-          scanCount++;
-          log(`worker hit #${scanCount}: ${result.data.slice(0, 50)}`);
-          const id = extractEquipementId(result.data);
-          if (!id) {
-            // QR détecté mais pas un équipement Vertxia → on affiche le contenu
-            // brut au lieu d'ignorer silencieusement.
-            setState({ type: "unknown_qr", content: result.data });
-            try {
-              scanner.stop();
-            } catch {
-              /* */
-            }
-            return;
-          }
-          setState({ type: "found", id });
-          try {
-            scanner.stop();
-          } catch {
-            /* */
-          }
-          // Petit délai pour montrer le ✓ avant de naviguer
-          setTimeout(() => router.push(`/eq/${id}`), 350);
-        },
-        {
-          onDecodeError: (err) => {
-            // "No QR code found" est attendu à chaque frame sans QR. On log
-            // seulement les VRAIES erreurs (worker cassé, image illisible…).
-            const msg = err instanceof Error ? err.message : String(err);
-            if (msg.includes("No QR code found")) {
-              errCount++;
-              if (errCount === 30 || errCount === 100) {
-                log(`scan vide #${errCount} (cam OK, juste pas de QR)`);
-              }
-              return;
-            }
-            log(`decode err: ${msg.slice(0, 80)}`);
-          },
-          preferredCamera: "environment",
-          highlightScanRegion: true, // cadre jaune autour de la zone scan
-          highlightCodeOutline: true, // contour jaune du QR détecté
-          returnDetailedScanResult: true,
-          maxScansPerSecond: 25, // plus de tentatives par seconde (vs 10) pour mieux capter
-          // Pas de calculateScanRegion : on scanne TOUTE la frame.
-          // Le default 60% rate les QR petits ou décentrés. Mieux vaut
-          // dépendre du worker pour trouver le QR n'importe où dans l'image.
-        }
-      );
-
-      scannerRef.current = scanner;
-
-      try {
-        await scanner.start();
-        log(`scanner start OK · video ${video.videoWidth}x${video.videoHeight}`);
-        setState({ type: "scanning" });
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+          audio: false,
+        });
       } catch (e) {
         const msg = e instanceof Error ? e.message.toLowerCase() : String(e);
         if (msg.includes("denied") || msg.includes("permission") || msg.includes("notallowed")) {
@@ -259,8 +186,63 @@ export default function MobileScanPage() {
         } else {
           setState({ type: "error", message: e instanceof Error ? e.message : String(e) });
         }
+        return;
       }
+      video.srcObject = stream;
+      await video.play();
+      log(`video ${video.videoWidth}x${video.videoHeight}`);
+
+      // ZXing décode en continu via decodeFromVideoElement
+      let stopped = false;
+      let scanAttempts = 0;
+      const controls = await codeReader.decodeFromVideoElement(video, (result, err) => {
+        if (stopped) return;
+        if (result) {
+          const raw = result.getText();
+          log(`zxing hit: ${raw.slice(0, 60)}`);
+          const id = extractEquipementId(raw);
+          if (!id) {
+            setState({ type: "unknown_qr", content: raw });
+            controls.stop();
+            try { stream.getTracks().forEach((t) => t.stop()); } catch {}
+            return;
+          }
+          setState({ type: "found", id });
+          controls.stop();
+          try { stream.getTracks().forEach((t) => t.stop()); } catch {}
+          setTimeout(() => router.push(`/eq/${id}`), 350);
+          return;
+        }
+        if (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          // ZXing throw NotFoundException à chaque frame sans QR — normal
+          if (msg.includes("NotFound") || msg.includes("No MultiFormat Readers")) {
+            scanAttempts++;
+            if (scanAttempts === 30 || scanAttempts === 100) {
+              log(`scan vide #${scanAttempts} (cam OK)`);
+            }
+            return;
+          }
+          log(`zxing err: ${msg.slice(0, 80)}`);
+        }
+      });
+
+      scannerRef.current = {
+        stop: () => {
+          stopped = true;
+          try { controls.stop(); } catch {}
+          try { stream.getTracks().forEach((t) => t.stop()); } catch {}
+        },
+        destroy: () => {
+          stopped = true;
+          try { controls.stop(); } catch {}
+          try { stream.getTracks().forEach((t) => t.stop()); } catch {}
+        },
+      };
+      log("zxing decode started");
+      setState({ type: "scanning" });
     } catch (e) {
+      log(`init err: ${e instanceof Error ? e.message : String(e)}`);
       setState({ type: "error", message: e instanceof Error ? e.message : String(e) });
     }
   }
