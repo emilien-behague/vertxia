@@ -1,40 +1,40 @@
 "use client";
 
 // Isolation des données localStorage par user_id.
-// Avant : tous les comptes connectés sur le même device voyaient les MÊMES
-// équipements / interventions / bouteilles (localStorage global au domaine).
-// Maintenant : chaque user a son namespace localStorage.
 //
-// On utilise localStorage (pas sessionStorage) car sessionStorage est purgé
-// par Safari iOS en mode privé et après certains reloads → boucle infinie
-// dans AuthSync qui détectait un changement de namespace fantôme.
+// SOURCE DE VÉRITÉ : cookie "vertxia-uid" set par le middleware Supabase
+// côté serveur (lib/supabase/middleware.ts). Lu SYNCHRONIQUEMENT côté
+// client via document.cookie → pas de race condition, pas de re-render
+// nécessaire après login.
+//
+// Avant on utilisait localStorage + AuthSync async → les pages /m/* lisaient
+// le mauvais namespace pendant le 1er render (race condition).
 
-const CURRENT_USER_KEY = "vertxia:current-user";
 const ANON_NAMESPACE = "anon";
 
 export function getCurrentUserId(): string {
-  if (typeof window === "undefined") return ANON_NAMESPACE;
+  if (typeof document === "undefined") return ANON_NAMESPACE;
   try {
-    return localStorage.getItem(CURRENT_USER_KEY) || ANON_NAMESPACE;
-  } catch {
-    return ANON_NAMESPACE;
-  }
-}
-
-export function setCurrentUserId(userId: string | null): void {
-  if (typeof window === "undefined") return;
-  try {
-    if (userId) {
-      localStorage.setItem(CURRENT_USER_KEY, userId);
-    } else {
-      localStorage.removeItem(CURRENT_USER_KEY);
+    const match = document.cookie.match(/(?:^|;\s*)vertxia-uid=([^;]+)/);
+    if (match && match[1]) {
+      return decodeURIComponent(match[1]);
     }
   } catch {
-    /* localStorage indispo (mode privé strict ?) */
+    /* doc inaccessible */
   }
+  return ANON_NAMESPACE;
 }
 
-/** Préfixe une clé de storage avec le namespace user courant. */
+/**
+ * Préfixe une clé de storage avec le namespace user courant.
+ * Ex: scopedKey("vertxia:equipements") → "vertxia:equipements:abc-uuid"
+ */
 export function scopedKey(baseKey: string): string {
   return `${baseKey}:${getCurrentUserId()}`;
+}
+
+/** API legacy conservée pour ne pas casser AuthSync. No-op : le cookie est
+ *  set par le serveur, le client n'a rien à faire. */
+export function setCurrentUserId(_userId: string | null): void {
+  /* géré par le middleware serveur via cookie */
 }

@@ -35,7 +35,7 @@ function readFileAsDataUrl(file: File): Promise<string> {
 
 export default function MobileProfilPage() {
   const router = useRouter();
-  const { user, signOut, configured } = useUser();
+  const { user, loading: authLoading, signOut, configured } = useUser();
   const [profil, setProfil] = useState<Profil>(EMPTY_PROFIL);
   const [savedFlash, setSavedFlash] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -374,10 +374,17 @@ export default function MobileProfilPage() {
             footer={
               user
                 ? "Tes données restent sur cet appareil après déconnexion. Tu peux te reconnecter avec un autre compte Google."
-                : "Connecte-toi pour synchroniser tes équipements et bouteilles sur tous tes appareils, et activer le partage de fiches."
+                : authLoading
+                  ? "Vérification de la session…"
+                  : "Connecte-toi pour synchroniser tes équipements et bouteilles sur tous tes appareils, et activer le partage de fiches."
             }
           >
-            {user ? (
+            {authLoading ? (
+              <div className="px-4 py-5 flex items-center gap-3 text-black/45">
+                <div className="w-4 h-4 rounded-full border-2 border-black/15 border-t-black/55 animate-spin" />
+                <span className="text-[14px]">Chargement de la session…</span>
+              </div>
+            ) : user ? (
               <>
                 <div className="px-4 py-3">
                   <div className="text-[11px] tracking-widest uppercase font-mono text-black/40 mb-1">

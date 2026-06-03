@@ -45,6 +45,28 @@ export async function updateSession(request: NextRequest): Promise<SessionResult
     // IMPORTANT : appel obligatoire pour rafraîchir la session.
     const { data } = await supabase.auth.getUser();
     user = data.user ? { id: data.user.id, email: data.user.email } : null;
+
+    // Écrit le user_id dans un cookie NON-httpOnly pour que le client puisse
+    // le lire de façon SYNCHRONE (via document.cookie). Sans ça, les pages
+    // /m/* qui appellent listEquipements() etc. au mount lisaient le mauvais
+    // namespace localStorage tant que useUser() n'avait pas résolu async →
+    // race condition → données partagées entre comptes.
+    if (user) {
+      supabaseResponse.cookies.set("vertxia-uid", user.id, {
+        httpOnly: false,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 30, // 30 jours
+        secure: process.env.NODE_ENV === "production",
+      });
+    } else {
+      supabaseResponse.cookies.set("vertxia-uid", "", {
+        httpOnly: false,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 0,
+      });
+    }
   } catch (e) {
     // Ne JAMAIS faire crasher le middleware (sinon MIDDLEWARE_INVOCATION_FAILED
     // sur toutes les pages). Log et continue.
