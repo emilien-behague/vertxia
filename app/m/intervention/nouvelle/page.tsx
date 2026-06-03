@@ -97,7 +97,7 @@ function NouvelleInterventionContent() {
   );
   const [fluide, setFluide] = useState(FLUIDES[0].code);
   const [weight, setWeight] = useState("2.5");
-  const [packagingNumero, setPackagingNumero] = useState("B112026047");
+  const [packagingNumero, setPackagingNumero] = useState("");
   const [clientName, setClientName] = useState("");
   const [modeleEquipement, setModeleEquipement] = useState("");
   const [numeroSerieEquipement, setNumeroSerieEquipement] = useState("");
@@ -176,6 +176,30 @@ function NouvelleInterventionContent() {
   useEffect(() => {
     setAllBouteilles(listBouteilles());
   }, []);
+
+  // Auto-fill du n° de contenant BSFF depuis la bouteille de récupération
+  // (priorité), sinon recharge. Préserve une saisie manuelle si elle existe.
+  useEffect(() => {
+    let resolved = "";
+    if (bouteilleRecuperationId) {
+      const b = allBouteilles.find((x) => x.id === bouteilleRecuperationId);
+      if (b?.numeroSerie) resolved = b.numeroSerie;
+    } else if (numBouteilleRetraitLibre.trim()) {
+      resolved = numBouteilleRetraitLibre.trim();
+    } else if (bouteilleRechargeId) {
+      const b = allBouteilles.find((x) => x.id === bouteilleRechargeId);
+      if (b?.numeroSerie) resolved = b.numeroSerie;
+    } else if (numBouteilleAjoutLibre.trim()) {
+      resolved = numBouteilleAjoutLibre.trim();
+    }
+    if (resolved) setPackagingNumero(resolved);
+  }, [
+    bouteilleRecuperationId,
+    numBouteilleRetraitLibre,
+    bouteilleRechargeId,
+    numBouteilleAjoutLibre,
+    allBouteilles,
+  ]);
 
   // Quantités à tracer dans les bouteilles, dérivées des saisies simples
   // (gazAjouteKg / gazRetireKg) OU de la décomposition expert A/B/C/D/E.
@@ -472,6 +496,18 @@ function NouvelleInterventionContent() {
   async function handleSubmit() {
     let bsffId: string | undefined;
     let destination: unknown = null;
+
+    // Validation : BSFF requis = il faut un n° de contenant.
+    // Le packagingNumero est auto-rempli depuis la bouteille sélectionnée,
+    // mais si rien n'a été saisi → bloque avec message clair.
+    if (config.needsBsff && !packagingNumero.trim()) {
+      setStatus({
+        type: "error",
+        message:
+          "Pour générer le BSFF officiel, renseigne la bouteille de récupération (section Mouvements de gaz) — son n° de série sera utilisé comme contenant BSFF.",
+      });
+      return;
+    }
 
     try {
       if (config.needsBsff) {
@@ -997,17 +1033,9 @@ function NouvelleInterventionContent() {
                 className="input-mobile"
               />
             </FormRow>
-            <FormRow label="N° de bouteille">
-              <input
-                type="text"
-                pattern="[A-Za-z0-9]+"
-                value={packagingNumero}
-                onChange={(e) => setPackagingNumero(e.target.value.replace(/[^A-Za-z0-9]/g, ""))}
-                disabled={isLoading}
-                placeholder="Alphanumérique uniquement"
-                className="input-mobile font-mono"
-              />
-            </FormRow>
+            {/* N° de bouteille : géré dans la section "Mouvements de gaz" ci-dessous.
+                Le n° du contenant BSFF = automatiquement le n° de la bouteille
+                de récupération sélectionnée. Si pas de bouteille, fallback recharge. */}
           </>
         )}
       </InsetListSection>
@@ -1116,7 +1144,7 @@ function NouvelleInterventionContent() {
       {/* Mouvements de gaz — toujours visibles, saisies simples ajouté/retiré */}
       <InsetListSection
         title="Mouvements de gaz · cette intervention"
-        footer="Saisis simplement combien de gaz tu as ajouté et/ou retiré. La bouteille (n° de série) peut être choisie dans ton stock ou saisie à la main."
+        footer="Saisis simplement combien de gaz tu as ajouté et/ou retiré. La bouteille (n° de série) peut être choisie dans ton stock ou saisie à la main. Le n° de la bouteille de récupération sert aussi de n° de contenant pour le BSFF officiel."
       >
         {/* Bandeau charge nominale (read-only, contexte) */}
         {eqContext && parseFloat(weight) > 0 && (
