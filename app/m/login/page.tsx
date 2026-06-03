@@ -12,13 +12,46 @@
  * cross-device et à la persistance long terme.
  */
 
+// Force dynamic : empêche Next.js de pré-rendre cette page côté serveur
+// au build (sinon createClient throw si env vars Supabase absentes).
+export const dynamic = "force-dynamic";
+
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/mobile-header";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 function MobileLoginInner() {
+  const configured = isSupabaseConfigured();
+  // Pas d'env vars Supabase → affiche un message au lieu de planter
+  if (!configured) {
+    return (
+      <>
+        <MobileHeader title="Connexion" largeTitle backHref="/m" />
+        <div className="px-5 mt-6">
+          <div className="px-5 py-6 rounded-2xl bg-amber-50 ring-1 ring-amber-200">
+            <div className="text-[10px] tracking-widest uppercase font-mono text-amber-800 mb-2">
+              · Auth non configurée
+            </div>
+            <h2 className="text-[18px] font-semibold text-amber-900 mb-2">
+              La connexion n&apos;est pas encore activée
+            </h2>
+            <p className="text-[13px] text-amber-800 leading-relaxed mb-4">
+              Le système de compte est en cours de configuration. Tu peux continuer à utiliser l&apos;app en mode démo : tes données restent sur ton téléphone.
+            </p>
+            <Link
+              href="/m"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#111] text-white text-[14px] font-medium"
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            >
+              ← Retour à l&apos;app
+            </Link>
+          </div>
+        </div>
+      </>
+    );
+  }
   const supabase = createClient();
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
