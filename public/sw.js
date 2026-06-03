@@ -1,29 +1,30 @@
 // Service Worker Vertxia — caching offline-first pour les pages /m/*
 // Stratégie :
-//  - Pages /m/* : stale-while-revalidate (sert le cache si dispo, met à jour en arrière-plan)
+//  - /m/scan : NETWORK-ONLY (jamais de cache, sinon nouveau code pas vu)
+//  - Autres pages /m/* : stale-while-revalidate
 //  - Assets statiques (_next/static, /icons, /fonts) : cache-first
-//  - Routes API : pas de cache, network-only (le caller gère le offline via offline-queue.ts)
+//  - Routes API : pas de cache, network-only
+//  - Workers .js dans public/ : network-only (content-type strict)
 //  - Autres pages : network-first avec fallback cache
 
-const CACHE_VERSION = "vertxia-v3";
-const STATIC_CACHE = "vertxia-static-v3";
+const CACHE_VERSION = "vertxia-v4";
+const STATIC_CACHE = "vertxia-static-v4";
 
 self.addEventListener("install", (event) => {
-  // Active immédiatement la nouvelle version sans attendre que tous les onglets soient fermés
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
-      // Nettoyage des vieux caches Vertxia (différentes versions)
+      // Nettoyage TOTAL des anciens caches (toutes versions, tout type).
+      // On garde uniquement la version courante.
       const keys = await caches.keys();
       await Promise.all(
         keys
-          .filter((k) => k.startsWith("vertxia-") && k !== CACHE_VERSION && k !== STATIC_CACHE)
+          .filter((k) => k !== CACHE_VERSION && k !== STATIC_CACHE)
           .map((k) => caches.delete(k))
       );
-      // Prend le contrôle des onglets ouverts immédiatement
       await self.clients.claim();
     })()
   );
@@ -31,29 +32,27 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
-  // On ne gère que les GET (les POST API restent network-only)
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
-
-  // Skip cross-origin (Vercel, Google Fonts, etc.)
   if (url.origin !== self.location.origin) return;
 
-  // API routes : network-only, l'app gère le offline via offline-queue
+  // API routes : network-only
   if (url.pathname.startsWith("/api/")) return;
 
-  // Web Workers servis depuis public/ : network-only, sans interception SW.
-  // Un Worker créé via `new Worker('/xxx.js')` exige content-type strict
-  // `application/javascript` ; passer par cacheFirst peut servir une réponse
-  // sans content-type correct → le worker se charge "OK" mais ne tourne pas
-  // (cas du scanner QR : caméra active, viseur visible, mais 0 détection).
-  // Ajouter ici tout fichier .js servi depuis public/ qui est utilisé comme
-  // Worker / SharedWorker / WASM glue.
+  // Workers .js dans public/ : network-only (content-type strict)
   if (
     url.pathname === "/qr-scanner-worker.min.js" ||
     url.pathname.endsWith(".wasm")
   ) {
-    return; // network-only par défaut du navigateur
+    return;
+  }
+
+  // /m/scan + sous-pages : NETWORK-ONLY pour garantir que l'utilisateur
+  // voit toujours la dernière version du scanner (changements fréquents
+  // de lib, et un cache obsolète casserait la démo CAPEB).
+  if (url.pathname === "/m/scan" || url.pathname.startsWith("/m/scan/")) {
+    return; // pas de respondWith → fetch direct du navigateur
   }
 
   // Assets statiques Next.js : cache-first (immutables, hash dans le nom)
@@ -78,7 +77,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Autres pages (login, marketing, etc.) : network-first
   event.respondWith(networkFirst(request));
 });
 
@@ -107,9 +105,7 @@ async function staleWhileRevalidate(event, request) {
     })
     .catch(() => null);
 
-  // Renvoie le cache immédiatement si dispo, sinon attend le network
   if (cached) {
-    // En arrière-plan, on revalide (event peut être absent si appel direct)
     if (event && typeof event.waitUntil === "function") {
       event.waitUntil(fetchPromise);
     }
@@ -117,7 +113,6 @@ async function staleWhileRevalidate(event, request) {
   }
   const networkResponse = await fetchPromise;
   if (networkResponse) return networkResponse;
-  // Ni cache ni network → fallback minimal
   return new Response(
     `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hors connexion</title><style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:40px;text-align:center;background:#F5F4F0}</style></head><body><h2>Hors connexion</h2><p>Cette page n'a pas encore été chargée. Reconnecte-toi à internet pour y accéder.</p></body></html>`,
     { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } }

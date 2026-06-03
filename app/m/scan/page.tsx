@@ -5,10 +5,15 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 
-// Scanner QR Code Vertxia — utilise la lib qr-scanner (35KB, WASM fallback).
-// Sur HTTPS / localhost : getUserMedia OK → scan caméra direct.
-// Sur HTTP IP locale 192.168.x.x : Safari iOS bloque getUserMedia (secure context required)
-//   → on affiche une instruction fallback vers l'app Appareil photo iPhone (qui scan en natif).
+// Scanner QR Code Vertxia — ZXing/browser (mature Safari iOS, pas de worker).
+// Path priorité : BarcodeDetector natif iOS 17+/Chrome Android.
+// Path fallback : ZXing JS (canvas DOM, pas d'OffscreenCanvas).
+// Sur HTTP IP locale 192.168.x.x : Safari iOS bloque getUserMedia (secure context required).
+
+// Tag de build visible dans l'UI → permet de vérifier que la version
+// servie par le SW correspond au dernier déploiement. À bumper à chaque
+// refacto majeure du scanner.
+const BUILD_TAG = "zxing-2026-06-03";
 
 type State =
   | { type: "idle" } // En attente du tap utilisateur (user gesture iOS)
@@ -250,6 +255,29 @@ export default function MobileScanPage() {
   return (
     <>
       <MobileHeader title="Scanner QR" backHref="/m" />
+
+      {/* Version banner — permet de vérifier instantanément quelle version
+          du code est rendue (combat les caches SW agressifs sur Safari iOS) */}
+      <div className="mx-4 mt-1 mb-2 flex items-center justify-between gap-2">
+        <div className="text-[9px] font-mono tracking-widest uppercase text-black/35">
+          · build {BUILD_TAG}
+        </div>
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              const keys = await caches.keys();
+              await Promise.all(keys.map((k) => caches.delete(k)));
+              const regs = await navigator.serviceWorker?.getRegistrations?.();
+              if (regs) await Promise.all(regs.map((r) => r.unregister()));
+            } catch {}
+            window.location.reload();
+          }}
+          className="text-[10px] font-medium text-black/55 underline underline-offset-2"
+        >
+          Vider cache & recharger
+        </button>
+      </div>
 
       {/* Vidéo plein écran — visible seulement quand scanner actif */}
       <div className="relative mx-4 mt-2 rounded-3xl overflow-hidden bg-black aspect-[3/4]">
