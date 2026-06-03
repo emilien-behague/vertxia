@@ -115,12 +115,12 @@ export default function StartPage() {
             <h1 className="text-[40px] font-light leading-[1.05] tracking-tight text-[#111] mb-6">
               Ton intervention F-Gas.
               <br />
-              <span className="text-black/40">Du smartphone à la paperasse, sans saisie.</span>
+              <span className="text-black/40">Du scan plaque au BSFF, sur ton iPhone.</span>
             </h1>
           </FadeInUp>
           <FadeInUp delay={0.16}>
             <p className="text-[15px] text-black/55 leading-relaxed">
-              Une photo de la plaque, quelques mots à la voix, la signature du client. L&apos;appli s&apos;occupe du reste : CERFA 15497*04, BSFF officiel TrackDéchets, étiquette QR.
+              L&apos;appli te guide à chaque étape : photo de la plaque pour pré-remplir l&apos;équipement, saisie vocale pour l&apos;intervention, signature client à l&apos;écran. À la fin, CERFA 15497*04, BSFF officiel TrackDéchets et étiquette QR générés automatiquement.
             </p>
           </FadeInUp>
         </section>
