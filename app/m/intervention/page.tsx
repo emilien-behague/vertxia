@@ -17,6 +17,8 @@ const INTERVENTION_TYPES = [
   { v: "controle_non_periodique", label: "Contrôle suite fuite", desc: "CERFA 15497*04" },
   { v: "mise_service", label: "Mise en service", desc: "Première mise en route" },
   { v: "maintenance", label: "Maintenance", desc: "Entretien préventif" },
+  { v: "assemblage", label: "Assemblage", desc: "Montage initial de l'équipement" },
+  { v: "modification", label: "Modification", desc: "Modification d'un équipement existant" },
 ];
 
 export default function MobileInterventionPage() {
