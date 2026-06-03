@@ -1,22 +1,28 @@
 "use client";
 
-// Synchronise le user_id Supabase courant vers sessionStorage pour que
-// les helpers de storage (lib/equipement, intervention, bouteille, profil)
-// utilisent la BONNE namespace localStorage selon le compte connecté.
+// Synchronise le user_id Supabase courant vers localStorage pour isoler
+// les données (équipements, interventions, bouteilles, profil) par compte.
 //
-// Sans ce composant, tous les comptes connectés sur le même device
-// partagent les MÊMES données localStorage (bug critique de cohabitation).
+// IMPORTANT : on ne fait JAMAIS window.location.reload() ici. Le faisait
+// avant créait une boucle infinie sur Safari iOS (sessionStorage purge
+// agressif → on détectait un namespace "anon" même après le set, donc on
+// reloadait, et au mount suivant, le check était à nouveau différent →
+// boucle).
 //
-// Monté dans /m/layout.tsx pour s'appliquer à toute l'app mobile.
+// Comportement actuel :
+// - Au mount : set le user_id courant dans localStorage (instant)
+// - Sur changement de session (signIn / signOut) : update localStorage
+// - Les pages /m/* qui lisent listEquipements() etc. récupèrent le bon
+//   namespace au prochain mount. Si l'utilisateur ne navigue pas, il peut
+//   voir l'ancien parc une fois — il navigue, et c'est cohérent.
 
 import { useEffect } from "react";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { setCurrentUserId, getCurrentUserId } from "@/lib/user-scope";
+import { setCurrentUserId } from "@/lib/user-scope";
 
 export function AuthSync() {
   useEffect(() => {
     if (!isSupabaseConfigured()) {
-      // Pas de Supabase → namespace anon par défaut
       setCurrentUserId(null);
       return;
     }
@@ -24,41 +30,15 @@ export function AuthSync() {
     const supabase = createClient();
     let mounted = true;
 
-    // 1. Sync immédiat au mount (cas où user déjà connecté au reload)
     supabase.auth.getUser().then(({ data }) => {
       if (!mounted) return;
-      const newUserId = data.user?.id ?? null;
-      const currentNamespace = getCurrentUserId();
-      const expectedNamespace = newUserId ?? "anon";
-      // Si le namespace a changé (login d'un autre compte, ou logout),
-      // on reload la page pour que les hooks/state se ré-initialisent
-      // avec les bonnes données du nouveau user.
-      if (currentNamespace !== expectedNamespace) {
-        setCurrentUserId(newUserId);
-        // Reload pour rafraîchir tous les listEquipements / listInterventions
-        // qui ont été appelés avec l'ancien namespace.
-        window.location.reload();
-      } else {
-        setCurrentUserId(newUserId);
-      }
+      setCurrentUserId(data.user?.id ?? null);
     });
 
-    // 2. Subscribe aux changements de session (signIn / signOut / refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (_event, session) => {
         if (!mounted) return;
-        const newUserId = session?.user?.id ?? null;
-        const currentNamespace = getCurrentUserId();
-        const expectedNamespace = newUserId ?? "anon";
-        setCurrentUserId(newUserId);
-        // Sur SIGNED_IN ou SIGNED_OUT avec changement de namespace,
-        // reload pour repartir propre.
-        if (
-          (event === "SIGNED_IN" || event === "SIGNED_OUT") &&
-          currentNamespace !== expectedNamespace
-        ) {
-          window.location.reload();
-        }
+        setCurrentUserId(session?.user?.id ?? null);
       }
     );
 
