@@ -66,11 +66,98 @@ export default function MobileScanPage() {
     };
   }, []);
 
+  // Debug overlay visible (utile pour iOS où on n'a pas la console)
+  const [debug, setDebug] = useState<string[]>([]);
+  const log = (msg: string) => setDebug((d) => [...d.slice(-8), `${new Date().toLocaleTimeString()} ${msg}`]);
+
+  // Chemin natif via BarcodeDetector (iOS 17+, Chrome Android).
+  // Boucle requestAnimationFrame qui appelle detector.detect(video) à chaque frame.
+  async function startNative(video: HTMLVideoElement) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+        audio: false,
+      });
+      video.srcObject = stream;
+      await video.play();
+      log(`video ${video.videoWidth}x${video.videoHeight}`);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const detector = new (window as any).BarcodeDetector({ formats: ["qr_code"] });
+      let stopped = false;
+      const stop = () => {
+        stopped = true;
+        try { stream.getTracks().forEach((t) => t.stop()); } catch {}
+      };
+      scannerRef.current = { stop, destroy: stop };
+      setState({ type: "scanning" });
+      log("scanning (native)");
+
+      let scanAttempts = 0;
+      const loop = async () => {
+        if (stopped) return;
+        try {
+          const codes = await detector.detect(video);
+          scanAttempts++;
+          if (scanAttempts % 30 === 0) log(`scan #${scanAttempts}`);
+          if (codes && codes.length > 0) {
+            const raw = codes[0].rawValue as string;
+            log(`hit: ${raw.slice(0, 60)}`);
+            const id = extractEquipementId(raw);
+            if (!id) {
+              setState({ type: "unknown_qr", content: raw });
+              stop();
+              return;
+            }
+            setState({ type: "found", id });
+            stop();
+            setTimeout(() => router.push(`/eq/${id}`), 350);
+            return;
+          }
+        } catch (e) {
+          log(`detect err: ${e instanceof Error ? e.message : String(e)}`);
+        }
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message.toLowerCase() : String(e);
+      log(`native err: ${msg}`);
+      if (msg.includes("denied") || msg.includes("permission") || msg.includes("notallowed")) {
+        setState({ type: "denied" });
+      } else {
+        setState({ type: "error", message: e instanceof Error ? e.message : String(e) });
+      }
+    }
+  }
+
   // Démarrage explicite via user gesture (iOS Safari l'exige pour getUserMedia)
   async function startScanner() {
     const video = videoRef.current;
     if (!video) return;
     setState({ type: "loading" });
+    setDebug([]);
+    log("start");
+
+    // Tentative 1 : BarcodeDetector natif (Safari iOS 17+, Chrome Android)
+    // Plus rapide, plus fiable, et pas de worker à charger.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const BD = (typeof window !== "undefined" ? (window as any).BarcodeDetector : undefined);
+    if (BD) {
+      try {
+        const formats = await BD.getSupportedFormats?.();
+        log(`BarcodeDetector OK (${formats?.join(",") ?? "?"})`);
+        if (formats?.includes("qr_code")) {
+          await startNative(video);
+          return;
+        }
+        log("qr_code pas supporté → fallback worker");
+      } catch (e) {
+        log(`BD throw : ${e instanceof Error ? e.message : String(e)}`);
+      }
+    } else {
+      log("BarcodeDetector indispo → worker");
+    }
 
     try {
       const { default: QrScanner } = await import("qr-scanner");
@@ -80,16 +167,21 @@ export default function MobileScanPage() {
       // Le fichier est copié dans public/qr-scanner-worker.min.js.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (QrScanner as any).WORKER_PATH = "/qr-scanner-worker.min.js";
+      log("qr-scanner importé");
 
       const hasCamera = await QrScanner.hasCamera();
+      log(`hasCamera=${hasCamera}`);
       if (!hasCamera) {
         setState({ type: "no_camera" });
         return;
       }
 
+      let scanCount = 0;
       const scanner = new QrScanner(
         video,
         (result) => {
+          scanCount++;
+          log(`worker hit #${scanCount}: ${result.data.slice(0, 50)}`);
           const id = extractEquipementId(result.data);
           if (!id) {
             // QR détecté mais pas un équipement Vertxia → on affiche le contenu
@@ -138,6 +230,7 @@ export default function MobileScanPage() {
 
       try {
         await scanner.start();
+        log(`scanner start OK · video ${video.videoWidth}x${video.videoHeight}`);
         setState({ type: "scanning" });
       } catch (e) {
         const msg = e instanceof Error ? e.message.toLowerCase() : String(e);
@@ -311,6 +404,20 @@ export default function MobileScanPage() {
           </div>
         )}
       </div>
+
+      {/* Debug overlay (visible iOS où on n'a pas la console) */}
+      {debug.length > 0 && (
+        <div className="px-4 mt-4">
+          <details className="rounded-2xl bg-black/[0.04] ring-1 ring-black/10 px-4 py-3 text-[11px] font-mono text-black/70">
+            <summary className="cursor-pointer text-[11px] font-medium text-black/65">
+              · Debug scanner ({debug.length} logs)
+            </summary>
+            <pre className="mt-2 whitespace-pre-wrap break-all text-[10px] leading-relaxed">
+              {debug.join("\n")}
+            </pre>
+          </details>
+        </div>
+      )}
 
       {/* Fallback : si scan impossible, accéder à la liste */}
       <div className="px-4 mt-6 space-y-2">
