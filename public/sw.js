@@ -5,8 +5,8 @@
 //  - Routes API : pas de cache, network-only (le caller gère le offline via offline-queue.ts)
 //  - Autres pages : network-first avec fallback cache
 
-const CACHE_VERSION = "vertxia-v2";
-const STATIC_CACHE = "vertxia-static-v2";
+const CACHE_VERSION = "vertxia-v3";
+const STATIC_CACHE = "vertxia-static-v3";
 
 self.addEventListener("install", (event) => {
   // Active immédiatement la nouvelle version sans attendre que tous les onglets soient fermés
@@ -41,6 +41,20 @@ self.addEventListener("fetch", (event) => {
 
   // API routes : network-only, l'app gère le offline via offline-queue
   if (url.pathname.startsWith("/api/")) return;
+
+  // Web Workers servis depuis public/ : network-only, sans interception SW.
+  // Un Worker créé via `new Worker('/xxx.js')` exige content-type strict
+  // `application/javascript` ; passer par cacheFirst peut servir une réponse
+  // sans content-type correct → le worker se charge "OK" mais ne tourne pas
+  // (cas du scanner QR : caméra active, viseur visible, mais 0 détection).
+  // Ajouter ici tout fichier .js servi depuis public/ qui est utilisé comme
+  // Worker / SharedWorker / WASM glue.
+  if (
+    url.pathname === "/qr-scanner-worker.min.js" ||
+    url.pathname.endsWith(".wasm")
+  ) {
+    return; // network-only par défaut du navigateur
+  }
 
   // Assets statiques Next.js : cache-first (immutables, hash dans le nom)
   if (
