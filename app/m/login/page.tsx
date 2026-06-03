@@ -189,17 +189,15 @@ function MobileLoginInner() {
               </button>
             </form>
 
-            {/* Échappatoire mode démo */}
+            {/* Pas d'échappatoire — la connexion est obligatoire pour
+                accéder à l'app. Tu peux retourner au site principal. */}
             <div className="mt-8 text-center">
               <Link
-                href="/m"
-                className="text-[13px] text-black/55 underline underline-offset-4"
+                href="/"
+                className="text-[12px] text-black/45 underline underline-offset-4"
               >
-                Continuer sans compte (mode démo)
+                ← Retour au site
               </Link>
-              <div className="mt-1 text-[11px] text-black/40 leading-relaxed">
-                Tes données resteront sur ton téléphone uniquement
-              </div>
             </div>
           </>
         )}

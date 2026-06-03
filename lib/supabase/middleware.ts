@@ -7,17 +7,24 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function updateSession(request: NextRequest) {
+type SessionResult = {
+  response: NextResponse;
+  /** User Supabase si connecté, null sinon, undefined si Supabase non configuré */
+  user: { id: string; email?: string } | null | undefined;
+};
+
+export async function updateSession(request: NextRequest): Promise<SessionResult> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   // Si env vars Supabase absentes (mode démo pur sans backend),
   // on skip silencieusement sans casser le middleware.
   if (!url || !key) {
-    return NextResponse.next({ request });
+    return { response: NextResponse.next({ request }), user: undefined };
   }
 
   let supabaseResponse = NextResponse.next({ request });
+  let user: { id: string; email?: string } | null = null;
 
   try {
     const supabase = createServerClient(url, key, {
@@ -36,13 +43,13 @@ export async function updateSession(request: NextRequest) {
     });
 
     // IMPORTANT : appel obligatoire pour rafraîchir la session.
-    // Ne pas supprimer même si on n'utilise pas la valeur retournée.
-    await supabase.auth.getUser();
+    const { data } = await supabase.auth.getUser();
+    user = data.user ? { id: data.user.id, email: data.user.email } : null;
   } catch (e) {
     // Ne JAMAIS faire crasher le middleware (sinon MIDDLEWARE_INVOCATION_FAILED
     // sur toutes les pages). Log et continue.
     console.warn("[supabase/middleware] updateSession error:", e);
   }
 
-  return supabaseResponse;
+  return { response: supabaseResponse, user };
 }

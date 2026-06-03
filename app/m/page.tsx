@@ -77,10 +77,10 @@ export default function MobileHomePage() {
     <>
       <MobileHeader title="Vertxia" largeTitle />
 
-      {/* Bandeau compte — affiché uniquement si Supabase est configuré */}
-      {configured && (
-      <div className="px-4 mt-2 mb-2">
-        {user ? (
+      {/* Bandeau compte connecté — affiché si Supabase configuré + user présent
+          (mode hybride : si Supabase pas configuré, pas de bandeau du tout). */}
+      {configured && user && (
+        <div className="px-4 mt-2 mb-2">
           <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200">
             <div className="flex items-center gap-2.5 min-w-0">
               <span className="inline-flex w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 items-center justify-center text-[12px] font-semibold shrink-0">
@@ -102,26 +102,7 @@ export default function MobileHomePage() {
               Déconnexion
             </button>
           </div>
-        ) : (
-          <Link
-            href="/m/login"
-            className="block px-4 py-2.5 rounded-2xl bg-black/[0.03] border border-black/[0.07] active:bg-black/[0.05] transition-colors"
-            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-[10px] tracking-widest uppercase font-mono text-black/45">
-                  Mode démo · données locales
-                </div>
-                <div className="text-[12px] text-[#111] mt-0.5">
-                  Se connecter pour synchroniser →
-                </div>
-              </div>
-              <span className="text-[#A16207] text-[14px]">→</span>
-            </div>
-          </Link>
-        )}
-      </div>
+        </div>
       )}
 
       {isEmpty && <EmptyState />}

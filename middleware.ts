@@ -5,31 +5,48 @@
  *    pour ne pas perdre le refresh_token).
  * 2. Protège les routes /app/* (ancien système v0.8 cookie maison) :
  *    redirige vers /login si pas de cookie `vertxia_session`.
- * 3. /m/* (app mobile démo) reste accessible SANS login (mode hybride :
- *    localStorage si pas connecté, sync DB si connecté).
+ * 3. Protège les routes /m/* (app mobile) : redirige vers /m/login si
+ *    pas de session Supabase. Connexion Google OAuth obligatoire.
+ *    Exception : /m/login (sinon boucle).
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
-const PROTECTED_PREFIXES = ["/app"];
+const PROTECTED_LEGACY_PREFIXES = ["/app"];
+const PROTECTED_MOBILE_PREFIXES = ["/m"];
+const MOBILE_PUBLIC_PATHS = ["/m/login"];
 
 export async function middleware(req: NextRequest) {
   // 1. Rafraîchit la session Supabase Auth (toutes les routes)
-  const supabaseResponse = await updateSession(req);
+  const { response: supabaseResponse, user } = await updateSession(req);
 
-  // 2. Protection ancien système /app/* (cookie maison)
   const pathname = req.nextUrl.pathname;
-  const isProtected = PROTECTED_PREFIXES.some(
+
+  // 2. Protection ancien système /app/* (cookie maison legacy)
+  const isLegacyProtected = PROTECTED_LEGACY_PREFIXES.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`)
   );
-  if (isProtected) {
+  if (isLegacyProtected) {
     const sessionCookie = req.cookies.get("vertxia_session");
     if (!sessionCookie?.value) {
       const loginUrl = new URL("/login", req.url);
       loginUrl.searchParams.set("from", pathname);
       return NextResponse.redirect(loginUrl);
     }
+  }
+
+  // 3. Protection /m/* via Supabase Auth (Google OAuth obligatoire)
+  // Skip si Supabase non configuré (user === undefined) : mode démo silencieux
+  const isMobileProtected = PROTECTED_MOBILE_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`)
+  );
+  const isMobilePublic = MOBILE_PUBLIC_PATHS.includes(pathname);
+  if (isMobileProtected && !isMobilePublic && user === null) {
+    // Supabase configuré ET pas d'user → redirect vers /m/login
+    const loginUrl = new URL("/m/login", req.url);
+    if (pathname !== "/m") loginUrl.searchParams.set("from", pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   return supabaseResponse;
