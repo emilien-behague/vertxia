@@ -11,11 +11,14 @@ const CSP = [
   "default-src 'self'",
   // En dev : https: wildcard pour eviter d'avoir a maintenir une whitelist exhaustive
   // (picsum, sources experimentales, etc.). En prod : whitelist serree.
-  `img-src 'self' data: blob:${IS_DEV ? " https:" : " https://*.public.blob.vercel-storage.com https://cdn.shopify.com https://images.unsplash.com https://plus.unsplash.com https://lh3.googleusercontent.com https://picsum.photos https://fastly.picsum.photos https://*.stripe.com"}`,
+  // OpenStreetMap tiles autorisees pour la carte /m/planning (tile.openstreetmap.org
+  // sert les *.tile.openstreetmap.org). Sans ca la carte affiche du gris vide.
+  `img-src 'self' data: blob:${IS_DEV ? " https:" : " https://*.public.blob.vercel-storage.com https://cdn.shopify.com https://images.unsplash.com https://plus.unsplash.com https://lh3.googleusercontent.com https://picsum.photos https://fastly.picsum.photos https://*.stripe.com https://*.tile.openstreetmap.org https://tile.openstreetmap.org"}`,
   `script-src 'self' 'unsafe-inline'${IS_DEV ? " 'unsafe-eval'" : ""} https://js.stripe.com`,
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
-  `connect-src 'self' https://api.stripe.com https://*.stripe.com${IS_DEV ? " ws: wss:" : ""}`,
+  // Nominatim pour le geocoding des adresses (lib/geocoding.ts).
+  `connect-src 'self' https://api.stripe.com https://*.stripe.com https://nominatim.openstreetmap.org${IS_DEV ? " ws: wss:" : ""}`,
   "frame-src https://checkout.stripe.com https://billing.stripe.com https://js.stripe.com",
   "media-src 'self' blob: https://*.public.blob.vercel-storage.com",
   "object-src 'none'",

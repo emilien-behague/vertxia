@@ -136,16 +136,13 @@ export default function PlanningPage() {
     (async () => {
       // Charge Leaflet dynamiquement côté client uniquement
       const L = (await import("leaflet")).default;
-      // Le CSS de Leaflet doit être chargé via une balise <link> dans le head
-      // (impossible d'import "leaflet/dist/leaflet.css" en Next.js client component)
-      // → on inject une fois si pas déjà présent
+      // CSS Leaflet self-hosted depuis /public/leaflet.css pour respecter
+      // la CSP `style-src 'self'` (un link vers unpkg.com serait bloque).
       if (!document.querySelector('link[data-leaflet-css]')) {
         const link = document.createElement("link");
         link.rel = "stylesheet";
-        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        link.href = "/leaflet.css";
         link.setAttribute("data-leaflet-css", "true");
-        link.integrity = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
-        link.crossOrigin = "";
         document.head.appendChild(link);
       }
       LRef = L;
