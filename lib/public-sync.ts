@@ -62,8 +62,15 @@ export async function syncInterventionToSupabase(int: StoredIntervention, equipe
 
 export type PublicEquipement = StoredEquipement & {
   ownerUserId: string;
-  isReadOnly: boolean; // true si le visiteur ≠ owner (vue partagée)
-  /** Mode "full" = owner authentifié, toutes données. Mode "public" = vue épurée. */
+  /** True si le visiteur ≠ owner (= ne peut pas éditer). */
+  isReadOnly: boolean;
+  /** True si le visiteur EST le owner. */
+  isOwner: boolean;
+  /** True si le visiteur peut démarrer une nouvelle intervention sur cet eq.
+   *  Owner = toujours. Confrère = uniquement s'il a déjà au moins 1 intervention
+   *  sur cet équipement (= il a déjà été "admis" par une prise en charge). */
+  canCreateIntervention: boolean;
+  /** "full" = authentifié, toutes données visibles. "public" = vue épurée (visiteur anonyme). */
   mode: "full" | "public";
   /** Présent UNIQUEMENT en mode "public" : coordonnées du frigoriste référent. */
   ownerPublic?: {
@@ -113,7 +120,9 @@ export async function fetchPublicEquipement(id: string): Promise<PublicEquipemen
     const json = (await res.json()) as {
       data: Record<string, unknown> | null;
       mode?: "full" | "public";
+      isOwner?: boolean;
       isReadOnly: boolean;
+      canCreateIntervention?: boolean;
       ownerPublic?: PublicEquipement["ownerPublic"];
     };
     if (!json.data) {
@@ -156,6 +165,8 @@ export async function fetchPublicEquipement(id: string): Promise<PublicEquipemen
       notes: isPublic ? undefined : ((data.notes as string) ?? undefined),
       ownerUserId: data.user_id as string,
       isReadOnly: json.isReadOnly,
+      isOwner: json.isOwner ?? !json.isReadOnly,
+      canCreateIntervention: json.canCreateIntervention ?? (json.isOwner ?? !json.isReadOnly),
       mode,
       ownerPublic: json.ownerPublic ?? null,
     };

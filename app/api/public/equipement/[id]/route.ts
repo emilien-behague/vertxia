@@ -1,16 +1,18 @@
 // Proxy server-side vers Supabase pour la lecture publique d'un équipement.
 //
-// IMPORTANT — Stratégie de visibilité :
-// Le propriétaire authentifié voit TOUT (mode "full"). Les visiteurs
-// (client, concurrent, contrôleur) voient une VUE ÉPURÉE (mode "public") :
-//   ✓ Modèle, n°série, fluide (code uniquement)
-//   ✓ Statut du contrôle (à jour / à programmer / en retard)
-//   ✓ Coordonnées du frigoriste référent (raison sociale + tel + email)
-//   ✗ Coordonnées client, historique interventions, charge exacte, GWP, notes
+// IMPORTANT — Stratégie de visibilité (3 niveaux) :
+// 1. Visiteur NON authentifié (client, contrôleur, anonyme) → mode "public"
+//    = vue épurée : modèle, n°série, fluide (code), statut, contact pro.
+//    ✗ Pas de coordonnées client, charge, GWP, historique, notes.
+// 2. Confrère AUTHENTIFIÉ non-owner → mode "full" mais isOwner=false
+//    = vue complète (consultation pleine) MAIS pas d'actions d'édition.
+//    Sert la collaboration inter-frigoristes (sous-traitance, dépannage).
+// 3. Owner AUTHENTIFIÉ → mode "full" + isOwner=true
+//    = vue complète + actions d'édition (démarrer intervention, relance, etc.).
 //
-// Objectif business : viralité (le client scan → il voit qu'un pro s'occupe
-// de lui) SANS donner gratuit la donnée commerciale. Un concurrent qui
-// scanne voit "installation déjà suivie par X" et ne peut pas voler.
+// Objectif business : viralité préservée pour les visiteurs anonymes
+// (client scan → il voit qu'un pro s'occupe) + collaboration entre pros
+// Vertxia (création de compte = ticket d'entrée pour voir le détail).
 
 import { NextResponse } from "next/server";
 import { createClient as createCookieClient } from "@/lib/supabase/server";
@@ -47,14 +49,36 @@ export async function GET(
 
     const cookieClient = await createCookieClient();
     const { data: { user } } = await cookieClient.auth.getUser();
-    const isReadOnly = !user || user.id !== data.user_id;
+    const isAuth = Boolean(user);
+    const isOwner = isAuth && user!.id === data.user_id;
 
-    if (!isReadOnly) {
-      // Mode FULL : owner authentifié → toutes les données
-      return NextResponse.json({ data, mode: "full", isReadOnly: false }, { status: 200 });
+    if (isAuth) {
+      // Mode FULL : authentifié (owner OU confrère) → toutes les données.
+      // isReadOnly = false uniquement pour le owner (= peut éditer la fiche).
+      //
+      // canCreateIntervention = peut démarrer une NOUVELLE intervention sur
+      // cet équipement. Vrai si :
+      //   - owner (toujours)
+      //   - OU technicien ayant déjà fait au moins 1 intervention sur l'eq
+      // (un frigoriste tiers qui n'a jamais touché à la machine ne peut pas
+      //  créer une intervention dessus — il doit d'abord être "admis" via une
+      //  première intervention de prise en charge initiée par l'owner).
+      let canCreateIntervention = isOwner;
+      if (!isOwner) {
+        const { count: prevCount } = await anon
+          .from("interventions")
+          .select("id", { count: "exact", head: true })
+          .eq("equipement_id", data.id)
+          .eq("user_id", user!.id);
+        canCreateIntervention = (prevCount ?? 0) > 0;
+      }
+      return NextResponse.json(
+        { data, mode: "full", isOwner, isReadOnly: !isOwner, canCreateIntervention },
+        { status: 200 }
+      );
     }
 
-    // Mode PUBLIC : visiteur non-owner → vue épurée + contact du frigoriste owner
+    // Mode PUBLIC : visiteur NON authentifié → vue épurée + contact pro
     const { data: ownerProfil } = await anon
       .from("profils")
       .select("raison_sociale, telephone, email, numero_attestation")
@@ -93,7 +117,14 @@ export async function GET(
       : null;
 
     return NextResponse.json(
-      { data: publicData, mode: "public", isReadOnly: true, ownerPublic },
+      {
+        data: publicData,
+        mode: "public",
+        isOwner: false,
+        isReadOnly: true,
+        canCreateIntervention: false,
+        ownerPublic,
+      },
       { status: 200 }
     );
   } catch (e) {

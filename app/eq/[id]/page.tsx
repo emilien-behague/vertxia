@@ -105,7 +105,13 @@ export default function EquipementScannedPage({
   const [qrError, setQrError] = useState<string | null>(null);
   // Mode lecture seule = équipement chargé depuis Supabase, pas en local
   // (visiteur qui scan le QR d'un équipement d'un autre frigoriste)
-  const [isReadOnly, setIsReadOnly] = useState(false);
+  // isReadOnly est stocké côté serveur mais on raisonne en UI via isOwner /
+  // canCreateIntervention / mode (plus précis). On garde le state pour
+  // d'éventuelles évolutions sans rebrasser tout.
+  const [, setIsReadOnly] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const [canCreateIntervention, setCanCreateIntervention] = useState(false);
+  const [mode, setMode] = useState<"full" | "public">("full");
   const [ownerPublic, setOwnerPublic] = useState<PublicEquipement["ownerPublic"]>(null);
   const [fetching, setFetching] = useState(false);
 
@@ -122,6 +128,9 @@ export default function EquipementScannedPage({
           setEq(computeStatus(found, interventions));
           setProfil(loadProfil());
           setIsReadOnly(false);
+          setIsOwner(true);
+          setCanCreateIntervention(true);
+          setMode("full");
         }
         return;
       }
@@ -136,14 +145,18 @@ export default function EquipementScannedPage({
         setFetching(false);
         return;
       }
-      // En mode public (non-owner) on ne fetch PAS l'historique d'interventions
-      // car on ne veut pas l'exposer aux visiteurs.
-      const remoteInterventions = remote.isReadOnly
+      // L'historique est fetch UNIQUEMENT si on est authentifié (mode "full").
+      // En mode "public" (visiteur anonyme) on ne charge pas l'historique pour
+      // ne pas exposer les données aux non-connectés.
+      const remoteInterventions = remote.mode === "public"
         ? []
         : await fetchPublicInterventions(id);
       if (cancelled) return;
       setEq(computeStatus(remote, remoteInterventions));
       setIsReadOnly(remote.isReadOnly);
+      setIsOwner(remote.isOwner);
+      setCanCreateIntervention(remote.canCreateIntervention);
+      setMode(remote.mode);
       setOwnerPublic(remote.ownerPublic ?? null);
       setFetching(false);
     })();
@@ -205,10 +218,26 @@ export default function EquipementScannedPage({
       }}
     >
       <div className="max-w-md mx-auto px-5 py-6">
-        {/* Bandeau "Suivi par un pro" — visible quand visiteur non-owner.
-            Le client final, un confrère ou un contrôleur voit la fiche
-            épurée + les coordonnées du frigoriste référent. */}
-        {isReadOnly && (
+        {/* Bandeau "Confrère Vertxia" — visible quand l'utilisateur est
+            authentifié mais ce n'est pas SON équipement. Léger, juste pour
+            éviter qu'il pense que c'est dans son parc. */}
+        {mode === "full" && !isOwner && (
+          <div className="mb-4 px-4 py-2.5 rounded-2xl bg-black/[0.04] ring-1 ring-black/10">
+            <div className="flex items-center gap-2.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.45)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4M12 8h.01" />
+              </svg>
+              <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-black/55">
+                Équipement d&apos;un confrère Vertxia · Lecture
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bandeau "Suivi par un pro" — visible UNIQUEMENT pour visiteur anonyme.
+            Le client final ou un contrôleur voit la fiche épurée + contact pro. */}
+        {mode === "public" && (
           <div className="mb-4 px-4 py-3 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200">
             <div className="flex items-start gap-3">
               <div className="shrink-0 w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center">
@@ -229,9 +258,9 @@ export default function EquipementScannedPage({
         )}
 
         {/* Header compact — la nav vers /m/equipements (PARC) est cachée
-            pour les visiteurs non-owner (le client n'a pas accès au parc). */}
+            pour les visiteurs anonymes (pas de compte = pas d'accès au parc). */}
         <div className="flex items-center justify-between mb-6">
-          {!isReadOnly ? (
+          {mode === "full" ? (
             <a
               href="/m/equipements"
               className="font-mono text-[10px] tracking-[0.25em] text-black/45 hover:text-black/80 transition-colors inline-flex items-center gap-2"
@@ -274,7 +303,7 @@ export default function EquipementScannedPage({
             {eq.modele || "(modèle inconnu)"}
           </h1>
 
-          {!isReadOnly && (
+          {mode === "full" && (
             <div className="mt-2 text-sm text-black/65 leading-relaxed">
               <strong className="text-black/85 font-medium">{eq.clientName}</strong>
               {eq.siteAdresse && (
@@ -300,8 +329,8 @@ export default function EquipementScannedPage({
           )}
         </div>
 
-        {/* Encart RELANCE CLIENT — visible uniquement si statut a_relancer ET owner */}
-        {eq.statut === "a_relancer" && !isReadOnly && (
+        {/* Encart RELANCE CLIENT — owner uniquement (action commerciale) */}
+        {eq.statut === "a_relancer" && isOwner && (
           <div className="rounded-2xl bg-orange-50 ring-1 ring-orange-200 p-5 mb-3">
             <div className="flex items-start gap-3">
               <div className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full bg-orange-500 text-white text-xl">
@@ -347,8 +376,9 @@ export default function EquipementScannedPage({
           </div>
         )}
 
-        {/* CTA principal — owner uniquement (démarrer intervention) */}
-        {!isReadOnly && (
+        {/* CTA principal "Démarrer intervention" — owner OU technicien
+            ayant déjà au moins 1 intervention sur cet équipement. */}
+        {canCreateIntervention && (
           <a
             href={`/m/intervention/nouvelle?equipement=${eq.id}`}
             className="block w-full px-6 py-5 bg-[#111] text-white rounded-2xl mb-3 active:bg-black/90 active:scale-[0.98] transition-all shadow-lg shadow-black/15"
@@ -372,8 +402,8 @@ export default function EquipementScannedPage({
           </a>
         )}
 
-        {/* Bloc "Contacter votre frigoriste référent" — mode public uniquement */}
-        {isReadOnly && ownerPublic && (ownerPublic.telephone || ownerPublic.email) && (
+        {/* Bloc "Contacter votre frigoriste référent" — visiteur anonyme uniquement */}
+        {mode === "public" && ownerPublic && (ownerPublic.telephone || ownerPublic.email) && (
           <div className="rounded-2xl bg-[#111] text-white mb-3 overflow-hidden shadow-lg shadow-black/15">
             <div className="px-5 py-4">
               <div className="font-mono text-[9px] tracking-[0.3em] uppercase text-white/55 mb-1">
@@ -436,8 +466,8 @@ export default function EquipementScannedPage({
           </div>
         )}
 
-        {/* Coordonnées client — owner uniquement (donnée commerciale sensible) */}
-        {!isReadOnly && (eq.clientEmail || eq.clientTelephone || eq.siteAdresse) && (
+        {/* Coordonnées client — authentifiés (data commerciale, pas pour visiteur anonyme) */}
+        {mode === "full" && (eq.clientEmail || eq.clientTelephone || eq.siteAdresse) && (
           <div className="rounded-2xl bg-white ring-1 ring-black/[0.06] mb-3 overflow-hidden">
             <div className="px-5 pt-4 pb-2 flex items-baseline justify-between">
               <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/45">
@@ -516,16 +546,13 @@ export default function EquipementScannedPage({
           </div>
         )}
 
-        {/* Specs équipement — détails masqués en mode public (visiteur).
-            Le visiteur voit juste fluide (code) + n°série + fréquence
-            réglementaire indicative. Charge, GWP, tCO2eq, détecteur, dernier
-            contrôle = données techniques commerciales du frigoriste. */}
+        {/* Specs équipement — données techniques cachées au visiteur anonyme. */}
         <div className="rounded-2xl bg-white ring-1 ring-black/[0.06] divide-y divide-black/[0.06] mb-3">
           <SpecRow
             label="Fluide"
-            value={isReadOnly ? eq.fluide.code : `${eq.fluide.code} · GWP ${eq.fluide.gwp.toLocaleString("fr-FR")}`}
+            value={mode === "public" ? eq.fluide.code : `${eq.fluide.code} · GWP ${eq.fluide.gwp.toLocaleString("fr-FR")}`}
           />
-          {!isReadOnly && (
+          {mode === "full" && (
             <>
               <SpecRow label="Charge nominale" value={`${eq.chargeKg.toFixed(2).replace(".", ",")} kg`} />
               <SpecRow
@@ -536,13 +563,13 @@ export default function EquipementScannedPage({
             </>
           )}
           <SpecRow label="Numéro de série" value={eq.numeroSerie} mono />
-          {!isReadOnly && eq.detecteurFixe && (
+          {mode === "full" && eq.detecteurFixe && (
             <SpecRow label="Détecteur fixe" value="Oui — fréquence × 2" valueClass="text-purple-700" />
           )}
-          {!isReadOnly && (
+          {mode === "full" && (
             <SpecRow label="Dernier contrôle" value={fmtDateLong(eq.dernierControleISO)} />
           )}
-          {isReadOnly && eq.frequenceMois && (
+          {mode === "public" && eq.frequenceMois && (
             <SpecRow
               label="Fréquence réglementaire"
               value={`Contrôle d'étanchéité tous les ${eq.frequenceMois} mois`}
@@ -550,7 +577,7 @@ export default function EquipementScannedPage({
           )}
         </div>
 
-        {!isReadOnly && eq.notes && (
+        {mode === "full" && eq.notes && (
           <div className="rounded-2xl bg-amber-50/60 ring-1 ring-amber-200/50 px-5 py-4 mb-3">
             <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-amber-800/70">
               Notes
@@ -559,9 +586,9 @@ export default function EquipementScannedPage({
           </div>
         )}
 
-        {/* Unités intérieures rattachées au circuit fluide — owner uniquement
-            (le visiteur n'a pas besoin de connaître la topologie de l'installation). */}
-        {!isReadOnly && eq.unitesInterieures && eq.unitesInterieures.length > 0 && (
+        {/* Unités intérieures rattachées — visibles pour authentifiés.
+            Le visiteur anonyme ne voit pas la topologie. */}
+        {mode === "full" && eq.unitesInterieures && eq.unitesInterieures.length > 0 && (
           <div className="rounded-2xl bg-white ring-1 ring-black/[0.06] mb-3 overflow-hidden">
             <div className="px-5 pt-4 pb-2 flex items-baseline justify-between">
               <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/45">
@@ -596,8 +623,8 @@ export default function EquipementScannedPage({
           </div>
         )}
 
-        {/* Actions secondaires — owner uniquement */}
-        {!isReadOnly && (
+        {/* Actions secondaires — owner uniquement (QR PDF + raccourcis perso) */}
+        {isOwner && (
         <div className="grid grid-cols-3 gap-3 mt-4">
           <button
             type="button"
@@ -633,17 +660,15 @@ export default function EquipementScannedPage({
           </a>
         </div>
         )}
-        {!isReadOnly && qrError && (
+        {isOwner && qrError && (
           <div className="mt-2 px-4 py-2 rounded-xl bg-red-50 ring-1 ring-red-200 text-[12px] text-red-700 text-center">
             {qrError}
           </div>
         )}
 
-        {/* CTA acquisition virale — visible UNIQUEMENT en mode public (visiteur).
-            Le wording cible explicitement les pros du froid → le client final
-            et le contrôleur passent leur chemin. Le concurrent ou un pro qui
-            scanne par curiosité est un lead chaud. */}
-        {isReadOnly && (
+        {/* CTA acquisition virale — visible UNIQUEMENT pour visiteur anonyme.
+            Le wording cible explicitement les pros du froid. */}
+        {mode === "public" && (
           <div className="mt-8 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50/40 ring-1 ring-amber-200/60 p-5">
             <div className="font-mono text-[9px] tracking-[0.3em] uppercase text-amber-800/70">
               · Pour les professionnels du froid
