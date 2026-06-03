@@ -161,6 +161,29 @@ export function deleteEquipement(id: string): void {
 }
 
 /**
+ * Insère un équipement EXISTANT (avec son ID original) dans le parc local
+ * du visiteur. Utilisé quand un confrère redeem un lien magique : l'équipement
+ * apparaît alors dans son /m/equipements sans dupliquer l'ID dans Supabase.
+ *
+ * Si l'eq existe déjà localement (même ID) → met à jour les champs.
+ * Sinon → l'ajoute.
+ *
+ * Ne déclenche PAS le sync Supabase (le visiteur n'est pas owner, l'upsert
+ * Supabase serait refusé par RLS de toute façon).
+ */
+export function upsertEquipementInPark(eq: StoredEquipement): void {
+  if (!isBrowser()) return;
+  const all = listEquipements();
+  const idx = all.findIndex((e) => e.id === eq.id);
+  if (idx >= 0) {
+    all[idx] = eq;
+  } else {
+    all.unshift(eq);
+  }
+  localStorage.setItem(storageKey(), JSON.stringify(all));
+}
+
+/**
  * Calcule la fréquence de contrôle d'étanchéité en mois pour un équipement HFC.
  * Retourne null si :
  *  - charge en tCO₂eq < 5 (équipement exempté)

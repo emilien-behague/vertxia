@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, use } from "react";
 import {
   listEquipements,
   computeStatus,
+  upsertEquipementInPark,
   UNITE_INTERIEURE_LABELS,
   buildRelanceMailto,
   type EquipementWithStatus,
@@ -161,8 +162,13 @@ export default function EquipementScannedPage({
   }, [id]);
 
   useEffect(() => {
-    // Attend la fin du redeem avant de fetch (sinon on récupère "confrere"
-    // alors qu'on devrait être en "full" après consommation du grant).
+    // Si l'URL contient un token de grant, on attend que le redeem soit
+    // terminé (done ou error) avant de fetch — sinon on récupère "confrere"
+    // alors qu'on aurait dû être en "full" après consommation du grant.
+    if (typeof window !== "undefined") {
+      const hasGrantToken = new URLSearchParams(window.location.search).get("grant");
+      if (hasGrantToken && redeemStatus !== "done" && redeemStatus !== "error") return;
+    }
     if (redeemStatus === "redeeming") return;
     let cancelled = false;
     (async () => {
@@ -207,6 +213,32 @@ export default function EquipementScannedPage({
       setMode(remote.mode);
       setOwnerPublic(remote.ownerPublic ?? null);
       setFetching(false);
+      // Si l'utilisateur vient de redeem un grant et qu'il a maintenant mode
+      // "full" sans être owner, on ajoute l'équipement à son parc local pour
+      // qu'il apparaisse dans /m/equipements. ID conservé pour cohérence avec
+      // le QR collé sur la machine.
+      if (
+        redeemStatus === "done" &&
+        remote.mode === "full" &&
+        !remote.isOwner
+      ) {
+        upsertEquipementInPark({
+          id: remote.id,
+          createdAt: remote.createdAt,
+          clientName: remote.clientName,
+          clientEmail: remote.clientEmail,
+          clientTelephone: remote.clientTelephone,
+          siteAdresse: remote.siteAdresse,
+          modele: remote.modele,
+          numeroSerie: remote.numeroSerie,
+          fluide: remote.fluide,
+          chargeKg: remote.chargeKg,
+          detecteurFixe: remote.detecteurFixe,
+          dernierControleISO: remote.dernierControleISO,
+          unitesInterieures: remote.unitesInterieures,
+          notes: remote.notes,
+        });
+      }
     })();
     return () => {
       cancelled = true;
