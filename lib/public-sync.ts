@@ -99,9 +99,29 @@ export type PublicEquipement = StoredEquipement & {
   isReadOnly: boolean; // true si le visiteur ≠ owner (vue partagée)
 };
 
+// Debug : la dernière exécution de fetchPublicEquipement stocke ici le détail
+// (pour afficher dans le UI quand un équipement est introuvable).
+export type FetchDebug = {
+  supabaseConfigured: boolean;
+  fetched: boolean;
+  errorMessage?: string;
+  errorCode?: string;
+  rowCount?: number;
+  searchedId: string;
+};
+export let lastFetchDebug: FetchDebug | null = null;
+
 export async function fetchPublicEquipement(id: string): Promise<PublicEquipement | null> {
   if (typeof window === "undefined") return null;
-  if (!isSupabaseConfigured()) return null;
+  if (!isSupabaseConfigured()) {
+    lastFetchDebug = {
+      supabaseConfigured: false,
+      fetched: false,
+      errorMessage: "Supabase env vars absentes",
+      searchedId: id,
+    };
+    return null;
+  }
   try {
     const supabase = createClient();
     const { data, error } = await supabase
@@ -109,12 +129,36 @@ export async function fetchPublicEquipement(id: string): Promise<PublicEquipemen
       .select("*")
       .eq("id", id)
       .maybeSingle();
-    if (error || !data) return null;
+    if (error) {
+      lastFetchDebug = {
+        supabaseConfigured: true,
+        fetched: true,
+        errorMessage: error.message,
+        errorCode: error.code,
+        searchedId: id,
+      };
+      return null;
+    }
+    if (!data) {
+      lastFetchDebug = {
+        supabaseConfigured: true,
+        fetched: true,
+        rowCount: 0,
+        searchedId: id,
+      };
+      return null;
+    }
 
     // Check si le visiteur est le owner
     const { data: { user } } = await supabase.auth.getUser();
     const isReadOnly = !user || user.id !== data.user_id;
 
+    lastFetchDebug = {
+      supabaseConfigured: true,
+      fetched: true,
+      rowCount: 1,
+      searchedId: id,
+    };
     return {
       id: data.id,
       createdAt: data.created_at,
@@ -139,6 +183,29 @@ export async function fetchPublicEquipement(id: string): Promise<PublicEquipemen
     };
   } catch (e) {
     console.warn("[public-sync] fetchPublicEquipement failed:", e);
+    lastFetchDebug = {
+      supabaseConfigured: true,
+      fetched: false,
+      errorMessage: e instanceof Error ? e.message : String(e),
+      searchedId: id,
+    };
+    return null;
+  }
+}
+
+/** Compte total d'équipements dans Supabase (visibles publiquement).
+ *  Pour debug : si 0 → le sync n'a jamais marché. Si > 0 → bug fetch ID. */
+export async function countPublicEquipements(): Promise<number | null> {
+  if (typeof window === "undefined") return null;
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const supabase = createClient();
+    const { count, error } = await supabase
+      .from("equipements")
+      .select("*", { count: "exact", head: true });
+    if (error) return null;
+    return count ?? 0;
+  } catch {
     return null;
   }
 }

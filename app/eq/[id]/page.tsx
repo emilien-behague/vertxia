@@ -12,7 +12,7 @@ import {
 import { listInterventions } from "@/lib/intervention-storage";
 import { loadProfil, type Profil } from "@/lib/profil";
 import { generateQrLabel } from "@/lib/qr-label";
-import { fetchPublicEquipement, fetchPublicInterventions } from "@/lib/public-sync";
+import { fetchPublicEquipement, fetchPublicInterventions, countPublicEquipements, lastFetchDebug } from "@/lib/public-sync";
 
 // Page mobile premium — affichée quand un frigoriste scanne le QR Code collé sur
 // un équipement. Doit s'afficher SANS bug sur Safari iOS (zéro animation initial:opacity:0
@@ -186,7 +186,7 @@ export default function EquipementScannedPage({
   }
 
   if (!mounted || fetching) return <LoadingState />;
-  if (!eq || !visual) return <NotFoundState id={id} />;
+  if (!eq || !visual) return <NotFoundState id={id} debug={lastFetchDebug} />;
 
   return (
     <div
@@ -593,7 +593,12 @@ function LoadingState() {
   );
 }
 
-function NotFoundState({ id }: { id: string }) {
+function NotFoundState({ id, debug }: { id: string; debug: import("@/lib/public-sync").FetchDebug | null }) {
+  const [count, setCount] = useState<number | null | "loading">("loading");
+  useEffect(() => {
+    countPublicEquipements().then(setCount);
+  }, []);
+
   return (
     <div
       className="min-h-screen bg-[#F5F4F0] text-[#111] font-sans antialiased"
@@ -612,6 +617,46 @@ function NotFoundState({ id }: { id: string }) {
             Cet équipement n&apos;existe pas dans ce compte Vertxia, ou il a été supprimé.
           </p>
           <div className="mt-1 text-[10px] font-mono text-black/30">ID : {id.slice(0, 8)}…</div>
+        </div>
+
+        {/* Diagnostic technique du fetch Supabase (debug partage Niveau 1) */}
+        <div className="mt-4 rounded-2xl bg-black/[0.04] ring-1 ring-black/10 px-4 py-3">
+          <details>
+            <summary className="text-[11px] font-mono tracking-widest uppercase text-black/55 cursor-pointer">
+              · Diagnostic technique
+            </summary>
+            <div className="mt-3 text-[11px] font-mono text-black/70 leading-relaxed space-y-1">
+              <div>ID recherché : {id}</div>
+              <div>Supabase configuré : {debug?.supabaseConfigured ? "✓ oui" : "✗ non"}</div>
+              <div>Fetch effectué : {debug?.fetched ? "✓ oui" : "✗ non"}</div>
+              {debug?.errorMessage && (
+                <div className="text-red-600">Erreur : {debug.errorMessage}</div>
+              )}
+              {debug?.errorCode && (
+                <div className="text-red-600">Code : {debug.errorCode}</div>
+              )}
+              {typeof debug?.rowCount === "number" && (
+                <div>Ligne trouvée : {debug.rowCount}</div>
+              )}
+              <div className="pt-2 border-t border-black/10 mt-2">
+                Total équipements dans Supabase : {
+                  count === "loading" ? "…" :
+                  count === null ? "erreur fetch" :
+                  count
+                }
+              </div>
+              {count === 0 && (
+                <div className="text-amber-700 mt-2">
+                  → La table Supabase est VIDE. Le sync n&apos;a jamais fonctionné. Crée un équipement et reviens ici.
+                </div>
+              )}
+              {count !== null && count !== "loading" && count > 0 && debug?.rowCount === 0 && (
+                <div className="text-amber-700 mt-2">
+                  → Il y a {count} équipement(s) dans Supabase mais pas celui-ci. Soit l&apos;ID est faux, soit cet équipement a été créé avant le sync.
+                </div>
+              )}
+            </div>
+          </details>
         </div>
 
         <div className="mt-5 space-y-2">
