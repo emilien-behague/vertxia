@@ -270,3 +270,44 @@ create policy "equipements_select_public" on public.equipements
 drop policy if exists "interventions_select_public" on public.interventions;
 create policy "interventions_select_public" on public.interventions
   for select to anon, authenticated using (true);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- ── 8. GRANTS D'ACCÈS ENTRE CONFRÈRES ──────────────────────────────────────
+-- L'owner d'un équipement peut générer un "lien magique" temporaire (24h)
+-- pour donner accès complet (mode "full") à un confrère Vertxia. Use case :
+-- sous-traitance d'une intervention sur une installation existante.
+--
+-- Flow :
+--  1. Owner clique "Donner accès" → POST /api/.../grant → row insérée avec
+--     token UUID + expires_at = now + 24h.
+--  2. Owner copie le lien `/eq/<id>?grant=<token>` → envoie WhatsApp.
+--  3. Confrère ouvre le lien (connecté à SON compte) → POST redeem
+--     → used_by_user_id set, used_at = now.
+--  4. À chaque fetch /eq/<id>, l'API vérifie : si un grant existe avec
+--     used_by_user_id = visitor → mode "full" + canCreateIntervention.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+create table if not exists public.equipement_grants (
+  id uuid primary key default gen_random_uuid(),
+  equipement_id uuid not null references public.equipements(id) on delete cascade,
+  owner_user_id uuid not null references auth.users(id) on delete cascade,
+  token text not null unique,
+  expires_at timestamptz not null,
+  used_by_user_id uuid references auth.users(id) on delete set null,
+  used_at timestamptz,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_grants_token on public.equipement_grants(token);
+create index if not exists idx_grants_eq on public.equipement_grants(equipement_id);
+create index if not exists idx_grants_used_user on public.equipement_grants(used_by_user_id, equipement_id);
+
+alter table public.equipement_grants enable row level security;
+
+-- L'owner peut tout faire sur les grants de ses propres équipements.
+-- (Les autres opérations passent par les routes API server-side avec
+--  service_role, donc pas besoin de policy publique ici.)
+create policy "grants_owner_all" on public.equipement_grants
+  for all to authenticated
+  using (auth.uid() = owner_user_id)
+  with check (auth.uid() = owner_user_id);

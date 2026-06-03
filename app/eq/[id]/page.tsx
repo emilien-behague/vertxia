@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, use } from "react";
+import { useCallback, useEffect, useMemo, useState, use } from "react";
 import {
   listEquipements,
   computeStatus,
@@ -114,8 +114,56 @@ export default function EquipementScannedPage({
   const [mode, setMode] = useState<"full" | "public" | "confrere">("full");
   const [ownerPublic, setOwnerPublic] = useState<PublicEquipement["ownerPublic"]>(null);
   const [fetching, setFetching] = useState(false);
+  // Modal "Donner accès" (owner uniquement)
+  const [grantModalOpen, setGrantModalOpen] = useState(false);
+  const [grantUrl, setGrantUrl] = useState<string | null>(null);
+  const [grantLoading, setGrantLoading] = useState(false);
+  const [grantError, setGrantError] = useState<string | null>(null);
+  const [grantCopied, setGrantCopied] = useState(false);
+  // Redeem auto si ?grant=<token> dans l'URL
+  const [redeemStatus, setRedeemStatus] = useState<"idle" | "redeeming" | "done" | "error">("idle");
+  const [redeemError, setRedeemError] = useState<string | null>(null);
+
+  // Détection ?grant=<token> au mount — consomme le lien magique pour
+  // accorder l'accès "full" à ce visiteur sur cet équipement.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("grant");
+    if (!token) return;
+    (async () => {
+      setRedeemStatus("redeeming");
+      try {
+        const res = await fetch(
+          `/api/public/equipement/${encodeURIComponent(id)}/grant/redeem`,
+          {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ token }),
+          }
+        );
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          setRedeemError(j?.error ?? `HTTP ${res.status}`);
+          setRedeemStatus("error");
+          return;
+        }
+        setRedeemStatus("done");
+        // Clean l'URL pour ne pas refaire la requête au prochain refresh
+        const url = new URL(window.location.href);
+        url.searchParams.delete("grant");
+        window.history.replaceState({}, "", url.pathname + url.search);
+      } catch (e) {
+        setRedeemError(e instanceof Error ? e.message : "réseau");
+        setRedeemStatus("error");
+      }
+    })();
+  }, [id]);
 
   useEffect(() => {
+    // Attend la fin du redeem avant de fetch (sinon on récupère "confrere"
+    // alors qu'on devrait être en "full" après consommation du grant).
+    if (redeemStatus === "redeeming") return;
     let cancelled = false;
     (async () => {
       setMounted(true);
@@ -163,7 +211,7 @@ export default function EquipementScannedPage({
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, redeemStatus]);
 
   const visual = useMemo(() => (eq ? STATUT_VISUAL[eq.statut] : null), [eq]);
 
@@ -177,6 +225,42 @@ export default function EquipementScannedPage({
       frigoristeTelephone: profil?.telephone || undefined,
     });
   }, [eq, profil]);
+
+  // Génère un lien magique 24h à partager avec un confrère
+  const handleCreateGrant = useCallback(async () => {
+    setGrantLoading(true);
+    setGrantError(null);
+    setGrantUrl(null);
+    setGrantCopied(false);
+    try {
+      const res = await fetch(
+        `/api/public/equipement/${encodeURIComponent(id)}/grant`,
+        { method: "POST" }
+      );
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setGrantError(j?.error ?? `HTTP ${res.status}`);
+        return;
+      }
+      const j = (await res.json()) as { url: string };
+      setGrantUrl(j.url);
+    } catch (e) {
+      setGrantError(e instanceof Error ? e.message : "réseau");
+    } finally {
+      setGrantLoading(false);
+    }
+  }, [id]);
+
+  async function handleCopyGrant() {
+    if (!grantUrl) return;
+    try {
+      await navigator.clipboard.writeText(grantUrl);
+      setGrantCopied(true);
+      setTimeout(() => setGrantCopied(false), 2000);
+    } catch {
+      // fallback : sélection manuelle
+    }
+  }
 
   async function handleGenerateQr() {
     if (!eq) return;
@@ -218,6 +302,30 @@ export default function EquipementScannedPage({
       }}
     >
       <div className="max-w-md mx-auto px-5 py-6">
+        {/* Bandeau succès "Accès accordé" — confrère qui vient d'utiliser
+            un lien magique. S'affiche après consommation du token. */}
+        {redeemStatus === "done" && (
+          <div className="mb-4 px-4 py-3 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200">
+            <div className="flex items-center gap-2.5">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(5, 150, 105)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+              <div className="text-[13px] font-medium text-emerald-900">
+                Accès accordé — tu peux maintenant intervenir sur cette installation.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bandeau erreur redeem (token expiré, déjà utilisé, etc.) */}
+        {redeemStatus === "error" && (
+          <div className="mb-4 px-4 py-3 rounded-2xl bg-red-50 ring-1 ring-red-200">
+            <div className="text-[13px] text-red-900">
+              <strong>Lien d&apos;accès invalide</strong> — {redeemError ?? "demande à l'owner de regénérer un lien."}
+            </div>
+          </div>
+        )}
+
         {/* Bandeau "Technicien admis" — utilisateur authentifié qui a déjà
             au moins 1 intervention sur cet eq mais qui n'est pas owner.
             Voit tout, peut intervenir de nouveau. */}
@@ -425,6 +533,29 @@ export default function EquipementScannedPage({
               </svg>
             </div>
           </a>
+        )}
+
+        {/* Bouton "Donner accès à un confrère" — owner uniquement.
+            Génère un lien magique 24h, idéal pour sous-traiter une intervention. */}
+        {isOwner && (
+          <button
+            type="button"
+            onClick={() => {
+              setGrantModalOpen(true);
+              if (!grantUrl) handleCreateGrant();
+            }}
+            className="block w-full px-5 py-3.5 rounded-2xl bg-white ring-1 ring-black/10 text-[#111] text-[14px] font-medium mb-3 active:bg-black/[0.03] transition-colors inline-flex items-center justify-center gap-2.5"
+            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+            Donner accès à un confrère
+          </button>
         )}
 
         {/* Bloc "Contacter le frigoriste référent" — visible pour visiteur
@@ -732,6 +863,91 @@ export default function EquipementScannedPage({
           </div>
         </div>
       </div>
+
+      {/* Modal "Donner accès à un confrère" */}
+      {grantModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setGrantModalOpen(false)}
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          <div
+            className="w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="min-w-0 flex-1 pr-3">
+                <div className="font-mono text-[9px] tracking-[0.3em] uppercase text-black/45">
+                  Partage d&apos;accès
+                </div>
+                <div className="mt-1 text-lg font-medium tracking-tight text-[#111]">
+                  Donner accès à un confrère
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setGrantModalOpen(false)}
+                className="shrink-0 w-9 h-9 rounded-full bg-black/[0.04] flex items-center justify-center active:bg-black/[0.08]"
+                aria-label="Fermer"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <p className="text-[13px] text-black/70 leading-relaxed mb-4">
+              Envoie ce lien à ton confrère par WhatsApp, SMS ou email. Une fois qu&apos;il clique
+              (connecté à son compte Vertxia), il aura accès complet à la fiche pendant 24h
+              et pourra créer des interventions.
+            </p>
+
+            {grantLoading && (
+              <div className="px-4 py-3 rounded-xl bg-black/[0.04] text-[12px] text-black/55 text-center font-mono">
+                Génération du lien…
+              </div>
+            )}
+
+            {grantError && (
+              <div className="px-4 py-3 rounded-xl bg-red-50 ring-1 ring-red-200 text-[12px] text-red-700">
+                ❌ {grantError}
+              </div>
+            )}
+
+            {grantUrl && (
+              <>
+                <div className="px-3 py-3 rounded-xl bg-black/[0.04] mb-3 break-all font-mono text-[11px] text-black/70 leading-relaxed">
+                  {grantUrl}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCopyGrant}
+                    className="px-4 py-3 rounded-xl bg-[#111] text-white text-[13px] font-medium active:bg-black/90 transition-colors"
+                    style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                  >
+                    {grantCopied ? "✓ Copié" : "📋 Copier le lien"}
+                  </button>
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(
+                      `Coucou, j'ai besoin d'un coup de main sur cette installation Vertxia : ${grantUrl}\n\nLe lien donne accès complet pendant 24h.`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-3 rounded-xl bg-emerald-600 text-white text-[13px] font-medium text-center active:bg-emerald-700 transition-colors"
+                    style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                  >
+                    💬 WhatsApp
+                  </a>
+                </div>
+                <div className="mt-3 text-[11px] text-black/45 leading-relaxed">
+                  Validité : 24h. Le lien est à usage unique — chaque confrère doit avoir son propre lien.
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

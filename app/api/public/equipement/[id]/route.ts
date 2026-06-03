@@ -81,9 +81,13 @@ export async function GET(
       : null;
 
     if (isAuth) {
-      // Vérification : ce technicien a-t-il déjà fait une intervention sur cet eq ?
-      // Si oui → mode "full" (il est "admis", voit tout). Sinon → mode "confrere".
+      // Vérification : ce visiteur a-t-il été ADMIS sur cet équipement ?
+      // Il y a 2 voies d'admission :
+      //   (a) Il a déjà fait au moins 1 intervention sur l'eq (mécanique
+      //       automatique pour les techniciens en cours de mission).
+      //   (b) Il a consommé un "grant" (lien magique) émis par l'owner.
       let hasIntervened = false;
+      let hasGrant = false;
       if (!isOwner) {
         const { count: prevCount } = await anon
           .from("interventions")
@@ -91,9 +95,17 @@ export async function GET(
           .eq("equipement_id", data.id)
           .eq("user_id", user!.id);
         hasIntervened = (prevCount ?? 0) > 0;
+
+        const { count: grantCount } = await anon
+          .from("equipement_grants")
+          .select("id", { count: "exact", head: true })
+          .eq("equipement_id", data.id)
+          .eq("used_by_user_id", user!.id)
+          .gte("expires_at", new Date().toISOString());
+        hasGrant = (grantCount ?? 0) > 0;
       }
 
-      const canCreateIntervention = isOwner || hasIntervened;
+      const canCreateIntervention = isOwner || hasIntervened || hasGrant;
 
       if (isOwner || hasIntervened) {
         // Mode FULL : voit TOUT (client, notes, historique, etc.)
