@@ -97,6 +97,7 @@ export default function BouteilleDetailPage() {
   const types = bouteille.type === "recharge" ? MOUVEMENT_TYPES_RECHARGE : MOUVEMENT_TYPES_RECUPERATION;
 
   function handleAddMouvement() {
+    if (!bouteille) return;
     setMvmtError(null);
     let qte: number;
     let pa: number | undefined;
@@ -162,17 +163,20 @@ export default function BouteilleDetailPage() {
   }
 
   function handleArchive() {
+    if (!bouteille) return;
     if (!confirm("Archiver cette bouteille ? Elle ne sera plus proposée dans les sélecteurs d'intervention.")) return;
     updateBouteille(bouteille.id, { statut: "archivee" });
     reload();
   }
 
   function handleReactivate() {
+    if (!bouteille) return;
     updateBouteille(bouteille.id, { statut: "active" });
     reload();
   }
 
   function handleDelete() {
+    if (!bouteille) return;
     if (!confirm("Supprimer définitivement cette bouteille ET tous ses mouvements ? Action irréversible.")) return;
     deleteBouteille(bouteille.id);
     router.push("/m/bouteilles");
