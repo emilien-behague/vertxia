@@ -87,9 +87,14 @@ function MobileScanContent() {
     };
   }, []);
 
-  // Debug overlay visible (utile pour iOS où on n'a pas la console)
+  // Logs internes du scanner. Plus affichés à l'écran (UI debug retirée
+   // demande Emilien 03/06/2026) — on garde le ring buffer en mémoire pour
+   // pouvoir l'inspecter via window.__vertxiaScanDebug si besoin de diag.
   const [debug, setDebug] = useState<string[]>([]);
   const log = (msg: string) => setDebug((d) => [...d.slice(-8), `${new Date().toLocaleTimeString()} ${msg}`]);
+  useEffect(() => {
+    (window as unknown as { __vertxiaScanDebug?: string[] }).__vertxiaScanDebug = debug;
+  }, [debug]);
 
   // Chemin natif via BarcodeDetector (iOS 17+, Chrome Android).
   // Boucle requestAnimationFrame qui appelle detector.detect(video) à chaque frame.
@@ -470,20 +475,6 @@ function MobileScanContent() {
           </div>
         )}
       </div>
-
-      {/* Debug overlay (visible iOS où on n'a pas la console) */}
-      {debug.length > 0 && (
-        <div className="px-4 mt-4">
-          <details className="rounded-2xl bg-black/[0.04] ring-1 ring-black/10 px-4 py-3 text-[11px] font-mono text-black/70">
-            <summary className="cursor-pointer text-[11px] font-medium text-black/65">
-              · Debug scanner ({debug.length} logs)
-            </summary>
-            <pre className="mt-2 whitespace-pre-wrap break-all text-[10px] leading-relaxed">
-              {debug.join("\n")}
-            </pre>
-          </details>
-        </div>
-      )}
 
       {/* Fallback : si scan impossible, accéder à la liste */}
       <div className="px-4 mt-6 space-y-2">
