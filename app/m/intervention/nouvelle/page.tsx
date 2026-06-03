@@ -12,7 +12,7 @@ import { InsetListSection } from "@/components/mobile/inset-list";
 import { VoiceInput } from "@/components/mobile/voice-input";
 import { VoiceFullDictation, type ExtractionResult } from "@/components/mobile/voice-full-dictation";
 import { SignaturePad } from "@/components/mobile/signature-pad";
-import { listEquipements } from "@/lib/equipement";
+import { listEquipements, saveEquipement, updateEquipement } from "@/lib/equipement";
 import { saveIntervention } from "@/lib/intervention-storage";
 import { loadProfil } from "@/lib/profil";
 import {
@@ -732,6 +732,52 @@ function NouvelleInterventionContent() {
         }
       } catch (e) {
         console.warn("[rapport] exception :", e);
+      }
+
+      // Synchronisation du parc d'équipements :
+      // - Cas A (form vierge avec infos minimales) → CRÉE l'équipement dans le parc
+      //   pour qu'il apparaisse dans /m/equipements et soit relancable à 30j.
+      // - Cas B (intervention sur équipement déjà enregistré) → UPDATE le
+      //   dernierControleISO si c'est un contrôle (déclenche le compteur 12 mois).
+      // Bloc try/catch silencieux : si ça plante, l'intervention reste sauvée.
+      try {
+        const isControle = config.needsControle;
+        if (!eqIdParam) {
+          // Form vierge : on crée si on a les champs minimum
+          const hasMinimum =
+            clientName.trim().length > 0 &&
+            modeleEquipement.trim().length > 0 &&
+            numeroSerieEquipement.trim().length > 0;
+          if (hasMinimum) {
+            // Charge nominale : on prend weight si > 0, sinon 0 (à compléter dans
+            // la fiche équipement). Pour récupération/démantèlement, weight
+            // représente le fluide récupéré ≠ charge nominale, donc 0 par défaut
+            // pour éviter une mauvaise donnée dans le parc.
+            const chargeKgRaw = parseFloat(weight);
+            const chargeKg =
+              !config.needsBsff && Number.isFinite(chargeKgRaw) && chargeKgRaw > 0
+                ? chargeKgRaw
+                : 0;
+            saveEquipement({
+              clientName: clientName.trim(),
+              clientEmail: clientEmail.trim() || undefined,
+              siteAdresse: clientAdresse.trim() || lieuIntervention.trim() || undefined,
+              modele: modeleEquipement.trim(),
+              numeroSerie: numeroSerieEquipement.trim(),
+              fluide: selectedFluide,
+              chargeKg,
+              detecteurFixe: detecteurPermanent === "oui",
+              dernierControleISO: isControle ? new Date().toISOString() : undefined,
+            });
+          }
+        } else if (isControle) {
+          // Équipement existant : on bump le dernier contrôle d'étanchéité
+          updateEquipement(eqIdParam, {
+            dernierControleISO: new Date().toISOString(),
+          });
+        }
+      } catch (e) {
+        console.warn("[parc] sync équipement échouée :", e);
       }
 
       try {
