@@ -104,7 +104,7 @@ function MobileLoginInner() {
 
       <div className="px-5 mt-2">
         <p className="text-[14px] text-black/55 leading-relaxed mb-6">
-          Connecte-toi pour synchroniser tes équipements, bouteilles et interventions sur tous tes appareils (iPhone, ordi, iPad). Sinon, tu peux continuer en mode démo libre — tes données restent sur ton téléphone.
+          Connecte-toi pour accéder à l&apos;app. Tes équipements, bouteilles et interventions sont liés à ton compte et synchronisés sur tous tes appareils (iPhone, ordi, iPad).
         </p>
 
         {urlError && (
