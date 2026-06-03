@@ -58,7 +58,10 @@ export async function POST(
     }
     // Déjà utilisé par CE user → idempotent
     if (grant.used_by_user_id === user.id) {
-      return NextResponse.json({ ok: true, alreadyRedeemed: true }, { status: 200 });
+      return NextResponse.json(
+        { ok: true, alreadyRedeemed: true, expiresAt: grant.expires_at },
+        { status: 200 }
+      );
     }
 
     const { error: updateError } = await anon
@@ -73,7 +76,10 @@ export async function POST(
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true }, { status: 200 });
+    return NextResponse.json(
+      { ok: true, expiresAt: grant.expires_at },
+      { status: 200 }
+    );
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: msg }, { status: 500 });

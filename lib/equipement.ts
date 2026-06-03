@@ -75,6 +75,10 @@ export type StoredEquipement = {
    *  important pour le SAV et le suivi garantie (info terrain frigo pro). */
   unitesInterieures?: UniteInterieure[];
   notes?: string;
+  /** Présent uniquement pour les équipements PARTAGÉS via lien magique d'un
+   *  confrère. ISO date d'expiration du grant (= eq disparaît du parc local
+   *  une fois expiré). Absent pour les équipements créés par l'owner. */
+  sharedExpiresAt?: string;
 };
 
 /** Fenêtre par défaut pour la relance client avant le prochain contrôle réglementaire.
@@ -116,7 +120,18 @@ export function listEquipements(): StoredEquipement[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw) as StoredEquipement[];
     if (!Array.isArray(parsed)) return [];
-    return parsed;
+    // Auto-cleanup : retire les eq partagés dont le grant a expiré.
+    // L'eq disparaît du parc du confrère sans action manuelle.
+    const now = Date.now();
+    const filtered = parsed.filter((e) => {
+      if (!e.sharedExpiresAt) return true; // pas un partagé → on garde
+      return new Date(e.sharedExpiresAt).getTime() > now;
+    });
+    if (filtered.length !== parsed.length) {
+      // Persiste le nettoyage pour éviter de refiltrer à chaque appel
+      localStorage.setItem(storageKey(), JSON.stringify(filtered));
+    }
+    return filtered;
   } catch {
     return [];
   }

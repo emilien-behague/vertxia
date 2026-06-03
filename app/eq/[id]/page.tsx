@@ -124,6 +124,7 @@ export default function EquipementScannedPage({
   // Redeem auto si ?grant=<token> dans l'URL
   const [redeemStatus, setRedeemStatus] = useState<"idle" | "redeeming" | "done" | "error">("idle");
   const [redeemError, setRedeemError] = useState<string | null>(null);
+  const [grantExpiresAt, setGrantExpiresAt] = useState<string | null>(null);
   const [serverDebug, setServerDebug] = useState<PublicEquipement["debug"]>(null);
 
   // Détection ?grant=<token> au mount — consomme le lien magique pour
@@ -150,6 +151,8 @@ export default function EquipementScannedPage({
           setRedeemStatus("error");
           return;
         }
+        const j = (await res.json()) as { ok: boolean; expiresAt?: string };
+        if (j.expiresAt) setGrantExpiresAt(j.expiresAt);
         setRedeemStatus("done");
         // Clean l'URL pour ne pas refaire la requête au prochain refresh
         const url = new URL(window.location.href);
@@ -239,13 +242,16 @@ export default function EquipementScannedPage({
           dernierControleISO: remote.dernierControleISO,
           unitesInterieures: remote.unitesInterieures,
           notes: remote.notes,
+          // Marque comme partagé temporaire — l'eq disparaîtra de /m/equipements
+          // dès que ce timestamp sera dépassé (auto-cleanup dans listEquipements).
+          sharedExpiresAt: grantExpiresAt ?? undefined,
         });
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [id, redeemStatus]);
+  }, [id, redeemStatus, grantExpiresAt]);
 
   const visual = useMemo(() => (eq ? STATUT_VISUAL[eq.statut] : null), [eq]);
 
