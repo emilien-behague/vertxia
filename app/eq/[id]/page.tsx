@@ -12,7 +12,7 @@ import {
 import { listInterventions } from "@/lib/intervention-storage";
 import { loadProfil, type Profil } from "@/lib/profil";
 import { generateQrLabel } from "@/lib/qr-label";
-import { fetchPublicEquipement, fetchPublicInterventions, lastFetchDebug } from "@/lib/public-sync";
+import { fetchPublicEquipement, fetchPublicInterventions, lastFetchDebug, type PublicEquipement } from "@/lib/public-sync";
 
 // Page mobile premium — affichée quand un frigoriste scanne le QR Code collé sur
 // un équipement. Doit s'afficher SANS bug sur Safari iOS (zéro animation initial:opacity:0
@@ -106,6 +106,7 @@ export default function EquipementScannedPage({
   // Mode lecture seule = équipement chargé depuis Supabase, pas en local
   // (visiteur qui scan le QR d'un équipement d'un autre frigoriste)
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const [ownerPublic, setOwnerPublic] = useState<PublicEquipement["ownerPublic"]>(null);
   const [fetching, setFetching] = useState(false);
 
   useEffect(() => {
@@ -135,10 +136,15 @@ export default function EquipementScannedPage({
         setFetching(false);
         return;
       }
-      const remoteInterventions = await fetchPublicInterventions(id);
+      // En mode public (non-owner) on ne fetch PAS l'historique d'interventions
+      // car on ne veut pas l'exposer aux visiteurs.
+      const remoteInterventions = remote.isReadOnly
+        ? []
+        : await fetchPublicInterventions(id);
       if (cancelled) return;
       setEq(computeStatus(remote, remoteInterventions));
       setIsReadOnly(remote.isReadOnly);
+      setOwnerPublic(remote.ownerPublic ?? null);
       setFetching(false);
     })();
     return () => {
@@ -199,40 +205,45 @@ export default function EquipementScannedPage({
       }}
     >
       <div className="max-w-md mx-auto px-5 py-6">
-        {/* Bandeau lecture seule (visiteur qui scan le QR d'un équipement
-            d'un autre frigoriste). Donne du contexte avant la fiche. */}
+        {/* Bandeau "Suivi par un pro" — visible quand visiteur non-owner.
+            Le client final, un confrère ou un contrôleur voit la fiche
+            épurée + les coordonnées du frigoriste référent. */}
         {isReadOnly && (
-          <div className="mb-4 px-4 py-3 rounded-2xl bg-blue-50 ring-1 ring-blue-200">
+          <div className="mb-4 px-4 py-3 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200">
             <div className="flex items-start gap-3">
-              <div className="shrink-0 w-8 h-8 rounded-full bg-white flex items-center justify-center text-blue-600">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+              <div className="shrink-0 w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6L9 17l-5-5" />
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[11px] tracking-widest uppercase font-mono text-blue-700 mb-0.5">
-                  · Fiche partagée · Lecture seule
+                <div className="text-[11px] tracking-widest uppercase font-mono text-emerald-800 mb-0.5">
+                  · Installation suivie
                 </div>
-                <div className="text-[12px] text-blue-900/80 leading-relaxed">
-                  Cet équipement appartient à un autre opérateur Vertxia. Vous consultez sa fiche en lecture seule.
+                <div className="text-[12px] text-emerald-900/80 leading-relaxed">
+                  Cette installation est suivie par un professionnel certifié. Coordonnées en bas de page.
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Header compact */}
+        {/* Header compact — la nav vers /m/equipements (PARC) est cachée
+            pour les visiteurs non-owner (le client n'a pas accès au parc). */}
         <div className="flex items-center justify-between mb-6">
-          <a
-            href="/m/equipements"
-            className="font-mono text-[10px] tracking-[0.25em] text-black/45 hover:text-black/80 transition-colors inline-flex items-center gap-2"
-          >
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m15 18-6-6 6-6" />
-            </svg>
-            PARC
-          </a>
+          {!isReadOnly ? (
+            <a
+              href="/m/equipements"
+              className="font-mono text-[10px] tracking-[0.25em] text-black/45 hover:text-black/80 transition-colors inline-flex items-center gap-2"
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+              PARC
+            </a>
+          ) : (
+            <span />
+          )}
           <div className="font-mono text-[10px] tracking-[0.25em] text-black/30">
             QR SCANNÉ
           </div>
@@ -263,12 +274,14 @@ export default function EquipementScannedPage({
             {eq.modele || "(modèle inconnu)"}
           </h1>
 
-          <div className="mt-2 text-sm text-black/65 leading-relaxed">
-            <strong className="text-black/85 font-medium">{eq.clientName}</strong>
-            {eq.siteAdresse && (
-              <span className="block text-xs text-black/50 mt-0.5">{eq.siteAdresse}</span>
-            )}
-          </div>
+          {!isReadOnly && (
+            <div className="mt-2 text-sm text-black/65 leading-relaxed">
+              <strong className="text-black/85 font-medium">{eq.clientName}</strong>
+              {eq.siteAdresse && (
+                <span className="block text-xs text-black/50 mt-0.5">{eq.siteAdresse}</span>
+              )}
+            </div>
+          )}
 
           {eq.prochainControleISO && (
             <div className="mt-5 pt-5 border-t border-black/[0.06]">
@@ -287,8 +300,8 @@ export default function EquipementScannedPage({
           )}
         </div>
 
-        {/* Encart RELANCE CLIENT — visible uniquement si statut a_relancer */}
-        {eq.statut === "a_relancer" && (
+        {/* Encart RELANCE CLIENT — visible uniquement si statut a_relancer ET owner */}
+        {eq.statut === "a_relancer" && !isReadOnly && (
           <div className="rounded-2xl bg-orange-50 ring-1 ring-orange-200 p-5 mb-3">
             <div className="flex items-start gap-3">
               <div className="shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full bg-orange-500 text-white text-xl">
@@ -334,31 +347,97 @@ export default function EquipementScannedPage({
           </div>
         )}
 
-        {/* CTA principal — DÉMARRER INTERVENTION (le moment important) */}
-        <a
-          href={`/m/intervention/nouvelle?equipement=${eq.id}`}
-          className="block w-full px-6 py-5 bg-[#111] text-white rounded-2xl mb-3 active:bg-black/90 active:scale-[0.98] transition-all shadow-lg shadow-black/15"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-mono text-[9px] tracking-[0.3em] uppercase text-white/55">
-                Action principale
+        {/* CTA principal — owner uniquement (démarrer intervention) */}
+        {!isReadOnly && (
+          <a
+            href={`/m/intervention/nouvelle?equipement=${eq.id}`}
+            className="block w-full px-6 py-5 bg-[#111] text-white rounded-2xl mb-3 active:bg-black/90 active:scale-[0.98] transition-all shadow-lg shadow-black/15"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-mono text-[9px] tracking-[0.3em] uppercase text-white/55">
+                  Action principale
+                </div>
+                <div className="mt-1 text-base font-medium tracking-wide">
+                  Démarrer une intervention
+                </div>
+                <div className="text-xs text-white/55 mt-0.5">
+                  Formulaire pré-rempli avec cet équipement
+                </div>
               </div>
-              <div className="mt-1 text-base font-medium tracking-wide">
-                Démarrer une intervention
-              </div>
-              <div className="text-xs text-white/55 mt-0.5">
-                Formulaire pré-rempli avec cet équipement
-              </div>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
             </div>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </div>
-        </a>
+          </a>
+        )}
 
-        {/* Coordonnées client — toujours affiché si au moins un contact renseigné */}
-        {(eq.clientEmail || eq.clientTelephone || eq.siteAdresse) && (
+        {/* Bloc "Contacter votre frigoriste référent" — mode public uniquement */}
+        {isReadOnly && ownerPublic && (ownerPublic.telephone || ownerPublic.email) && (
+          <div className="rounded-2xl bg-[#111] text-white mb-3 overflow-hidden shadow-lg shadow-black/15">
+            <div className="px-5 py-4">
+              <div className="font-mono text-[9px] tracking-[0.3em] uppercase text-white/55 mb-1">
+                Frigoriste référent
+              </div>
+              {ownerPublic.raisonSociale && (
+                <div className="text-base font-medium tracking-wide">
+                  {ownerPublic.raisonSociale}
+                </div>
+              )}
+              {ownerPublic.numeroAttestation && (
+                <div className="text-[11px] text-white/55 mt-0.5">
+                  Attestation F-Gas n° {ownerPublic.numeroAttestation}
+                </div>
+              )}
+            </div>
+            <div className="divide-y divide-white/10">
+              {ownerPublic.telephone && (
+                <a
+                  href={`tel:${ownerPublic.telephone.replace(/\s/g, "")}`}
+                  className="px-5 py-3.5 flex items-center gap-3 active:bg-white/5 transition-colors"
+                  style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                >
+                  <span className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/10 text-white">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[10px] text-white/45 uppercase tracking-wider">Téléphone</div>
+                    <div className="text-[15px] font-medium truncate">{ownerPublic.telephone}</div>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                </a>
+              )}
+              {ownerPublic.email && (
+                <a
+                  href={`mailto:${ownerPublic.email}`}
+                  className="px-5 py-3.5 flex items-center gap-3 active:bg-white/5 transition-colors"
+                  style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                >
+                  <span className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/10 text-white">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                      <polyline points="22,6 12,13 2,6" />
+                    </svg>
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[10px] text-white/45 uppercase tracking-wider">Email</div>
+                    <div className="text-[15px] font-medium truncate">{ownerPublic.email}</div>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Coordonnées client — owner uniquement (donnée commerciale sensible) */}
+        {!isReadOnly && (eq.clientEmail || eq.clientTelephone || eq.siteAdresse) && (
           <div className="rounded-2xl bg-white ring-1 ring-black/[0.06] mb-3 overflow-hidden">
             <div className="px-5 pt-4 pb-2 flex items-baseline justify-between">
               <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/45">
@@ -437,23 +516,41 @@ export default function EquipementScannedPage({
           </div>
         )}
 
-        {/* Specs équipement — grid mobile */}
+        {/* Specs équipement — détails masqués en mode public (visiteur).
+            Le visiteur voit juste fluide (code) + n°série + fréquence
+            réglementaire indicative. Charge, GWP, tCO2eq, détecteur, dernier
+            contrôle = données techniques commerciales du frigoriste. */}
         <div className="rounded-2xl bg-white ring-1 ring-black/[0.06] divide-y divide-black/[0.06] mb-3">
-          <SpecRow label="Fluide" value={`${eq.fluide.code} · GWP ${eq.fluide.gwp.toLocaleString("fr-FR")}`} />
-          <SpecRow label="Charge nominale" value={`${eq.chargeKg.toFixed(2).replace(".", ",")} kg`} />
           <SpecRow
-            label="Équivalent CO₂"
-            value={`${eq.tCO2eq.toFixed(2).replace(".", ",")} tCO₂eq`}
-            sub={eq.frequenceMois ? `Contrôle tous les ${eq.frequenceMois} mois` : "Exempté de contrôle"}
+            label="Fluide"
+            value={isReadOnly ? eq.fluide.code : `${eq.fluide.code} · GWP ${eq.fluide.gwp.toLocaleString("fr-FR")}`}
           />
+          {!isReadOnly && (
+            <>
+              <SpecRow label="Charge nominale" value={`${eq.chargeKg.toFixed(2).replace(".", ",")} kg`} />
+              <SpecRow
+                label="Équivalent CO₂"
+                value={`${eq.tCO2eq.toFixed(2).replace(".", ",")} tCO₂eq`}
+                sub={eq.frequenceMois ? `Contrôle tous les ${eq.frequenceMois} mois` : "Exempté de contrôle"}
+              />
+            </>
+          )}
           <SpecRow label="Numéro de série" value={eq.numeroSerie} mono />
-          {eq.detecteurFixe && (
+          {!isReadOnly && eq.detecteurFixe && (
             <SpecRow label="Détecteur fixe" value="Oui — fréquence × 2" valueClass="text-purple-700" />
           )}
-          <SpecRow label="Dernier contrôle" value={fmtDateLong(eq.dernierControleISO)} />
+          {!isReadOnly && (
+            <SpecRow label="Dernier contrôle" value={fmtDateLong(eq.dernierControleISO)} />
+          )}
+          {isReadOnly && eq.frequenceMois && (
+            <SpecRow
+              label="Fréquence réglementaire"
+              value={`Contrôle d'étanchéité tous les ${eq.frequenceMois} mois`}
+            />
+          )}
         </div>
 
-        {eq.notes && (
+        {!isReadOnly && eq.notes && (
           <div className="rounded-2xl bg-amber-50/60 ring-1 ring-amber-200/50 px-5 py-4 mb-3">
             <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-amber-800/70">
               Notes
@@ -462,8 +559,9 @@ export default function EquipementScannedPage({
           </div>
         )}
 
-        {/* Unités intérieures rattachées au circuit fluide */}
-        {eq.unitesInterieures && eq.unitesInterieures.length > 0 && (
+        {/* Unités intérieures rattachées au circuit fluide — owner uniquement
+            (le visiteur n'a pas besoin de connaître la topologie de l'installation). */}
+        {!isReadOnly && eq.unitesInterieures && eq.unitesInterieures.length > 0 && (
           <div className="rounded-2xl bg-white ring-1 ring-black/[0.06] mb-3 overflow-hidden">
             <div className="px-5 pt-4 pb-2 flex items-baseline justify-between">
               <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/45">
@@ -498,7 +596,8 @@ export default function EquipementScannedPage({
           </div>
         )}
 
-        {/* Actions secondaires */}
+        {/* Actions secondaires — owner uniquement */}
+        {!isReadOnly && (
         <div className="grid grid-cols-3 gap-3 mt-4">
           <button
             type="button"
@@ -533,7 +632,8 @@ export default function EquipementScannedPage({
             <div className="mt-1 text-xs font-medium text-black/75">Tableau de bord</div>
           </a>
         </div>
-        {qrError && (
+        )}
+        {!isReadOnly && qrError && (
           <div className="mt-2 px-4 py-2 rounded-xl bg-red-50 ring-1 ring-red-200 text-[12px] text-red-700 text-center">
             {qrError}
           </div>

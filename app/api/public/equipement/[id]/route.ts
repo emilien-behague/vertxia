@@ -1,14 +1,16 @@
 // Proxy server-side vers Supabase pour la lecture publique d'un équipement.
-// Évite les blocages Safari iOS (ITP, CORS) en passant par le serveur Next.js.
 //
-// IMPORTANT : on utilise un client Supabase ANON (sans cookies) pour la
-// lecture, sinon RLS filtre les rows par auth.uid() du visiteur → un
-// utilisateur connecté ne pourrait pas voir les équipements créés par un
-// autre compte. La policy "equipements_select_public USING (true)" autorise
-// le rôle anon à tout lire ; c'est le partage Niveau 1 voulu.
+// IMPORTANT — Stratégie de visibilité :
+// Le propriétaire authentifié voit TOUT (mode "full"). Les visiteurs
+// (client, concurrent, contrôleur) voient une VUE ÉPURÉE (mode "public") :
+//   ✓ Modèle, n°série, fluide (code uniquement)
+//   ✓ Statut du contrôle (à jour / à programmer / en retard)
+//   ✓ Coordonnées du frigoriste référent (raison sociale + tel + email)
+//   ✗ Coordonnées client, historique interventions, charge exacte, GWP, notes
 //
-// On utilise quand même createClient (cookies) en parallèle pour récupérer
-// l'identité du visiteur si connecté → calcul du flag isReadOnly.
+// Objectif business : viralité (le client scan → il voit qu'un pro s'occupe
+// de lui) SANS donner gratuit la donnée commerciale. Un concurrent qui
+// scanne voit "installation déjà suivie par X" et ne peut pas voler.
 
 import { NextResponse } from "next/server";
 import { createClient as createCookieClient } from "@/lib/supabase/server";
@@ -40,15 +42,60 @@ export async function GET(
       );
     }
     if (!data) {
-      return NextResponse.json({ data: null, isReadOnly: true }, { status: 200 });
+      return NextResponse.json({ data: null, mode: "public" }, { status: 200 });
     }
 
-    // Identité du visiteur (pour isReadOnly) — via cookies de session.
     const cookieClient = await createCookieClient();
     const { data: { user } } = await cookieClient.auth.getUser();
     const isReadOnly = !user || user.id !== data.user_id;
 
-    return NextResponse.json({ data, isReadOnly }, { status: 200 });
+    if (!isReadOnly) {
+      // Mode FULL : owner authentifié → toutes les données
+      return NextResponse.json({ data, mode: "full", isReadOnly: false }, { status: 200 });
+    }
+
+    // Mode PUBLIC : visiteur non-owner → vue épurée + contact du frigoriste owner
+    const { data: ownerProfil } = await anon
+      .from("profils")
+      .select("raison_sociale, telephone, email, numero_attestation")
+      .eq("user_id", data.user_id)
+      .maybeSingle();
+
+    const publicData = {
+      id: data.id,
+      created_at: data.created_at,
+      modele: data.modele,
+      numero_serie: data.numero_serie,
+      fluide_code: data.fluide_code,
+      fluide_label: data.fluide_label,
+      // On garde la date du dernier contrôle pour CALCULER le statut côté
+      // client, mais on masquera la date exacte à l'affichage.
+      dernier_controle_iso: data.dernier_controle_iso,
+      detecteur_fixe: data.detecteur_fixe,
+      // Charge approchée pour calc statut (tCO2eq) mais sera masquée à l'affichage
+      charge_kg: data.charge_kg,
+      fluide_gwp: data.fluide_gwp,
+      // Nombre d'unités intérieures (pas le détail)
+      unites_count: Array.isArray(data.unites_interieures) ? data.unites_interieures.length : 0,
+      user_id: data.user_id,
+      // ❌ Pas de client_name, client_email, client_telephone, site_adresse
+      // ❌ Pas de notes
+      // ❌ Pas de unites_interieures détaillées
+    };
+
+    const ownerPublic = ownerProfil
+      ? {
+          raisonSociale: ownerProfil.raison_sociale || null,
+          telephone: ownerProfil.telephone || null,
+          email: ownerProfil.email || null,
+          numeroAttestation: ownerProfil.numero_attestation || null,
+        }
+      : null;
+
+    return NextResponse.json(
+      { data: publicData, mode: "public", isReadOnly: true, ownerPublic },
+      { status: 200 }
+    );
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return NextResponse.json({ error: msg }, { status: 500 });

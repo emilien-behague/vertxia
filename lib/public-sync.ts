@@ -63,6 +63,15 @@ export async function syncInterventionToSupabase(int: StoredIntervention, equipe
 export type PublicEquipement = StoredEquipement & {
   ownerUserId: string;
   isReadOnly: boolean; // true si le visiteur ≠ owner (vue partagée)
+  /** Mode "full" = owner authentifié, toutes données. Mode "public" = vue épurée. */
+  mode: "full" | "public";
+  /** Présent UNIQUEMENT en mode "public" : coordonnées du frigoriste référent. */
+  ownerPublic?: {
+    raisonSociale: string | null;
+    telephone: string | null;
+    email: string | null;
+    numeroAttestation: string | null;
+  } | null;
 };
 
 // Debug : la dernière exécution de fetchPublicEquipement stocke ici le détail
@@ -103,7 +112,9 @@ export async function fetchPublicEquipement(id: string): Promise<PublicEquipemen
     }
     const json = (await res.json()) as {
       data: Record<string, unknown> | null;
+      mode?: "full" | "public";
       isReadOnly: boolean;
+      ownerPublic?: PublicEquipement["ownerPublic"];
     };
     if (!json.data) {
       lastFetchDebug = {
@@ -115,19 +126,22 @@ export async function fetchPublicEquipement(id: string): Promise<PublicEquipemen
       return null;
     }
     const data = json.data;
+    const mode = json.mode ?? (json.isReadOnly ? "public" : "full");
     lastFetchDebug = {
       supabaseConfigured: true,
       fetched: true,
       rowCount: 1,
       searchedId: id,
     };
+    // En mode "public", clientName n'existe pas — on met un placeholder neutre.
+    const isPublic = mode === "public";
     return {
       id: data.id as string,
       createdAt: data.created_at as string,
-      clientName: data.client_name as string,
-      clientEmail: (data.client_email as string) ?? undefined,
-      clientTelephone: (data.client_telephone as string) ?? undefined,
-      siteAdresse: (data.site_adresse as string) ?? undefined,
+      clientName: isPublic ? "" : ((data.client_name as string) ?? ""),
+      clientEmail: isPublic ? undefined : ((data.client_email as string) ?? undefined),
+      clientTelephone: isPublic ? undefined : ((data.client_telephone as string) ?? undefined),
+      siteAdresse: isPublic ? undefined : ((data.site_adresse as string) ?? undefined),
       modele: data.modele as string,
       numeroSerie: data.numero_serie as string,
       fluide: {
@@ -138,10 +152,12 @@ export async function fetchPublicEquipement(id: string): Promise<PublicEquipemen
       chargeKg: Number(data.charge_kg) || 0,
       detecteurFixe: Boolean(data.detecteur_fixe),
       dernierControleISO: (data.dernier_controle_iso as string) ?? undefined,
-      unitesInterieures: (data.unites_interieures as UniteInterieure[]) ?? undefined,
-      notes: (data.notes as string) ?? undefined,
+      unitesInterieures: isPublic ? undefined : ((data.unites_interieures as UniteInterieure[]) ?? undefined),
+      notes: isPublic ? undefined : ((data.notes as string) ?? undefined),
       ownerUserId: data.user_id as string,
       isReadOnly: json.isReadOnly,
+      mode,
+      ownerPublic: json.ownerPublic ?? null,
     };
   } catch (e) {
     console.warn("[public-sync] fetchPublicEquipement failed:", e);
