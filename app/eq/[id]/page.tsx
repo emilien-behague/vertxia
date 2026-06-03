@@ -124,6 +124,7 @@ export default function EquipementScannedPage({
   // Redeem auto si ?grant=<token> dans l'URL
   const [redeemStatus, setRedeemStatus] = useState<"idle" | "redeeming" | "done" | "error">("idle");
   const [redeemError, setRedeemError] = useState<string | null>(null);
+  const [serverDebug, setServerDebug] = useState<PublicEquipement["debug"]>(null);
 
   // Détection ?grant=<token> au mount — consomme le lien magique pour
   // accorder l'accès "full" à ce visiteur sur cet équipement.
@@ -212,6 +213,7 @@ export default function EquipementScannedPage({
       setCanCreateIntervention(remote.canCreateIntervention);
       setMode(remote.mode);
       setOwnerPublic(remote.ownerPublic ?? null);
+      setServerDebug(remote.debug ?? null);
       setFetching(false);
       // Si l'utilisateur vient de redeem un grant et qu'il a maintenant mode
       // "full" sans être owner, on ajoute l'équipement à son parc local pour
@@ -379,6 +381,25 @@ export default function EquipementScannedPage({
           <div className="mb-4 px-4 py-3 rounded-2xl bg-red-50 ring-1 ring-red-200">
             <div className="text-[13px] text-red-900">
               <strong>Lien d&apos;accès invalide</strong> — {redeemError ?? "demande à l'owner de regénérer un lien."}
+            </div>
+          </div>
+        )}
+
+        {/* Debug : si on est en mode confrere alors qu'un redeem a réussi,
+            ya un bug. Affichage du diag serveur pour comprendre. */}
+        {redeemStatus === "done" && mode === "confrere" && serverDebug && (
+          <div className="mb-4 px-4 py-3 rounded-2xl bg-amber-50 ring-1 ring-amber-300">
+            <div className="text-[11px] tracking-widest uppercase font-mono text-amber-800 mb-2">
+              · Debug grant non actif
+            </div>
+            <div className="text-[11px] font-mono text-amber-900 space-y-0.5">
+              <div>userId visiteur : {serverDebug.userId.slice(0, 8)}…</div>
+              <div>owner eq : {serverDebug.ownerUserId.slice(0, 8)}…</div>
+              <div>hasIntervened : {String(serverDebug.hasIntervened)}</div>
+              <div>hasGrant : <strong>{String(serverDebug.hasGrant)}</strong></div>
+              <div className="pt-2 text-amber-800">
+                Si hasGrant=false → la table equipement_grants n&apos;a pas le row attendu (problème de redeem ou de DB).
+              </div>
             </div>
           </div>
         )}

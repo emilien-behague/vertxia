@@ -107,7 +107,17 @@ export async function GET(
 
       const canCreateIntervention = isOwner || hasIntervened || hasGrant;
 
-      if (isOwner || hasIntervened) {
+      // Debug payload pour comprendre pourquoi un visiteur est en
+      // "confrere" alors qu'il devrait être en "full" via un grant.
+      const debug = {
+        userId: user!.id,
+        isOwner,
+        hasIntervened,
+        hasGrant,
+        ownerUserId: data.user_id,
+      };
+
+      if (isOwner || hasIntervened || hasGrant) {
         // Mode FULL : voit TOUT (client, notes, historique, etc.)
         return NextResponse.json(
           {
@@ -117,6 +127,7 @@ export async function GET(
             isReadOnly: !isOwner,
             canCreateIntervention,
             ownerPublic: isOwner ? null : ownerPublic, // owner connaît ses propres infos
+            debug,
           },
           { status: 200 }
         );
@@ -148,6 +159,7 @@ export async function GET(
           isReadOnly: true,
           canCreateIntervention: false,
           ownerPublic,
+          debug,
         },
         { status: 200 }
       );

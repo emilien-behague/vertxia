@@ -82,6 +82,15 @@ export type PublicEquipement = StoredEquipement & {
     email: string | null;
     numeroAttestation: string | null;
   } | null;
+  /** Debug serveur — utile pour comprendre pourquoi le mode est "confrere"
+   *  alors qu'un grant aurait dû passer le visiteur en "full". */
+  debug?: {
+    userId: string;
+    isOwner: boolean;
+    hasIntervened: boolean;
+    hasGrant: boolean;
+    ownerUserId: string;
+  } | null;
 };
 
 // Debug : la dernière exécution de fetchPublicEquipement stocke ici le détail
@@ -127,6 +136,7 @@ export async function fetchPublicEquipement(id: string): Promise<PublicEquipemen
       isReadOnly: boolean;
       canCreateIntervention?: boolean;
       ownerPublic?: PublicEquipement["ownerPublic"];
+      debug?: PublicEquipement["debug"];
     };
     if (!json.data) {
       lastFetchDebug = {
@@ -178,6 +188,7 @@ export async function fetchPublicEquipement(id: string): Promise<PublicEquipemen
       canCreateIntervention: json.canCreateIntervention ?? (json.isOwner ?? !json.isReadOnly),
       mode,
       ownerPublic: json.ownerPublic ?? null,
+      debug: json.debug ?? null,
     };
   } catch (e) {
     console.warn("[public-sync] fetchPublicEquipement failed:", e);
