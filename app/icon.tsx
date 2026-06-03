@@ -1,14 +1,14 @@
 import { ImageResponse } from "next/og";
 
-// Apple touch icon — affiché sur l'écran d'accueil iOS après "Ajouter à l'écran d'accueil".
-// 180×180 px est la taille officielle attendue par Safari iOS depuis iOS 7.
-// Logo Vertxia 2026 : 3 branches gold (#A16207) a 120°, traits epais arrondis,
-// fond noir #111. Aucun point central — version validee par Emilien 04/06/2026.
+// Favicon Vertxia — onglet navigateur, raccourcis.
+// Logo : 3 branches gold (#A16207) a 120°, fond noir #111. Identique a
+// apple-icon mais plus petit. Remplace l'ancien icon.png (gros V blanc)
+// pour cohérence brand avec le logo 2026 valide par Emilien 04/06/2026.
 
-export const size = { width: 180, height: 180 };
+export const size = { width: 64, height: 64 };
 export const contentType = "image/png";
 
-export default function AppleIcon() {
+export default function Icon() {
   return new ImageResponse(
     (
       <div
@@ -24,11 +24,11 @@ export default function AppleIcon() {
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 100 100"
-          width={120}
-          height={120}
+          width={48}
+          height={48}
           fill="none"
           stroke="#A16207"
-          strokeWidth="11"
+          strokeWidth="13"
           strokeLinecap="round"
         >
           <line x1="50" y1="50" x2="50" y2="14" />

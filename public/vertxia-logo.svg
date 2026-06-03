@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Logo Vertxia : 3 branches a 120 degres, gold #A16207 sur fond transparent.
+       Top (12h), bottom-right (4h), bottom-left (8h). -->
+  <g stroke="#A16207" stroke-width="11" stroke-linecap="round">
+    <line x1="50" y1="50" x2="50" y2="14" />
+    <line x1="50" y1="50" x2="81.2" y2="68" />
+    <line x1="50" y1="50" x2="18.8" y2="68" />
+  </g>
+</svg>

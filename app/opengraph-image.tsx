@@ -31,7 +31,7 @@ export default async function OpenGraphImage() {
           position: "relative",
         }}
       >
-        {/* Wordmark Vertxia */}
+        {/* Lockup logo + wordmark Vertxia */}
         <div
           style={{
             display: "flex",
@@ -40,16 +40,26 @@ export default async function OpenGraphImage() {
             width: "100%",
           }}
         >
-          <div
-            style={{
-              fontSize: 32,
-              fontWeight: 700,
-              letterSpacing: "0.18em",
-              color: "#111",
-              display: "flex",
-            }}
-          >
-            VERTXIA
+          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+            {/* Logo : 3 branches a 120° en gold #A16207 */}
+            <svg width="56" height="56" viewBox="0 0 100 100" fill="none">
+              <g stroke="#A16207" strokeWidth="11" strokeLinecap="round">
+                <line x1="50" y1="50" x2="50" y2="14" />
+                <line x1="50" y1="50" x2="81.2" y2="68" />
+                <line x1="50" y1="50" x2="18.8" y2="68" />
+              </g>
+            </svg>
+            <div
+              style={{
+                fontSize: 36,
+                fontWeight: 700,
+                letterSpacing: "0.16em",
+                color: "#111",
+                display: "flex",
+              }}
+            >
+              VERTXIA
+            </div>
           </div>
           <div
             style={{
