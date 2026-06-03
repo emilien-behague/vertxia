@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection } from "@/components/mobile/inset-list";
+import { useUser } from "@/lib/supabase/use-user";
 import {
   loadProfil,
   saveProfil,
@@ -32,14 +34,33 @@ function readFileAsDataUrl(file: File): Promise<string> {
 }
 
 export default function MobileProfilPage() {
+  const router = useRouter();
+  const { user, signOut, configured } = useUser();
   const [profil, setProfil] = useState<Profil>(EMPTY_PROFIL);
   const [savedFlash, setSavedFlash] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     setProfil(loadProfil());
   }, []);
+
+  async function handleSignOut() {
+    if (signingOut) return;
+    const ok = window.confirm(
+      "Te déconnecter de Vertxia ?\n\nTes équipements et interventions restent sur cet appareil. Tu peux te reconnecter avec le même compte ou un autre."
+    );
+    if (!ok) return;
+    setSigningOut(true);
+    try {
+      await signOut();
+      router.push("/m/login");
+    } catch (e) {
+      console.warn("[signOut] failed:", e);
+      setSigningOut(false);
+    }
+  }
 
   function update<K extends keyof Profil>(key: K, value: Profil[K]) {
     setProfil((p) => ({ ...p, [key]: value }));
@@ -345,6 +366,35 @@ export default function MobileProfilPage() {
         )}
 
         {/* Outils admin */}
+        {/* Compte connecté Vertxia (Supabase Auth). Permet de se déconnecter
+            pour tester la fiche partagée publique avec un autre compte. */}
+        {configured && (
+          <InsetListSection
+            title="Compte Vertxia"
+            footer="Tes données restent sur cet appareil après déconnexion. Tu peux te reconnecter avec un autre compte Google."
+          >
+            <div className="px-4 py-3">
+              <div className="text-[11px] tracking-widest uppercase font-mono text-black/40 mb-1">
+                · Connecté
+              </div>
+              <div className="text-[15px] text-[#111] break-all">
+                {user?.email ?? (signingOut ? "Déconnexion…" : "Non connecté")}
+              </div>
+            </div>
+            {user && (
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="w-full px-4 py-3.5 text-left text-[15px] font-medium text-red-600 active:bg-red-50 transition-colors disabled:opacity-60 border-t border-black/[0.06]"
+                style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+              >
+                {signingOut ? "Déconnexion…" : "Se déconnecter"}
+              </button>
+            )}
+          </InsetListSection>
+        )}
+
         <InsetListSection title="Outils">
           <a
             href="/m/admin/seed"
