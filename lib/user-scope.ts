@@ -1,40 +1,29 @@
 "use client";
 
-// Isolation des données localStorage par user_id.
+// Isolation des données par user_id — DÉSACTIVÉE pour la démo CAPEB.
 //
-// SOURCE DE VÉRITÉ : cookie "vertxia-uid" set par le middleware Supabase
-// côté serveur (lib/supabase/middleware.ts). Lu SYNCHRONIQUEMENT côté
-// client via document.cookie → pas de race condition, pas de re-render
-// nécessaire après login.
+// Retourne TOUJOURS "anon" : toutes les pages /m/* utilisent le même
+// namespace localStorage, peu importe le compte connecté. Conséquence :
+// 2 comptes Google sur le même device partagent les mêmes données.
 //
-// Avant on utilisait localStorage + AuthSync async → les pages /m/* lisaient
-// le mauvais namespace pendant le 1er render (race condition).
+// C'est OK pour la démo CAPEB où Emilien utilise UN seul compte. Pour
+// tester le partage Niveau 1 entre 2 comptes : utiliser 2 navigateurs
+// différents (PC + iPhone, ou Safari + Chrome).
+//
+// L'isolation propre nécessite un refacto complet (server components,
+// Supabase comme source de vérité, cleanup race conditions). À faire
+// après les premiers vrais clients payants.
 
 const ANON_NAMESPACE = "anon";
 
 export function getCurrentUserId(): string {
-  if (typeof document === "undefined") return ANON_NAMESPACE;
-  try {
-    const match = document.cookie.match(/(?:^|;\s*)vertxia-uid=([^;]+)/);
-    if (match && match[1]) {
-      return decodeURIComponent(match[1]);
-    }
-  } catch {
-    /* doc inaccessible */
-  }
   return ANON_NAMESPACE;
 }
 
-/**
- * Préfixe une clé de storage avec le namespace user courant.
- * Ex: scopedKey("vertxia:equipements") → "vertxia:equipements:abc-uuid"
- */
 export function scopedKey(baseKey: string): string {
-  return `${baseKey}:${getCurrentUserId()}`;
+  return `${baseKey}:${ANON_NAMESPACE}`;
 }
 
-/** API legacy conservée pour ne pas casser AuthSync. No-op : le cookie est
- *  set par le serveur, le client n'a rien à faire. */
 export function setCurrentUserId(_userId: string | null): void {
-  /* géré par le middleware serveur via cookie */
+  /* no-op */
 }
