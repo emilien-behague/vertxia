@@ -13,7 +13,7 @@ import {
 import { listInterventions } from "@/lib/intervention-storage";
 import { loadProfil, type Profil } from "@/lib/profil";
 import { generateQrLabel } from "@/lib/qr-label";
-import { fetchPublicEquipement, fetchPublicInterventions, lastFetchDebug, type PublicEquipement } from "@/lib/public-sync";
+import { fetchPublicEquipement, fetchPublicInterventions, syncEquipementToSupabase, lastFetchDebug, type PublicEquipement } from "@/lib/public-sync";
 
 // Page mobile premium — affichée quand un frigoriste scanne le QR Code collé sur
 // un équipement. Doit s'afficher SANS bug sur Safari iOS (zéro animation initial:opacity:0
@@ -258,13 +258,38 @@ export default function EquipementScannedPage({
     });
   }, [eq, profil]);
 
-  // Génère un lien magique 24h à partager avec un confrère
+  // Génère un lien magique 24h à partager avec un confrère.
+  // Avant le grant, on s'assure que l'équipement existe bien en Supabase.
+  // Cas typique : l'eq a été créé en local AVANT que le sync server-side
+  // soit en place, donc il n'est pas dans la table public.equipements →
+  // la route /grant renvoyait "equipement not found".
   const handleCreateGrant = useCallback(async () => {
     setGrantLoading(true);
     setGrantError(null);
     setGrantUrl(null);
     setGrantCopied(false);
     try {
+      // 1. Upsert l'eq vers Supabase (idempotent — si déjà là, c'est un no-op
+      //    côté base, mais ça garantit qu'il y est avant le grant).
+      if (eq) {
+        await syncEquipementToSupabase({
+          id: eq.id,
+          createdAt: eq.createdAt,
+          clientName: eq.clientName,
+          clientEmail: eq.clientEmail,
+          clientTelephone: eq.clientTelephone,
+          siteAdresse: eq.siteAdresse,
+          modele: eq.modele,
+          numeroSerie: eq.numeroSerie,
+          fluide: eq.fluide,
+          chargeKg: eq.chargeKg,
+          detecteurFixe: eq.detecteurFixe,
+          dernierControleISO: eq.dernierControleISO,
+          unitesInterieures: eq.unitesInterieures,
+          notes: eq.notes,
+        });
+      }
+      // 2. Génération du grant
       const res = await fetch(
         `/api/public/equipement/${encodeURIComponent(id)}/grant`,
         { method: "POST" }
@@ -281,7 +306,7 @@ export default function EquipementScannedPage({
     } finally {
       setGrantLoading(false);
     }
-  }, [id]);
+  }, [id, eq]);
 
   async function handleCopyGrant() {
     if (!grantUrl) return;
