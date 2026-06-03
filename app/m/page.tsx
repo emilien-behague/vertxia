@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection, InsetRow } from "@/components/mobile/inset-list";
 import {
@@ -39,14 +38,12 @@ export default function MobileHomePage() {
   const [equipements, setEquipements] = useState<EquipementWithStatus[]>([]);
   const [interventions, setInterventions] = useState<StoredIntervention[]>([]);
   const [profil, setProfil] = useState<Profil | null>(null);
-  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const ints = listInterventions();
     setInterventions(ints);
     setEquipements(computeAllStatus(listEquipements(), ints));
     setProfil(loadProfil());
-    setReady(true);
   }, []);
 
   const stats = useMemo(() => getEquipementStats(equipements), [equipements]);
@@ -69,18 +66,19 @@ export default function MobileHomePage() {
   );
   const recentes = useMemo(() => interventions.slice(0, 3), [interventions]);
 
-  const isEmpty = ready && equipements.length === 0 && interventions.length === 0;
+  // Le dashboard est rendu DANS TOUS LES CAS — même parc vide / zéro
+  // intervention. On veut que la page d'accueil de l'app expose toujours
+  // les raccourcis et actions rapides, pas un EmptyState "Bienvenue" qui
+  // masquerait les boutons Scanner QR / Nouvelle intervention / Mon parc.
+  // Quand vide, les stats montrent 0 et seules les sections "Actions rapides"
+  // + "Compléter mon profil" s'affichent.
 
   return (
     <>
       <MobileHeader title="Vertxia" largeTitle />
 
-      {isEmpty && <EmptyState />}
-
-      {!isEmpty && (
-        <>
-          {/* Stats grid 2x2 */}
-          <section className="px-4 mt-2">
+      {/* Stats grid 2x2 */}
+      <section className="px-4 mt-2">
             <div className="grid grid-cols-2 gap-3">
               <StatCard label="Équipements" value={stats.total} sub="au parc" color="text-[#111]" />
               <StatCard label="En retard" value={stats.enRetard} sub="à traiter" color="text-red-600" pulse={stats.enRetard > 0} />
@@ -206,19 +204,17 @@ export default function MobileHomePage() {
             />
           </InsetListSection>
 
-          {/* Profil section */}
-          {!profil?.raisonSociale && (
-            <InsetListSection footer="Renseignez votre raison sociale et numéro d'attestation pour signer les CERFA automatiquement.">
-              <InsetRow
-                href="/m/profil"
-                leading={<ActionIcon name="warning" />}
-                label="Compléter mon profil"
-                sublabel="Profil entreprise incomplet"
-                showChevron
-              />
-            </InsetListSection>
-          )}
-        </>
+      {/* Profil section */}
+      {!profil?.raisonSociale && (
+        <InsetListSection footer="Renseignez votre raison sociale et numéro d'attestation pour signer les CERFA automatiquement.">
+          <InsetRow
+            href="/m/profil"
+            leading={<ActionIcon name="warning" />}
+            label="Compléter mon profil"
+            sublabel="Profil entreprise incomplet"
+            showChevron
+          />
+        </InsetListSection>
       )}
     </>
   );
@@ -346,38 +342,3 @@ function ActionIcon({ name }: { name: "plus" | "list" | "doc" | "warning" | "qr"
   );
 }
 
-function EmptyState() {
-  return (
-    <div className="px-5 py-10">
-      <div className="rounded-3xl bg-white ring-1 ring-black/[0.04] p-7 text-center">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#A16207]/10 mb-4">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#A16207" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="32" y1="32" x2="32" y2="7" />
-            <line x1="32" y1="32" x2="55" y2="45.5" />
-            <line x1="32" y1="32" x2="9" y2="45.5" />
-          </svg>
-        </div>
-        <h2 className="text-xl font-semibold tracking-tight">Bienvenue sur Vertxia</h2>
-        <p className="mt-2 text-sm text-black/55 leading-relaxed">
-          Commencez par ajouter vos premiers équipements ou lancez votre première intervention.
-        </p>
-        <div className="mt-5 space-y-2">
-          <Link
-            href="/m/equipements"
-            className="block w-full px-5 py-3.5 bg-[#111] text-white text-sm font-medium rounded-xl active:bg-black/90 transition-colors"
-            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-          >
-            + Ajouter un équipement
-          </Link>
-          <Link
-            href="/m/intervention/nouvelle"
-            className="block w-full px-5 py-3 ring-1 ring-black/10 text-black/70 text-sm font-medium rounded-xl text-center"
-            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-          >
-            Nouvelle intervention
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
