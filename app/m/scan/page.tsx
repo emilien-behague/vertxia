@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 
@@ -48,6 +48,12 @@ function extractEquipementId(rawUrl: string): string | null {
 
 export default function MobileScanPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Si returnTo est fourni (ex: depuis /m/equipements/nouveau), on redirige
+  // vers cette page avec ?fromQr=<id> au lieu de naviguer vers /eq/<id>.
+  // Permet d'utiliser le scanner pour pré-remplir un formulaire au lieu de
+  // simplement consulter la fiche.
+  const returnTo = searchParams.get("returnTo");
   const videoRef = useRef<HTMLVideoElement>(null);
   const scannerRef = useRef<{ stop: () => void; destroy: () => void } | null>(null);
   const [state, setState] = useState<State>({ type: "idle" });
@@ -116,7 +122,10 @@ export default function MobileScanPage() {
             }
             setState({ type: "found", id });
             stop();
-            setTimeout(() => router.push(`/eq/${id}`), 350);
+            const target = returnTo
+              ? `${returnTo}${returnTo.includes("?") ? "&" : "?"}fromQr=${id}`
+              : `/eq/${id}`;
+            setTimeout(() => router.push(target), 350);
             return;
           }
         } catch (e) {
@@ -251,7 +260,10 @@ export default function MobileScanPage() {
             }
             setState({ type: "found", id });
             cleanup();
-            setTimeout(() => router.push(`/eq/${id}`), 350);
+            const target = returnTo
+              ? `${returnTo}${returnTo.includes("?") ? "&" : "?"}fromQr=${id}`
+              : `/eq/${id}`;
+            setTimeout(() => router.push(target), 350);
             return;
           }
           scanAttempts++;

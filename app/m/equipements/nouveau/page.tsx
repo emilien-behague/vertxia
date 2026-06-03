@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection } from "@/components/mobile/inset-list";
 import { VoiceInput } from "@/components/mobile/voice-input";
@@ -58,8 +58,13 @@ const UNITE_TYPES: UniteInterieureType[] = [
 
 export default function MobileAjoutEquipementPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Scan QR Vertxia — pré-remplit le form depuis un équipement existant
+  const [qrInfo, setQrInfo] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
 
   const [form, setForm] = useState({
     clientName: "",
@@ -88,6 +93,106 @@ export default function MobileAjoutEquipementPage() {
   const [scanning, setScanning] = useState(false);
   const [scanInfo, setScanInfo] = useState<string | null>(null);
   const scanInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Au mount, si on revient du scanner QR avec ?fromQr=<id>, pré-remplit
+  // le formulaire avec les données publiques de l'équipement scanné.
+  // Use case : reprendre une machine sur laquelle un autre frigoriste
+  // était déjà passé — gain de temps massif (pas de re-saisie).
+  useEffect(() => {
+    const fromQr = searchParams.get("fromQr");
+    if (!fromQr) return;
+    setQrLoading(true);
+    setQrInfo("Récupération de l'équipement scanné…");
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/public/equipement/${encodeURIComponent(fromQr)}`,
+          { headers: { "cache-control": "no-store" } }
+        );
+        if (!res.ok) {
+          setQrInfo("❌ Équipement scanné non trouvé.");
+          return;
+        }
+        const json = await res.json();
+        if (!json.data) {
+          setQrInfo("❌ Équipement scanné non trouvé.");
+          return;
+        }
+        const d = json.data as Record<string, unknown>;
+        const filled: string[] = [];
+        setForm((prev) => {
+          const next = { ...prev };
+          if (typeof d.client_name === "string" && d.client_name) {
+            next.clientName = d.client_name;
+            filled.push("client");
+          }
+          if (typeof d.client_email === "string" && d.client_email) {
+            next.clientEmail = d.client_email;
+            filled.push("email");
+          }
+          if (typeof d.client_telephone === "string" && d.client_telephone) {
+            next.clientTelephone = d.client_telephone;
+            filled.push("téléphone");
+          }
+          if (typeof d.site_adresse === "string" && d.site_adresse) {
+            next.siteAdresse = d.site_adresse;
+            filled.push("adresse");
+          }
+          if (typeof d.modele === "string" && d.modele) {
+            next.modele = d.modele;
+            filled.push("modèle");
+          }
+          if (typeof d.numero_serie === "string" && d.numero_serie) {
+            next.numeroSerie = d.numero_serie;
+            filled.push("n° série");
+          }
+          if (typeof d.fluide_code === "string" && FLUIDES.some((f) => f.code === d.fluide_code)) {
+            next.fluideCode = d.fluide_code;
+            filled.push("fluide");
+          }
+          const charge = typeof d.charge_kg === "number" ? d.charge_kg : Number(d.charge_kg);
+          if (Number.isFinite(charge) && charge > 0) {
+            next.chargeKg = String(charge);
+            filled.push("charge");
+          }
+          if (typeof d.detecteur_fixe === "boolean") {
+            next.detecteurFixe = d.detecteur_fixe;
+            if (d.detecteur_fixe) filled.push("détecteur");
+          }
+          if (typeof d.dernier_controle_iso === "string" && d.dernier_controle_iso) {
+            next.dernierControle = d.dernier_controle_iso.slice(0, 10);
+            filled.push("dernier contrôle");
+          }
+          if (typeof d.notes === "string" && d.notes) {
+            next.notes = d.notes;
+            filled.push("notes");
+          }
+          return next;
+        });
+        if (Array.isArray(d.unites_interieures) && d.unites_interieures.length > 0) {
+          const valids = (d.unites_interieures as UniteInterieure[]).filter((u) =>
+            VALID_UNITE_TYPES.has(u.type)
+          );
+          if (valids.length > 0) {
+            setUnites((prev) => [...prev, ...valids]);
+            filled.push(`${valids.length} unité${valids.length > 1 ? "s" : ""} intérieure${valids.length > 1 ? "s" : ""}`);
+          }
+        }
+        setQrInfo(
+          filled.length > 0
+            ? `✅ ${filled.length} champ${filled.length > 1 ? "s" : ""} pré-remplis — vérifie et complète si besoin.`
+            : "⚠️ QR scanné mais aucune donnée exploitable récupérée."
+        );
+      } catch (e) {
+        setQrInfo("❌ Erreur réseau : " + (e instanceof Error ? e.message : "inconnue"));
+      } finally {
+        setQrLoading(false);
+        // Clean l'URL pour ne pas re-fetcher si l'utilisateur navigue back/forward
+        router.replace("/m/equipements/nouveau", { scroll: false });
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Dictée vocale plein écran — IA extrait tout l'équipement d'un coup
   const [voiceOpen, setVoiceOpen] = useState(false);
@@ -331,6 +436,38 @@ export default function MobileAjoutEquipementPage() {
                 }`}
               >
                 {voiceInfo}
+              </div>
+            )}
+          </div>
+        </InsetListSection>
+
+        {/* Scan QR Vertxia — rapatrie un équipement existant (autre frigoriste,
+            ou ton propre équipement à dupliquer) en pré-remplissant tout le form. */}
+        <InsetListSection
+          title="Scanner un QR Vertxia (optionnel)"
+          footer="Si la machine porte déjà une étiquette QR Vertxia (collée par un autre frigoriste ou par toi), scanne-la pour récupérer toutes les infos d'un coup."
+        >
+          <div className="px-4 py-3">
+            <button
+              type="button"
+              onClick={() =>
+                router.push("/m/scan?returnTo=/m/equipements/nouveau")
+              }
+              disabled={busy || scanning || qrLoading}
+              className="w-full px-5 py-3.5 rounded-2xl bg-white ring-1 ring-black/15 text-[#111] text-[14px] font-medium active:bg-black/[0.04] transition-colors disabled:opacity-60 inline-flex items-center justify-center gap-2.5"
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1" />
+                <rect x="14" y="3" width="7" height="7" rx="1" />
+                <rect x="3" y="14" width="7" height="7" rx="1" />
+                <path d="M14 14h2v2h-2zM18 14h3M14 18h3M18 21h3M21 18v3" />
+              </svg>
+              <span>{qrLoading ? "Chargement…" : "Scanner un QR Vertxia"}</span>
+            </button>
+            {qrInfo && (
+              <div className="mt-3 text-[12px] text-black/65 leading-relaxed">
+                {qrInfo}
               </div>
             )}
           </div>
