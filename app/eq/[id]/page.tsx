@@ -1014,7 +1014,7 @@ export default function EquipementScannedPage({
                   </button>
                   <a
                     href={`https://wa.me/?text=${encodeURIComponent(
-                      `Coucou, j'ai besoin d'un coup de main sur cette installation Vertxia : ${grantUrl}\n\nLe lien donne accès complet pendant 7 jours.`
+                      `Bonjour, j'ai besoin d'un coup de main sur cette installation Vertxia : ${grantUrl}\n\nLe lien donne accès complet pendant 7 jours.`
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
