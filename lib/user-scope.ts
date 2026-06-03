@@ -1,29 +1,40 @@
 "use client";
 
-// Isolation des données par user_id — DÉSACTIVÉE pour la démo CAPEB.
+// Isolation des données localStorage par user_id.
 //
-// Retourne TOUJOURS "anon" : toutes les pages /m/* utilisent le même
-// namespace localStorage, peu importe le compte connecté. Conséquence :
-// 2 comptes Google sur le même device partagent les mêmes données.
+// SOURCE DE VÉRITÉ : cookie "vertxia-uid" set par le middleware Supabase
+// côté serveur (lib/supabase/middleware.ts) à chaque request. Lu côté
+// client de manière SYNCHRONE via document.cookie → pas de race condition.
 //
-// C'est OK pour la démo CAPEB où Emilien utilise UN seul compte. Pour
-// tester le partage Niveau 1 entre 2 comptes : utiliser 2 navigateurs
-// différents (PC + iPhone, ou Safari + Chrome).
+// Comportement :
+// - Si connecté : cookie = user.id → namespace localStorage = user.id
+// - Si pas connecté : cookie vide ou absent → namespace = "anon"
 //
-// L'isolation propre nécessite un refacto complet (server components,
-// Supabase comme source de vérité, cleanup race conditions). À faire
-// après les premiers vrais clients payants.
+// Conséquence : chaque compte Google a son propre parc isolé sur ce device.
+// Les anciens équipements créés avant ce déploiement restent sous "anon"
+// (accessibles uniquement en mode déconnecté).
 
 const ANON_NAMESPACE = "anon";
 
 export function getCurrentUserId(): string {
+  if (typeof document === "undefined") return ANON_NAMESPACE;
+  try {
+    const match = document.cookie.match(/(?:^|;\s*)vertxia-uid=([^;]+)/);
+    if (match && match[1] && match[1] !== "") {
+      return decodeURIComponent(match[1]);
+    }
+  } catch {
+    /* document inaccessible */
+  }
   return ANON_NAMESPACE;
 }
 
 export function scopedKey(baseKey: string): string {
-  return `${baseKey}:${ANON_NAMESPACE}`;
+  return `${baseKey}:${getCurrentUserId()}`;
 }
 
+/** No-op : le cookie est géré par le middleware serveur, le client n'a
+ *  rien à set manuellement. Conservé pour compat AuthSync. */
 export function setCurrentUserId(_userId: string | null): void {
-  /* no-op */
+  /* géré par le middleware */
 }
