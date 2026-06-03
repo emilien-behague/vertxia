@@ -209,6 +209,40 @@ export default function MobileEquipementsPage() {
             }
             showChevron
           />
+          <InsetRow
+            href="/m/import-registre"
+            label="Importer un registre papier"
+            sublabel="Photos → IA détecte le parc → import bulk"
+            leading={
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-700">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+              </span>
+            }
+            showChevron
+          />
+        </InsetListSection>
+      )}
+      {/* Si parc vide : on propose quand meme l'import registre (gros usecase
+          pour les nouveaux users qui veulent migrer leur ancien systeme) */}
+      {items.length === 0 && (
+        <InsetListSection title="Migration depuis l'ancien système">
+          <InsetRow
+            href="/m/import-registre"
+            label="Importer un registre papier"
+            sublabel="Photos → IA détecte le parc → import bulk en 10 min"
+            leading={
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-700">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+              </span>
+            }
+            showChevron
+          />
         </InsetListSection>
       )}
     </>
