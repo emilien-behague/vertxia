@@ -7,8 +7,8 @@
 //  - Workers .js dans public/ : network-only (content-type strict)
 //  - Autres pages : network-first avec fallback cache
 
-const CACHE_VERSION = "vertxia-v5";
-const STATIC_CACHE = "vertxia-static-v5";
+const CACHE_VERSION = "vertxia-v6";
+const STATIC_CACHE = "vertxia-static-v6";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -87,11 +87,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // /eq/* : stale-while-revalidate OK car c'est lecture pure (pas de session)
-  if (
-    url.pathname === "/" ||
-    url.pathname.startsWith("/eq/")
-  ) {
+  // /eq/* : NETWORK-FIRST (le code change souvent — partage QR, diagnostic).
+  // stale-while-revalidate servait du vieux HTML jusqu'au prochain scan, ce
+  // qui masquait les fixes deployes. Network-first force chaque scan a tenter
+  // le reseau et tombe sur le cache uniquement si offline.
+  if (url.pathname.startsWith("/eq/")) {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  // Home : stale-while-revalidate (rarement modifiee)
+  if (url.pathname === "/") {
     event.respondWith(staleWhileRevalidate(event, request));
     return;
   }
