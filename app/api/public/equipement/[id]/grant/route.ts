@@ -3,7 +3,7 @@
 // POST /api/public/equipement/[id]/grant
 // → { token, expiresAt, url }
 //
-// Seul l'owner de l'équipement peut générer un grant. Validité 24h.
+// Seul l'owner de l'équipement peut générer un grant. Validité 7 jours.
 
 import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
@@ -12,7 +12,7 @@ import { createAnonClient } from "@/lib/supabase/anon";
 
 export const runtime = "nodejs";
 
-const GRANT_DURATION_MS = 24 * 60 * 60 * 1000; // 24h
+const GRANT_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 jours
 
 export async function POST(
   req: Request,

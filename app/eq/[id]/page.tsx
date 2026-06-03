@@ -266,7 +266,7 @@ export default function EquipementScannedPage({
     });
   }, [eq, profil]);
 
-  // Génère un lien magique 24h à partager avec un confrère.
+  // Génère un lien magique 7 jours à partager avec un confrère.
   // Avant le grant, on s'assure que l'équipement existe bien en Supabase.
   // Cas typique : l'eq a été créé en local AVANT que le sync server-side
   // soit en place, donc il n'est pas dans la table public.equipements →
@@ -620,7 +620,7 @@ export default function EquipementScannedPage({
         )}
 
         {/* Bouton "Donner accès à un confrère" — owner uniquement.
-            Génère un lien magique 24h, idéal pour sous-traiter une intervention. */}
+            Génère un lien magique 7 jours, idéal pour sous-traiter une intervention. */}
         {isOwner && (
           <button
             type="button"
@@ -982,7 +982,7 @@ export default function EquipementScannedPage({
 
             <p className="text-[13px] text-black/70 leading-relaxed mb-4">
               Envoie ce lien à ton confrère par WhatsApp, SMS ou email. Une fois qu&apos;il clique
-              (connecté à son compte Vertxia), il aura accès complet à la fiche pendant 24h
+              (connecté à son compte Vertxia), il aura accès complet à la fiche pendant 7 jours
               et pourra créer des interventions.
             </p>
 
@@ -1014,7 +1014,7 @@ export default function EquipementScannedPage({
                   </button>
                   <a
                     href={`https://wa.me/?text=${encodeURIComponent(
-                      `Coucou, j'ai besoin d'un coup de main sur cette installation Vertxia : ${grantUrl}\n\nLe lien donne accès complet pendant 24h.`
+                      `Coucou, j'ai besoin d'un coup de main sur cette installation Vertxia : ${grantUrl}\n\nLe lien donne accès complet pendant 7 jours.`
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -1025,7 +1025,7 @@ export default function EquipementScannedPage({
                   </a>
                 </div>
                 <div className="mt-3 text-[11px] text-black/45 leading-relaxed">
-                  Validité : 24h. Le lien est à usage unique — chaque confrère doit avoir son propre lien.
+                  Validité : 7 jours. Le lien est à usage unique — chaque confrère doit avoir son propre lien.
                 </div>
               </>
             )}
