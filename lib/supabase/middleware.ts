@@ -8,12 +8,19 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  // Si env vars Supabase absentes (mode démo pur sans backend),
+  // on skip silencieusement sans casser le middleware.
+  if (!url || !key) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
+  try {
+    const supabase = createServerClient(url, key, {
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -26,12 +33,16 @@ export async function updateSession(request: NextRequest) {
           );
         },
       },
-    }
-  );
+    });
 
-  // IMPORTANT : appel obligatoire pour rafraîchir la session.
-  // Ne pas supprimer même si on n'utilise pas la valeur retournée.
-  await supabase.auth.getUser();
+    // IMPORTANT : appel obligatoire pour rafraîchir la session.
+    // Ne pas supprimer même si on n'utilise pas la valeur retournée.
+    await supabase.auth.getUser();
+  } catch (e) {
+    // Ne JAMAIS faire crasher le middleware (sinon MIDDLEWARE_INVOCATION_FAILED
+    // sur toutes les pages). Log et continue.
+    console.warn("[supabase/middleware] updateSession error:", e);
+  }
 
   return supabaseResponse;
 }
