@@ -75,6 +75,10 @@ export type StoredEquipement = {
    *  important pour le SAV et le suivi garantie (info terrain frigo pro). */
   unitesInterieures?: UniteInterieure[];
   notes?: string;
+  /** Présent uniquement pour les équipements PARTAGÉS via lien magique d'un
+   *  confrère. ISO date d'expiration du grant (= eq disparaît du parc local
+   *  une fois expiré). Absent pour les équipements créés par l'owner. */
+  sharedExpiresAt?: string;
 };
 
 /** Fenêtre par défaut pour la relance client avant le prochain contrôle réglementaire.
@@ -98,7 +102,12 @@ export type EquipementWithStatus = StoredEquipement & {
   isHFO: boolean;
 };
 
-const STORAGE_KEY = "vertxia:equipements";
+import { scopedKey } from "@/lib/user-scope";
+
+const STORAGE_KEY_BASE = "vertxia:equipements";
+function storageKey(): string {
+  return scopedKey(STORAGE_KEY_BASE);
+}
 
 function isBrowser(): boolean {
   return typeof window !== "undefined" && typeof localStorage !== "undefined";
@@ -107,11 +116,22 @@ function isBrowser(): boolean {
 export function listEquipements(): StoredEquipement[] {
   if (!isBrowser()) return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey());
     if (!raw) return [];
     const parsed = JSON.parse(raw) as StoredEquipement[];
     if (!Array.isArray(parsed)) return [];
-    return parsed;
+    // Auto-cleanup : retire les eq partagés dont le grant a expiré.
+    // L'eq disparaît du parc du confrère sans action manuelle.
+    const now = Date.now();
+    const filtered = parsed.filter((e) => {
+      if (!e.sharedExpiresAt) return true; // pas un partagé → on garde
+      return new Date(e.sharedExpiresAt).getTime() > now;
+    });
+    if (filtered.length !== parsed.length) {
+      // Persiste le nettoyage pour éviter de refiltrer à chaque appel
+      localStorage.setItem(storageKey(), JSON.stringify(filtered));
+    }
+    return filtered;
   } catch {
     return [];
   }
@@ -128,20 +148,54 @@ export function saveEquipement(
   };
   const all = listEquipements();
   all.unshift(entry);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  localStorage.setItem(storageKey(), JSON.stringify(all));
+  // Sync background vers Supabase pour partage public (scan QR)
+  // Import dynamique pour éviter cycles d'import + lazy load Supabase client
+  import("@/lib/public-sync")
+    .then((m) => m.syncEquipementToSupabase(entry))
+    .catch(() => {});
   return entry;
 }
 
 export function updateEquipement(id: string, patch: Partial<StoredEquipement>): void {
   if (!isBrowser()) return;
   const all = listEquipements().map((e) => (e.id === id ? { ...e, ...patch } : e));
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  localStorage.setItem(storageKey(), JSON.stringify(all));
+  const updated = all.find((e) => e.id === id);
+  if (updated) {
+    import("@/lib/public-sync")
+      .then((m) => m.syncEquipementToSupabase(updated))
+      .catch(() => {});
+  }
 }
 
 export function deleteEquipement(id: string): void {
   if (!isBrowser()) return;
   const filtered = listEquipements().filter((e) => e.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+  localStorage.setItem(storageKey(), JSON.stringify(filtered));
+}
+
+/**
+ * Insère un équipement EXISTANT (avec son ID original) dans le parc local
+ * du visiteur. Utilisé quand un confrère redeem un lien magique : l'équipement
+ * apparaît alors dans son /m/equipements sans dupliquer l'ID dans Supabase.
+ *
+ * Si l'eq existe déjà localement (même ID) → met à jour les champs.
+ * Sinon → l'ajoute.
+ *
+ * Ne déclenche PAS le sync Supabase (le visiteur n'est pas owner, l'upsert
+ * Supabase serait refusé par RLS de toute façon).
+ */
+export function upsertEquipementInPark(eq: StoredEquipement): void {
+  if (!isBrowser()) return;
+  const all = listEquipements();
+  const idx = all.findIndex((e) => e.id === eq.id);
+  if (idx >= 0) {
+    all[idx] = eq;
+  } else {
+    all.unshift(eq);
+  }
+  localStorage.setItem(storageKey(), JSON.stringify(all));
 }
 
 /**

@@ -6,8 +6,12 @@
 
 import type { TypeIntervention, Destination, ControleDetails } from "@/lib/cerfa";
 import { uuid } from "@/lib/uuid";
+import { scopedKey } from "@/lib/user-scope";
 
-const STORAGE_KEY = "vertxia:interventions";
+const STORAGE_KEY_BASE = "vertxia:interventions";
+function storageKey(): string {
+  return scopedKey(STORAGE_KEY_BASE);
+}
 
 export type StoredIntervention = {
   /** UUID local — pas relié à TrackDéchets, pour le tri/identification UI. */
@@ -45,7 +49,7 @@ function isBrowser(): boolean {
 export function listInterventions(): StoredIntervention[] {
   if (!isBrowser()) return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey());
     if (!raw) return [];
     const parsed = JSON.parse(raw) as StoredIntervention[];
     if (!Array.isArray(parsed)) return [];
@@ -61,31 +65,38 @@ export function getIntervention(id: string): StoredIntervention | null {
 }
 
 export function saveIntervention(
-  data: Omit<StoredIntervention, "id" | "createdAt">
+  data: Omit<StoredIntervention, "id" | "createdAt"> & { equipementId?: string }
 ): StoredIntervention {
   if (!isBrowser()) {
     throw new Error("localStorage indisponible (SSR ?)");
   }
+  const { equipementId, ...rest } = data;
   const entry: StoredIntervention = {
-    ...data,
+    ...rest,
     id: uuid(),
     createdAt: new Date().toISOString(),
   };
   const all = listInterventions();
   all.unshift(entry);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  localStorage.setItem(storageKey(), JSON.stringify(all));
+  // Sync background vers Supabase pour partage public (scan QR de l'équipement
+  // → l'historique s'affiche). equipementId lie l'intervention à un équipement
+  // du parc partagé.
+  import("@/lib/public-sync")
+    .then((m) => m.syncInterventionToSupabase(entry, equipementId))
+    .catch(() => {});
   return entry;
 }
 
 export function deleteIntervention(id: string): void {
   if (!isBrowser()) return;
   const filtered = listInterventions().filter(i => i.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+  localStorage.setItem(storageKey(), JSON.stringify(filtered));
 }
 
 export function clearAllInterventions(): void {
   if (!isBrowser()) return;
-  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(storageKey());
 }
 
 /** Compteurs pour le header de la page historique. */

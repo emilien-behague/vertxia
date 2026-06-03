@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection } from "@/components/mobile/inset-list";
+import { useUser } from "@/lib/supabase/use-user";
 import {
   loadProfil,
   saveProfil,
@@ -32,14 +34,33 @@ function readFileAsDataUrl(file: File): Promise<string> {
 }
 
 export default function MobileProfilPage() {
+  const router = useRouter();
+  const { user, loading: authLoading, signOut, configured } = useUser();
   const [profil, setProfil] = useState<Profil>(EMPTY_PROFIL);
   const [savedFlash, setSavedFlash] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     setProfil(loadProfil());
   }, []);
+
+  async function handleSignOut() {
+    if (signingOut) return;
+    const ok = window.confirm(
+      "Te déconnecter de Vertxia ?\n\nTes équipements et interventions restent sur cet appareil. Tu peux te reconnecter avec le même compte ou un autre."
+    );
+    if (!ok) return;
+    setSigningOut(true);
+    try {
+      await signOut();
+      router.push("/m/login");
+    } catch (e) {
+      console.warn("[signOut] failed:", e);
+      setSigningOut(false);
+    }
+  }
 
   function update<K extends keyof Profil>(key: K, value: Profil[K]) {
     setProfil((p) => ({ ...p, [key]: value }));
@@ -345,6 +366,73 @@ export default function MobileProfilPage() {
         )}
 
         {/* Outils admin */}
+        {/* Compte connecté Vertxia (Supabase Auth). Permet de se déconnecter
+            pour tester la fiche partagée publique avec un autre compte. */}
+        {configured && (
+          <InsetListSection
+            title="Compte Vertxia"
+            footer={
+              user
+                ? "Tes données restent sur cet appareil après déconnexion. Tu peux te reconnecter avec un autre compte Google."
+                : authLoading
+                  ? "Vérification de la session…"
+                  : "Connecte-toi pour synchroniser tes équipements et bouteilles sur tous tes appareils, et activer le partage de fiches."
+            }
+          >
+            {authLoading ? (
+              <div className="px-4 py-5 flex items-center gap-3 text-black/45">
+                <div className="w-4 h-4 rounded-full border-2 border-black/15 border-t-black/55 animate-spin" />
+                <span className="text-[14px]">Chargement de la session…</span>
+              </div>
+            ) : user ? (
+              <>
+                <div className="px-4 py-3">
+                  <div className="text-[11px] tracking-widest uppercase font-mono text-black/40 mb-1">
+                    · Connecté
+                  </div>
+                  <div className="text-[15px] text-[#111] break-all">
+                    {signingOut ? "Déconnexion…" : user.email}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  disabled={signingOut}
+                  className="w-full px-4 py-3.5 text-left text-[15px] font-medium text-red-600 active:bg-red-50 transition-colors disabled:opacity-60 border-t border-black/[0.06]"
+                  style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                >
+                  {signingOut ? "Déconnexion…" : "Se déconnecter"}
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="px-4 py-3">
+                  <div className="text-[11px] tracking-widest uppercase font-mono text-black/40 mb-1">
+                    · Non connecté
+                  </div>
+                  <div className="text-[13px] text-black/55">
+                    Tes données restent sur cet appareil.
+                  </div>
+                </div>
+                <a
+                  href="/m/login"
+                  className="block w-full px-4 py-3.5 text-left text-[15px] font-medium text-[#111] active:bg-black/[0.04] transition-colors border-t border-black/[0.06] inline-flex items-center gap-3"
+                  style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                >
+                  <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#111]">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                      <polyline points="10 17 15 12 10 7" />
+                      <line x1="15" y1="12" x2="3" y2="12" />
+                    </svg>
+                  </span>
+                  <span>Se connecter avec Google</span>
+                </a>
+              </>
+            )}
+          </InsetListSection>
+        )}
+
         <InsetListSection title="Outils">
           <a
             href="/m/admin/seed"

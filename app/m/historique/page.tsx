@@ -43,7 +43,60 @@ function HistoriqueContent() {
   const [equipement, setEquipement] = useState<StoredEquipement | null>(null);
 
   useEffect(() => {
-    setAllInterventions(listInterventions());
+    // 1. Interventions locales (les miennes, stockées sur ce device)
+    const local = listInterventions();
+    setAllInterventions(local);
+
+    // 2. Interventions sur mes équipements faites par des confrères (via lien
+    //    magique). On les fetch et on merge avec les locales (dédup par id).
+    (async () => {
+      try {
+        const res = await fetch("/api/public/my-interventions", {
+          method: "GET",
+          headers: { "cache-control": "no-store" },
+        });
+        if (!res.ok) return;
+        const json = (await res.json()) as { data: Record<string, unknown>[] };
+        if (!Array.isArray(json.data) || json.data.length === 0) return;
+        const remote: StoredIntervention[] = json.data.map((row) => ({
+          id: row.id as string,
+          createdAt: row.date_iso as string,
+          typeIntervention: row.type_intervention as StoredIntervention["typeIntervention"],
+          fluide: {
+            code: row.fluide_code as string,
+            label: (row.fluide_label as string) ?? (row.fluide_code as string),
+            gwp: (row.fluide_gwp as number) ?? 0,
+          },
+          weight: Number(row.weight_kg) || 0,
+          packagingNumero: (row.packaging_numero as string) ?? "",
+          clientName: (row.client_name as string) ?? null,
+          modeleEquipement: (row.modele_equipement as string) ?? undefined,
+          numeroSerieEquipement: (row.numero_serie_equipement as string) ?? undefined,
+          lieuIntervention: (row.lieu_intervention as string) ?? undefined,
+          bsffId: (row.bsff_id as string) ?? undefined,
+          controleDetails: (row.controle_details as StoredIntervention["controleDetails"]) ?? undefined,
+          notes: (row.notes as string) ?? undefined,
+          hasDetenteurSignature: Boolean(row.has_detenteur_signature),
+          detenteurName: (row.detenteur_name as string) ?? undefined,
+          detenteurQuality: (row.detenteur_quality as StoredIntervention["detenteurQuality"]) ?? undefined,
+        }));
+        // Merge sans doublon (les interventions locales que j'ai aussi syncé
+        // côté serveur arriveraient en double sinon).
+        const seen = new Set(local.map((i) => i.id));
+        const merged = [...local];
+        for (const r of remote) {
+          if (!seen.has(r.id)) {
+            merged.push(r);
+            seen.add(r.id);
+          }
+        }
+        merged.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        setAllInterventions(merged);
+      } catch {
+        // Network ou pas connecté → on garde juste les interventions locales
+      }
+    })();
+
     if (eqIdParam) {
       const eq = listEquipements().find((e) => e.id === eqIdParam);
       setEquipement(eq ?? null);

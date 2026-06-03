@@ -7,16 +7,23 @@
 
 import type { Bouteille, Mouvement } from "./bouteille";
 import { uuid } from "./uuid";
+import { scopedKey } from "./user-scope";
 
-const BOUTEILLES_KEY = "vertxia.bouteilles.v1";
-const MOUVEMENTS_KEY = "vertxia.mouvements.v1";
+const BOUTEILLES_BASE = "vertxia.bouteilles.v1";
+const MOUVEMENTS_BASE = "vertxia.mouvements.v1";
+function bouteillesKey(): string {
+  return scopedKey(BOUTEILLES_BASE);
+}
+function mouvementsKey(): string {
+  return scopedKey(MOUVEMENTS_BASE);
+}
 
 // ─── Bouteilles ────────────────────────────────────────────────────────────────
 
 function readBouteilles(): Bouteille[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.localStorage.getItem(BOUTEILLES_KEY);
+    const raw = window.localStorage.getItem(bouteillesKey());
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? (parsed as Bouteille[]) : [];
@@ -28,7 +35,7 @@ function readBouteilles(): Bouteille[] {
 function writeBouteilles(list: Bouteille[]): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(BOUTEILLES_KEY, JSON.stringify(list));
+    window.localStorage.setItem(bouteillesKey(), JSON.stringify(list));
   } catch (e) {
     console.warn("[bouteille-storage] write failed:", e);
   }
@@ -77,7 +84,7 @@ export function deleteBouteille(id: string): void {
 function readMouvements(): Mouvement[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.localStorage.getItem(MOUVEMENTS_KEY);
+    const raw = window.localStorage.getItem(mouvementsKey());
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? (parsed as Mouvement[]) : [];
@@ -89,7 +96,7 @@ function readMouvements(): Mouvement[] {
 function writeMouvements(list: Mouvement[]): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(MOUVEMENTS_KEY, JSON.stringify(list));
+    window.localStorage.setItem(mouvementsKey(), JSON.stringify(list));
   } catch (e) {
     console.warn("[bouteille-storage] write mouvements failed:", e);
   }

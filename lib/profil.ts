@@ -4,7 +4,12 @@
 // automatiquement depuis l'API TrackDéchets — le user n'aura plus qu'à compléter
 // la partie F-Gas (attestation, catégorie, organisme) et la partie visuelle (logo, signature).
 
-const STORAGE_KEY = "vertxia:profil";
+import { scopedKey } from "./user-scope";
+
+const STORAGE_KEY_BASE = "vertxia:profil";
+function storageKey(): string {
+  return scopedKey(STORAGE_KEY_BASE);
+}
 
 export type CategorieAttestation = "I" | "II" | "III" | "IV" | "V";
 
@@ -81,7 +86,7 @@ function isBrowser(): boolean {
 export function loadProfil(): Profil {
   if (!isBrowser()) return EMPTY_PROFIL;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey());
     if (!raw) return EMPTY_PROFIL;
     const parsed = JSON.parse(raw) as Partial<Profil>;
     return { ...EMPTY_PROFIL, ...parsed };
@@ -93,13 +98,13 @@ export function loadProfil(): Profil {
 export function saveProfil(profil: Profil): Profil {
   if (!isBrowser()) throw new Error("localStorage indisponible");
   const next: Profil = { ...profil, updatedAt: new Date().toISOString() };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  localStorage.setItem(storageKey(), JSON.stringify(next));
   return next;
 }
 
 export function clearProfil(): void {
   if (!isBrowser()) return;
-  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(storageKey());
 }
 
 /**
