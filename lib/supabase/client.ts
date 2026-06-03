@@ -11,7 +11,8 @@
 // Convention Supabase 2026 : NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 // (anciennement NEXT_PUBLIC_SUPABASE_ANON_KEY).
 
-import { createBrowserClient, type SupabaseClient } from "@supabase/ssr";
+import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Indique si les env vars Supabase sont configurées.
