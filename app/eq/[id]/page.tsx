@@ -600,6 +600,7 @@ type FullDiag = {
     SUPABASE_SERVICE_ROLE_KEY_set: boolean;
     SUPABASE_URL_host: string | null;
   };
+  usingServiceRole?: boolean;
   anonCount?: number | null;
   anonCountError?: string | null;
   anonSample?: Array<{ id: string; user_id: string; modele: string }> | null;
@@ -678,7 +679,9 @@ function NotFoundState({ id, debug }: { id: string; debug: import("@/lib/public-
                   </div>
 
                   <div>
-                    <div className="text-black/90 font-semibold mb-1 mt-2">LECTURE ANON :</div>
+                    <div className="text-black/90 font-semibold mb-1 mt-2">
+                      LECTURE {diag.usingServiceRole ? "SERVICE-ROLE (bypass RLS)" : "ANON"} :
+                    </div>
                     {diag.anonClientCrash && (
                       <div className="text-red-600">· Crash : {diag.anonClientCrash}</div>
                     )}
@@ -723,17 +726,25 @@ function NotFoundState({ id, debug }: { id: string; debug: import("@/lib/public-
                         → ENV VARS MANQUANTES côté serveur. Configurer dans Vercel → Project Settings → Environment Variables (cocher PREVIEW), puis redeploy.
                       </div>
                     ) : diag.anonCount === 0 ? (
-                      <div className="text-amber-700">
-                        → Table VIDE en mode anon. Soit aucun équipement créé, soit policy publique non appliquée dans Supabase. Coller dans SQL Editor :
-                        <pre className="mt-1 p-2 bg-black/5 rounded text-[9px] whitespace-pre-wrap break-all">
+                      diag.usingServiceRole ? (
+                        <div className="text-amber-700">
+                          → Table RÉELLEMENT vide (service-role bypass RLS). Aucun équipement n&apos;est jamais arrivé en Supabase.
+                          Cause probable : le POST /api/public/equipement/upsert échoue silencieusement (401 not authenticated ou autre).
+                          Crée un équipement maintenant, l&apos;upsert va se faire au save — reviens scanner.
+                        </div>
+                      ) : (
+                        <div className="text-amber-700">
+                          → Table VIDE en mode anon. Soit aucun équipement créé, soit policy publique non appliquée. Coller dans SQL Editor :
+                          <pre className="mt-1 p-2 bg-black/5 rounded text-[9px] whitespace-pre-wrap break-all">
 {`drop policy if exists "equipements_select_public" on public.equipements;
 create policy "equipements_select_public" on public.equipements
   for select to anon, authenticated using (true);
 drop policy if exists "interventions_select_public" on public.interventions;
 create policy "interventions_select_public" on public.interventions
   for select to anon, authenticated using (true);`}
-                        </pre>
-                      </div>
+                          </pre>
+                        </div>
+                      )
                     ) : diag.anonProbe ? (
                       <div className="text-emerald-700">
                         → Row trouvée mais loadée en local échoue. Bug code, à investiguer.

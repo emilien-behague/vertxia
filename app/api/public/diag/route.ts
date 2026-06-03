@@ -5,7 +5,7 @@
 
 import { NextResponse } from "next/server";
 import { createClient as createCookieClient } from "@/lib/supabase/server";
-import { createAnonClient } from "@/lib/supabase/anon";
+import { createAnonClient, isUsingServiceRole } from "@/lib/supabase/anon";
 
 export const runtime = "nodejs";
 
@@ -25,9 +25,10 @@ export async function GET(req: Request) {
       : null,
   };
 
-  // 2. Lecture anon — count + un sample
+  // 2. Lecture anon (ou service-role si dispo) — count + un sample
   try {
     const anon = createAnonClient();
+    diag.usingServiceRole = isUsingServiceRole();
     const { count, error: countError } = await anon
       .from("equipements")
       .select("id", { count: "exact", head: true });
