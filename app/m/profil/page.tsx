@@ -323,6 +323,102 @@ export default function MobileProfilPage() {
           </FormRow>
         </InsetListSection>
 
+        {/* BSFF officiel TrackDéchets — opt-in pour passer du mode démo
+            sandbox au BSFF signé Ministère opposable légalement */}
+        <InsetListSection
+          title="BSFF officiel TrackDéchets"
+          footer="Active le mode officiel pour que tes BSFF soient signés au Ministère (valeur légale). Sinon mode démo Vertxia (sandbox, gratuit, sans valeur légale)."
+        >
+          <div className="px-4 py-3 border-b border-black/[0.04]">
+            <label className="text-[10px] uppercase tracking-wide text-black/45 font-medium">
+              Mode
+            </label>
+            <select
+              value={profil.trackdechetsMode || "sandbox"}
+              onChange={(e) =>
+                update("trackdechetsMode", e.target.value as "sandbox" | "production")
+              }
+              className="input-mobile mt-1 w-full"
+            >
+              <option value="sandbox">🧪 Démo Vertxia (sandbox, sans valeur légale)</option>
+              <option value="production">⚖️ Officiel Ministère (production)</option>
+            </select>
+          </div>
+          {profil.trackdechetsMode === "production" && (
+            <>
+              <FormRow label="Mon token TrackDéchets">
+                <input
+                  type="password"
+                  value={profil.trackdechetsToken || ""}
+                  onChange={(e) => update("trackdechetsToken", e.target.value)}
+                  placeholder="eyJhbGc..."
+                  autoComplete="off"
+                  spellCheck={false}
+                  className="input-mobile font-mono text-[12px]"
+                />
+                <div className="text-[11px] text-black/45 mt-1 leading-relaxed">
+                  Obtiens-le sur{" "}
+                  <a
+                    href="https://app.trackdechets.beta.gouv.fr/account/tokens"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#A16207] underline"
+                  >
+                    trackdechets.beta.gouv.fr → Mon compte → API
+                  </a>
+                  . Stocké uniquement sur ton appareil (jamais en cloud).
+                </div>
+              </FormRow>
+              <FormRow label="Centre destination — SIRET">
+                <input
+                  type="text"
+                  value={profil.bsffDestinationSiret || ""}
+                  onChange={(e) =>
+                    update(
+                      "bsffDestinationSiret",
+                      e.target.value.replace(/\s+/g, "").slice(0, 14)
+                    )
+                  }
+                  placeholder="37989147300018"
+                  inputMode="numeric"
+                  maxLength={14}
+                  className="input-mobile font-mono"
+                />
+                <div className="text-[11px] text-black/45 mt-1 leading-relaxed">
+                  SIRET du centre agréé de régénération HFC (Climalife, Arkema, etc.). À chercher sur{" "}
+                  <a
+                    href="https://trackdechets.beta.gouv.fr/company-search"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#A16207] underline"
+                  >
+                    trackdechets.beta.gouv.fr/company-search
+                  </a>
+                  .
+                </div>
+              </FormRow>
+              <FormRow label="Centre destination — Nom commercial">
+                <input
+                  type="text"
+                  value={profil.bsffDestinationName || ""}
+                  onChange={(e) => update("bsffDestinationName", e.target.value)}
+                  placeholder="Climalife — Site de Cernay"
+                  className="input-mobile"
+                />
+              </FormRow>
+              <FormRow label="Centre destination — Adresse">
+                <input
+                  type="text"
+                  value={profil.bsffDestinationAddress || ""}
+                  onChange={(e) => update("bsffDestinationAddress", e.target.value)}
+                  placeholder="Route de Bâle, 68700 Cernay"
+                  className="input-mobile"
+                />
+              </FormRow>
+            </>
+          )}
+        </InsetListSection>
+
         {/* Submit + lien désktop pour signature */}
         <div className="px-4 mt-8 mb-4 space-y-2">
           <button

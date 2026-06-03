@@ -49,6 +49,24 @@ export type Profil = {
    *  vers le centre de traitement. Pré-rempli dans la section [7] du BSFF. */
   immatriculationVehicule?: string;
 
+  // BSFF OFFICIEL TrackDéchets — quand renseigné, le BSFF est signé
+  // au nom du frigoriste (son SIRET, son token) sur le serveur prod
+  // au lieu du sandbox Vertxia TEST. Le bordereau a alors une vraie
+  // valeur légale opposable au Ministère.
+  // Token = obtenu depuis trackdechets.beta.gouv.fr → Mon compte → API.
+  /** Token API personnel TrackDéchets (Bearer). Sensible. */
+  trackdechetsToken?: string;
+  /** "sandbox" (démo Vertxia) ou "production" (officiel Ministère). Default: sandbox. */
+  trackdechetsMode?: "sandbox" | "production";
+  /** SIRET du centre agréé qui réceptionne les bouteilles HFC pour régénération.
+   *  Ex: Climalife (37989147300018), Schneider Electric (51820126800023), etc.
+   *  Source de vérité : https://trackdechets.beta.gouv.fr/company-search */
+  bsffDestinationSiret?: string;
+  /** Nom commercial du centre destination (affiché dans le BSFF) */
+  bsffDestinationName?: string;
+  /** Adresse du centre destination */
+  bsffDestinationAddress?: string;
+
   // Visuel (data URLs base64)
   /** Logo PNG/JPEG en data URL — affiché sur tous les livrables PDF */
   logoDataUrl?: string;
@@ -74,6 +92,11 @@ export const EMPTY_PROFIL: Profil = {
   dateExpirationAttestation: "",
   numeroRecepisseTransport: "",
   immatriculationVehicule: "",
+  trackdechetsToken: "",
+  trackdechetsMode: "sandbox",
+  bsffDestinationSiret: "",
+  bsffDestinationName: "",
+  bsffDestinationAddress: "",
   logoDataUrl: undefined,
   signatureDataUrl: undefined,
   updatedAt: new Date(0).toISOString(),
@@ -120,6 +143,21 @@ export function isProfilComplete(profil: Profil): boolean {
       profil.adresseVille &&
       profil.numeroAttestation &&
       profil.categorieAttestation
+  );
+}
+
+/**
+ * Renvoie true si la config TrackDéchets officielle est complète. Permet de
+ * basculer le BSFF en mode officiel (signé Ministère) au lieu du mode démo
+ * sandbox Vertxia. Requiert : token + mode=production + SIRET destination.
+ */
+export function isTrackDechetsLiveReady(profil: Profil): boolean {
+  return Boolean(
+    profil.trackdechetsToken &&
+      profil.trackdechetsToken.trim().length > 10 &&
+      profil.trackdechetsMode === "production" &&
+      profil.bsffDestinationSiret &&
+      profil.bsffDestinationName
   );
 }
 

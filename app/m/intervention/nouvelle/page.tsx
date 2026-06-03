@@ -511,8 +511,41 @@ function NouvelleInterventionContent() {
 
     try {
       if (config.needsBsff) {
-        setStatus({ type: "loading", step: "Création du bordereau BSFF officiel…" });
         const profilTransport = loadProfil();
+        const liveMode =
+          profilTransport.trackdechetsMode === "production" &&
+          Boolean(profilTransport.trackdechetsToken?.trim());
+        setStatus({
+          type: "loading",
+          step: liveMode
+            ? "Signature officielle du BSFF (TrackDéchets prod)…"
+            : "Création du bordereau BSFF (mode démo)…",
+        });
+        // En mode officiel : on envoie token + identité user + destination du profil.
+        // En mode démo : champs vides → fallback sandbox Vertxia côté serveur.
+        const emitterCompany = liveMode && profilTransport.siret
+          ? {
+              siret: profilTransport.siret.replace(/\s+/g, ""),
+              name: profilTransport.raisonSociale,
+              address: [
+                profilTransport.adresseRue,
+                profilTransport.adresseCp,
+                profilTransport.adresseVille,
+              ]
+                .filter(Boolean)
+                .join(", "),
+              contact: profilTransport.raisonSociale,
+              phone: profilTransport.telephone,
+              mail: profilTransport.email,
+            }
+          : undefined;
+        const destinationCompany = liveMode && profilTransport.bsffDestinationSiret
+          ? {
+              siret: profilTransport.bsffDestinationSiret.replace(/\s+/g, ""),
+              name: profilTransport.bsffDestinationName || "",
+              address: profilTransport.bsffDestinationAddress || "",
+            }
+          : undefined;
         const res = await fetch("/api/bsff/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -522,6 +555,10 @@ function NouvelleInterventionContent() {
             packagingNumero,
             clientName: clientName.trim() || null,
             immatriculation: profilTransport.immatriculationVehicule || undefined,
+            userToken: liveMode ? profilTransport.trackdechetsToken : undefined,
+            apiMode: liveMode ? "production" : "sandbox",
+            emitterCompany,
+            destinationCompany,
           }),
         });
         const data = await res.json();

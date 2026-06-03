@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 
-const API_ENDPOINT = "https://api.sandbox.trackdechets.beta.gouv.fr/";
+// Endpoints TrackDéchets
+// - Sandbox = bac à sable démo, BSFF sans valeur légale (mode démo Vertxia)
+// - Production = api officielle Ministère, BSFF opposable légalement
+const API_ENDPOINT_SANDBOX = "https://api.sandbox.trackdechets.beta.gouv.fr/";
+const API_ENDPOINT_PRODUCTION = "https://api.trackdechets.beta.gouv.fr/";
 
-// SIRET sandbox Vertxia TEST — utilisé pour les 3 rôles (émetteur / transporteur / destination)
-// pendant la phase MVP démo. Sera remplacé par l'OAuth2 du frigoriste en production.
+// SIRET sandbox Vertxia TEST — utilisé en mode démo pour les 3 rôles
+// (émetteur / transporteur / destination). Remplacé par le profil utilisateur
+// quand il a renseigné son propre token + SIRET + destination.
 const VERTXIA_SIRET = "00000091982033";
 
 const VERTXIA_COMPANY = {
@@ -15,6 +20,15 @@ const VERTXIA_COMPANY = {
   mail: "emilien@vertxia.com",
 };
 
+type CompanyOverride = {
+  siret: string;
+  name: string;
+  address: string;
+  contact?: string;
+  phone?: string;
+  mail?: string;
+};
+
 type RequestBody = {
   fluide: { code: string; label: string; gwp: number; wasteCode: string };
   weight: number;
@@ -22,10 +36,25 @@ type RequestBody = {
   clientName: string | null;
   /** Immatriculation du véhicule transporteur (depuis profil). Fallback "AB123CD" si absent. */
   immatriculation?: string;
+  // ─── Mode officiel TrackDéchets (BSFF signé Ministère) ───────────────
+  /** Token API personnel TrackDéchets du frigoriste. Si présent → mode
+   *  officiel, le BSFF est signé sous le SIRET du frigoriste sur l'API prod. */
+  userToken?: string;
+  /** "sandbox" (défaut, démo Vertxia) ou "production" (officiel) */
+  apiMode?: "sandbox" | "production";
+  /** Entreprise émettrice + transporteur (le frigoriste). Si absent → Vertxia TEST. */
+  emitterCompany?: CompanyOverride;
+  /** Centre agréé de régénération HFC (Climalife, Arkema...). Si absent → Vertxia TEST. */
+  destinationCompany?: CompanyOverride;
 };
 
-async function gql(token: string, query: string, variables: Record<string, unknown> = {}) {
-  const res = await fetch(API_ENDPOINT, {
+async function gql(
+  endpoint: string,
+  token: string,
+  query: string,
+  variables: Record<string, unknown> = {}
+) {
+  const res = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -46,13 +75,6 @@ function serverError(message: string, details?: unknown) {
 }
 
 export async function POST(req: Request) {
-  const token = process.env.TRACKDECHETS_SANDBOX_TOKEN;
-  if (!token) {
-    return serverError(
-      "TRACKDECHETS_SANDBOX_TOKEN manquant. Ajoute le dans web/.env.local et redémarre le serveur dev."
-    );
-  }
-
   let body: RequestBody;
   try {
     body = (await req.json()) as RequestBody;
@@ -60,7 +82,18 @@ export async function POST(req: Request) {
     return badRequest("Corps de requête invalide");
   }
 
-  const { fluide, weight, packagingNumero, clientName, immatriculation } = body;
+  const {
+    fluide,
+    weight,
+    packagingNumero,
+    clientName,
+    immatriculation,
+    userToken,
+    apiMode,
+    emitterCompany,
+    destinationCompany,
+  } = body;
+
   if (!fluide?.code || !weight || !packagingNumero) {
     return badRequest("Champs requis manquants : fluide, weight, packagingNumero");
   }
@@ -68,14 +101,72 @@ export async function POST(req: Request) {
     return badRequest("Le numéro de contenant doit être alphanumérique (pas de tirets ni espaces)");
   }
 
+  // ─── Résolution mode + token + endpoint ───────────────────────────────
+  // Mode officiel : user a fourni son propre token + mode=production
+  //   → API endpoint production, token user, SIRET user, destination user
+  // Mode démo (par défaut) : sandbox Vertxia
+  //   → API endpoint sandbox, token env, SIRET Vertxia TEST partout
+  const isLive = apiMode === "production" && Boolean(userToken);
+  const endpoint = isLive ? API_ENDPOINT_PRODUCTION : API_ENDPOINT_SANDBOX;
+  const token = isLive ? userToken! : process.env.TRACKDECHETS_SANDBOX_TOKEN;
+  if (!token) {
+    return serverError(
+      isLive
+        ? "Token TrackDéchets manquant côté client (mode officiel)."
+        : "TRACKDECHETS_SANDBOX_TOKEN manquant côté serveur (mode démo)."
+    );
+  }
+
+  // En mode live, l'emitter est OBLIGATOIRE (sinon le BSFF serait signé
+  // sous le SIRET sandbox sur l'API prod → rejet).
+  if (isLive && (!emitterCompany?.siret || !emitterCompany?.name)) {
+    return badRequest(
+      "Mode officiel TrackDéchets : SIRET + raison sociale du frigoriste requis (depuis le profil)."
+    );
+  }
+  if (isLive && (!destinationCompany?.siret || !destinationCompany?.name)) {
+    return badRequest(
+      "Mode officiel TrackDéchets : SIRET + nom du centre de destination requis (depuis le profil)."
+    );
+  }
+
+  const emitter = emitterCompany
+    ? {
+        siret: emitterCompany.siret,
+        name: emitterCompany.name,
+        address: emitterCompany.address,
+        contact: emitterCompany.contact || "Frigoriste Vertxia",
+        phone: emitterCompany.phone || "",
+        mail: emitterCompany.mail || "",
+      }
+    : VERTXIA_COMPANY;
+
+  const destination = destinationCompany
+    ? {
+        siret: destinationCompany.siret,
+        name: destinationCompany.name,
+        address: destinationCompany.address,
+        contact: destinationCompany.contact || "Service Réception",
+        phone: destinationCompany.phone || "",
+        mail: destinationCompany.mail || "",
+      }
+    : {
+        ...VERTXIA_COMPANY,
+        contact: "Service Réception",
+        phone: "0562999999",
+        mail: "reception@centre-test.fr",
+      };
+
   // ÉTAPE 1 — createBsff (DRAFT)
   const description = clientName
     ? `Fluide frigorigène ${fluide.code} récupéré — Client : ${clientName}`
     : `Fluide frigorigène ${fluide.code} récupéré`;
 
+  const authorName = emitter.contact || "Frigoriste Vertxia";
+
   const createInput = {
     type: "COLLECTE_PETITES_QUANTITES",
-    emitter: { company: VERTXIA_COMPANY },
+    emitter: { company: emitter },
     waste: {
       code: fluide.wasteCode,
       description,
@@ -91,7 +182,7 @@ export async function POST(req: Request) {
       },
     ],
     transporter: {
-      company: VERTXIA_COMPANY,
+      company: emitter, // le frigoriste collecte ET transporte (SCOLLAC = transporteur agréé)
       transport: {
         mode: "ROAD",
         plates: [immatriculation?.trim() || "AB123CD"],
@@ -99,18 +190,14 @@ export async function POST(req: Request) {
       recepisse: { isExempted: true },
     },
     destination: {
-      company: {
-        ...VERTXIA_COMPANY,
-        contact: "Service Réception",
-        phone: "0562999999",
-        mail: "reception@centre-test.fr",
-      },
+      company: destination,
       plannedOperationCode: "R5",
       cap: "",
     },
   };
 
   const r1 = await gql(
+    endpoint,
     token,
     `mutation CreateBsff($input: BsffInput!) {
        createBsff(input: $input) {
@@ -129,6 +216,7 @@ export async function POST(req: Request) {
 
   // ÉTAPE 2 — publishBsff (DRAFT → INITIAL)
   const r2 = await gql(
+    endpoint,
     token,
     `mutation PublishBsff($id: ID!) {
        publishBsff(id: $id) { id status isDraft }
@@ -141,6 +229,7 @@ export async function POST(req: Request) {
 
   // ÉTAPE 3 — signBsff(EMISSION)
   const r3 = await gql(
+    endpoint,
     token,
     `mutation SignBsff($id: ID!, $input: BsffSignatureInput!) {
        signBsff(id: $id, input: $input) {
@@ -150,7 +239,7 @@ export async function POST(req: Request) {
      }`,
     {
       id: bsff.id,
-      input: { type: "EMISSION", author: "Emilien Behague" },
+      input: { type: "EMISSION", author: authorName },
     }
   );
   if (r3.errors) {
@@ -160,6 +249,7 @@ export async function POST(req: Request) {
 
   // ÉTAPE 4 — bsffPdf : récupération URL de téléchargement signée
   const r4 = await gql(
+    endpoint,
     token,
     `query BsffPdf($id: ID!) {
        bsffPdf(id: $id) { downloadLink token }
@@ -180,6 +270,7 @@ export async function POST(req: Request) {
   // Source de vérité = TrackDéchets, donc on relit le BSFF côté serveur
   // au lieu de réutiliser le payload qu'on a envoyé.
   const r5 = await gql(
+    endpoint,
     token,
     `query BsffDestination($id: ID!) {
        bsff(id: $id) {
@@ -192,7 +283,7 @@ export async function POST(req: Request) {
   );
   // Pas bloquant si ça échoue — le CERFA peut être généré sans la section 13.
   const destCompany = r5.data?.bsff?.destination?.company;
-  const destination = destCompany
+  const destinationOut = destCompany
     ? {
         name: destCompany.name as string,
         siret: destCompany.siret as string,
@@ -205,6 +296,7 @@ export async function POST(req: Request) {
     status: r3.data?.signBsff?.status,
     signedAt: signedAt ?? new Date().toISOString(),
     pdfUrl,
-    destination,
+    destination: destinationOut,
+    mode: isLive ? "production" : "sandbox",
   });
 }
