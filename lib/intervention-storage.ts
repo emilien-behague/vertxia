@@ -5,6 +5,7 @@
 // du payload enregistré), juste les données + l'URL du BSFF TrackDéchets.
 
 import type { TypeIntervention, Destination, ControleDetails } from "@/lib/cerfa";
+import { uuid } from "@/lib/uuid";
 
 const STORAGE_KEY = "vertxia:interventions";
 
@@ -33,6 +34,8 @@ export type StoredIntervention = {
   hasDetenteurSignature?: boolean;
   detenteurName?: string;
   detenteurQuality?: string;
+  /** Notes libres saisies ou dictées par le frigoriste (observations terrain) */
+  notes?: string;
 };
 
 function isBrowser(): boolean {
@@ -65,7 +68,7 @@ export function saveIntervention(
   }
   const entry: StoredIntervention = {
     ...data,
-    id: crypto.randomUUID(),
+    id: uuid(),
     createdAt: new Date().toISOString(),
   };
   const all = listInterventions();

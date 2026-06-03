@@ -77,13 +77,39 @@ export type FeaturedProduct = {
  * - horizontal-slider   : scroll HORIZONTAL snap-x, 1 slide = 100vw, keyboard/wheel/dots nav
  * - brutalist-tech      : neubrutalism — palette NB+accent forcee, sans-serif chunky uppercase,
  *                         bordures 2px partout, hard shadows offset zero blur, hover invert
+ * - museum-curated      : luxe ultra-minimal — fond blanc OFF force, photos modestes 55vw centrees,
+ *                         typo serif weight 200-300, captions Geist Mono grises, espace vertical
+ *                         enorme (py-48), 1 produit par "salle". Mood Maison Margiela/Lemaire/Aesop.
+ * - kinetic-typography  : typographie monumentale en mouvement — photo brutaliste full-bleed,
+ *                         enorme typo sans-serif Archivo Black overlay 14rem, marquees horizontales
+ *                         entre sections, numeros geants overlay produits, palette B+N+1 accent
+ *                         sature. Mood MINIMAL ARCHITECTURE / Wodniack / Yota.aagency.
+ * - noir-magazine       : magazine luxe noir — fond noir total, enorme wordmark serif Fraunces 22vw,
+ *                         3 teasers photos couleur saturee, article format magazine avec drop cap,
+ *                         spread photo pleine largeur, index produits style "Featured in this issue".
+ *                         Mood Voyager Press / Wallpaper / Mr Porter Journal / Cabana. ZERO glitch.
+ * - cyberpunk-noir      : tech cinematic moody — vidéo dark fullscreen brightness 55%, serif italique
+ *                         centré Fraunces, scanlines CSS overlay constant, accent NEON vif (cyan/
+ *                         magenta/lime), marquee top "SYSTEM ONLINE", glitch hover chromatic
+ *                         aberration, footer terminal-style avec status indicators ◢.
+ *                         Mood Sarah Mitchell / Triage / Blade Runner / Cyberpunk 2077.
+ * - agentic-hero        : OVERRIDE explicite regle 22 — esthétique cliché IA générique Runable /
+ *                         Lovable / Bolt / v0 : fond off-white, gros titre centré "Qu'est-ce qui doit
+ *                         être fait ?", énorme prompt box, badge orange social proof "1M+ clients",
+ *                         6 connecteurs logos, 5 boutons catégories. + Showcase vidéos AI Vertxia
+ *                         en dessous (= différenciation). Pour pages produit Vertxia agentic.
  */
 export type TemplateId =
   | "editorial-magazine"
   | "cinematic-narrative"
   | "documentary-story"
   | "horizontal-slider"
-  | "brutalist-tech";
+  | "brutalist-tech"
+  | "museum-curated"
+  | "kinetic-typography"
+  | "noir-magazine"
+  | "cyberpunk-noir"
+  | "agentic-hero";
 
 /**
  * Signature visuelle : overlay/filtre applique PAR-DESSUS n'importe quel template.

@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="fr" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>Gymshark · Trailer Vertxia</title>
+
+    <!-- GSAP core + SplitText (paid plugin in club, here we use a manual split) -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Fraunces:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #1a1c1e;
+        color: #e8e4dc;
+        font-family: 'Inter', system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+      }
+
+      /* ─── Universal clip base ─── */
+      .clip {
+        position: absolute;
+        inset: 0;
+      }
+
+      /* ─── Video clip styles ─── */
+      .video-clip {
+        z-index: 1;
+      }
+      .video-clip video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .video-clip .overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          180deg,
+          rgba(26, 28, 30, 0.35) 0%,
+          rgba(26, 28, 30, 0.1) 40%,
+          rgba(26, 28, 30, 0.85) 100%
+        );
+        z-index: 2;
+      }
+
+      /* ─── Text overlay layer ─── */
+      .text-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        pointer-events: none;
+      }
+
+      /* ─── Hero intro ─── */
+      .hero-bg {
+        z-index: 1;
+      }
+      .hero-bg video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: brightness(0.35) saturate(0.6) blur(8px);
+      }
+      .hero-content {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 0 80px;
+      }
+      .hero-kicker {
+        font-family: 'Geist Mono', monospace;
+        font-weight: 600;
+        font-size: 32px;
+        letter-spacing: 0.4em;
+        text-transform: uppercase;
+        color: #c0392b;
+        margin-bottom: 48px;
+        opacity: 0;
+      }
+      .hero-brand {
+        font-family: 'Archivo Black', sans-serif;
+        font-weight: 900;
+        font-size: 220px;
+        letter-spacing: -0.04em;
+        line-height: 0.9;
+        color: #e8e4dc;
+        text-transform: uppercase;
+        overflow: hidden;
+      }
+      .hero-brand .char {
+        display: inline-block;
+        transform: translateY(110%);
+      }
+      .hero-presents {
+        font-family: 'Geist Mono', monospace;
+        font-weight: 500;
+        font-size: 24px;
+        letter-spacing: 0.5em;
+        text-transform: uppercase;
+        color: rgba(232, 228, 220, 0.5);
+        margin-top: 48px;
+        opacity: 0;
+      }
+
+      /* ─── Product clip overlays ─── */
+      .product-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 80px 60px;
+        z-index: 10;
+      }
+      .product-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
+      .product-number {
+        font-family: 'Archivo Black', sans-serif;
+        font-weight: 900;
+        font-size: 180px;
+        line-height: 0.85;
+        letter-spacing: -0.04em;
+        color: #c0392b;
+        mix-blend-mode: difference;
+        text-shadow: 0 4px 30px rgba(192, 57, 43, 0.5);
+      }
+      .product-watermark {
+        font-family: 'Geist Mono', monospace;
+        font-weight: 600;
+        font-size: 24px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: rgba(232, 228, 220, 0.8);
+        text-align: right;
+      }
+      .product-bottom {
+        max-width: 880px;
+      }
+      .product-sub {
+        font-family: 'Geist Mono', monospace;
+        font-weight: 500;
+        font-size: 26px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: #c0392b;
+        margin-bottom: 28px;
+        opacity: 0;
+      }
+      .product-title {
+        font-family: 'Archivo Black', sans-serif;
+        font-weight: 900;
+        font-size: 110px;
+        line-height: 0.92;
+        letter-spacing: -0.03em;
+        text-transform: uppercase;
+        color: #e8e4dc;
+        overflow: hidden;
+      }
+      .product-title .line {
+        display: block;
+        overflow: hidden;
+      }
+      .product-title .line-inner {
+        display: inline-block;
+        transform: translateY(110%);
+      }
+      .product-meta {
+        font-family: 'Geist Mono', monospace;
+        font-weight: 500;
+        font-size: 22px;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        color: rgba(232, 228, 220, 0.7);
+        margin-top: 32px;
+        opacity: 0;
+      }
+
+      /* ─── Flash transitions ─── */
+      .flash {
+        background: #ffffff;
+        z-index: 100;
+        opacity: 0;
+      }
+      .flash-accent {
+        background: #c0392b;
+      }
+
+      /* ─── Outro ─── */
+      .outro-bg {
+        z-index: 1;
+      }
+      .outro-bg video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: brightness(0.2) saturate(0.4) blur(12px);
+      }
+      .outro-content {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 0 100px;
+      }
+      .outro-tagline {
+        font-family: 'Fraunces', serif;
+        font-weight: 300;
+        font-style: italic;
+        font-size: 88px;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        color: #e8e4dc;
+        margin-bottom: 80px;
+        overflow: hidden;
+      }
+      .outro-tagline .line {
+        display: block;
+        overflow: hidden;
+      }
+      .outro-tagline .line-inner {
+        display: inline-block;
+        transform: translateY(110%);
+      }
+      .outro-separator {
+        width: 80px;
+        height: 2px;
+        background: #c0392b;
+        margin-bottom: 56px;
+        transform: scaleX(0);
+        transform-origin: center;
+      }
+      .outro-domain {
+        font-family: 'Archivo Black', sans-serif;
+        font-weight: 900;
+        font-size: 54px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #c0392b;
+        margin-bottom: 32px;
+        opacity: 0;
+      }
+      .outro-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 16px;
+        font-family: 'Geist Mono', monospace;
+        font-weight: 600;
+        font-size: 22px;
+        letter-spacing: 0.4em;
+        text-transform: uppercase;
+        color: #e8e4dc;
+        padding: 18px 36px;
+        border: 1px solid rgba(232, 228, 220, 0.4);
+        opacity: 0;
+      }
+      .outro-signature {
+        position: absolute;
+        bottom: 80px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-family: 'Geist Mono', monospace;
+        font-weight: 500;
+        font-size: 18px;
+        letter-spacing: 0.5em;
+        text-transform: uppercase;
+        color: rgba(232, 228, 220, 0.4);
+        opacity: 0;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="60"
+      data-width="1080"
+      data-height="1920"
+    >
+      <!-- ═══════════════ 0-3s HERO INTRO ═══════════════ -->
+      <div class="clip hero-bg" id="scene-intro-bg" data-start="0" data-duration="3" data-track-index="0">
+        <video src="assets/01-hoodie.mp4" data-start="0" data-duration="3" muted playsinline></video>
+      </div>
+
+      <div class="clip" data-start="0" data-duration="3" data-track-index="2">
+        <div class="hero-content">
+          <div class="hero-kicker" id="hero-kicker">◢ BE A VISIONARY ◣</div>
+          <div class="hero-brand" id="hero-brand">
+            <span class="char">G</span><span class="char">Y</span><span class="char">M</span><span
+              class="char"
+              >S</span
+            ><span class="char">H</span><span class="char">A</span><span class="char">R</span><span
+              class="char"
+              >K</span
+            >
+          </div>
+          <div class="hero-presents" id="hero-presents">SS26 — PRESENTS</div>
+        </div>
+      </div>
+
+      <!-- Flash transition out of intro -->
+      <div
+        class="clip flash flash-accent"
+        id="flash-1"
+        data-start="2.85"
+        data-duration="0.3"
+        data-track-index="100"
+      ></div>
+
+      <!-- ═══════════════ 3-12s CLIP 1 HOODIE ═══════════════ -->
+      <div class="clip video-clip" id="scene-1-video" data-start="3" data-duration="9" data-track-index="1">
+        <video src="assets/01-hoodie.mp4" data-start="3" data-duration="9" muted playsinline loop></video>
+        <div class="overlay"></div>
+      </div>
+
+      <div class="clip" data-start="3" data-duration="9" data-track-index="3">
+        <div class="product-overlay">
+          <div class="product-top">
+            <div class="product-number" id="num-1">N°01</div>
+            <div class="product-watermark">◢ GYMSHARK / SS26</div>
+          </div>
+          <div class="product-bottom">
+            <div class="product-sub" id="sub-1">◢ HEAVYWEIGHT TOPS</div>
+            <div class="product-title" id="title-1">
+              <span class="line"><span class="line-inner">PUMP WASHED</span></span>
+              <span class="line"><span class="line-inner">ZIP HOODIE</span></span>
+            </div>
+            <div class="product-meta" id="meta-1">CARMINE RED · SS26 · 80 €</div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="clip flash"
+        id="flash-2"
+        data-start="11.85"
+        data-duration="0.3"
+        data-track-index="100"
+      ></div>
+
+      <!-- ═══════════════ 12-21s CLIP 2 PANTS ═══════════════ -->
+      <div class="clip video-clip" id="scene-2-video" data-start="12" data-duration="9" data-track-index="1">
+        <video src="assets/02-pants.mp4" data-start="12" data-duration="9" muted playsinline loop></video>
+        <div class="overlay"></div>
+      </div>
+
+      <div class="clip" data-start="12" data-duration="9" data-track-index="3">
+        <div class="product-overlay">
+          <div class="product-top">
+            <div class="product-number" id="num-2">N°02</div>
+            <div class="product-watermark">◢ GYMSHARK / SS26</div>
+          </div>
+          <div class="product-bottom">
+            <div class="product-sub" id="sub-2">◢ WIDE LEG · COLLEGIATE</div>
+            <div class="product-title" id="title-2">
+              <span class="line"><span class="line-inner">RETRO COLLEGIATE</span></span>
+              <span class="line"><span class="line-inner">WIDE LEG PANTS</span></span>
+            </div>
+            <div class="product-meta" id="meta-2">BLACK · GRAPHIC · 70 €</div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="clip flash"
+        id="flash-3"
+        data-start="20.85"
+        data-duration="0.3"
+        data-track-index="100"
+      ></div>
+
+      <!-- ═══════════════ 21-30s CLIP 3 JOGGERS ═══════════════ -->
+      <div class="clip video-clip" id="scene-3-video" data-start="21" data-duration="9" data-track-index="1">
+        <video src="assets/03-joggers.mp4" data-start="21" data-duration="9" muted playsinline loop></video>
+        <div class="overlay"></div>
+      </div>
+
+      <div class="clip" data-start="21" data-duration="9" data-track-index="3">
+        <div class="product-overlay">
+          <div class="product-top">
+            <div class="product-number" id="num-3">N°03</div>
+            <div class="product-watermark">◢ GYMSHARK / SS26</div>
+          </div>
+          <div class="product-bottom">
+            <div class="product-sub" id="sub-3">◢ STRAIGHT LEG · WASHED</div>
+            <div class="product-title" id="title-3">
+              <span class="line"><span class="line-inner">PUMP WASHED</span></span>
+              <span class="line"><span class="line-inner">STRAIGHT JOGGERS</span></span>
+            </div>
+            <div class="product-meta" id="meta-3">CARMINE RED · SOFT WHITE · 60 €</div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="clip flash flash-accent"
+        id="flash-4"
+        data-start="29.85"
+        data-duration="0.3"
+        data-track-index="100"
+      ></div>
+
+      <!-- ═══════════════ 30-39s CLIP 4 JACKET ═══════════════ -->
+      <div class="clip video-clip" id="scene-4-video" data-start="30" data-duration="9" data-track-index="1">
+        <video src="assets/04-jacket.mp4" data-start="30" data-duration="9" muted playsinline loop></video>
+        <div class="overlay"></div>
+      </div>
+
+      <div class="clip" data-start="30" data-duration="9" data-track-index="3">
+        <div class="product-overlay">
+          <div class="product-top">
+            <div class="product-number" id="num-4">N°04</div>
+            <div class="product-watermark">◢ GYMSHARK / SS26</div>
+          </div>
+          <div class="product-bottom">
+            <div class="product-sub" id="sub-4">◢ STATEMENT OUTERWEAR</div>
+            <div class="product-title" id="title-4">
+              <span class="line"><span class="line-inner">SCRIPT EMBROIDERY</span></span>
+              <span class="line"><span class="line-inner">FULL ZIP JACKET</span></span>
+            </div>
+            <div class="product-meta" id="meta-4">INDIGO PURPLE · HEAVYWEIGHT · 95 €</div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="clip flash"
+        id="flash-5"
+        data-start="38.85"
+        data-duration="0.3"
+        data-track-index="100"
+      ></div>
+
+      <!-- ═══════════════ 39-48s CLIP 5 T-SHIRT ═══════════════ -->
+      <div class="clip video-clip" id="scene-5-video" data-start="39" data-duration="9" data-track-index="1">
+        <video src="assets/05-tshirt.mp4" data-start="39" data-duration="9" muted playsinline loop></video>
+        <div class="overlay"></div>
+      </div>
+
+      <div class="clip" data-start="39" data-duration="9" data-track-index="3">
+        <div class="product-overlay">
+          <div class="product-top">
+            <div class="product-number" id="num-5">N°05</div>
+            <div class="product-watermark">◢ GYMSHARK / SS26</div>
+          </div>
+          <div class="product-bottom">
+            <div class="product-sub" id="sub-5">◢ ESSENTIAL LAYER</div>
+            <div class="product-title" id="title-5">
+              <span class="line"><span class="line-inner">RETRO COLLEGIATE</span></span>
+              <span class="line"><span class="line-inner">3/4 SLEEVE TEE</span></span>
+            </div>
+            <div class="product-meta" id="meta-5">TINTED WHITE · ATHLETIC RED · 35 €</div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="clip flash flash-accent"
+        id="flash-6"
+        data-start="47.85"
+        data-duration="0.3"
+        data-track-index="100"
+      ></div>
+
+      <!-- ═══════════════ 48-60s OUTRO ═══════════════ -->
+      <div class="clip outro-bg" id="scene-outro-bg" data-start="48" data-duration="12" data-track-index="0">
+        <video src="assets/02-pants.mp4" data-start="48" data-duration="12" muted playsinline loop></video>
+      </div>
+
+      <div class="clip" data-start="48" data-duration="12" data-track-index="10">
+        <div class="outro-content">
+          <div class="outro-tagline" id="outro-tagline">
+            <span class="line"><span class="line-inner">« L'effort n'attend pas</span></span>
+            <span class="line"><span class="line-inner">la perfection. »</span></span>
+          </div>
+          <div class="outro-separator" id="outro-sep"></div>
+          <div class="outro-domain" id="outro-domain">GYMSHARK.COM</div>
+          <div class="outro-cta" id="outro-cta">
+            <span>→ EXPLORER LA COLLECTION</span>
+          </div>
+          <div class="outro-signature" id="outro-sig">◢ CRAFTED BY VERTXIA</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      /* ─────────────────── HERO INTRO (0-3s) ─────────────────── */
+      // Brand chars cascade in
+      tl.to(
+        '#hero-brand .char',
+        {
+          y: 0,
+          duration: 0.85,
+          ease: 'expo.out',
+          stagger: 0.06,
+        },
+        0.2
+      )
+        // Kicker fade in
+        .to('#hero-kicker', { opacity: 1, duration: 0.7, ease: 'power2.out' }, 0.1)
+        // Presents fade in
+        .to('#hero-presents', { opacity: 1, duration: 0.6, ease: 'power2.out' }, 1.4);
+
+      // Flash 1 (intro → clip1)
+      tl.to('#flash-1', { opacity: 1, duration: 0.05, ease: 'none' }, 2.85)
+        .to('#flash-1', { opacity: 0, duration: 0.25, ease: 'power2.in' }, 2.9);
+
+      /* ─────────────────── PRODUCT CLIPS ─────────────────── */
+      // Generic timing function for each clip
+      function animateClip(index, startTime) {
+        // Number giant slide in
+        tl.fromTo(
+          '#num-' + index,
+          { y: '-30%', opacity: 0 },
+          { y: 0, opacity: 1, duration: 0.7, ease: 'expo.out' },
+          startTime + 0.1
+        );
+
+        // Sub fade
+        tl.to(
+          '#sub-' + index,
+          { opacity: 1, duration: 0.5, ease: 'power2.out' },
+          startTime + 0.5
+        );
+
+        // Title lines cascade
+        tl.to(
+          '#title-' + index + ' .line-inner',
+          { y: 0, duration: 0.85, ease: 'expo.out', stagger: 0.12 },
+          startTime + 0.7
+        );
+
+        // Meta fade
+        tl.to(
+          '#meta-' + index,
+          { opacity: 1, duration: 0.5, ease: 'power2.out' },
+          startTime + 1.4
+        );
+
+        // Subtle camera-zoom on video (scale 1 → 1.08 sur 9s) + pan léger
+        tl.fromTo(
+          '#scene-' + index + '-video video',
+          { scale: 1, xPercent: 0 },
+          {
+            scale: 1.08,
+            xPercent: index % 2 === 0 ? -2 : 2, // pan alterné gauche/droite
+            duration: 9,
+            ease: 'none',
+            transformOrigin: 'center center',
+          },
+          startTime
+        );
+      }
+
+      animateClip(1, 3);
+      animateClip(2, 12);
+      animateClip(3, 21);
+      animateClip(4, 30);
+      animateClip(5, 39);
+
+      // Flash transitions between clips
+      ['flash-2', 'flash-3', 'flash-4', 'flash-5', 'flash-6'].forEach((id, i) => {
+        const t = 11.85 + i * 9;
+        tl.to('#' + id, { opacity: 1, duration: 0.05, ease: 'none' }, t)
+          .to('#' + id, { opacity: 0, duration: 0.25, ease: 'power2.in' }, t + 0.05);
+      });
+
+      /* ─────────────────── OUTRO (48-60s) ─────────────────── */
+      // Tagline lines reveal
+      tl.to(
+        '#outro-tagline .line-inner',
+        { y: 0, duration: 1.0, ease: 'expo.out', stagger: 0.18 },
+        48.3
+      );
+
+      // Separator scale in
+      tl.to(
+        '#outro-sep',
+        { scaleX: 1, duration: 0.6, ease: 'expo.out' },
+        49.6
+      );
+
+      // Domain fade
+      tl.to(
+        '#outro-domain',
+        { opacity: 1, duration: 0.6, ease: 'power2.out' },
+        50.0
+      );
+
+      // CTA fade + breathing
+      tl.to(
+        '#outro-cta',
+        { opacity: 1, duration: 0.5, ease: 'power2.out' },
+        50.5
+      );
+
+      // Signature appears
+      tl.to(
+        '#outro-sig',
+        { opacity: 1, duration: 0.6, ease: 'power2.out' },
+        51.0
+      );
+
+      // CTA subtle pulse
+      tl.to(
+        '#outro-cta',
+        {
+          scale: 1.05,
+          duration: 1.2,
+          ease: 'sine.inOut',
+          repeat: 5,
+          yoyo: true,
+          transformOrigin: 'center center',
+        },
+        52
+      );
+
+      window.__timelines['main'] = tl;
+    </script>
+  </body>
+</html>

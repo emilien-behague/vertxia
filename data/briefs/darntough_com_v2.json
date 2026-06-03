@@ -1,0 +1,189 @@
+{
+  "template_id": "cinematic-narrative",
+  "visual_signature": "none",
+  "brand": {
+    "name": "Darn Tough",
+    "category": "Performance Outdoor Apparel & Accessories",
+    "positioning_one_liner": "The last sock you'll ever need to buy — guaranteed for life, knit in Vermont, built for everything the mountain throws at you.",
+    "icp": "Outdoor purists aged 28–55 who buy once and buy well. Trail runners, backcountry hikers, and working professionals who've done the math: one $26 sock that lasts a decade beats ten $6 socks that don't. Anti-fast-fashion by conviction, not by budget constraint. They own fewer things and expect more from each one.",
+    "voice": "Dry wit meets mountain stoicism. Honest, grounded, and quietly proud. Never shouts — lets the lifetime guarantee do the talking. Manifesto-toned with a Vermont farmer's economy of words.",
+    "domain": "darntough.com"
+  },
+  "client_prompt_interpretation": "The client wants a cinematic, grit-and-glory treatment rooted in Vermont's outdoor heritage. The lifetime guarantee is the manifesto core — not a marketing footnote, but a moral stance. The visual language should evoke granite ridgelines, wool mills at dawn, and the kind of people who fix things instead of replacing them. Every product frame should feel like a still from a documentary about people who earn their terrain. The subversion inherent in the Darn Tough proposition — a lifetime guarantee on socks, of all things — should be the structural engine of the narrative, not a footnote.",
+  "creative_direction": {
+    "mood": "Overcast summit light. The smell of wet wool and pine. A quiet that earns itself. Cinematic frames shot at golden hour on the Long Trail — desaturated greens, slate grays, amber earth. Grit without grimness. Pride without chest-thumping.",
+    "reference_style": "Patagonia's environmental manifesto films crossed with a Vermont state tourism doc. Think: 16mm grain, wide landscape inserts, extreme macro on wool textile structure — the fine-gauge knit pattern as both visual motif and structural metaphor. Color grade: lifted shadows, crushed highlights, warm midtones pulling toward aged Kodak. The knit grid itself — dense, precise, interlocked — becomes the signature visual texture of every transition.",
+    "narrative_arc": "Open with the absurdity: a lifetime guarantee on socks. Lean into it. The mountain doesn't care — and neither do we, because the guarantee makes caring unnecessary. Move through craft and terrain not as a catalog but as evidence. Close with the inversion: in a world of disposable everything, the most radical thing a company can do is promise to replace your socks forever. That's the whole subversion. That's Darn Tough."
+  },
+  "visual_system": {
+    "palette": [
+      {
+        "name": "background",
+        "hex": "#1A1714"
+      },
+      {
+        "name": "foreground",
+        "hex": "#F0EBE1"
+      },
+      {
+        "name": "accent",
+        "hex": "#C4622D"
+      },
+      {
+        "name": "muted",
+        "hex": "#6B6355"
+      },
+      {
+        "name": "surface",
+        "hex": "#2E2A25"
+      }
+    ],
+    "fonts": {
+      "serif": "Fraunces",
+      "sans": "Manrope"
+    },
+    "spacing_density": "spacious",
+    "imagery_treatment": "The fine-gauge merino knit structure — photographed in extreme macro — serves as the primary visual signature: used as section dividers, transition overlays, and background texture at 12% opacity. Product shots set against slate, bark, or granite only — never white. Landscape photography desaturated with warm midtone push. Lifted shadows, crushed highlights, Kodak-warm grade. Black letterboxing on hero frames. The knit grid motif replaces film grain as the proprietary texture — inextricably linked to the product itself."
+  },
+  "hero": {
+    "kicker": "Knit in Vermont. Guaranteed Forever.",
+    "headline": "The Mountain Doesn't Care About Your Socks. We Do.",
+    "subheadline": "Made in one Vermont mill. Backed by one unconditional guarantee. Embarrassingly simple.",
+    "primary_cta_label": "Shop the Guarantee",
+    "secondary_cta_label": "Our Story in the Mill"
+  },
+  "site_structure": [
+    {
+      "section": "manifesto",
+      "section_role": "Brand manifesto — opens with the absurdist provocation of a lifetime guarantee on socks, then earns it through conviction.",
+      "headline": "A Lifetime Guarantee on Socks. Yes, Socks.",
+      "body_paragraphs": [
+        "We know how that sounds. Socks are the thing you lose in the dryer, the thing you buy in bulk at the airport, the thing nobody thinks about until one fails at mile eighteen. That's precisely why we guarantee ours for life.",
+        "If your Darn Tough socks ever wear out, develop a hole, or fail in any way — send them back. We replace them. No receipt. No expiration date. No fine print. This is not a marketing line; it's the entire business model.",
+        "We've been knitting the same promise since 2004 in Northfield, Vermont. Same machines. Same Merino wool. Same stubborn refusal to make something we'd be embarrassed to replace."
+      ],
+      "pull_quote": "\"The most radical thing we do is replace your socks. We'll be doing it forever.\""
+    },
+    {
+      "section": "craft",
+      "section_role": "Deep-dive into Vermont manufacturing and Merino wool provenance — builds trust through process transparency.",
+      "headline": "One Mill. One State. One Standard.",
+      "body_paragraphs": [
+        "The Cabot Hosiery mill has operated in Vermont's Mad River Valley since 1978. Every pair of Darn Tough socks is knit there — no offshore production, no compromises, no exceptions.",
+        "Fine-gauge Merino wool: natural temperature regulation, moisture-wicking performance, softness that doesn't quit after a hundred washes. It's the fiber the mountains would choose, if mountains wore socks.",
+        "Fine-gauge knitting means denser, more precise construction than standard hosiery — fewer weak points, better fit retention, a sock that moves with your foot instead of against it. This is what the guarantee is built on."
+      ],
+      "pull_quote": null
+    },
+    {
+      "section": "performance",
+      "section_role": "Performance proof points across use cases — hiking, running, work, everyday — framed as terrain conquered.",
+      "headline": "Whatever the Terrain Demands, These Socks Already Agreed.",
+      "body_paragraphs": [
+        "From rocky exposure on Vermont's Long Trail to the urban assault of a predawn tempo run, Darn Tough performance socks are engineered for the specific punishment each activity delivers — not a generic compromise between them.",
+        "Merino's natural odor resistance means three days in a backcountry hut and you emerge a socially acceptable human. This is not a small thing.",
+        "Cushioning profiles are designed by activity, not aesthetics. Ultralight for runners who want ground feel. Midweight for hikers who want protection. Work-grade for the people who actually stand on their feet for ten hours."
+      ],
+      "pull_quote": "\"Built for the trail. Overqualified for everything else.\""
+    },
+    {
+      "section": "limited-edition",
+      "section_role": "Editorial spotlight on limited and seasonal collections — creates urgency around color while reinforcing the permanent guarantee.",
+      "headline": "Limited Colors. The Same Lifetime Promise.",
+      "body_paragraphs": [
+        "Every limited edition colorway uses the same construction, the same Merino wool, and the same unconditional guarantee as everything else in our line. The only thing that expires is the color.",
+        "Some runs use overstock yarns — raw materials with nowhere to go except on your feet, and a lifetime of miles ahead. Less waste. More miles. The math isn't complicated.",
+        "When a colorway is gone, it's gone. The guarantee isn't. That asymmetry is the point: buy the color because you love it, keep the sock because it won't let you throw it away."
+      ],
+      "pull_quote": null
+    },
+    {
+      "section": "guarantee-cta",
+      "section_role": "Closing manifesto CTA — the inversion: in a disposable world, the guarantee is the subversive act.",
+      "headline": "Buy Them Once. That's the Whole Pitch.",
+      "body_paragraphs": [
+        "We're not asking you to trust us. We're asking you to hold us to the guarantee. Wear them into the ground, across every summit, through every shift, for as many miles as you can manage — and if they fail you first, we'll replace them.",
+        "In a world engineered for replacement cycles, a lifetime guarantee on socks is quietly, stubbornly radical. That's the only manifesto we need.",
+        "Everything else is just color."
+      ],
+      "pull_quote": "\"Guaranteed for life — because that's how long we expect you to keep moving.\""
+    }
+  ],
+  "featured_products": [
+    {
+      "handle": "mens-merino-wool-limited-edition-hiker-micro-crew-cushioned-midweight-hiking-socks",
+      "title": "Men's Limited Edition Hiker Micro Crew Midweight Hiking Sock",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/1354/8177/files/1466_White.png?v=1775489146",
+      "editorial_caption": "The most-worn sock on the Long Trail. Twisted Merino, buttery underfoot, guaranteed to outlast your excuses.",
+      "video_prompt": "Static wide shot: a lone hiker's silhouette crests a Vermont granite ridgeline at dawn, wind visible in the jacket. Cut abruptly to extreme macro — the heathered merino knit structure fills the entire frame, individual wool fibers catching amber light, the textile grid sharp as architecture. Hold. Fade. No pull-back, no landscape cliché — the macro IS the landscape. Warm Kodak grade, lifted shadows. Engine chosen for photorealistic macro fiber texture and depth-of-field control.",
+      "video_engine_hint": "runway",
+      "video_duration_s": 5,
+      "price_eur": 26
+    },
+    {
+      "handle": "mens-weird-and-wild-2-pack",
+      "title": "Men's Weird and Wild Hiking 2-Pack",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/1354/8177/files/5014_Eclipse_5051_Walnut.png?v=1776351952",
+      "editorial_caption": "For trails that don't show up on the map and stories nobody believes. Guaranteed for life — same as the other ones.",
+      "video_prompt": "POV shoulder-mount: subjective camera lurches across a boulder field at dusk, looking DOWN at patterned merino socks picking over dark wet stone — the viewer IS the hiker. The socks are the only color in the frame. No establishing shot, no pull-back. Camera stumbles slightly on a loose rock, recovers. Cut to black. The disorientation is intentional: this is the weird and wild, not the scenic overlook. Engine chosen for handheld human motion simulation and POV stability control.",
+      "video_engine_hint": "higgsfield",
+      "video_duration_s": 5,
+      "price_eur": 51
+    },
+    {
+      "handle": "mens-and-womens-pacer-2-pack",
+      "title": "Men's and Women's Pacer 2-Pack Running Socks",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/1354/8177/files/1041_Seafoam_1050_Glacier.png?v=1773317034",
+      "editorial_caption": "Ultralight Merino. A touch of cushion. Zero tolerance for socks that quit before you do.",
+      "video_prompt": "Full abstract slow-motion: camera at ground level, lens almost touching wet trail surface. Feet are NEVER visible — only the compression wave of each footstrike rippling through standing water, the spray pattern catching early light, the rhythm of two runners in sync. Seafoam and glacier color bleeds appear only as reflected light in the puddles. The socks are felt, not seen. Engine chosen for slow-motion fluid dynamics and abstract motion rendering.",
+      "video_engine_hint": "veo",
+      "video_duration_s": 5,
+      "price_eur": 44
+    },
+    {
+      "handle": "womens-limited-edition-light-hiker-quarter-cushioned-lightweight-hiking-socks",
+      "title": "Women's Limited Edition Light Hiker Quarter Lightweight Hiking Socks",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/1354/8177/files/1987_OatMilk.png?v=1774380742",
+      "editorial_caption": "Minimalist construction. Exclusive color. The views cost more than the socks — but only one of them comes with a lifetime guarantee.",
+      "video_prompt": "Locked-off tripod shot: woman's boots in oat-colored quarter socks, ankle-level, on a narrow ridge. She is completely still. The valley behind her shifts — clouds move, light changes, mist rises and falls — time passes in the landscape while the sock and boot remain motionless, constant. The sock as the fixed point in a changing world. Desaturated, Kodak-warm. Engine chosen for time-lapse sky compositing and landscape motion over static foreground.",
+      "video_engine_hint": "runway",
+      "video_duration_s": 5,
+      "price_eur": 22
+    },
+    {
+      "handle": "womens-farmers-market-crew-lightweight-lifestyle-sock-last-chance",
+      "title": "Women's Farmer's Market Crew Lightweight Lifestyle Sock",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/1354/8177/files/6054_Sky.png?v=1735735841",
+      "editorial_caption": "A small hug for your feet. A quieter argument for buying local, buying well, and buying once.",
+      "video_prompt": "Rapid-cut montage, each shot held for 12 frames: worn hands passing change at a vegetable stall — feet in sky-blue crew socks stepping off a truck tailgate — a mason jar of honey catching morning light — the same socks on worn wooden floorboards — a child's hand grabbing an apple. Fast, warm, tactile. The rhythm of a Vermont Saturday. No slow-motion, no grain affectation — just the accumulated weight of small good things. Engine chosen for fast-cut temporal coherence and warm color fidelity.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5,
+      "price_eur": 24
+    },
+    {
+      "handle": "mens-boot-sock-3-pack",
+      "title": "Men's Boot Sock 3-Pack",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/1354/8177/files/1980_Eclipse_1403_Rye_1403_Eclipse.png?v=1776187690",
+      "editorial_caption": "Three pairs. One guarantee. For the kind of work that doesn't stop because the weather did.",
+      "video_prompt": "Single unbroken take, 5 seconds: worn work hands pull a dark merino boot sock slowly onto a foot in a barn at pre-dawn. Cold light falls through timber slats in one diagonal beam. The action is deliberate, unhurried — 5 full seconds for one sock, one foot. Camera does not move. No cut, no music implied, no grain overlay — just the weight and ceremony of a working person beginning a long day. The restraint IS the cinematic choice. Engine chosen for photorealistic hand and fabric interaction in low light.",
+      "video_engine_hint": "hailuo",
+      "video_duration_s": 5,
+      "price_eur": 84
+    }
+  ],
+  "footer": {
+    "tagline": "Made in Vermont. Guaranteed Forever. No Exceptions.",
+    "closing_line": "When your socks outlast everything else in your pack, you'll understand why we only make one kind of promise."
+  },
+  "_meta": {
+    "model": "claude-sonnet-4-6",
+    "client_prompt": "outdoor heritage Vermont, manifeste lifetime warranty, mood mountains-and-grit cinematic",
+    "source_json": "darntough.com_scrape.json",
+    "product_count_total": 50,
+    "featured_count": 6,
+    "generated_in_seconds": 90.8,
+    "multi_pass": true,
+    "pass_index": 3,
+    "audit_overall_v1": 3.5
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "template_id": "cinematic-narrative",
+  "visual_signature": "film-grain",
+  "brand": {
+    "name": "Fellow",
+    "category": "Coffee Equipment & Specialty Coffee",
+    "positioning_one_liner": "Where obsessive product design meets the quiet argument of a perfect cup.",
+    "icp": "The obsessive home barista who tracks extraction yields, watches Hoffmann at 2x speed, and owns strong opinions about grind distribution — and who also happens to have taste. Aged 28–45, SF-brained, design-literate, technically demanding. They don't want calm. They want correct.",
+    "voice": "Precise. Dry. Self-aware. Speaks in declarative sentences with a raised eyebrow. Never solemn. Lets obsession show without apology. Capable of a joke — a good one — without winking too hard.",
+    "domain": "fellowproducts.com"
+  },
+  "client_prompt_interpretation": "The user wants a cinematic, object-forward site that frames coffee-making as a morning ritual — but Fellow's ritual is not zen. It's an argument you have with yourself about variables, equipment, and the gap between a good cup and the right one. The aesthetic is premium minimal industrial: raw materials, precise gestures, single-source light. Each product feels like it belongs in a technical still-life. The tone carries Fellow's actual personality — dry wit beneath the precision, self-awareness beneath the seriousness. Film grain adds analog warmth without softening the obsession.",
+  "creative_direction": {
+    "mood": "6am and already opinionated. Industrial warmth without apology. The hush before the extraction — not because it's sacred, but because you're listening for the right sound. Matte surfaces, honest materials, one light source. Not luxury — correctness.",
+    "reference_style": "Dieter Rams meets a Hoffmann deep-dive. The visual restraint of Japanese monozukuri craft films, but with a Californian directness — objects shown with gravity AND wit. The typography of a technical manual that happens to be beautiful.",
+    "narrative_arc": "Open on the uncomfortable question (the manifesto). Anchor in the real — terroir, soil, the farmers before the machine. Show the proof: the Drops, origin by origin. Present the machine as the answer to what you've just tasted. Close with the expanded system, then the rare morning that requires no machine at all. Tension builds toward the product, not away from it."
+  },
+  "visual_system": {
+    "palette": [
+      {
+        "name": "background",
+        "hex": "#0F0E0C"
+      },
+      {
+        "name": "foreground",
+        "hex": "#F2EDE6"
+      },
+      {
+        "name": "accent",
+        "hex": "#C8A96E"
+      },
+      {
+        "name": "muted",
+        "hex": "#3A3733"
+      },
+      {
+        "name": "surface",
+        "hex": "#1C1A17"
+      }
+    ],
+    "fonts": {
+      "serif": "Fraunces",
+      "sans": "Manrope"
+    },
+    "spacing_density": "spacious",
+    "imagery_treatment": "High-contrast monochromatic base with warm sepia toning on hero frames. Product shots isolated on dark surfaces with single raking tungsten light source. Grain overlay at 18% opacity. Slow parallax depth on scroll. No lifestyle clutter — objects breathe alone, with the confidence of something that doesn't need context."
+  },
+  "hero": {
+    "kicker": "Fellow — San Francisco",
+    "headline": "Wrong variable. Wrong cup. Start over.",
+    "subheadline": "Precision instruments and single-origin coffees for people who know exactly what went wrong — and why that's the point.",
+    "primary_cta_label": "Enter the System",
+    "secondary_cta_label": "Browse the Drops"
+  },
+  "site_structure": [
+    {
+      "section": "manifesto",
+      "section_role": "Brand philosophy — opens with the uncomfortable question, sets Fellow's tone: obsessive, precise, and unexpectedly funny about it",
+      "headline": "Design is the ingredient you can't taste but always feel.",
+      "body_paragraphs": [
+        "Fellow began with one uncomfortable question: why do the objects we use every morning deserve any less thought than the coffee inside them?",
+        "We build tools that disappear into your hands — weighted right, heated precisely, engineered to remove every variable except your intention. Which, if you're being honest, is still a variable.",
+        "This is not about gear. It is about giving the obsession the infrastructure it deserves."
+      ],
+      "pull_quote": "A kettle should feel inevitable in your hand. So should the argument it starts."
+    },
+    {
+      "section": "sourcing-ethos",
+      "section_role": "Values anchor — terroir, producer relationships, decades of soil knowledge — establishes what the machine is actually in service of, before the machine appears",
+      "headline": "The farms remember. The cup keeps receipts.",
+      "body_paragraphs": [
+        "Lucia's Guatemala. Rwanda Nyampinga. Finca El Diviso. These are not flavor labels — they are addresses, relationships, decades of soil knowledge passed between hands that were doing this long before specialty coffee had a hashtag.",
+        "The best extraction starts in a conversation between a roaster and a producer who have been showing up for each other for ten years. We work backward from that cup.",
+        "We feature these coffees because the story belongs in the brew — and because terroir is not a marketing word. It is the address of a flavor you will never forget."
+      ],
+      "pull_quote": "Specialty coffee is an act of attention — paid first by the farmer, then the roaster, then finally, by you and your grinder settings."
+    },
+    {
+      "section": "drops",
+      "section_role": "Editorial proof of taste — concrete, origin-specific, rotates with velocity — positions Fellow as authority, not just hardware vendor",
+      "headline": "The Drops. Coffees chosen the way arguments are chosen — carefully, with evidence.",
+      "body_paragraphs": [
+        "Every Fellow Drop is a collaboration with the roasters, producers, and cooperatives who are doing the most interesting work in specialty coffee right now.",
+        "Anaerobic blackberry co-ferments from Colombian microlots. Semi-forest naturals grown under Guji shade trees. A Swiss Water decaf from Finca El Vergel that will make you question everything you thought about decaf.",
+        "We don't curate for trend. We curate for the cup that makes you put the phone down and actually pay attention."
+      ],
+      "pull_quote": null
+    },
+    {
+      "section": "espresso-system",
+      "section_role": "Product family narrative — frames Series 1 as the machine that earns its place after you understand the coffee it's serving",
+      "headline": "Series 1. Built for the cup you just tasted.",
+      "body_paragraphs": [
+        "Now that you know what's in the bag, the machine matters. Espresso Series 1 is not trying to impress you with complexity — it is built to remove friction from dosing to extraction so that the coffee does the talking.",
+        "Every accessory in the ecosystem was chosen for the same reason: it should make the next step feel obvious. The Complete Bundle is not an upsell. It is a closed loop. (Yes, it's €1,745. No, you won't regret it.)",
+        "When the machine gets out of your way, what's left is the coffee. Which is, inconveniently, also the point."
+      ],
+      "pull_quote": null
+    },
+    {
+      "section": "beyond-coffee",
+      "section_role": "Earned expansion — tea as a rare alternative, not a pivot; signals the depth of sensory curation without diluting coffee identity",
+      "headline": "For the mornings when even you need a break from yourself.",
+      "body_paragraphs": [
+        "MUMS, our collaboration with Hugo Tea Company, brings the same standard of traceability and terroir we demand of every Drop — to a black tea pressed from ancient Yunnan mountain leaf, fully oxidized to a warm, honeyed depth.",
+        "Because the ritual is not always about extraction ratios. Sometimes it is about sitting still long enough to notice the cup."
+      ],
+      "pull_quote": null
+    }
+  ],
+  "featured_products": [
+    {
+      "handle": "the-series-1-accessories-bundle",
+      "title": "The Series 1 + Accessories Bundle",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0057/6235/1219/files/TheSeries1_AccessoriesBundle_1.png?v=1779128000",
+      "price_eur": 1745.55,
+      "editorial_caption": "Every variable accounted for. Every surface considered. The machine that earns its counter space.",
+      "video_prompt": "Extreme close-up of a matte black espresso machine surface — pores of the anodized finish visible. A hand enters from left, locks a portafilter with a single deliberate quarter-turn. Steam rises in one thin vertical thread against near-black background. Single raking tungsten light from camera-left casts a hard shadow. Camera holds for 3 seconds, then pulls back in a slow continuous move over 5 seconds to reveal the full machine on a minimal concrete counter. No secondary objects. Silence implied. Film grain at 20% overlay. Color: near-black shadows, warm amber on metal highlight.",
+      "video_engine_hint": "runway",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "andres-martinez-blackberry-co-ferment",
+      "title": "Andres Martinez, Blackberry Co-Ferment",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0057/6235/1219/files/05.26.26_drops_image_text_MomNEm_AndresMartinezHoney.jpg?v=1779393231",
+      "price_eur": 26.5,
+      "editorial_caption": "Four days of anaerobic fermentation with castilla blackberries. Colombia's most obsessive process in a bag.",
+      "video_prompt": "Slow macro push into dark coffee beans scattered on a wet slate surface — condensation visible on individual beans, showing the anaerobic process implied. Warm amber side light at 15 degrees. Shallow depth of field: front beans sharp, background beans fall into bokeh. Camera moves at glacial pace forward over full 5 seconds — the movement is barely perceptible, almost geological. Film grain overlay. Color grade: deep shadow, warm midtones, no blue. No blackberry in frame — the suggestion is in the darkness of the beans and the moisture.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "ethiopia-anasora-guji-natural-fellow",
+      "title": "Ethiopia Anasora Guji Natural",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0057/6235/1219/files/05.12.26_drops_AdditionalPDP_Medici-EthiopiaAnasoraGujiNatural_62a2991b-58ba-401f-83fe-70e316ba087e.png?v=1780006636",
+      "price_eur": 24,
+      "editorial_caption": "Semi-forest grown under Guji shade trees. Raspberry and champagne acidity — from a natural. Yes, really.",
+      "video_prompt": "Bird's eye slow drift over a bed of drying coffee cherries on raised African drying beds. First light — the sun is below frame, casting orange raking light across the surface, long shadows from the bed's wooden slats making a grid across the cherries. The cherries are deep crimson against pale wood. Camera rotates 3 degrees clockwise while drifting forward over 5 seconds. Film grain. Muted warm palette — no saturation boost. The image reads almost like a textile from above.",
+      "video_engine_hint": "veo",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "colombia-finca-el-diviso-estate",
+      "title": "Colombia — Finca El Diviso Estate",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0057/6235/1219/files/V1_05.18.26_drops_AdditionalPDP_Stereoscope_ElDiviso-Estate_846ec101-ef41-4045-a878-9561a38f2198.png?v=1779381584",
+      "price_eur": 27,
+      "editorial_caption": "Anaerobic mosto fermentation. Huila microlot. Nestor Lasso grows fruit-forward clarity — Stereoscope roasts it without flinching.",
+      "video_prompt": "Tight overhead shot — a single ceramic cupping bowl on a dark matte surface. A small ladle breaks the crust of the bloom: the grounds part and a swirl of deep amber liquid catches a single overhead spotlight. The movement is precise, professional — a Q-grader's gesture, not a lifestyle moment. Steam rises in a diffuse haze. Camera is locked off overhead, completely static. Only the liquid moves. 5 seconds. Film grain. Color: dark background, high-contrast amber liquid, no warm toning — let the coffee's actual color read. Cinematic 2.39:1 crop.",
+      "video_engine_hint": "runway",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "complete-espresso-bundle",
+      "title": "Complete Espresso Bundle",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0057/6235/1219/files/Web_PDP_ThirdLevelBundle_8d5a9da5-a819-4601-bb3b-34ad66377f97.png?v=1774902019",
+      "price_eur": 250.45,
+      "editorial_caption": "From preservation to preparation to the shot. A closed loop. Nothing missing — which, for once, is a relief.",
+      "video_prompt": "Overhead flat lay of espresso accessories arranged with engineering precision on dark matte concrete: vacuum canister top-center, dosing funnel left, WDT tool right, knock box bottom-left, tamping mat bottom-right, espresso glass bottom-center. Camera starts at maximum zoom on the vacuum canister lid — the brushed metal surface fills the frame. Over 5 seconds, camera pulls back in a perfectly smooth vertical move to reveal the full composition. The spacing between objects is deliberate — equal, architectural. Single diffused overhead light. Film grain. Desaturated except for warm highlights on metal.",
+      "video_engine_hint": "hailuo",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "2026-mums",
+      "title": "MUMS — Hugo Tea Company",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0057/6235/1219/files/05.04.26_drops_image_text_HugoTea-FloralCake_fe5907f3-2a1b-47e5-a4dc-37fb3e6c9eaf.jpg?v=1777576435",
+      "price_eur": 35,
+      "editorial_caption": "Ancient Yunnan mountain leaf. Full oxidation. A morning that doesn't ask anything of your grinder.",
+      "video_prompt": "Extreme close-up of a compressed tea cake resting on raw unbleached linen. A wooden tea pick enters from the right. The pick's tip contacts the cake's edge — a hairline crack forms, and fine amber dust lifts into the frame. The light is a single candle-temperature source from low camera-left, casting the texture of the compressed leaf in sharp relief. Camera is completely locked off — completely static. Only the hand, the pick, and the dust move. The movement takes the full 5 seconds — deliberate to the point of ceremony. Film grain heavy. Color: warm sepia shadows, near-black background.",
+      "video_engine_hint": "higgsfield",
+      "video_duration_s": 5
+    }
+  ],
+  "footer": {
+    "tagline": "Fellow. Because the wrong kettle is a problem that compounds daily.",
+    "closing_line": "Designed in San Francisco. Brewed in the quiet before everything else — and the argument right after."
+  },
+  "_meta": {
+    "model": "claude-sonnet-4-6",
+    "client_prompt": "rituel cafe matinal, premium minimal industrial, cinematic objet design",
+    "source_json": "fellowproducts.com_scrape.json",
+    "product_count_total": 50,
+    "featured_count": 6,
+    "generated_in_seconds": 93,
+    "multi_pass": true,
+    "pass_index": 3,
+    "audit_overall_v1": 3.5
+  }
+}

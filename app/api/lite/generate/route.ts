@@ -102,6 +102,10 @@ export async function POST(req: NextRequest) {
     typeof maxVideosRaw === "number" && Number.isFinite(maxVideosRaw)
       ? Math.max(1, Math.min(6, Math.floor(maxVideosRaw)))
       : undefined;
+  // Brief multi-pass auto-critique (V2) : passCount=3 active audit + improve (~+100s, ~$0.16)
+  // Default 1 (single-pass classique).
+  const passCountRaw = (body as { passCount?: unknown }).passCount;
+  const passCount: 1 | 3 = passCountRaw === 3 ? 3 : 1;
 
   if (!url || !prompt) {
     return NextResponse.json(
@@ -129,6 +133,7 @@ export async function POST(req: NextRequest) {
       prompt,
       withVideos,
       maxVideos,
+      passCount,
     });
 
     // Lance le pipeline en background (non-awaited).

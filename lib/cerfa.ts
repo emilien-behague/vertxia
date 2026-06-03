@@ -8,7 +8,16 @@ export type TypeIntervention =
   | "controle_periodique"
   | "controle_non_periodique"
   | "mise_service"
-  | "maintenance";
+  | "maintenance"
+  | "assemblage"
+  | "modification";
+
+export type Fuite = {
+  /** Localisation décrite par l'opérateur */
+  localisation: string;
+  /** Réparation déjà réalisée ou à faire ? */
+  reparee?: "realisee" | "a_faire";
+};
 
 export type ControleDetails = {
   /** N° du détecteur de fuite manuel utilisé pendant le contrôle */
@@ -17,10 +26,35 @@ export type ControleDetails = {
   detecteurPermanent: boolean;
   /** Au moins une fuite détectée lors du contrôle ? */
   fuiteDetectee: boolean;
-  /** Si fuite : localisation décrite par l'opérateur */
+  /** Liste des fuites détectées (max 3 sur le CERFA officiel). Si vide
+   *  alors qu'fuiteDetectee=true, on fallback sur fuiteLocalisation/fuiteReparee. */
+  fuites?: Fuite[];
+  /** [LEGACY rétrocompat] Si fuite : localisation décrite par l'opérateur */
   fuiteLocalisation?: string;
-  /** Si fuite : réparation déjà réalisée ou à faire ? */
+  /** [LEGACY rétrocompat] Si fuite : réparation déjà réalisée ou à faire ? */
   fuiteReparee?: "realisee" | "a_faire";
+};
+
+/** Décomposition de la manipulation du fluide (section [11] du CERFA) */
+export type FluideManipule = {
+  /** A — fluide vierge chargé (kg) */
+  vierge?: number;
+  /** B — fluide recyclé chargé (récupéré et réintroduit) (kg) */
+  recycle?: number;
+  /** C — fluide régénéré chargé (kg) */
+  regenere?: number;
+  /** D — fluide récupéré destiné au traitement (kg) */
+  recupereTraitement?: number;
+  /** E — fluide récupéré conservé pour réutilisation (kg) */
+  recupereReutilisation?: number;
+};
+
+/** Détenteur (section [2] du CERFA) — info légale du client */
+export type DetenteurInfo = {
+  /** SIRET du détenteur (si entreprise) */
+  siret?: string;
+  /** Adresse postale complète du détenteur */
+  adresse?: string;
 };
 
 export type Destination = {
@@ -68,6 +102,14 @@ export type CerfaInput = {
    *  Si présente : remplit Sign_Detenteur_Nom/Qualite/Date + embed l'image
    *  PNG dans la zone signature détenteur du PDF officiel. */
   detenteurSignature?: SignatureDetenteur | null;
+  /** Info légale du détenteur (SIRET, adresse). Concaténé avec clientName dans la case [2]. */
+  detenteur?: DetenteurInfo;
+  /** Décomposition du fluide manipulé (sections [11A-E] du CERFA).
+   *  Si absent : on remplit juste 11_Quantite (total) + 11_QE (assume tout réutilisé). */
+  fluideManipule?: FluideManipule;
+  /** Observations libres du frigoriste (notes terrain, dictée vocale, etc.).
+   *  Concaténé après les observations auto-générées dans la case [14]. */
+  observationsLibres?: string;
   /** Infos de l'opérateur (frigoriste) depuis son profil entreprise Vertxia.
    *  Si présent : remplit Sign_Operateur_Nom/Qualite/Date + appose la signature
    *  manuscrite du frigoriste si signatureDataUrl est fournie.
@@ -194,14 +236,20 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
   setText("Attestation_no", attestation, 9);
 
   // ─── 2. Détenteur ─────────────────────────────────────────────────────────
-  setText(
-    "Detenteur",
-    [
-      input.clientName?.trim() || "Client à compléter",
-      input.lieuIntervention?.trim() || "Adresse à compléter sur site",
-    ].join(" — "),
-    8
-  );
+  // Concatène : nom + SIRET (si fourni) + adresse postale (détenteur.adresse
+  // prioritaire, sinon lieuIntervention en fallback).
+  const detenteurParts: string[] = [
+    input.clientName?.trim() || "Client à compléter",
+  ];
+  if (input.detenteur?.siret?.trim()) {
+    detenteurParts.push(`SIRET ${input.detenteur.siret.trim()}`);
+  }
+  const adresseDetenteur =
+    input.detenteur?.adresse?.trim() ||
+    input.lieuIntervention?.trim() ||
+    "";
+  if (adresseDetenteur) detenteurParts.push(adresseDetenteur);
+  setText("Detenteur", detenteurParts.join(" — "), 8);
 
   // ─── 3. Équipement ────────────────────────────────────────────────────────
   setText(
@@ -221,6 +269,12 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
   // ─── 4. Type d'intervention ───────────────────────────────────────────────
   // Notice 52064*04 : 8 cases possibles, on coche celle(s) qui correspond(ent).
   switch (typeIntervention) {
+    case "assemblage":
+      check("Case_Assemblage");
+      break;
+    case "modification":
+      check("Case_Modif");
+      break;
     case "controle_periodique":
       check("Case_CtrlPerio");
       break;
@@ -290,14 +344,29 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
       else if (teqCO2Num >= 5) check("Case_Sans_12m");
     }
 
-    // Section 10 — Fuite détectée
+    // Section 10 — Fuites détectées (jusqu'à 3 lignes dans le CERFA officiel)
     if (controle.fuiteDetectee) {
       check("Case_Fuite_Oui");
-      if (controle.fuiteLocalisation) {
-        setText("Fuite_Loca_1", controle.fuiteLocalisation, 8);
-      }
-      if (controle.fuiteReparee === "realisee") check("Case_Rep_Fuite1_realisee");
-      else if (controle.fuiteReparee === "a_faire") check("Case_Rep_Fuite1_AFaire");
+      // Construit la liste des fuites : priorité au tableau `fuites`, sinon
+      // fallback rétrocompat sur le couple legacy (fuiteLocalisation + fuiteReparee).
+      const fuitesList: Fuite[] =
+        controle.fuites && controle.fuites.length > 0
+          ? controle.fuites.slice(0, 3)
+          : controle.fuiteLocalisation
+            ? [{ localisation: controle.fuiteLocalisation, reparee: controle.fuiteReparee }]
+            : [];
+      const slots: Array<{ loca: string; rep_realisee: string; rep_afaire: string }> = [
+        { loca: "Fuite_Loca_1", rep_realisee: "Case_Rep_Fuite1_realisee", rep_afaire: "Case_Rep_Fuite1_AFaire" },
+        { loca: "Fuite_Loca_2", rep_realisee: "Case_Rep_Fuite2_realisee", rep_afaire: "Case_Rep_Fuite2_AFaire" },
+        { loca: "Fuite_Loca_3", rep_realisee: "Case_Rep_Fuite3_realisee", rep_afaire: "Case_Rep_Fuite3_AFaire" },
+      ];
+      fuitesList.forEach((fuite, idx) => {
+        const slot = slots[idx];
+        if (!slot) return;
+        if (fuite.localisation) setText(slot.loca, fuite.localisation, 8);
+        if (fuite.reparee === "realisee") check(slot.rep_realisee);
+        else if (fuite.reparee === "a_faire") check(slot.rep_afaire);
+      });
     } else {
       check("Case_Fuite_Non");
     }
@@ -308,13 +377,33 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
   // (recuperation, demantelement). Pour les contrôles d'étanchéité, la mise
   // en service et la maintenance préventive, aucune quantité n'est manipulée.
   if (hasRecuperation) {
-    setText("11_Quantite", String(input.weight), 8);
+    const fm = input.fluideManipule;
+    const qa = fm?.vierge;
+    const qb = fm?.recycle;
+    const qc = fm?.regenere;
+    const totalCharge =
+      typeof qa === "number" || typeof qb === "number" || typeof qc === "number"
+        ? (qa ?? 0) + (qb ?? 0) + (qc ?? 0)
+        : input.weight;
+    setText("11_Quantite", String(totalCharge), 8);
+    if (typeof qa === "number") setText("11_QA", qa.toFixed(2), 8);
+    if (typeof qb === "number") setText("11_QB", qb.toFixed(2), 8);
+    if (typeof qc === "number") setText("11_QC", qc.toFixed(2), 8);
+
     setText("11_Denom", input.fluide.code, 8);
-    // BSFF ID : ~21 chars (FF-YYYYMMDD-XXXXXXXXX) → case TRÈS étroite, fontSize 6.
     setText("11_BSFF", input.bsffId ?? "", 6);
     setText("11_Contenant_ID", input.packagingNumero, 8);
-    // QE = quantité récupérée transmise pour destruction/régénération
-    setText("11_QE", String(input.weight), 8);
+
+    const qd = fm?.recupereTraitement;
+    const qe = fm?.recupereReutilisation;
+    if (typeof qd === "number" || typeof qe === "number") {
+      if (typeof qd === "number") setText("11_QD", qd.toFixed(2), 8);
+      if (typeof qe === "number") setText("11_QE", qe.toFixed(2), 8);
+      setText("11_QDE", ((qd ?? 0) + (qe ?? 0)).toFixed(2), 8);
+    } else {
+      setText("11_QE", String(input.weight), 8);
+      setText("11_QDE", String(input.weight), 8);
+    }
   }
 
   // ─── 12. Dénomination ADR/RID ─────────────────────────────────────────────
@@ -372,6 +461,16 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
     observationsParts.push(
       "Maintenance préventive sans manipulation de fluide."
     );
+  } else if (typeIntervention === "assemblage") {
+    observationsParts.push("Assemblage de l'équipement.");
+  } else if (typeIntervention === "modification") {
+    observationsParts.push("Modification de l'équipement.");
+  }
+  // Observations libres saisies par le frigoriste (notes terrain / dictée vocale).
+  // Placées AVANT le footer "Fiche générée par Vertxia" pour rester lisibles
+  // si jamais le texte total dépasse la zone et est tronqué.
+  if (input.observationsLibres?.trim()) {
+    observationsParts.push(input.observationsLibres.trim());
   }
   observationsParts.push(
     "Fiche générée automatiquement par Vertxia · vertxia.com"

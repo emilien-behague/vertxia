@@ -16,13 +16,53 @@
 // avec une note explicite à l'utilisateur.
 
 import type { StoredIntervention } from "./intervention-storage";
+import { uuid } from "./uuid";
+
+export type UniteInterieureType =
+  | "cassette_plafond"
+  | "cassette_4_voies"
+  | "cassette_1_voie"
+  | "murale"
+  | "gainable"
+  | "plafonnier"
+  | "console"
+  | "vitrine_murale"
+  | "chambre_froide_positive"
+  | "chambre_froide_negative";
+
+export const UNITE_INTERIEURE_LABELS: Record<UniteInterieureType, string> = {
+  cassette_plafond: "Cassette plafond",
+  cassette_4_voies: "Cassette 4 voies",
+  cassette_1_voie: "Cassette 1 voie",
+  murale: "Murale (split)",
+  gainable: "Gainable",
+  plafonnier: "Plafonnier",
+  console: "Console",
+  vitrine_murale: "Vitrine murale",
+  chambre_froide_positive: "Chambre froide +",
+  chambre_froide_negative: "Chambre froide –",
+};
+
+export type UniteInterieure = {
+  type: UniteInterieureType;
+  modele: string;
+  numeroSerie: string;
+  /** Localisation optionnelle (ex: "Chambre 12", "Cuisine froid+") */
+  emplacement?: string;
+};
 
 export type StoredEquipement = {
   id: string;
   createdAt: string;
   clientName: string;
+  /** Email du client final — utilisé pour les emails de relance avant échéance contrôle */
+  clientEmail?: string;
+  /** Téléphone du client final — affiché dans la fiche pour rappel rapide */
+  clientTelephone?: string;
   siteAdresse?: string;
+  /** Modèle de l'unité extérieure (le compresseur qui porte la charge fluide) */
   modele: string;
+  /** N°série de l'unité extérieure (identifiant principal de l'installation) */
   numeroSerie: string;
   fluide: { code: string; label: string; gwp: number };
   chargeKg: number;
@@ -30,10 +70,24 @@ export type StoredEquipement = {
   detecteurFixe: boolean;
   /** Date du dernier contrôle d'étanchéité (ISO). Si vide : jamais contrôlé. */
   dernierControleISO?: string;
+  /** Unités intérieures rattachées au système (split multi, VRV/VRF, centrale commerciale).
+   *  La charge fluide est globale au circuit, mais chaque unité a son propre n°série
+   *  important pour le SAV et le suivi garantie (info terrain frigo pro). */
+  unitesInterieures?: UniteInterieure[];
   notes?: string;
 };
 
-export type ControleStatut = "exempt" | "ok" | "a_programmer" | "en_retard" | "jamais";
+/** Fenêtre par défaut pour la relance client avant le prochain contrôle réglementaire.
+ *  Validée 02/06/2026 par retour terrain frigo pro (père d'Emilien). */
+export const RELANCE_WINDOW_DAYS = 30;
+
+export type ControleStatut =
+  | "exempt"
+  | "ok"
+  | "a_programmer"
+  | "a_relancer"
+  | "en_retard"
+  | "jamais";
 
 export type EquipementWithStatus = StoredEquipement & {
   tCO2eq: number;
@@ -69,7 +123,7 @@ export function saveEquipement(
   if (!isBrowser()) throw new Error("localStorage indisponible");
   const entry: StoredEquipement = {
     ...data,
-    id: crypto.randomUUID(),
+    id: uuid(),
     createdAt: new Date().toISOString(),
   };
   const all = listEquipements();
@@ -168,6 +222,7 @@ export function computeStatus(
     const jours = daysBetween(new Date(), prochain);
     joursAvantControle = jours;
     if (jours < 0) statut = "en_retard";
+    else if (jours <= RELANCE_WINDOW_DAYS) statut = "a_relancer";
     else if (jours <= 90) statut = "a_programmer";
     else statut = "ok";
   }
@@ -190,13 +245,14 @@ export function computeAllStatus(
   return equipements
     .map((e) => computeStatus(e, interventions))
     .sort((a, b) => {
-      // Tri : en_retard → a_programmer → jamais → ok → exempt
+      // Tri : en_retard → a_relancer → a_programmer → jamais → ok → exempt
       const order: Record<ControleStatut, number> = {
         en_retard: 0,
-        a_programmer: 1,
-        jamais: 2,
-        ok: 3,
-        exempt: 4,
+        a_relancer: 1,
+        a_programmer: 2,
+        jamais: 3,
+        ok: 4,
+        exempt: 5,
       };
       const diff = order[a.statut] - order[b.statut];
       if (diff !== 0) return diff;
@@ -211,6 +267,7 @@ export function computeAllStatus(
 export type EquipementStats = {
   total: number;
   enRetard: number;
+  aRelancer: number;
   aProgrammer: number;
   ok: number;
   jamais: number;
@@ -221,6 +278,7 @@ export function getEquipementStats(items: EquipementWithStatus[]): EquipementSta
   return {
     total: items.length,
     enRetard: items.filter((i) => i.statut === "en_retard").length,
+    aRelancer: items.filter((i) => i.statut === "a_relancer").length,
     aProgrammer: items.filter((i) => i.statut === "a_programmer").length,
     ok: items.filter((i) => i.statut === "ok").length,
     jamais: items.filter((i) => i.statut === "jamais").length,
@@ -228,8 +286,73 @@ export function getEquipementStats(items: EquipementWithStatus[]): EquipementSta
   };
 }
 
+/**
+ * Génère un mailto: URL pour relancer le client avant l'échéance du contrôle.
+ * Pré-rempli avec destinataire (clientEmail), CC frigoriste, objet, et corps complet.
+ * L'utilisateur clique → app Mail iPhone s'ouvre → tap Envoyer.
+ */
+export function buildRelanceMailto(args: {
+  eq: EquipementWithStatus;
+  frigoristeEmail?: string;
+  frigoristeRaisonSociale?: string;
+  frigoristeNumeroAttestation?: string;
+  frigoristeTelephone?: string;
+}): string {
+  const { eq, frigoristeEmail, frigoristeRaisonSociale, frigoristeNumeroAttestation, frigoristeTelephone } = args;
+
+  const fmtFR = (iso: string | null | undefined): string => {
+    if (!iso) return "non renseigné";
+    const d = new Date(iso);
+    return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+  };
+
+  const to = eq.clientEmail ?? "";
+  const cc = frigoristeEmail ?? "";
+
+  const subject = `Rappel : contrôle d'étanchéité réglementaire de votre installation ${eq.modele} à programmer`;
+
+  const lines = [
+    `Bonjour,`,
+    ``,
+    `Conformément au règlement UE 2024/573 (anciennement règlement 517/2014), votre installation de réfrigération nécessite un contrôle d'étanchéité réglementaire.`,
+    ``,
+    `Référence de l'installation :`,
+    `• Modèle : ${eq.modele}`,
+    `• N° de série : ${eq.numeroSerie}`,
+    `• Fluide : ${eq.fluide.code} (GWP ${eq.fluide.gwp.toLocaleString("fr-FR")})`,
+    `• Charge nominale : ${eq.chargeKg.toFixed(2).replace(".", ",")} kg (${eq.tCO2eq.toFixed(2).replace(".", ",")} tonnes éq. CO₂)`,
+    eq.siteAdresse ? `• Site : ${eq.siteAdresse}` : "",
+    eq.unitesInterieures && eq.unitesInterieures.length > 0
+      ? `• Unités intérieures rattachées : ${eq.unitesInterieures.length}`
+      : "",
+    ``,
+    `Historique :`,
+    `• Dernier contrôle : ${fmtFR(eq.dernierControleISO)}`,
+    `• Prochain contrôle requis avant le : ${fmtFR(eq.prochainControleISO)}`,
+    `• Fréquence : tous les ${eq.frequenceMois} mois`,
+    ``,
+    `Je vous remercie de me recontacter pour planifier cette intervention dans les meilleurs délais. Vous pouvez me joindre directement${frigoristeTelephone ? ` au ${frigoristeTelephone}` : ""}${frigoristeEmail ? ` ou par retour de mail` : ""}.`,
+    ``,
+    `Cordialement,`,
+    frigoristeRaisonSociale ?? "",
+    frigoristeNumeroAttestation ? `Attestation F-Gas n° ${frigoristeNumeroAttestation}` : "",
+    frigoristeTelephone ?? "",
+    frigoristeEmail ?? "",
+  ].filter(Boolean);
+
+  const body = lines.join("\n");
+
+  const params = new URLSearchParams();
+  if (cc) params.set("cc", cc);
+  params.set("subject", subject);
+  params.set("body", body);
+
+  return `mailto:${encodeURIComponent(to)}?${params.toString().replace(/\+/g, "%20")}`;
+}
+
 const STATUT_LABELS: Record<ControleStatut, string> = {
   en_retard: "EN RETARD",
+  a_relancer: "RELANCE CLIENT",
   a_programmer: "A PROGRAMMER",
   jamais: "JAMAIS CONTROLE",
   ok: "A JOUR",
@@ -260,8 +383,8 @@ export function equipementsToCsv(items: EquipementWithStatus[]): string {
   const headers = [
     "Client",
     "Site / Adresse",
-    "Modele",
-    "N° de serie",
+    "Modele unite exterieure",
+    "N° serie unite exterieure",
     "Fluide",
     "GWP",
     "Charge (kg)",
@@ -272,6 +395,8 @@ export function equipementsToCsv(items: EquipementWithStatus[]): string {
     "Prochain controle",
     "Jours avant controle",
     "Statut",
+    "Nb unites interieures",
+    "Detail unites interieures",
     "Notes",
     "Date d'ajout",
   ];
@@ -279,6 +404,14 @@ export function equipementsToCsv(items: EquipementWithStatus[]): string {
   const lines = [headers.join(sep)];
 
   for (const eq of items) {
+    const unites = eq.unitesInterieures ?? [];
+    const unitesDetail = unites
+      .map((u) => {
+        const label = UNITE_INTERIEURE_LABELS[u.type];
+        const emp = u.emplacement ? ` ${u.emplacement}` : "";
+        return `${label} ${u.modele} (SN:${u.numeroSerie}${emp})`;
+      })
+      .join(" | ");
     const row = [
       escapeCsv(eq.clientName),
       escapeCsv(eq.siteAdresse ?? ""),
@@ -294,6 +427,8 @@ export function equipementsToCsv(items: EquipementWithStatus[]): string {
       fmtIsoDateFR(eq.prochainControleISO),
       eq.joursAvantControle !== null ? eq.joursAvantControle.toString() : "",
       STATUT_LABELS[eq.statut],
+      unites.length.toString(),
+      escapeCsv(unitesDetail),
       escapeCsv(eq.notes ?? ""),
       fmtIsoDateFR(eq.createdAt),
     ];

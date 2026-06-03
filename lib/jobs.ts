@@ -41,6 +41,8 @@ export type Job = {
   withVideos: boolean;
   /** Limite max de vidéos Kling à generer (default 3 si withVideos). */
   maxVideos: number;
+  /** Nombre de passes du briefer : 1 (rapide $0.30) ou 3 (multi-pass auto-critique $0.46). Default 1. */
+  passCount?: 1 | 3;
 };
 
 const JOB_ID_REGEX = /^[a-f0-9-]{36}$/i;
@@ -75,6 +77,7 @@ export async function createJob(input: {
   prompt: string;
   withVideos?: boolean;
   maxVideos?: number;
+  passCount?: 1 | 3;
 }): Promise<Job> {
   await ensureJobsDir();
 
@@ -107,6 +110,7 @@ export async function createJob(input: {
     alreadyExists,
     withVideos: input.withVideos === true,
     maxVideos: Math.max(1, Math.min(6, input.maxVideos ?? 3)),
+    passCount: input.passCount === 3 ? 3 : 1,
   };
 
   await atomicWrite(jobPath(id), JSON.stringify(job, null, 2));

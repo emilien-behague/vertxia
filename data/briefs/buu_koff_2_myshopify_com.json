@@ -1,0 +1,174 @@
+{
+  "template_id": "brutalist-tech",
+  "visual_signature": "neon-noir",
+  "brand": {
+    "name": "BUU'KOFF",
+    "category": "Figurines collector anime premium",
+    "positioning_one_liner": "BUU'KOFF réunit les pièces qui ont marqué une génération — du shonen culte à la figurine d'exception.",
+    "icp": "Homme 18-35 ans, fan de shonen (DBZ, One Piece, Naruto), collectionneur passionné qui investit dans des pièces rares et officielles comme d'autres achètent de l'art.",
+    "voice": "manifeste",
+    "domain": "buu-koff-2.myshopify.com"
+  },
+  "client_prompt_interpretation": "La marque arrive via Instagram link-in-bio : audience fan-culture exigeante, mobile-first, sensible à l'impact visuel immédiat — le site doit frapper comme une cover de Weekly Shōnen Jump passée au traitement cinématographique noir et néon.",
+  "creative_direction": {
+    "mood": "Noir d'encre percé de lumière. L'univers BUU'KOFF est une salle des trophées dans l'obscurité — chaque figurine émerge comme une apparition, éclairée par un faisceau unique. Pas de nostalgie bon marché : une gravité de musée, un frisson de bataille.",
+    "reference_style": "Supreme drop pages 2019, Medicom Toy BE@RBRICK editorial lookbook, Hypebeast product features, streetwear brutalism de Dover Street Market Tokyo — avec la densité narrative d'un artbook Akira.",
+    "narrative_arc": "L'utilisateur entre dans l'obscurité, rencontre le manifeste, puis découvre les pièces une par une comme s'il traversait une galerie underground avant de rejoindre la communauté des collectionneurs."
+  },
+  "visual_system": {
+    "palette": [
+      {
+        "name": "background",
+        "hex": "#0A0A0F"
+      },
+      {
+        "name": "foreground",
+        "hex": "#F0EDE6"
+      },
+      {
+        "name": "accent",
+        "hex": "#FF3B1F"
+      },
+      {
+        "name": "muted",
+        "hex": "#2A2A35"
+      },
+      {
+        "name": "surface",
+        "hex": "#13131A"
+      }
+    ],
+    "fonts": {
+      "serif": "Fraunces",
+      "sans": "Inter"
+    },
+    "spacing_density": "dense",
+    "imagery_treatment": "Fond arraché au noir, vignette extrême sur les bords, lumière froide directionnelle sur la figurine — chaque produit devient une sculpture isolée dans le vide."
+  },
+  "hero": {
+    "kicker": "Collector. Pas fan.",
+    "headline": "LES PIÈCES QUI\nNE DORMENT PAS\nDANS UN TIROIR.",
+    "subheadline": "Figurines officielles anime sélectionnées pour ceux qui savent ce qu'ils cherchent. Bandai. Banpresto. Ichiban Kuji. Rien d'autre.",
+    "primary_cta_label": "Explorer le catalogue",
+    "secondary_cta_label": "Les raretés du moment"
+  },
+  "site_structure": [
+    {
+      "section": "manifesto",
+      "section_role": "Poser l'identité radicale de BUU'KOFF et qualifier l'audience : pas un magasin de jouets, un espace de collection sérieux.",
+      "headline": "ON NE VEND PAS DE LA NOSTALGIE. ON VEND CE QUI LA MÉRITE.",
+      "body_paragraphs": [
+        "BUU'KOFF est né d'une conviction simple : les grandes séries produisent des grandes œuvres. Pas des gadgets. Pas du plastique générique. Des sculptures officielles qui cristallisent un moment, un arc, une transformation qui t'a marqué à vie.",
+        "Dragon Ball Z. Naruto. One Piece. Bleach. Ces univers ont défini une génération entière — et les pièces qui les incarnent méritent d'être traitées avec la même exigence que n'importe quel objet de collection premium.",
+        "Chaque référence chez BUU'KOFF est sélectionnée à la main. Bandai Spirits, Banpresto, Ichiban Kuji, Grandista, Solid Edge Works — on connaît les lignes, les séries, les lots. On sait ce qui prend de la valeur et ce qui prend la poussière."
+      ],
+      "pull_quote": "« Une figurine, c'est l'instant où un personnage devient réel. »"
+    },
+    {
+      "section": "collection",
+      "section_role": "Présenter les pièces phares comme une sélection éditoriale, pas un listing e-commerce classique.",
+      "headline": "LA SÉLECTION DU MOMENT.",
+      "body_paragraphs": [
+        "Des drops récents aux précommandes exclusives, voici les pièces qui circulent dans la communauté en ce moment. Éditions limitées, derniers lots Ichiban Kuji, Grandista grande taille — disponibilité non garantie.",
+        "Chaque figurine est expédiée dans son emballage d'origine, contrôlée avant envoi. Ce que tu reçois correspond exactement à ce que tu vois."
+      ],
+      "pull_quote": null
+    },
+    {
+      "section": "rarites",
+      "section_role": "Mettre en lumière les pièces premium et précommandes pour justifier le positionnement haut de gamme.",
+      "headline": "ICHIBAN KUJI. LES LOTS QU'ON NE RETROUVE PAS.",
+      "body_paragraphs": [
+        "Les figurines Ichiban Kuji ne se commandent pas sur Amazon. Elles sortent en tirage limité, par lots numérotés, dans des circuits spécifiques. BUU'KOFF les source directement pour te les proposer sans la chasse.",
+        "Zaraki Kenpachi Last One. Son Goku Lot F. Jiraiya Sage Mode Lot E. Ce sont des pièces qui disparaissent vite et ne reviennent pas. Si tu les vois ici, c'est maintenant ou jamais.",
+        "Les précommandes Dragon Ball GT SSJ4 sont ouvertes. Végéta, Son Goku, Super C-17 — la trilogie Ichibansho qui ne laissera aucun shelf vide."
+      ],
+      "pull_quote": "« Last One. Dernier lot. Dernière chance. »"
+    },
+    {
+      "section": "closing",
+      "section_role": "Convertir et fidéliser : inviter l'audience Instagram à rejoindre la communauté collector.",
+      "headline": "TON PROCHAIN DROP T'ATTEND.",
+      "body_paragraphs": [
+        "On annonce les nouvelles arrivées et les précommandes en premier sur Instagram. Si tu viens de là, tu sais déjà comment ça marche.",
+        "Rejoins les collectionneurs qui ne ratent rien. Pas de newsletter agressive — juste les pièces qui comptent, quand elles arrivent.",
+        "BUU'KOFF. Pour ceux qui choisissent."
+      ],
+      "pull_quote": null
+    }
+  ],
+  "featured_products": [
+    {
+      "handle": "bleach-ichiban-kuji-thousand-year-blood-war-op-1-figurine-zaraki-kenpachi-last-one",
+      "title": "BLEACH - ICHIBAN KUJI THOUSAND YEAR BLOOD WAR OP.1 - FIGURINE ZARAKI KENPACHI LAST ONE",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0995/9597/7051/files/48A33664-0E71-4395-973A-A06CED0EFCEF.jpg?v=1779451749",
+      "price_eur": "129.99",
+      "editorial_caption": "Le Last One ne se redemande pas. Zaraki Kenpachi dans l'arc Thousand Year Blood War — la pièce la plus convoitée de la série, capturée dans sa puissance brute.",
+      "video_prompt": "Extreme close-up on Kenpachi figure, pitch black background, single cold spotlight reveals textured sculpt detail slowly. Camera rises in a slow crane move. Dust particles in light beam. Cinematic color grade, deep blacks, 24fps.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "dragon-ball-omnibus-ultimate-ichiban-kuji-kakarot-son-goku-lot-f",
+      "title": "DRAGON BALL Z - OMNIBUS ULTIMATE - ICHIBAN KUJI KAKAROT (SON GOKU) LOT F",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0995/9597/7051/files/BE38B373-CE7A-438D-8563-A943B8B0B235.jpg?v=1779453696",
+      "price_eur": "114.99",
+      "editorial_caption": "Kakarot. Pas Goku le personnage de dessin animé — Kakarot, l'origine, la légende. Le Lot F Ichiban Kuji Omnibus Ultimate, pour les collections qui assument leur ambition.",
+      "video_prompt": "Medium shot of Son Goku figure, dark studio, dramatic backlight with warm orange energy aura simulated by practical light. Slow dolly push-in. Lens flare at 2 seconds. Film grain overlay, anamorphic bokeh.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "one-piece-figurine-monkey-d-luffy-gear-5-grandista",
+      "title": "ONE PIECE - FIGURINE MONKEY D. LUFFY GEAR 5 GRANDISTA",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0995/9597/7051/files/F22FA744-041E-4E59-936E-3BF4CF481CD1.webp?v=1779867107",
+      "price_eur": "49.99",
+      "editorial_caption": "Gear 5 n'est pas une transformation — c'est une libération. La Grandista capture cet instant d'absurde puissance avec une présence qui déborde littéralement de la vitrine.",
+      "video_prompt": "Wide low-angle shot of Luffy Gear 5 Grandista figure, white hair catching backlight, black void background. Camera orbits slowly left to right, revealing sculpt volume. Subtle white particle glow effect. Cinematic 2.39:1 crop.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "naruto-shippuden-ichiban-kuji-the-bridge-of-peace-and-the-lament-of-reincarnation-figurine-jiraya-sage-mode-lot-e",
+      "title": "NARUTO SHIPPUDEN - ICHIBAN KUJI THE BRIDGE OF PEACE AND THE LAMENT OF REINCARNATION - FIGURINE JIRAYA (SAGE MODE) LOT E",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0995/9597/7051/files/6A6CAFFF-C749-4C50-9A00-6C12EEEDC335.jpg?v=1779453813",
+      "price_eur": "95.99",
+      "editorial_caption": "Jiraiya en Sage Mode. Un personnage dont la mort a redéfini ce que pouvait faire un shonen — et une figurine Ichiban Kuji Lot E qui lui rend une dignité de monument.",
+      "video_prompt": "Slow tilt-up from base to face of Jiraiya sage mode figure, moody green-tinted underlighting, fog machine wisps at base. Camera move: floor level to eye level. Deep shadow zones, neon-green accent on sculpt detail.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "one-piece-figurine-ichibansho-masterlise-shanks-roger-pirates",
+      "title": "One Piece - Figurine Ichibansho Masterlise Shanks (Roger Pirates)",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0995/9597/7051/files/CF258ADC-382D-42E7-A6A2-A3D728AACD82.jpg?v=1779454212",
+      "price_eur": "45.99",
+      "editorial_caption": "Shanks aux Roger Pirates. Avant la légende, l'apprentissage. La Masterlise Ichibansho fige ce chapitre rare avec une finesse de peinture qui n'appartient qu'aux grandes lignes.",
+      "video_prompt": "Profile shot of Shanks Masterlise figure, dramatic side key light, dark navy background. Slow 180-degree orbit revealing cape sculpt. Shallow depth of field, foreground blur. Warm candlelight-grade color treatment.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5
+    },
+    {
+      "handle": "dragon-ball-z-figurine-gogeta-ssj4-solid-edge-works",
+      "title": "DRAGON BALL Z - FIGURINE GOGETA SSJ4 SOLID EDGE WORKS",
+      "hero_image_url": "https://cdn.shopify.com/s/files/1/0995/9597/7051/files/9A24C3FC-99CE-4479-9F19-2881D0125EE1.jpg?v=1779867065",
+      "price_eur": "34.99",
+      "editorial_caption": "La fusion ultime en Super Saiyan 4. Gogeta SSJ4 Solid Edge Works : accessible en prix, impossible à ignorer en présence. La pièce d'entrée dans la collection Dragon Ball GT.",
+      "video_prompt": "Close medium shot of Gogeta SSJ4 figure, red and black fur detail catching hard side light. Camera slow push-in on face. Background: absolute black. Red neon rim light on right edge. Anamorphic horizontal lens flare at cut.",
+      "video_engine_hint": "kling",
+      "video_duration_s": 5
+    }
+  ],
+  "footer": {
+    "tagline": "Collector. Pas fan. BUU'KOFF.",
+    "closing_line": "Chaque pièce a une histoire — la tienne commence ici."
+  },
+  "_meta": {
+    "model": "claude-sonnet-4-6",
+    "client_prompt": "https://buu-koff-2.myshopify.com/?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQPOTM2NjE5NzQzMzkyNDU5AAGnBNU-scv6YUvz8zMQKSiUv-v4HOKA7vjamfQCRzvANU1wz6tQEYC25RB3cxg_aem_hL4uL7JchJ18--ip_NRzvA",
+    "source_json": "buu-koff-2.myshopify.com_scrape.json",
+    "product_count_total": 46,
+    "featured_count": 6,
+    "generated_in_seconds": 69.7
+  }
+}
