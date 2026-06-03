@@ -197,8 +197,14 @@ export default function VertxiaPage() {
             }}
           >
             <a
-              href="mailto:emilien@vertxia.com?subject=Beta-test Vertxia F-Gas&body=Salut Emilien, je suis frigoriste / installateur PAC / climaticien et je veux tester Vertxia en beta privée. Mon contexte : "
+              href="/start"
               className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium whitespace-nowrap"
+            >
+              ESSAYER L&apos;APPLI
+            </a>
+            <a
+              href="mailto:emilien@vertxia.com?subject=Beta-test Vertxia F-Gas&body=Salut Emilien, je suis frigoriste / installateur PAC / climaticien et je veux tester Vertxia en beta privée. Mon contexte : "
+              className="inline-flex items-center justify-center gap-2 px-8 py-3 border border-black/10 text-black/70 text-sm rounded-xl hover:border-black/25 hover:bg-black/[0.04] transition-colors tracking-widest whitespace-nowrap"
             >
               DEVENIR BETA-TESTEUR
             </a>
@@ -206,7 +212,7 @@ export default function VertxiaPage() {
               href="https://instagram.com/vertxia.fr"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3 border border-black/10 text-black/70 text-sm rounded-xl hover:border-black/25 hover:bg-black/[0.04] transition-colors tracking-widest whitespace-nowrap"
+              className="hidden sm:inline-flex items-center justify-center gap-2 px-8 py-3 border border-black/10 text-black/70 text-sm rounded-xl hover:border-black/25 hover:bg-black/[0.04] transition-colors tracking-widest whitespace-nowrap"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -370,22 +376,22 @@ export default function VertxiaPage() {
       {/* ── DÉMO LIVE ─────────────────────────────────────────────────────── */}
       <section id="demo" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
         <div className="max-w-3xl mx-auto text-center">
-          <Tag>DÉMO LIVE · SANDBOX TRACKDÉCHETS</Tag>
+          <Tag>DÉMO LIVE · APPLI MOBILE</Tag>
           <RevealText className="mt-5 text-4xl md:text-5xl lg:text-6xl font-light tracking-tight leading-[1.05]">
-            {"Essayez-le maintenant.\nEn moins de 30 secondes."}
+            {"Ouvre l'appli sur ton iPhone.\nMaintenant."}
           </RevealText>
           <p className="mt-8 text-base text-black/50 max-w-xl mx-auto leading-relaxed">
-            Générez un BSFF officiel signé par le Ministère via la plateforme TrackDéchets directement depuis votre navigateur. Aucune installation, aucune inscription, aucun engagement.
+            Scan de plaque, saisie vocale, signature client, génération CERFA + BSFF officiel signé Ministère. L&apos;appli PWA s&apos;installe sur ton écran d&apos;accueil. Aucune inscription, aucun engagement.
           </p>
           <p className="mt-4 text-sm text-black/40 max-w-md mx-auto leading-relaxed">
-            Renseignez le fluide récupéré, la quantité et le numéro de contenant. Vertxia s&apos;occupe de tout le reste — création, publication, signature électronique, téléchargement du PDF officiel.
+            Les données restent sur ton téléphone. Compatible iPhone &amp; Android. Démo sandbox TrackDéchets — pas de BSFF de production envoyé.
           </p>
           <div className="mt-12">
             <a
-              href="/bsff"
+              href="/start"
               className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium"
             >
-              OUVRIR LA DÉMO LIVE
+              OUVRIR L&apos;APPLI MOBILE
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="7" y1="17" x2="17" y2="7" />
                 <polyline points="7 7 17 7 17 17" />
@@ -393,7 +399,10 @@ export default function VertxiaPage() {
             </a>
           </div>
           <p className="mt-6 font-mono text-[10px] tracking-[0.2em] uppercase text-black/35">
-            Environnement sandbox · Aucun BSFF de production · Réinitialisable à volonté
+            ou{" "}
+            <a href="/bsff" className="underline underline-offset-4 hover:text-black/70 transition-colors">
+              tester juste la sandbox BSFF
+            </a>
           </p>
         </div>
       </section>
@@ -542,16 +551,22 @@ export default function VertxiaPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto justify-center">
             <a
-              href="mailto:emilien@vertxia.com?subject=Beta-test Vertxia F-Gas"
+              href="/start"
               className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium"
             >
-              DEVENIR BETA-TESTEUR
+              ESSAYER L&apos;APPLI
+            </a>
+            <a
+              href="mailto:emilien@vertxia.com?subject=Beta-test Vertxia F-Gas"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3 border border-black/10 text-black/70 text-sm rounded-xl hover:border-black/25 hover:bg-black/[0.04] transition-colors tracking-widest"
+            >
+              BETA-TESTEUR
             </a>
             <a
               href="https://instagram.com/vertxia.fr"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3 border border-black/10 text-black/70 text-sm rounded-xl hover:border-black/25 hover:bg-black/[0.04] transition-colors tracking-widest"
+              className="hidden sm:inline-flex items-center justify-center gap-2 px-8 py-3 border border-black/10 text-black/70 text-sm rounded-xl hover:border-black/25 hover:bg-black/[0.04] transition-colors tracking-widest"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
