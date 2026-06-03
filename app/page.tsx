@@ -168,9 +168,9 @@ export default function VertxiaPage() {
           {/* 3 metrics */}
           <div className="flex gap-8 sm:gap-12 mb-12">
             {[
-              { value: "5 sec", label: "BSFF généré via API" },
+              { value: "Direct", label: "BSFF via API officielle" },
               { value: "Officiel", label: "Signature Ministère" },
-              { value: "0 saisie", label: "Photo + voix" },
+              { value: "Pré-rempli", label: "Plaque + voix" },
             ].map((stat, i) => (
               <div
                 key={i}
@@ -256,7 +256,7 @@ export default function VertxiaPage() {
                 </div>
                 <h3 className="text-2xl font-light mb-3">Photo de la plaque + commande vocale</h3>
                 <p className="text-sm text-black/45 leading-relaxed max-w-md">
-                  Une photo de la plaque signalétique de l&apos;unité, vous précisez l&apos;intervention à la voix, et c&apos;est fini. Plus aucun champ administratif à saisir. N&apos;importe quel smartphone, sans installation — PWA en V1, app native en V2.
+                  Une photo de la plaque pré-remplit l&apos;équipement (modèle, n° de série, fluide, charge). Vous précisez l&apos;intervention à la voix, le client signe à l&apos;écran. Champs administratifs pré-remplis depuis votre profil et l&apos;équipement. N&apos;importe quel smartphone, sans installation — PWA en V1, app native en V2.
                 </p>
               </div>
               <div className="mt-8 flex items-center gap-3">
@@ -283,7 +283,7 @@ export default function VertxiaPage() {
               </div>
               <h3 className="text-lg font-light mb-2">Vision IA + reconnaissance fluide</h3>
               <p className="text-sm text-black/45 leading-relaxed">
-                L&apos;IA lit la plaque signalétique (modèle, fluide, charge), comprend votre dictée vocale, et remplit automatiquement BSFF, CERFA et registre.
+                L&apos;IA lit la plaque signalétique (modèle, fluide, charge) et comprend votre dictée vocale. Elle pré-remplit BSFF, CERFA et registre — vous validez et signez.
               </p>
             </BentoCard>
 
@@ -296,7 +296,7 @@ export default function VertxiaPage() {
               </div>
               <h3 className="text-lg font-light mb-2">Connecté à TrackDéchets</h3>
               <p className="text-sm text-black/45 leading-relaxed">
-                Génération du BSFF via l&apos;API officielle du Ministère de la Transition écologique. Signature électronique, PDF officiel téléchargé en 5 secondes.
+                Génération du BSFF via l&apos;API officielle du Ministère de la Transition écologique. Signature électronique, PDF officiel téléchargeable directement depuis l&apos;appli.
               </p>
             </BentoCard>
 
