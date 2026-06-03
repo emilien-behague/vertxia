@@ -12,7 +12,6 @@ import {
 } from "@/lib/equipement";
 import { listInterventions, type StoredIntervention } from "@/lib/intervention-storage";
 import { loadProfil, type Profil } from "@/lib/profil";
-import { useUser } from "@/lib/supabase/use-user";
 
 // Dashboard mobile — l'écran d'accueil de l'app Vertxia.
 // 3 sections : KPIs grid 2x2 / Équipements urgents / Dernières interventions.
@@ -71,39 +70,10 @@ export default function MobileHomePage() {
   const recentes = useMemo(() => interventions.slice(0, 3), [interventions]);
 
   const isEmpty = ready && equipements.length === 0 && interventions.length === 0;
-  const { user, signOut, configured } = useUser();
 
   return (
     <>
       <MobileHeader title="Vertxia" largeTitle />
-
-      {/* Bandeau compte connecté — affiché si Supabase configuré + user présent
-          (mode hybride : si Supabase pas configuré, pas de bandeau du tout). */}
-      {configured && user && (
-        <div className="px-4 mt-2 mb-2">
-          <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span className="inline-flex w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 items-center justify-center text-[12px] font-semibold shrink-0">
-                {(user.email?.[0] ?? "?").toUpperCase()}
-              </span>
-              <div className="min-w-0">
-                <div className="text-[10px] tracking-widest uppercase font-mono text-emerald-700">
-                  Compte connecté
-                </div>
-                <div className="text-[12px] text-emerald-900 truncate">{user.email}</div>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={signOut}
-              className="text-[11px] text-emerald-700 underline shrink-0"
-              style={{ WebkitTapHighlightColor: "transparent" }}
-            >
-              Déconnexion
-            </button>
-          </div>
-        </div>
-      )}
 
       {isEmpty && <EmptyState />}
 
