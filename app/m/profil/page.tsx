@@ -357,16 +357,17 @@ export default function MobileProfilPage() {
                   className="input-mobile font-mono text-[12px]"
                 />
                 <div className="text-[11px] text-black/45 mt-1 leading-relaxed">
-                  Obtiens-le sur{" "}
+                  Connecte-toi sur{" "}
                   <a
-                    href="https://app.trackdechets.beta.gouv.fr/account/tokens"
+                    href="https://app.trackdechets.beta.gouv.fr/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[#A16207] underline"
                   >
-                    trackdechets.beta.gouv.fr → Mon compte → API
+                    app.trackdechets.beta.gouv.fr
                   </a>
-                  . Stocké uniquement sur ton appareil (jamais en cloud).
+                  {" "}→ <em>Mon Compte</em> → <em>Intégration API</em> → <em>Générer une clé</em>.
+                  Stocké uniquement sur ton appareil (jamais en cloud).
                 </div>
               </FormRow>
               <FormRow label="Centre destination — SIRET">
@@ -387,14 +388,14 @@ export default function MobileProfilPage() {
                 <div className="text-[11px] text-black/45 mt-1 leading-relaxed">
                   SIRET du centre agréé de régénération HFC (Climalife, Arkema, etc.). À chercher sur{" "}
                   <a
-                    href="https://trackdechets.beta.gouv.fr/company-search"
+                    href="https://annuaire-entreprises.data.gouv.fr/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[#A16207] underline"
                   >
-                    trackdechets.beta.gouv.fr/company-search
+                    annuaire-entreprises.data.gouv.fr
                   </a>
-                  .
+                  {" "}(annuaire officiel gouv.fr).
                 </div>
               </FormRow>
               <FormRow label="Centre destination — Nom commercial">
