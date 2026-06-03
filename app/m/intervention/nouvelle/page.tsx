@@ -144,8 +144,16 @@ function NouvelleInterventionContent() {
   const [dictedFields, setDictedFields] = useState<Set<string>>(new Set());
   const [voiceInfo, setVoiceInfo] = useState<string | null>(null);
 
-  // Bouteilles — sélecteurs optionnels pour traçabilité fluide
-  const [showBouteilles, setShowBouteilles] = useState(false);
+  // Mouvements de gaz cette intervention — saisies simples qui mappent
+  // sur les cases A (vierge) et D (récupéré traitement) du CERFA. Plus
+  // accessible que la décomposition A/B/C/D/E pour les premiers usages.
+  const [gazAjouteKg, setGazAjouteKg] = useState("");
+  const [gazRetireKg, setGazRetireKg] = useState("");
+  // Saisie libre du n° de bouteille si pas encore enregistrée dans le stock
+  const [numBouteilleAjoutLibre, setNumBouteilleAjoutLibre] = useState("");
+  const [numBouteilleRetraitLibre, setNumBouteilleRetraitLibre] = useState("");
+
+  // Bouteilles — sélecteurs liés au stock pour traçabilité fluide
   const [bouteilleRechargeId, setBouteilleRechargeId] = useState<string>("");
   const [bouteilleRecuperationId, setBouteilleRecuperationId] = useState<string>("");
   const [methodePesee, setMethodePesee] = useState<"balance" | "declarative">("declarative");
@@ -169,18 +177,21 @@ function NouvelleInterventionContent() {
     setAllBouteilles(listBouteilles());
   }, []);
 
-  // Quantités à tracer dans les bouteilles, dérivées des saisies fluide
+  // Quantités à tracer dans les bouteilles, dérivées des saisies simples
+  // (gazAjouteKg / gazRetireKg) OU de la décomposition expert A/B/C/D/E.
   const qteRecharge = useMemo(() => {
-    // Si décomposition activée : fluideVierge (A) + fluideRecycle (B) + fluideRegenere (C)
-    // Sinon, pour BSFF non récupération → on prend le weight global
+    // Priorité 1 : décomposition expert si activée
     if (showFluideDecompose) {
       const v = parseFloat(fluideVierge) || 0;
       const r = parseFloat(fluideRecycle) || 0;
       const g = parseFloat(fluideRegenere) || 0;
       return v + r + g;
     }
+    // Priorité 2 : saisie simple "gaz ajouté"
+    const simple = parseFloat(gazAjouteKg) || 0;
+    if (simple > 0) return simple;
     return 0;
-  }, [showFluideDecompose, fluideVierge, fluideRecycle, fluideRegenere]);
+  }, [showFluideDecompose, fluideVierge, fluideRecycle, fluideRegenere, gazAjouteKg]);
 
   const qteRecuperation = useMemo(() => {
     if (showFluideDecompose) {
@@ -189,10 +200,13 @@ function NouvelleInterventionContent() {
       const e = parseFloat(fluideReutilisation) || 0;
       return d + e;
     }
-    // Pour récupération sans décomposition : le weight global est récupéré
+    // Priorité 2 : saisie simple "gaz retiré"
+    const simple = parseFloat(gazRetireKg) || 0;
+    if (simple > 0) return simple;
+    // Fallback : pour récupération sans décomposition → weight global
     if (config.needsBsff) return parseFloat(weight) || 0;
     return 0;
-  }, [showFluideDecompose, fluideTraitement, fluideReutilisation, config.needsBsff, weight]);
+  }, [showFluideDecompose, fluideTraitement, fluideReutilisation, gazRetireKg, config.needsBsff, weight]);
 
   // Filtres bouteilles compatibles selon fluide + quantité
   const mouvementsIdx = useMemo(() => indexMouvementsParBouteille(), [allBouteilles]);
@@ -348,35 +362,58 @@ function NouvelleInterventionContent() {
       }
     }
 
+    // Propage les quantités extraites vers les champs SIMPLES (gazAjouté/Retiré)
+    // visibles en haut + également vers la décomposition expert A/B/C/D/E.
     let anyDecompo = false;
+    let anyGazSimple = false;
     if (typeof extraction.fluideVierge === "number" && extraction.fluideVierge > 0) {
       setFluideVierge(extraction.fluideVierge.toFixed(3));
+      setGazAjouteKg(extraction.fluideVierge.toFixed(3));
       anyDecompo = true;
+      anyGazSimple = true;
       filled.add("fluideVierge");
+      filled.add("gazAjouteKg");
     }
     if (typeof extraction.fluideRecycle === "number" && extraction.fluideRecycle > 0) {
       setFluideRecycle(extraction.fluideRecycle.toFixed(3));
+      // Recyclé = aussi du gaz ajouté côté pratique frigoriste
+      setGazAjouteKg((prev) =>
+        (parseFloat(prev || "0") + (extraction.fluideRecycle ?? 0)).toFixed(3)
+      );
       anyDecompo = true;
       filled.add("fluideRecycle");
     }
     if (typeof extraction.fluideRegenere === "number" && extraction.fluideRegenere > 0) {
       setFluideRegenere(extraction.fluideRegenere.toFixed(3));
+      setGazAjouteKg((prev) =>
+        (parseFloat(prev || "0") + (extraction.fluideRegenere ?? 0)).toFixed(3)
+      );
       anyDecompo = true;
       filled.add("fluideRegenere");
     }
     if (typeof extraction.fluideTraitement === "number" && extraction.fluideTraitement > 0) {
       setFluideTraitement(extraction.fluideTraitement.toFixed(3));
+      setGazRetireKg(extraction.fluideTraitement.toFixed(3));
       anyDecompo = true;
+      anyGazSimple = true;
       filled.add("fluideTraitement");
+      filled.add("gazRetireKg");
     }
     if (typeof extraction.fluideReutilisation === "number" && extraction.fluideReutilisation > 0) {
       setFluideReutilisation(extraction.fluideReutilisation.toFixed(3));
+      // Réutilisé = aussi du gaz retiré côté pratique frigoriste
+      setGazRetireKg((prev) =>
+        (parseFloat(prev || "0") + (extraction.fluideReutilisation ?? 0)).toFixed(3)
+      );
       anyDecompo = true;
       filled.add("fluideReutilisation");
     }
     if (anyDecompo) {
       setShowFluideDecompose(true);
       filledLabels.push("décomposition fluide");
+    }
+    if (anyGazSimple) {
+      filledLabels.push("gaz ajouté/retiré");
     }
 
     if (extraction.clientName && !clientName.trim()) {
@@ -501,13 +538,15 @@ function NouvelleInterventionContent() {
               }))
           : undefined;
 
-      // Décomposition fluide A/B/C/D/E — seulement si activée et au moins 1 valeur fournie
+      // Décomposition fluide A/B/C/D/E
+      // Priorité 1 : si décomposition expert activée → utilise ces valeurs fines
+      // Priorité 2 : sinon → mappe les saisies simples gazAjoute/Retire vers A/D
       const parseKg = (s: string): number | undefined => {
         const v = parseFloat(s.replace(",", "."));
         return Number.isFinite(v) && v > 0 ? v : undefined;
       };
-      const fluideManipulePayload =
-        config.needsBsff && showFluideDecompose
+      const fluideManipulePayload = config.needsBsff
+        ? showFluideDecompose
           ? (() => {
               const fm = {
                 vierge: parseKg(fluideVierge),
@@ -518,7 +557,31 @@ function NouvelleInterventionContent() {
               };
               return Object.values(fm).some((v) => v !== undefined) ? fm : undefined;
             })()
-          : undefined;
+          : (() => {
+              // Pas de décomposition expert → on convertit les saisies simples
+              const vierge = parseKg(gazAjouteKg);
+              const traitement = parseKg(gazRetireKg);
+              if (vierge !== undefined || traitement !== undefined) {
+                return { vierge, recupereTraitement: traitement };
+              }
+              return undefined;
+            })()
+        : undefined;
+
+      // N° bouteilles saisies à la main (pas dans le stock) → trace dans notes
+      const numBouteilleNotes = [
+        numBouteilleAjoutLibre.trim() ? `Bouteille recharge n° ${numBouteilleAjoutLibre.trim()}` : null,
+        numBouteilleRetraitLibre.trim() ? `Bouteille récupération n° ${numBouteilleRetraitLibre.trim()}` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+
+      const notesAvecBouteilles = [
+        notes.trim() || null,
+        numBouteilleNotes || null,
+      ]
+        .filter(Boolean)
+        .join("\n");
 
       const cerfaPayload: Record<string, unknown> = {
         fluide: selectedFluide,
@@ -535,7 +598,7 @@ function NouvelleInterventionContent() {
         detenteur: detenteurInfoPayload,
         detenteurSignature: detenteurSignaturePayload,
         fluideManipule: fluideManipulePayload,
-        observationsLibres: notes.trim() || undefined,
+        observationsLibres: notesAvecBouteilles || undefined,
         controleDetails: config.needsControle
           ? {
               detecteurId: detecteurId.trim() || undefined,
@@ -1050,175 +1113,289 @@ function NouvelleInterventionContent() {
         </InsetListSection>
       )}
 
-      {/* Suivi bouteilles — traçabilité interne */}
-      {(qteRecharge > 0 || qteRecuperation > 0) && (
-        <InsetListSection
-          title="Suivi bouteilles (optionnel)"
-          footer="Lie cette intervention à tes bouteilles de stock pour générer ton registre conforme attestation de capacité F-Gas."
-        >
-          <div className="px-4 py-3">
+      {/* Mouvements de gaz — toujours visibles, saisies simples ajouté/retiré */}
+      <InsetListSection
+        title="Mouvements de gaz · cette intervention"
+        footer="Saisis simplement combien de gaz tu as ajouté et/ou retiré. La bouteille (n° de série) peut être choisie dans ton stock ou saisie à la main."
+      >
+        {/* Bandeau charge nominale (read-only, contexte) */}
+        {eqContext && parseFloat(weight) > 0 && (
+          <div className="px-4 py-2.5 bg-black/[0.03] border-b border-black/[0.06]">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[12px] text-black/55">
+                📊 Charge nominale du circuit
+              </span>
+              <span className="text-[14px] font-mono text-[#111]">
+                {weight} kg de {selectedFluide.code}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Méthode de saisie */}
+        <div className="px-4 py-3 border-b border-black/[0.06]">
+          <label className="block text-[11px] tracking-widest uppercase font-mono text-black/40 mb-2">
+            Méthode de saisie
+          </label>
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={() => setShowBouteilles((v) => !v)}
-              className="w-full text-left px-3 py-2 rounded-xl bg-black/[0.04] active:bg-black/[0.08] flex items-center justify-between"
+              onClick={() => setMethodePesee("declarative")}
+              className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
+                methodePesee === "declarative"
+                  ? "bg-[#111] text-white"
+                  : "bg-black/[0.04] text-[#111] active:bg-black/[0.08]"
+              }`}
               style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
             >
-              <span className="text-[14px] text-[#111]">
-                {showBouteilles ? "Masquer le suivi" : "Lier aux bouteilles de stock"}
-              </span>
-              <span className="text-[12px] text-black/45">{showBouteilles ? "↑" : "↓"}</span>
+              Saisie directe
+            </button>
+            <button
+              type="button"
+              onClick={() => setMethodePesee("balance")}
+              className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
+                methodePesee === "balance"
+                  ? "bg-[#111] text-white"
+                  : "bg-black/[0.04] text-[#111] active:bg-black/[0.08]"
+              }`}
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            >
+              Pesée balance
             </button>
           </div>
+        </div>
 
-          {showBouteilles && (
-            <>
-              {/* Méthode pesée */}
-              <div className="px-4 py-2 border-t border-black/[0.06]">
-                <label className="block text-[11px] tracking-widest uppercase font-mono text-black/40 mb-2">
-                  Méthode
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setMethodePesee("declarative")}
-                    className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
-                      methodePesee === "declarative"
-                        ? "bg-[#111] text-white"
-                        : "bg-black/[0.04] text-[#111] active:bg-black/[0.08]"
-                    }`}
-                    style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-                  >
-                    Quantité saisie
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMethodePesee("balance")}
-                    className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-colors ${
-                      methodePesee === "balance"
-                        ? "bg-[#111] text-white"
-                        : "bg-black/[0.04] text-[#111] active:bg-black/[0.08]"
-                    }`}
-                    style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-                  >
-                    Pesée avant/après
-                  </button>
-                </div>
-                <div className="mt-2 text-[11px] text-black/45 leading-relaxed">
-                  {methodePesee === "balance"
-                    ? "Pesée balance : saisis poids brut avant et après — la quantité est calculée auto."
-                    : `Quantité reprise depuis tes saisies : ${qteRecharge > 0 ? `${qteRecharge.toFixed(3)} kg recharge` : ""}${qteRecharge > 0 && qteRecuperation > 0 ? " · " : ""}${qteRecuperation > 0 ? `${qteRecuperation.toFixed(3)} kg récupération` : ""}.`}
-                </div>
+        {/* ── GAZ AJOUTÉ (recharge) ───────────────────────────────────── */}
+        <div className="px-4 py-3 border-b border-black/[0.06]">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 text-[14px] font-bold">+</span>
+            <span className="text-[14px] font-semibold text-[#111]">Gaz AJOUTÉ (recharge)</span>
+          </div>
+
+          {methodePesee === "declarative" ? (
+            <div className="mb-3">
+              <label className="block text-[10px] uppercase tracking-wider text-black/40 mb-1">
+                Quantité ajoutée (kg)
+              </label>
+              <input
+                type="number"
+                step="0.001"
+                value={gazAjouteKg}
+                onChange={(e) => setGazAjouteKg(e.target.value)}
+                placeholder="Ex : 0.200"
+                inputMode="decimal"
+                disabled={isLoading}
+                className="input-mobile"
+              />
+            </div>
+          ) : (
+            <div className="mb-3 grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-black/40 mb-1">Poids bouteille AVANT (kg)</label>
+                <input
+                  type="number"
+                  step="0.001"
+                  value={poidsAvantRecharge}
+                  onChange={(e) => {
+                    setPoidsAvantRecharge(e.target.value);
+                    const a = parseFloat(e.target.value);
+                    const b = parseFloat(poidsApresRecharge);
+                    if (Number.isFinite(a) && Number.isFinite(b)) {
+                      setGazAjouteKg(Math.abs(a - b).toFixed(3));
+                    }
+                  }}
+                  inputMode="decimal"
+                  className="input-mobile"
+                />
               </div>
-
-              {/* Bouteille de RECHARGE */}
-              {qteRecharge > 0 && (
-                <div className="px-4 py-3 border-t border-black/[0.06]">
-                  <label className="block text-[11px] tracking-widest uppercase font-mono text-black/40 mb-2">
-                    Bouteille de recharge ({selectedFluide.code})
-                  </label>
-                  {bouteillesRecharge.length === 0 ? (
-                    <div className="text-[12px] text-black/55 italic">
-                      Aucune bouteille de recharge {selectedFluide.code}. <a href="/m/bouteilles/nouvelle" className="text-[#A16207] underline">Ajouter une bouteille</a>.
-                    </div>
-                  ) : (
-                    <select
-                      value={bouteilleRechargeId}
-                      onChange={(e) => setBouteilleRechargeId(e.target.value)}
-                      className="input-mobile"
-                    >
-                      <option value="">— Aucune (intervention sans liaison) —</option>
-                      {bouteillesRecharge.map(({ bouteille: b, chargeActuelle, pct, compatible, raison }) => (
-                        <option key={b.id} value={b.id} disabled={!compatible}>
-                          #{b.numeroSerie} · {chargeActuelle.toFixed(2)}kg ({pct.toFixed(0)}%) {compatible ? "" : `· ${raison}`}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                  {methodePesee === "balance" && bouteilleRechargeId && (
-                    <div className="mt-3 grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[10px] uppercase tracking-wider text-black/40 mb-1">Poids avant (kg)</label>
-                        <input
-                          type="number"
-                          step="0.001"
-                          value={poidsAvantRecharge}
-                          onChange={(e) => setPoidsAvantRecharge(e.target.value)}
-                          inputMode="decimal"
-                          className="input-mobile"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] uppercase tracking-wider text-black/40 mb-1">Poids après (kg)</label>
-                        <input
-                          type="number"
-                          step="0.001"
-                          value={poidsApresRecharge}
-                          onChange={(e) => setPoidsApresRecharge(e.target.value)}
-                          inputMode="decimal"
-                          className="input-mobile"
-                        />
-                      </div>
-                    </div>
-                  )}
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-black/40 mb-1">Poids bouteille APRÈS (kg)</label>
+                <input
+                  type="number"
+                  step="0.001"
+                  value={poidsApresRecharge}
+                  onChange={(e) => {
+                    setPoidsApresRecharge(e.target.value);
+                    const a = parseFloat(poidsAvantRecharge);
+                    const b = parseFloat(e.target.value);
+                    if (Number.isFinite(a) && Number.isFinite(b)) {
+                      setGazAjouteKg(Math.abs(a - b).toFixed(3));
+                    }
+                  }}
+                  inputMode="decimal"
+                  className="input-mobile"
+                />
+              </div>
+              {gazAjouteKg && (
+                <div className="col-span-2 text-[12px] text-emerald-700">
+                  Quantité calculée : {gazAjouteKg} kg
                 </div>
               )}
+            </div>
+          )}
 
-              {/* Bouteille de RÉCUPÉRATION */}
-              {qteRecuperation > 0 && (
-                <div className="px-4 py-3 border-t border-black/[0.06]">
-                  <label className="block text-[11px] tracking-widest uppercase font-mono text-black/40 mb-2">
-                    Bouteille de récupération ({selectedFluide.code})
-                  </label>
-                  {bouteillesRecup.length === 0 ? (
-                    <div className="text-[12px] text-black/55 italic">
-                      Aucune bouteille de récupération {selectedFluide.code}. <a href="/m/bouteilles/nouvelle" className="text-[#A16207] underline">Ajouter une bouteille</a>.
-                    </div>
-                  ) : (
-                    <select
-                      value={bouteilleRecuperationId}
-                      onChange={(e) => setBouteilleRecuperationId(e.target.value)}
-                      className="input-mobile"
-                    >
-                      <option value="">— Aucune (intervention sans liaison) —</option>
-                      {bouteillesRecup.map(({ bouteille: b, chargeActuelle, pct, compatible, raison }) => (
-                        <option key={b.id} value={b.id} disabled={!compatible}>
-                          #{b.numeroSerie} · {chargeActuelle.toFixed(2)}kg ({pct.toFixed(0)}%) {compatible ? "" : `· ${raison}`}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                  {methodePesee === "balance" && bouteilleRecuperationId && (
-                    <div className="mt-3 grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[10px] uppercase tracking-wider text-black/40 mb-1">Poids avant (kg)</label>
-                        <input
-                          type="number"
-                          step="0.001"
-                          value={poidsAvantRecup}
-                          onChange={(e) => setPoidsAvantRecup(e.target.value)}
-                          inputMode="decimal"
-                          className="input-mobile"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] uppercase tracking-wider text-black/40 mb-1">Poids après (kg)</label>
-                        <input
-                          type="number"
-                          step="0.001"
-                          value={poidsApresRecup}
-                          onChange={(e) => setPoidsApresRecup(e.target.value)}
-                          inputMode="decimal"
-                          className="input-mobile"
-                        />
-                      </div>
-                    </div>
-                  )}
+          {/* Sélection bouteille — depuis stock OU saisie libre */}
+          {(parseFloat(gazAjouteKg) > 0 || methodePesee === "balance") && (
+            <>
+              <label className="block text-[10px] uppercase tracking-wider text-black/40 mb-1">
+                Bouteille de recharge ({selectedFluide.code})
+              </label>
+              {bouteillesRecharge.length > 0 && (
+                <select
+                  value={bouteilleRechargeId}
+                  onChange={(e) => {
+                    setBouteilleRechargeId(e.target.value);
+                    if (e.target.value) setNumBouteilleAjoutLibre(""); // évite double saisie
+                  }}
+                  className="input-mobile mb-2"
+                  disabled={isLoading}
+                >
+                  <option value="">— Choisir dans mon stock —</option>
+                  {bouteillesRecharge.map(({ bouteille: b, chargeActuelle, pct, compatible, raison }) => (
+                    <option key={b.id} value={b.id} disabled={!compatible}>
+                      #{b.numeroSerie} · {chargeActuelle.toFixed(2)}kg ({pct.toFixed(0)}%){compatible ? "" : ` · ${raison}`}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <input
+                type="text"
+                value={numBouteilleAjoutLibre}
+                onChange={(e) => {
+                  setNumBouteilleAjoutLibre(e.target.value);
+                  if (e.target.value) setBouteilleRechargeId(""); // évite double saisie
+                }}
+                placeholder={bouteillesRecharge.length > 0 ? "ou saisir un n° de série libre" : "N° de série de la bouteille (ex : B112026047)"}
+                disabled={isLoading}
+                className="input-mobile"
+                autoCapitalize="characters"
+              />
+              {bouteillesRecharge.length === 0 && (
+                <div className="mt-1 text-[11px] text-black/50">
+                  Aucune bouteille {selectedFluide.code} dans ton stock.{" "}
+                  <a href="/m/bouteilles/nouvelle" className="text-[#A16207] underline">Enregistrer une bouteille</a>{" "}
+                  pour le suivi automatique, ou saisis juste son n° de série ci-dessus pour le tracer dans le CERFA.
                 </div>
               )}
             </>
           )}
-        </InsetListSection>
-      )}
+        </div>
+
+        {/* ── GAZ RETIRÉ (récupération) ────────────────────────────────── */}
+        <div className="px-4 py-3">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-red-100 text-red-700 text-[14px] font-bold">−</span>
+            <span className="text-[14px] font-semibold text-[#111]">Gaz RETIRÉ (récupération)</span>
+          </div>
+
+          {methodePesee === "declarative" ? (
+            <div className="mb-3">
+              <label className="block text-[10px] uppercase tracking-wider text-black/40 mb-1">
+                Quantité retirée (kg)
+              </label>
+              <input
+                type="number"
+                step="0.001"
+                value={gazRetireKg}
+                onChange={(e) => setGazRetireKg(e.target.value)}
+                placeholder="Ex : 0.800"
+                inputMode="decimal"
+                disabled={isLoading}
+                className="input-mobile"
+              />
+            </div>
+          ) : (
+            <div className="mb-3 grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-black/40 mb-1">Poids bouteille AVANT (kg)</label>
+                <input
+                  type="number"
+                  step="0.001"
+                  value={poidsAvantRecup}
+                  onChange={(e) => {
+                    setPoidsAvantRecup(e.target.value);
+                    const a = parseFloat(e.target.value);
+                    const b = parseFloat(poidsApresRecup);
+                    if (Number.isFinite(a) && Number.isFinite(b)) {
+                      setGazRetireKg(Math.abs(b - a).toFixed(3));
+                    }
+                  }}
+                  inputMode="decimal"
+                  className="input-mobile"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-black/40 mb-1">Poids bouteille APRÈS (kg)</label>
+                <input
+                  type="number"
+                  step="0.001"
+                  value={poidsApresRecup}
+                  onChange={(e) => {
+                    setPoidsApresRecup(e.target.value);
+                    const a = parseFloat(poidsAvantRecup);
+                    const b = parseFloat(e.target.value);
+                    if (Number.isFinite(a) && Number.isFinite(b)) {
+                      setGazRetireKg(Math.abs(b - a).toFixed(3));
+                    }
+                  }}
+                  inputMode="decimal"
+                  className="input-mobile"
+                />
+              </div>
+              {gazRetireKg && (
+                <div className="col-span-2 text-[12px] text-red-700">
+                  Quantité calculée : {gazRetireKg} kg
+                </div>
+              )}
+            </div>
+          )}
+
+          {(parseFloat(gazRetireKg) > 0 || methodePesee === "balance") && (
+            <>
+              <label className="block text-[10px] uppercase tracking-wider text-black/40 mb-1">
+                Bouteille de récupération ({selectedFluide.code})
+              </label>
+              {bouteillesRecup.length > 0 && (
+                <select
+                  value={bouteilleRecuperationId}
+                  onChange={(e) => {
+                    setBouteilleRecuperationId(e.target.value);
+                    if (e.target.value) setNumBouteilleRetraitLibre("");
+                  }}
+                  className="input-mobile mb-2"
+                  disabled={isLoading}
+                >
+                  <option value="">— Choisir dans mon stock —</option>
+                  {bouteillesRecup.map(({ bouteille: b, chargeActuelle, pct, compatible, raison }) => (
+                    <option key={b.id} value={b.id} disabled={!compatible}>
+                      #{b.numeroSerie} · {chargeActuelle.toFixed(2)}kg ({pct.toFixed(0)}%){compatible ? "" : ` · ${raison}`}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <input
+                type="text"
+                value={numBouteilleRetraitLibre}
+                onChange={(e) => {
+                  setNumBouteilleRetraitLibre(e.target.value);
+                  if (e.target.value) setBouteilleRecuperationId("");
+                }}
+                placeholder={bouteillesRecup.length > 0 ? "ou saisir un n° de série libre" : "N° de série de la bouteille (ex : RC2026-089)"}
+                disabled={isLoading}
+                className="input-mobile"
+                autoCapitalize="characters"
+              />
+              {bouteillesRecup.length === 0 && (
+                <div className="mt-1 text-[11px] text-black/50">
+                  Aucune bouteille de récupération {selectedFluide.code} dans ton stock.{" "}
+                  <a href="/m/bouteilles/nouvelle" className="text-[#A16207] underline">Enregistrer une bouteille</a>{" "}
+                  pour le suivi automatique, ou saisis juste son n° de série ci-dessus.
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </InsetListSection>
 
       {/* Contrôle d'étanchéité */}
       {config.needsControle && (
