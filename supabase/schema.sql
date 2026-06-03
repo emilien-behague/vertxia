@@ -251,3 +251,22 @@ create trigger set_updated_at before update on public.equipements
 drop trigger if exists set_updated_at on public.bouteilles;
 create trigger set_updated_at before update on public.bouteilles
   for each row execute function public.handle_updated_at();
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- ── 7. PARTAGE PUBLIC NIVEAU 1 (scan QR ouvert) ────────────────────────────
+-- Permet à quiconque (même non connecté) de SELECT un équipement et ses
+-- interventions via leur UUID. Permet :
+--   - Le client final scan le QR collé sur son équipement → voit la fiche
+--   - Un confrère/collègue technicien voit l'historique
+--   - Un contrôleur DREAL/DGCCRF accède aux preuves
+-- Les écritures (INSERT/UPDATE/DELETE) restent strictement owner-only via
+-- les policies déjà en place ci-dessus.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+drop policy if exists "equipements_select_public" on public.equipements;
+create policy "equipements_select_public" on public.equipements
+  for select to anon, authenticated using (true);
+
+drop policy if exists "interventions_select_public" on public.interventions;
+create policy "interventions_select_public" on public.interventions
+  for select to anon, authenticated using (true);

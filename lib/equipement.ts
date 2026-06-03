@@ -129,6 +129,11 @@ export function saveEquipement(
   const all = listEquipements();
   all.unshift(entry);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  // Sync background vers Supabase pour partage public (scan QR)
+  // Import dynamique pour éviter cycles d'import + lazy load Supabase client
+  import("@/lib/public-sync")
+    .then((m) => m.syncEquipementToSupabase(entry))
+    .catch(() => {});
   return entry;
 }
 
@@ -136,6 +141,12 @@ export function updateEquipement(id: string, patch: Partial<StoredEquipement>): 
   if (!isBrowser()) return;
   const all = listEquipements().map((e) => (e.id === id ? { ...e, ...patch } : e));
   localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  const updated = all.find((e) => e.id === id);
+  if (updated) {
+    import("@/lib/public-sync")
+      .then((m) => m.syncEquipementToSupabase(updated))
+      .catch(() => {});
+  }
 }
 
 export function deleteEquipement(id: string): void {

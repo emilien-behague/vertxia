@@ -740,6 +740,9 @@ function NouvelleInterventionContent() {
       // - Cas B (intervention sur équipement déjà enregistré) → UPDATE le
       //   dernierControleISO si c'est un contrôle (déclenche le compteur 12 mois).
       // Bloc try/catch silencieux : si ça plante, l'intervention reste sauvée.
+      // Le résultat (linkedEquipementId) sert à lier l'intervention à l'équipement
+      // dans Supabase pour le partage public (Niveau 1).
+      let linkedEquipementId: string | undefined = eqIdParam ?? undefined;
       try {
         const isControle = config.needsControle;
         if (!eqIdParam) {
@@ -749,16 +752,12 @@ function NouvelleInterventionContent() {
             modeleEquipement.trim().length > 0 &&
             numeroSerieEquipement.trim().length > 0;
           if (hasMinimum) {
-            // Charge nominale : on prend weight si > 0, sinon 0 (à compléter dans
-            // la fiche équipement). Pour récupération/démantèlement, weight
-            // représente le fluide récupéré ≠ charge nominale, donc 0 par défaut
-            // pour éviter une mauvaise donnée dans le parc.
             const chargeKgRaw = parseFloat(weight);
             const chargeKg =
               !config.needsBsff && Number.isFinite(chargeKgRaw) && chargeKgRaw > 0
                 ? chargeKgRaw
                 : 0;
-            saveEquipement({
+            const createdEq = saveEquipement({
               clientName: clientName.trim(),
               clientEmail: clientEmail.trim() || undefined,
               siteAdresse: clientAdresse.trim() || lieuIntervention.trim() || undefined,
@@ -769,6 +768,7 @@ function NouvelleInterventionContent() {
               detecteurFixe: detecteurPermanent === "oui",
               dernierControleISO: isControle ? new Date().toISOString() : undefined,
             });
+            linkedEquipementId = createdEq.id;
           }
         } else if (isControle) {
           // Équipement existant : on bump le dernier contrôle d'étanchéité
@@ -782,6 +782,7 @@ function NouvelleInterventionContent() {
 
       try {
         saveIntervention({
+          equipementId: linkedEquipementId,
           typeIntervention,
           fluide: selectedFluide,
           weight: config.needsBsff ? parseFloat(weight) : 0,

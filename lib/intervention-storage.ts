@@ -61,19 +61,26 @@ export function getIntervention(id: string): StoredIntervention | null {
 }
 
 export function saveIntervention(
-  data: Omit<StoredIntervention, "id" | "createdAt">
+  data: Omit<StoredIntervention, "id" | "createdAt"> & { equipementId?: string }
 ): StoredIntervention {
   if (!isBrowser()) {
     throw new Error("localStorage indisponible (SSR ?)");
   }
+  const { equipementId, ...rest } = data;
   const entry: StoredIntervention = {
-    ...data,
+    ...rest,
     id: uuid(),
     createdAt: new Date().toISOString(),
   };
   const all = listInterventions();
   all.unshift(entry);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  // Sync background vers Supabase pour partage public (scan QR de l'équipement
+  // → l'historique s'affiche). equipementId lie l'intervention à un équipement
+  // du parc partagé.
+  import("@/lib/public-sync")
+    .then((m) => m.syncInterventionToSupabase(entry, equipementId))
+    .catch(() => {});
   return entry;
 }
 

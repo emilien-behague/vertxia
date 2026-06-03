@@ -12,6 +12,7 @@ import {
 import { listInterventions } from "@/lib/intervention-storage";
 import { loadProfil, type Profil } from "@/lib/profil";
 import { generateQrLabel } from "@/lib/qr-label";
+import { fetchPublicEquipement, fetchPublicInterventions } from "@/lib/public-sync";
 
 // Page mobile premium — affichée quand un frigoriste scanne le QR Code collé sur
 // un équipement. Doit s'afficher SANS bug sur Safari iOS (zéro animation initial:opacity:0
@@ -102,18 +103,47 @@ export default function EquipementScannedPage({
   const [profil, setProfil] = useState<Profil | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [qrError, setQrError] = useState<string | null>(null);
+  // Mode lecture seule = équipement chargé depuis Supabase, pas en local
+  // (visiteur qui scan le QR d'un équipement d'un autre frigoriste)
+  const [isReadOnly, setIsReadOnly] = useState(false);
+  const [fetching, setFetching] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    const all = listEquipements();
-    const found = all.find((e) => e.id === id);
-    if (!found) {
-      setEq(null);
-      return;
-    }
-    const interventions = listInterventions();
-    setEq(computeStatus(found, interventions));
-    setProfil(loadProfil());
+    let cancelled = false;
+    (async () => {
+      setMounted(true);
+      // 1. Cherche en local (cas owner sur son propre device)
+      const all = listEquipements();
+      const found = all.find((e) => e.id === id);
+      if (found) {
+        const interventions = listInterventions();
+        if (!cancelled) {
+          setEq(computeStatus(found, interventions));
+          setProfil(loadProfil());
+          setIsReadOnly(false);
+        }
+        return;
+      }
+      // 2. Fallback Supabase (cas partage public : visiteur scan le QR d'un
+      //    équipement d'un autre frigoriste). RLS policy "equipements_select_public"
+      //    autorise la lecture sans login.
+      setFetching(true);
+      const remote = await fetchPublicEquipement(id);
+      if (cancelled) return;
+      if (!remote) {
+        setEq(null);
+        setFetching(false);
+        return;
+      }
+      const remoteInterventions = await fetchPublicInterventions(id);
+      if (cancelled) return;
+      setEq(computeStatus(remote, remoteInterventions));
+      setIsReadOnly(remote.isReadOnly);
+      setFetching(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const visual = useMemo(() => (eq ? STATUT_VISUAL[eq.statut] : null), [eq]);
@@ -155,7 +185,7 @@ export default function EquipementScannedPage({
     }
   }
 
-  if (!mounted) return <LoadingState />;
+  if (!mounted || fetching) return <LoadingState />;
   if (!eq || !visual) return <NotFoundState id={id} />;
 
   return (
@@ -169,6 +199,29 @@ export default function EquipementScannedPage({
       }}
     >
       <div className="max-w-md mx-auto px-5 py-6">
+        {/* Bandeau lecture seule (visiteur qui scan le QR d'un équipement
+            d'un autre frigoriste). Donne du contexte avant la fiche. */}
+        {isReadOnly && (
+          <div className="mb-4 px-4 py-3 rounded-2xl bg-blue-50 ring-1 ring-blue-200">
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 w-8 h-8 rounded-full bg-white flex items-center justify-center text-blue-600">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] tracking-widest uppercase font-mono text-blue-700 mb-0.5">
+                  · Fiche partagée · Lecture seule
+                </div>
+                <div className="text-[12px] text-blue-900/80 leading-relaxed">
+                  Cet équipement appartient à un autre opérateur Vertxia. Vous consultez sa fiche en lecture seule.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header compact */}
         <div className="flex items-center justify-between mb-6">
           <a
