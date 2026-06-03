@@ -14,7 +14,6 @@
 //    (RLS policy "equipements_select_public" autorise anon + authenticated)
 //  - fetchPublicInterventions(equipementId) : historique lié à un équipement
 
-import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { StoredEquipement, UniteInterieure } from "@/lib/equipement";
 import type { StoredIntervention } from "@/lib/intervention-storage";
 
@@ -22,33 +21,19 @@ import type { StoredIntervention } from "@/lib/intervention-storage";
 
 export async function syncEquipementToSupabase(eq: StoredEquipement): Promise<void> {
   if (typeof window === "undefined") return;
-  if (!isSupabaseConfigured()) return;
   try {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return; // pas connecté → skip silencieux
-
-    await supabase.from("equipements").upsert(
-      {
-        id: eq.id,
-        user_id: user.id,
-        client_name: eq.clientName,
-        client_email: eq.clientEmail ?? null,
-        client_telephone: eq.clientTelephone ?? null,
-        site_adresse: eq.siteAdresse ?? null,
-        modele: eq.modele,
-        numero_serie: eq.numeroSerie,
-        fluide_code: eq.fluide.code,
-        fluide_label: eq.fluide.label,
-        fluide_gwp: eq.fluide.gwp,
-        charge_kg: eq.chargeKg,
-        detecteur_fixe: eq.detecteurFixe,
-        dernier_controle_iso: eq.dernierControleISO ?? null,
-        unites_interieures: eq.unitesInterieures ?? [],
-        notes: eq.notes ?? null,
-      },
-      { onConflict: "id" }
-    );
+    const res = await fetch("/api/public/equipement/upsert", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(eq),
+    });
+    if (!res.ok) {
+      // 401 = pas connecté → skip silencieux normal
+      if (res.status !== 401) {
+        const j = await res.json().catch(() => ({}));
+        console.warn("[public-sync] equipement upsert failed:", j);
+      }
+    }
   } catch (e) {
     console.warn("[public-sync] equipement sync failed:", e);
   }
@@ -56,37 +41,18 @@ export async function syncEquipementToSupabase(eq: StoredEquipement): Promise<vo
 
 export async function syncInterventionToSupabase(int: StoredIntervention, equipementId?: string): Promise<void> {
   if (typeof window === "undefined") return;
-  if (!isSupabaseConfigured()) return;
   try {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    await supabase.from("interventions").upsert(
-      {
-        id: int.id,
-        user_id: user.id,
-        equipement_id: equipementId ?? null,
-        date_iso: int.createdAt,
-        type_intervention: int.typeIntervention,
-        fluide_code: int.fluide.code,
-        fluide_label: int.fluide.label,
-        fluide_gwp: int.fluide.gwp,
-        weight_kg: int.weight,
-        packaging_numero: int.packagingNumero,
-        client_name: int.clientName ?? null,
-        modele_equipement: int.modeleEquipement ?? null,
-        numero_serie_equipement: int.numeroSerieEquipement ?? null,
-        lieu_intervention: int.lieuIntervention ?? null,
-        bsff_id: int.bsffId ?? null,
-        controle_details: int.controleDetails ?? null,
-        notes: int.notes ?? null,
-        has_detenteur_signature: int.hasDetenteurSignature ?? false,
-        detenteur_name: int.detenteurName ?? null,
-        detenteur_quality: int.detenteurQuality ?? null,
-      },
-      { onConflict: "id" }
-    );
+    const res = await fetch("/api/public/intervention/upsert", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ ...int, equipementId }),
+    });
+    if (!res.ok) {
+      if (res.status !== 401) {
+        const j = await res.json().catch(() => ({}));
+        console.warn("[public-sync] intervention upsert failed:", j);
+      }
+    }
   } catch (e) {
     console.warn("[public-sync] intervention sync failed:", e);
   }
