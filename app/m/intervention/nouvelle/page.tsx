@@ -65,6 +65,9 @@ type Status =
       type: "success";
       bsffId?: string;
       cerfaUrl: string;
+      /** Fiche de visite client (rapport "humain" brandable) — optionnel,
+       *  manque si le profil entreprise n'est pas encore configuré. */
+      rapportUrl?: string;
       /** Email du client final si renseigné (pour bouton 'Envoyer au client') */
       clientEmail?: string;
       clientName?: string;
@@ -482,6 +485,27 @@ function NouvelleInterventionContent() {
       const cerfaBlob = await cerfaRes.blob();
       const cerfaUrl = URL.createObjectURL(cerfaBlob);
 
+      // Fiche de visite client (PDF "humain" brandable) — non-bloquant :
+      // si le profil entreprise n'est pas rempli, on continue sans (silent).
+      let rapportUrl: string | undefined;
+      try {
+        setStatus({ type: "loading", step: "Génération de la fiche de visite client…" });
+        const rapportRes = await fetch("/api/rapport/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...cerfaPayload, profil }),
+        });
+        if (rapportRes.ok) {
+          const rapportBlob = await rapportRes.blob();
+          rapportUrl = URL.createObjectURL(rapportBlob);
+        } else {
+          // Profil pas rempli ou autre erreur — on log mais on continue
+          console.warn("[rapport] non généré :", await rapportRes.text());
+        }
+      } catch (e) {
+        console.warn("[rapport] exception :", e);
+      }
+
       try {
         saveIntervention({
           typeIntervention,
@@ -516,6 +540,7 @@ function NouvelleInterventionContent() {
         type: "success",
         bsffId,
         cerfaUrl,
+        rapportUrl,
         clientEmail: clientEmail.trim() || undefined,
         clientName: clientName.trim() || undefined,
         typeIntervention,
@@ -1268,6 +1293,7 @@ function SuccessView({
     type: "success";
     bsffId?: string;
     cerfaUrl: string;
+    rapportUrl?: string;
     clientEmail?: string;
     clientName?: string;
     typeIntervention: string;
@@ -1332,6 +1358,21 @@ function SuccessView({
         >
           ⬇ Télécharger le CERFA 15497*04
         </a>
+        {status.rapportUrl && (
+          <a
+            href={status.rapportUrl}
+            download={`Fiche_visite_${status.bsffId ?? "intervention"}.pdf`}
+            className="block w-full px-6 py-4 rounded-2xl text-[15px] font-medium text-center transition-colors bg-white border border-[#111] text-[#111] active:bg-black/[0.03]"
+            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+          >
+            ⬇ Télécharger la fiche de visite client
+          </a>
+        )}
+        {!status.rapportUrl && (
+          <div className="px-4 py-3 rounded-2xl bg-amber-50 ring-1 ring-amber-200 text-[12px] text-amber-900 leading-relaxed">
+            ⚠️ Fiche de visite client non générée — remplis ton profil entreprise sur la page Profil pour l&apos;activer (logo, raison sociale, signature).
+          </div>
+        )}
       </div>
 
       {/* Bouton 'Envoyer au client' — toujours visible, mailto pré-rempli */}
