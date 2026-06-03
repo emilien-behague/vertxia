@@ -70,25 +70,31 @@ Modèle / N° de série :
 - "S/N : DK24..." → numeroSerie="DK24..."
 - ATTENTION : ne JAMAIS confondre modèle (texte commercial) et n°série (alphanumérique unique)
 
-Détecteur fixe :
-- "détecteur permanent installé", "système de détection fixe", "il y a un détecteur de fuites" → detecteurFixe=true
-- "pas de détecteur" → detecteurFixe=false
+Détecteur fixe (= système permanent de détection de fuite F-Gas) :
+- "détecteur fixe installé", "détecteur permanent", "système de détection fixe", "il y a un détecteur de fuites", "détection de fuites permanente", "détecteur de fluide installé" → detecteurFixe=true
+- "pas de détecteur fixe", "pas de détection permanente", "détection manuelle uniquement" → detecteurFixe=false
 - Non mentionné → null
 
-Dernier contrôle (date format YYYY-MM-DD) :
-- "dernier contrôle en mars 2025" → "2025-03-01"
-- "contrôlé le 15 janvier" + année courante → "2026-01-15"
-- "jamais contrôlé", "neuf" → null
+Dernier contrôle d'étanchéité (date format YYYY-MM-DD STRICTEMENT) :
+- Si une date complète : "le 15 mars 2025" → "2025-03-15"
+- Si mois + année : "en mars 2025" → "2025-03-01" (1er du mois)
+- Si juste mois sans année : "en mars" → utilise l'année courante (donnée dans le contexte) → "{ANNEE}-03-01"
+- Si juste année : "en 2025" → "2025-01-01"
+- Si relatif : "il y a 6 mois", "le mois dernier" → calcule depuis la date du jour (donnée dans le contexte)
+- "jamais contrôlé", "neuf", "première installation", "pas encore contrôlé" → null
 - Non mentionné → null
 
-Unités intérieures :
-- "4 cassettes plafonnières dans les chambres" → 4 entrées de type "cassette_plafond" avec emplacement="chambre 1", "chambre 2"... SI ET SEULEMENT SI le frigoriste a précisé chambre 1, chambre 2, etc.
-- Sinon 4 entrées avec emplacement="Chambre" (générique) ou null
-- "une vitrine murale en salle" → 1 entrée type "vitrine_murale", emplacement="Salle"
-- "chambre froide négative en réserve" → 1 entrée type "chambre_froide_negative", emplacement="Réserve"
-- Si le frigoriste ne précise PAS modèle/n°série pour chaque unité, mettre null pour ces champs (l'utilisateur les complétera après)
+Unités intérieures (TRÈS IMPORTANT) :
+- Génère EXACTEMENT le nombre d'unités dicté, ni plus ni moins
+- Si emplacements numérotés : "4 cassettes dans les chambres 1 à 4" → 4 entrées "cassette_plafond" avec emplacement "Chambre 1", "Chambre 2", "Chambre 3", "Chambre 4"
+- Si emplacement unique : "une vitrine murale en salle restaurant" → 1 entrée type "vitrine_murale", emplacement="Salle restaurant"
+- Si pas d'emplacement précisé : "3 cassettes plafonnières" → 3 entrées avec emplacement=null
+- Si emplacements distincts dictés : "une cassette plafonnière en salle de réunion, une murale dans le bureau du directeur, une console en accueil" → 3 entrées avec types et emplacements respectifs
+- Numéro de série par unité : si dicté explicitement ("la cassette 1 c'est le n° DK24F32A101"), remplir numeroSerie ; sinon null
+- Modèle par unité : pareil, remplir si dicté ("4 cassettes Daikin FXFA32A"), sinon null
 - Si AUCUNE unité intérieure mentionnée → unitesInterieures=[]
-- ATTENTION : ne génère JAMAIS plus d'unités que ce qui est dicté
+- INTERDIT : ne génère JAMAIS plus d'unités que dicté, ne devine JAMAIS un emplacement non dicté
+- ATTENTION : "chambre froide" = unité (chambre_froide_positive/negative), pas un emplacement "Chambre"
 
 Mapping types unités intérieures :
 - "cassette plafonnière", "cassette plafond" → "cassette_plafond"
@@ -180,7 +186,14 @@ export async function POST(req: Request) {
     );
   }
 
-  const userMessage = `Voici la transcription du nouvel équipement que vient de dicter le frigoriste :
+  const now = new Date();
+  const todayISO = now.toISOString().slice(0, 10);
+  const currentYear = now.getFullYear();
+
+  const userMessage = `Date du jour (pour résoudre les dates relatives) : ${todayISO}
+Année courante : ${currentYear}
+
+Voici la transcription du nouvel équipement que vient de dicter le frigoriste :
 
 """
 ${transcript}

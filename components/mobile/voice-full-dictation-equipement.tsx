@@ -252,18 +252,35 @@ export function VoiceFullDictationEquipement({ open, onClose, onExtraction }: Pr
         {phase === "idle" && (
           <div className="max-w-md mx-auto pt-8">
             <p className="text-[18px] leading-relaxed text-white/85 mb-6">
-              Dicte les infos du nouvel équipement en langage naturel. L&apos;IA range tout dans les bonnes cases.
+              Dicte tout ce que tu veux sur l&apos;équipement — l&apos;IA range chaque info dans la bonne case.
             </p>
+
+            <div className="rounded-2xl bg-white/[0.06] p-5 mb-4">
+              <div className="text-[10px] tracking-[0.25em] text-white/40 uppercase font-mono mb-3">
+                · Tu peux dicter
+              </div>
+              <ul className="text-[13px] text-white/70 leading-relaxed space-y-1.5">
+                <li>· Client (nom, email, téléphone, adresse)</li>
+                <li>· Modèle + n° de série de l&apos;unité extérieure</li>
+                <li>· Fluide (R-32, R-410A, R-407C…) + charge en kg</li>
+                <li>· Détecteur fixe de fuite (oui / non)</li>
+                <li>· Date du dernier contrôle d&apos;étanchéité</li>
+                <li>· Unités intérieures : type (cassette, murale, gainable, vitrine, chambre froide…) + emplacement + n° série</li>
+                <li>· Notes (accès, particularités…)</li>
+              </ul>
+            </div>
+
             <div className="rounded-2xl bg-white/[0.06] p-5 mb-6">
               <div className="text-[10px] tracking-[0.25em] text-white/40 uppercase font-mono mb-3">
-                · Exemple
+                · Exemple complet
               </div>
               <p className="text-[14px] text-white/65 leading-relaxed italic">
-                «&nbsp;Nouvel équipement chez l&apos;hôtel Le Provençal à Toulon. C&apos;est un Daikin VRV cinq, numéro de série DK24VRV16001, 16 kilos de R32, détecteur fixe installé. Il y a 4 cassettes plafonnières dans les chambres.&nbsp;»
+                «&nbsp;Nouvel équipement chez l&apos;hôtel Le Provençal à Toulon, 14 avenue de la République, contact direction@hotel-leprovencal.fr téléphone 04 94 41 23 45. Unité extérieure Daikin VRV cinq RWEYQ16T7Y1B, numéro de série DK24VRV16001, 16 kilos de R32, détecteur fixe de fuite installé. Dernier contrôle d&apos;étanchéité en mars 2026. Il y a 4 cassettes plafonnières dans les chambres 1 à 4, plus une vitrine murale en salle restaurant et une chambre froide positive en réserve. Accès toit par échelle côté nord.&nbsp;»
               </p>
             </div>
+
             <div className="text-[12px] text-white/45 leading-relaxed">
-              Tu peux parler aussi longtemps que tu veux. Stop quand t&apos;as fini.
+              Parle aussi longtemps que tu veux. Pas besoin d&apos;ordre précis. Stop quand t&apos;as fini.
             </div>
           </div>
         )}
