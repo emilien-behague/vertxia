@@ -13,7 +13,7 @@ import { MobileHeader } from "@/components/mobile/mobile-header";
 // Tag de build visible dans l'UI → permet de vérifier que la version
 // servie par le SW correspond au dernier déploiement. À bumper à chaque
 // refacto majeure du scanner.
-const BUILD_TAG = "zxing-2026-06-03";
+const BUILD_TAG = "zxing-constraints-2026-06-03b";
 
 type State =
   | { type: "idle" } // En attente du tap utilisateur (user gesture iOS)
@@ -164,91 +164,82 @@ export default function MobileScanPage() {
       log("BarcodeDetector indispo → worker");
     }
 
-    // PATH FALLBACK : @zxing/browser (lib mature pour Safari iOS, pas de
-    // worker externe, pas d'OffscreenCanvas qui pose problème sur certains iOS).
+    // PATH FALLBACK : @zxing/browser via decodeFromConstraints.
+    // Cette méthode gère TOUT : getUserMedia + binding video + play + scan.
+    // On NE doit PAS set video.srcObject nous-mêmes avant : decodeFromVideoElement
+    // a une vérif interne qui throw "e.includes" si le video est déjà lié.
     try {
       const { BrowserQRCodeReader } = await import("@zxing/browser");
       log("zxing importé");
 
       const codeReader = new BrowserQRCodeReader();
 
-      // Acquisition caméra
-      let stream: MediaStream;
+      // S'assurer que le video n'a PAS de srcObject pré-existant
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
-          audio: false,
-        });
-      } catch (e) {
-        const msg = e instanceof Error ? e.message.toLowerCase() : String(e);
-        if (msg.includes("denied") || msg.includes("permission") || msg.includes("notallowed")) {
-          setState({ type: "denied" });
-        } else if (msg.includes("notreadable") || msg.includes("inuse")) {
-          setState({
-            type: "error",
-            message: "La caméra est utilisée par une autre app. Ferme-la et réessaie.",
-          });
-        } else {
-          setState({ type: "error", message: e instanceof Error ? e.message : String(e) });
+        const old = video.srcObject as MediaStream | null;
+        if (old) {
+          old.getTracks().forEach((t) => t.stop());
         }
-        return;
-      }
-      video.srcObject = stream;
-      await video.play();
-      log(`video ${video.videoWidth}x${video.videoHeight}`);
+        video.srcObject = null;
+      } catch {}
 
-      // ZXing décode en continu via decodeFromVideoElement
       let stopped = false;
       let scanAttempts = 0;
-      const controls = await codeReader.decodeFromVideoElement(video, (result, err) => {
-        if (stopped) return;
-        if (result) {
-          const raw = result.getText();
-          log(`zxing hit: ${raw.slice(0, 60)}`);
-          const id = extractEquipementId(raw);
-          if (!id) {
-            setState({ type: "unknown_qr", content: raw });
-            controls.stop();
-            try { stream.getTracks().forEach((t) => t.stop()); } catch {}
-            return;
-          }
-          setState({ type: "found", id });
-          controls.stop();
-          try { stream.getTracks().forEach((t) => t.stop()); } catch {}
-          setTimeout(() => router.push(`/eq/${id}`), 350);
-          return;
-        }
-        if (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          // ZXing throw NotFoundException à chaque frame sans QR — normal
-          if (msg.includes("NotFound") || msg.includes("No MultiFormat Readers")) {
-            scanAttempts++;
-            if (scanAttempts === 30 || scanAttempts === 100) {
-              log(`scan vide #${scanAttempts} (cam OK)`);
-            }
-            return;
-          }
-          log(`zxing err: ${msg.slice(0, 80)}`);
-        }
-      });
 
+      const controls = await codeReader.decodeFromConstraints(
+        { video: { facingMode: "environment" }, audio: false },
+        video,
+        (result, err) => {
+          if (stopped) return;
+          if (result) {
+            const raw = result.getText();
+            log(`zxing hit: ${raw.slice(0, 60)}`);
+            const id = extractEquipementId(raw);
+            if (!id) {
+              setState({ type: "unknown_qr", content: raw });
+              try { controls.stop(); } catch {}
+              return;
+            }
+            setState({ type: "found", id });
+            try { controls.stop(); } catch {}
+            setTimeout(() => router.push(`/eq/${id}`), 350);
+            return;
+          }
+          if (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            // NotFoundException à chaque frame sans QR — normal
+            if (msg.includes("NotFound") || msg.includes("No MultiFormat Readers")) {
+              scanAttempts++;
+              if (scanAttempts === 30 || scanAttempts === 100) {
+                log(`scan vide #${scanAttempts} (cam OK)`);
+              }
+              return;
+            }
+            log(`zxing err: ${msg.slice(0, 80)}`);
+          }
+        }
+      );
+
+      log(`zxing OK · video ${video.videoWidth}x${video.videoHeight}`);
       scannerRef.current = {
-        stop: () => {
-          stopped = true;
-          try { controls.stop(); } catch {}
-          try { stream.getTracks().forEach((t) => t.stop()); } catch {}
-        },
-        destroy: () => {
-          stopped = true;
-          try { controls.stop(); } catch {}
-          try { stream.getTracks().forEach((t) => t.stop()); } catch {}
-        },
+        stop: () => { stopped = true; try { controls.stop(); } catch {} },
+        destroy: () => { stopped = true; try { controls.stop(); } catch {} },
       };
-      log("zxing decode started");
       setState({ type: "scanning" });
     } catch (e) {
-      log(`init err: ${e instanceof Error ? e.message : String(e)}`);
-      setState({ type: "error", message: e instanceof Error ? e.message : String(e) });
+      const errMsg = e instanceof Error ? e.message : String(e);
+      log(`init err: ${errMsg.slice(0, 100)}`);
+      const lower = errMsg.toLowerCase();
+      if (lower.includes("denied") || lower.includes("permission") || lower.includes("notallowed")) {
+        setState({ type: "denied" });
+      } else if (lower.includes("notreadable") || lower.includes("inuse")) {
+        setState({
+          type: "error",
+          message: "La caméra est utilisée par une autre app. Ferme-la et réessaie.",
+        });
+      } else {
+        setState({ type: "error", message: errMsg });
+      }
     }
   }
 
