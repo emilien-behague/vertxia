@@ -7,8 +7,8 @@
 //  - Workers .js dans public/ : network-only (content-type strict)
 //  - Autres pages : network-first avec fallback cache
 
-const CACHE_VERSION = "vertxia-v6";
-const STATIC_CACHE = "vertxia-static-v6";
+const CACHE_VERSION = "vertxia-v7";
+const STATIC_CACHE = "vertxia-static-v7";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
