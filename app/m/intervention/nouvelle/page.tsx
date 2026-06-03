@@ -10,6 +10,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection } from "@/components/mobile/inset-list";
 import { VoiceInput } from "@/components/mobile/voice-input";
+import { VoiceFullDictation, type ExtractionResult } from "@/components/mobile/voice-full-dictation";
 import { SignaturePad } from "@/components/mobile/signature-pad";
 import { listEquipements } from "@/lib/equipement";
 import { saveIntervention } from "@/lib/intervention-storage";
@@ -125,6 +126,11 @@ function NouvelleInterventionContent() {
   const [scanInfo, setScanInfo] = useState<string | null>(null);
   const scanInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Dictée IA — modal plein écran + tracking des champs remplis vocalement
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [dictedFields, setDictedFields] = useState<Set<string>>(new Set());
+  const [voiceInfo, setVoiceInfo] = useState<string | null>(null);
+
   const config = useMemo(
     () => INTERVENTIONS.find((t) => t.v === typeIntervention) ?? INTERVENTIONS[0],
     [typeIntervention]
@@ -211,6 +217,124 @@ function NouvelleInterventionContent() {
       setScanning(false);
       if (scanInputRef.current) scanInputRef.current.value = "";
     }
+  }
+
+  function handleVoiceExtraction(extraction: ExtractionResult, transcript: string) {
+    const filled = new Set<string>(dictedFields);
+    const filledLabels: string[] = [];
+
+    if (extraction.typeIntervention && INTERVENTIONS.find((i) => i.v === extraction.typeIntervention)) {
+      setTypeIntervention(extraction.typeIntervention as TypeIntervention);
+      filled.add("typeIntervention");
+      filledLabels.push("type");
+    }
+    if (extraction.fluide && FLUIDES.find((f) => f.code === extraction.fluide)) {
+      setFluide(extraction.fluide);
+      filled.add("fluide");
+      filledLabels.push("fluide");
+    }
+    if (typeof extraction.weight === "number" && extraction.weight > 0) {
+      setWeight(extraction.weight.toFixed(3));
+      filled.add("weight");
+      filledLabels.push("poids");
+    }
+    if (extraction.packagingNumero) {
+      setPackagingNumero(extraction.packagingNumero);
+      filled.add("packagingNumero");
+      filledLabels.push("contenant");
+    }
+    if (extraction.detecteurId) {
+      setDetecteurId(extraction.detecteurId);
+      filled.add("detecteurId");
+    }
+    if (extraction.detecteurPermanent) {
+      setDetecteurPermanent(extraction.detecteurPermanent);
+      filled.add("detecteurPermanent");
+    }
+    if (extraction.fuiteDetectee) {
+      setFuiteDetectee(extraction.fuiteDetectee);
+      filled.add("fuiteDetectee");
+      filledLabels.push("étanchéité");
+    }
+    if (Array.isArray(extraction.fuites) && extraction.fuites.length > 0) {
+      const newFuites = extraction.fuites
+        .filter((f) => f.localisation && f.localisation.trim())
+        .slice(0, 3)
+        .map((f) => ({
+          localisation: f.localisation.trim(),
+          reparee: (f.reparee === "realisee" || f.reparee === "a_faire" ? f.reparee : "") as "" | "realisee" | "a_faire",
+        }));
+      if (newFuites.length > 0) {
+        setFuites(newFuites);
+        filled.add("fuites");
+        filledLabels.push(`${newFuites.length} fuite${newFuites.length > 1 ? "s" : ""}`);
+      }
+    }
+
+    let anyDecompo = false;
+    if (typeof extraction.fluideVierge === "number" && extraction.fluideVierge > 0) {
+      setFluideVierge(extraction.fluideVierge.toFixed(3));
+      anyDecompo = true;
+      filled.add("fluideVierge");
+    }
+    if (typeof extraction.fluideRecycle === "number" && extraction.fluideRecycle > 0) {
+      setFluideRecycle(extraction.fluideRecycle.toFixed(3));
+      anyDecompo = true;
+      filled.add("fluideRecycle");
+    }
+    if (typeof extraction.fluideRegenere === "number" && extraction.fluideRegenere > 0) {
+      setFluideRegenere(extraction.fluideRegenere.toFixed(3));
+      anyDecompo = true;
+      filled.add("fluideRegenere");
+    }
+    if (typeof extraction.fluideTraitement === "number" && extraction.fluideTraitement > 0) {
+      setFluideTraitement(extraction.fluideTraitement.toFixed(3));
+      anyDecompo = true;
+      filled.add("fluideTraitement");
+    }
+    if (typeof extraction.fluideReutilisation === "number" && extraction.fluideReutilisation > 0) {
+      setFluideReutilisation(extraction.fluideReutilisation.toFixed(3));
+      anyDecompo = true;
+      filled.add("fluideReutilisation");
+    }
+    if (anyDecompo) {
+      setShowFluideDecompose(true);
+      filledLabels.push("décomposition fluide");
+    }
+
+    if (extraction.clientName && !clientName.trim()) {
+      setClientName(extraction.clientName);
+      filled.add("clientName");
+      filledLabels.push("client");
+    }
+    if (extraction.clientAdresse && !clientAdresse.trim()) {
+      setClientAdresse(extraction.clientAdresse);
+      filled.add("clientAdresse");
+    }
+    if (extraction.lieuIntervention && !lieuIntervention.trim()) {
+      setLieuIntervention(extraction.lieuIntervention);
+      filled.add("lieuIntervention");
+    }
+
+    // Notes : on append (ne pas écraser ce qui existe), prefixé "Dicté : "
+    if (extraction.notes && extraction.notes.trim()) {
+      const dictee = extraction.notes.trim();
+      setNotes((prev) => (prev.trim() ? `${prev.trim()}\n\nDicté : ${dictee}` : `Dicté : ${dictee}`));
+      filled.add("notes");
+    } else if (transcript && !notes.trim()) {
+      // Si l'IA n'a rien mis en notes mais qu'on a un transcript, le mettre brut
+      setNotes(`Dicté : ${transcript.trim()}`);
+      filled.add("notes");
+    }
+
+    setDictedFields(filled);
+
+    const summary =
+      filledLabels.length > 0
+        ? `✓ ${filledLabels.length} champ${filledLabels.length > 1 ? "s" : ""} rempli${filledLabels.length > 1 ? "s" : ""} : ${filledLabels.join(", ")}. Confiance ${extraction.confiance}.`
+        : `Aucun champ détecté dans la dictée — réessaie avec plus de détails. Confiance ${extraction.confiance}.`;
+    setVoiceInfo(summary);
+    setVoiceOpen(false);
   }
 
   async function handleSubmit() {
@@ -417,6 +541,32 @@ function NouvelleInterventionContent() {
           </div>
         </div>
       )}
+
+      {/* DICTÉE IA — remplit le formulaire vocal */}
+      <div className="mx-4 mt-3 mb-2">
+        <button
+          type="button"
+          onClick={() => setVoiceOpen(true)}
+          disabled={isLoading}
+          className="w-full px-5 py-4 rounded-2xl bg-[#111] text-white text-[15px] font-semibold flex items-center justify-center gap-3 active:bg-black/90 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] disabled:opacity-50"
+          style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+            <line x1="12" y1="19" x2="12" y2="22" />
+          </svg>
+          <span>Dicter l&apos;intervention complète</span>
+        </button>
+        <div className="mt-2 text-[11px] text-black/45 text-center leading-relaxed">
+          Parle 30 secondes, l&apos;IA range tout dans les bonnes cases du CERFA
+        </div>
+        {voiceInfo && (
+          <div className="mt-3 px-4 py-3 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200 text-[13px] text-emerald-900 leading-relaxed">
+            {voiceInfo}
+          </div>
+        )}
+      </div>
 
       {/* Type d'intervention */}
       <InsetListSection title="Type d'intervention">
@@ -954,6 +1104,23 @@ function NouvelleInterventionContent() {
           background-repeat: no-repeat; background-position: right 4px center; padding-right: 24px;
         }
       `}</style>
+
+      {/* Modal dictée IA — overlay plein écran */}
+      <VoiceFullDictation
+        open={voiceOpen}
+        onClose={() => setVoiceOpen(false)}
+        onExtraction={handleVoiceExtraction}
+        equipementContext={
+          eqContext
+            ? {
+                modele: eqContext.modele,
+                fluide: selectedFluide.code,
+                chargeKg: parseFloat(weight) || undefined,
+                clientName: eqContext.clientName,
+              }
+            : undefined
+        }
+      />
     </>
   );
 }
