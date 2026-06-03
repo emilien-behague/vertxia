@@ -568,12 +568,6 @@ function NotFoundState({ id }: { id: string }) {
           >
             VOIR LE PARC ÉQUIPEMENTS
           </a>
-          <a
-            href="/login"
-            className="block w-full px-5 py-3 ring-1 ring-black/10 text-black/70 text-xs tracking-widest font-medium rounded-xl text-center hover:bg-black/[0.03] transition-colors"
-          >
-            SE CONNECTER À MON COMPTE
-          </a>
         </div>
       </div>
     </div>
