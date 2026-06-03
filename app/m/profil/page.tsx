@@ -13,6 +13,7 @@ import {
   type CategorieAttestation,
   EMPTY_PROFIL,
 } from "@/lib/profil";
+import { lookupSiret, isValidSiretFormat } from "@/lib/siret";
 
 const CATEGORIES: { value: CategorieAttestation; label: string }[] = [
   { value: "I", label: "Cat. I — Tous équipements" },
@@ -78,6 +79,41 @@ export default function MobileProfilPage() {
     const next: Profil = { ...profil, trackdechetsToken: "", trackdechetsMode: "sandbox" };
     setProfil(next);
     saveProfil(next);
+  }
+
+  // ─── Lookup SIRET destination (auto-fill nom + adresse via data.gouv) ──
+  const [destLookupBusy, setDestLookupBusy] = useState(false);
+  const [destLookupError, setDestLookupError] = useState<string | null>(null);
+  const [destLookupOk, setDestLookupOk] = useState(false);
+
+  async function handleLookupDestSiret() {
+    const siret = (profil.bsffDestinationSiret || "").replace(/\D+/g, "");
+    setDestLookupError(null);
+    setDestLookupOk(false);
+    if (!isValidSiretFormat(siret)) {
+      setDestLookupError("SIRET invalide : 14 chiffres attendus.");
+      return;
+    }
+    setDestLookupBusy(true);
+    try {
+      const result = await lookupSiret(siret);
+      if (!result) {
+        setDestLookupError("Aucun établissement trouvé pour ce SIRET dans l'annuaire officiel.");
+        return;
+      }
+      setProfil((p) => ({
+        ...p,
+        bsffDestinationSiret: result.siret,
+        bsffDestinationName: result.raisonSociale,
+        bsffDestinationAddress: result.adresseComplete,
+      }));
+      setDestLookupOk(true);
+      setTimeout(() => setDestLookupOk(false), 3000);
+    } catch (e) {
+      setDestLookupError(e instanceof Error ? e.message : "Erreur de connexion à l'annuaire.");
+    } finally {
+      setDestLookupBusy(false);
+    }
   }
 
   async function handleSignOut() {
@@ -441,32 +477,49 @@ export default function MobileProfilPage() {
                 )}
               </div>
               <FormRow label="Centre destination — SIRET">
-                <input
-                  type="text"
-                  value={profil.bsffDestinationSiret || ""}
-                  onChange={(e) =>
-                    update(
-                      "bsffDestinationSiret",
-                      e.target.value.replace(/\s+/g, "").slice(0, 14)
-                    )
-                  }
-                  placeholder="37989147300018"
-                  inputMode="numeric"
-                  maxLength={14}
-                  className="input-mobile font-mono"
-                />
-                <div className="text-[11px] text-black/45 mt-1 leading-relaxed">
-                  SIRET du centre agréé de régénération HFC (Climalife, Arkema, etc.). À chercher sur{" "}
-                  <a
-                    href="https://annuaire-entreprises.data.gouv.fr/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#A16207] underline"
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={profil.bsffDestinationSiret || ""}
+                    onChange={(e) => {
+                      setDestLookupError(null);
+                      setDestLookupOk(false);
+                      update(
+                        "bsffDestinationSiret",
+                        e.target.value.replace(/\s+/g, "").slice(0, 14)
+                      );
+                    }}
+                    placeholder="14 chiffres"
+                    inputMode="numeric"
+                    maxLength={14}
+                    className="input-mobile font-mono flex-1 min-w-0"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleLookupDestSiret}
+                    disabled={destLookupBusy || !profil.bsffDestinationSiret}
+                    className="px-3 py-2 rounded-xl bg-[#A16207] text-white text-[13px] font-medium active:opacity-90 disabled:opacity-40 disabled:active:opacity-40 transition-opacity shrink-0"
+                    style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
                   >
-                    annuaire-entreprises.data.gouv.fr
-                  </a>
-                  {" "}(annuaire officiel gouv.fr).
+                    {destLookupBusy ? "…" : "Rechercher"}
+                  </button>
                 </div>
+                {destLookupOk && (
+                  <div className="mt-1.5 text-[11px] text-emerald-700 font-medium flex items-center gap-1">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                    Trouvé dans l&apos;annuaire officiel — nom et adresse pré-remplis ci-dessous.
+                  </div>
+                )}
+                {destLookupError && (
+                  <div className="mt-1.5 text-[11px] text-red-600 leading-snug">
+                    {destLookupError}
+                  </div>
+                )}
+                {!destLookupOk && !destLookupError && (
+                  <div className="text-[11px] text-black/45 mt-1 leading-relaxed">
+                    Tape le SIRET du centre agréé (Climalife, Arkema…) puis clique <strong>Rechercher</strong> pour auto-remplir nom et adresse.
+                  </div>
+                )}
               </FormRow>
               <FormRow label="Centre destination — Nom commercial">
                 <input

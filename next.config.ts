@@ -18,7 +18,8 @@ const CSP = [
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
   // Nominatim pour le geocoding des adresses (lib/geocoding.ts).
-  `connect-src 'self' https://api.stripe.com https://*.stripe.com https://nominatim.openstreetmap.org${IS_DEV ? " ws: wss:" : ""}`,
+  // recherche-entreprises.api.gouv.fr pour le lookup SIRET (lib/siret.ts).
+  `connect-src 'self' https://api.stripe.com https://*.stripe.com https://nominatim.openstreetmap.org https://recherche-entreprises.api.gouv.fr${IS_DEV ? " ws: wss:" : ""}`,
   "frame-src https://checkout.stripe.com https://billing.stripe.com https://js.stripe.com",
   "media-src 'self' blob: https://*.public.blob.vercel-storage.com",
   "object-src 'none'",
