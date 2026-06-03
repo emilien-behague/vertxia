@@ -176,7 +176,20 @@ export default function MobileScanPage() {
         return;
       }
 
+      // Pré-instancier l'engine (worker ou BarcodeDetector) AVANT le scanner
+      // pour s'assurer qu'il est bien créé et utilisable. Si throw ici,
+      // on voit la vraie erreur dans le debug overlay.
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const engine = await (QrScanner as any).createQrEngine("/qr-scanner-worker.min.js");
+        const isWorker = typeof Worker !== "undefined" && engine instanceof Worker;
+        log(`engine créé : ${isWorker ? "Worker" : "BarcodeDetector"}`);
+      } catch (e) {
+        log(`createQrEngine err: ${e instanceof Error ? e.message : String(e)}`);
+      }
+
       let scanCount = 0;
+      let errCount = 0;
       const scanner = new QrScanner(
         video,
         (result) => {
@@ -204,25 +217,27 @@ export default function MobileScanPage() {
           setTimeout(() => router.push(`/eq/${id}`), 350);
         },
         {
+          onDecodeError: (err) => {
+            // "No QR code found" est attendu à chaque frame sans QR. On log
+            // seulement les VRAIES erreurs (worker cassé, image illisible…).
+            const msg = err instanceof Error ? err.message : String(err);
+            if (msg.includes("No QR code found")) {
+              errCount++;
+              if (errCount === 30 || errCount === 100) {
+                log(`scan vide #${errCount} (cam OK, juste pas de QR)`);
+              }
+              return;
+            }
+            log(`decode err: ${msg.slice(0, 80)}`);
+          },
           preferredCamera: "environment",
           highlightScanRegion: true, // cadre jaune autour de la zone scan
           highlightCodeOutline: true, // contour jaune du QR détecté
           returnDetailedScanResult: true,
-          maxScansPerSecond: 10,
-          // 85% de la plus petite dimension, centré — large pour ne pas
-          // rater les QR (default 60% trop restrictif) mais avec une zone
-          // visible jaune via highlightScanRegion.
-          calculateScanRegion: (video: HTMLVideoElement) => {
-            const w = video.videoWidth || 640;
-            const h = video.videoHeight || 480;
-            const size = Math.round(0.85 * Math.min(w, h));
-            return {
-              x: Math.round((w - size) / 2),
-              y: Math.round((h - size) / 2),
-              width: size,
-              height: size,
-            };
-          },
+          maxScansPerSecond: 25, // plus de tentatives par seconde (vs 10) pour mieux capter
+          // Pas de calculateScanRegion : on scanne TOUTE la frame.
+          // Le default 60% rate les QR petits ou décentrés. Mieux vaut
+          // dépendre du worker pour trouver le QR n'importe où dans l'image.
         }
       );
 
