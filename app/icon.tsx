@@ -5,7 +5,10 @@ import { ImageResponse } from "next/og";
 // apple-icon mais plus petit. Remplace l'ancien icon.png (gros V blanc)
 // pour cohérence brand avec le logo 2026 valide par Emilien 04/06/2026.
 
-export const size = { width: 64, height: 64 };
+// Google preconise un favicon multiple de 48 (48, 96, 144...). On part sur 96
+// car c'est dans la fourchette recommandee et reste leger.
+// Cf. https://developers.google.com/search/docs/appearance/favicon-in-search
+export const size = { width: 96, height: 96 };
 export const contentType = "image/png";
 
 export default function Icon() {
@@ -24,8 +27,8 @@ export default function Icon() {
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 100 100"
-          width={48}
-          height={48}
+          width={70}
+          height={70}
           fill="none"
           stroke="#A16207"
           strokeWidth="13"
