@@ -23,6 +23,7 @@ export default function MobileSignaturePage() {
   const [hasContent, setHasContent] = useState(false);
   const [saving, setSaving] = useState(false);
   const [existingSignature, setExistingSignature] = useState<string | undefined>(undefined);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const profil = loadProfil();
@@ -172,24 +173,58 @@ export default function MobileSignaturePage() {
   function handleSave() {
     const canvas = canvasRef.current;
     if (!canvas || saving) return;
+    setError(null);
     setSaving(true);
     try {
-      // Trim transparent edges + export en PNG dataURL
-      const dataUrl = canvas.toDataURL("image/png");
+      // Export en PNG dataURL puis compress si gros (signature > 80KB rare).
+      // canvas.toDataURL peut throw "Tainted canvases may not be exported"
+      // si l'image existante chargee venait d'un domaine cross-origin (impossible
+      // ici puisque c'est une dataURL locale, mais defensif).
+      let dataUrl = canvas.toDataURL("image/png");
+      // Si la PNG depasse 80KB, on retombe sur du JPEG 80% pour eviter de
+      // remplir le localStorage iOS (5MB hard limit).
+      if (dataUrl.length > 80 * 1024) {
+        const jpeg = canvas.toDataURL("image/jpeg", 0.8);
+        if (jpeg.length < dataUrl.length) dataUrl = jpeg;
+      }
       const profil = loadProfil();
       saveProfil({ ...profil, signatureDataUrl: dataUrl });
       router.push("/m/profil");
     } catch (e) {
-      console.error("Save signature failed:", e);
+      const err = e instanceof Error ? e : new Error(String(e));
+      console.error("[signature] save failed:", err);
+      // QuotaExceededError = localStorage full
+      const isQuota =
+        err.name === "QuotaExceededError" ||
+        /quota|storage/i.test(err.message);
+      setError(
+        isQuota
+          ? "Espace de stockage saturé sur le téléphone. Va dans l'historique et supprime quelques anciens diagnostics ou interventions, puis recommence."
+          : `Échec enregistrement : ${err.message}`
+      );
       setSaving(false);
     }
   }
 
   function handleRemove() {
-    if (!confirm("Supprimer la signature enregistrée ?")) return;
-    const profil = loadProfil();
-    saveProfil({ ...profil, signatureDataUrl: undefined });
-    router.push("/m/profil");
+    // confirm() peut etre bloque en PWA standalone iOS -> fallback try direct
+    let ok = true;
+    try {
+      ok = window.confirm("Supprimer la signature enregistrée ?");
+    } catch {
+      ok = true;
+    }
+    if (!ok) return;
+    setError(null);
+    try {
+      const profil = loadProfil();
+      saveProfil({ ...profil, signatureDataUrl: undefined });
+      router.push("/m/profil");
+    } catch (e) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      console.error("[signature] remove failed:", err);
+      setError(`Échec suppression : ${err.message}`);
+    }
   }
 
   return (
@@ -233,12 +268,19 @@ export default function MobileSignaturePage() {
         </div>
       </div>
 
+      {/* Banner erreur si save/remove a foire */}
+      {error && (
+        <div className="mx-4 mt-4 px-4 py-3 rounded-2xl bg-red-50 border border-red-200 text-[13px] text-red-700 leading-relaxed">
+          {error}
+        </div>
+      )}
+
       {/* Actions */}
       <div className="px-4 mt-5 space-y-2">
         <button
           type="button"
           onClick={handleSave}
-          disabled={!hasContent || saving}
+          disabled={(!hasContent && !existingSignature) || saving}
           className="w-full px-6 py-4 rounded-2xl bg-[#111] text-white text-[15px] font-medium active:bg-black/90 transition-colors disabled:opacity-40"
           style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
         >
