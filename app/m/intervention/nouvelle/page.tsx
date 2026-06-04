@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 import { Suspense, useEffect, useRef, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { Drawer } from "vaul";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection } from "@/components/mobile/inset-list";
 import { VoiceInput } from "@/components/mobile/voice-input";
@@ -31,6 +32,12 @@ import {
   quantiteDepuisPesee,
   type Bouteille,
 } from "@/lib/bouteille";
+import {
+  checkInterventionIntegrity,
+  SEVERITE_STYLES,
+  type IntegrityReport,
+  type DraftIntervention,
+} from "@/lib/integrity-checks";
 
 // Formulaire intervention mobile-native — wizard simplifié sur une seule page
 // avec sections conditionnelles selon le type d'intervention.
@@ -144,6 +151,12 @@ function NouvelleInterventionContent() {
   // ?equipement=ID). Sert au bouton "Reprendre la meme intervention" qui
   // pre-remplit le type + parametres metier (detecteur, detenteur, packaging).
   const [lastInterventionOnEq, setLastInterventionOnEq] = useState<StoredIntervention | null>(null);
+  // Garde-fou qualite — rapport d'integrite affiche dans une modal AVANT
+  // la generation du CERFA / BSFF. Bloque les erreurs reglementaires graves
+  // (R-22, signature manquante, attestation absente) et alerte sur les
+  // incoherences metier (charge >150% nominal, recharge repetee sans recherche).
+  const [integrityReport, setIntegrityReport] = useState<IntegrityReport | null>(null);
+  const [integrityModalOpen, setIntegrityModalOpen] = useState(false);
   const [diagContext, setDiagContext] = useState<StoredDiagnostic | null>(null);
 
   // Vision IA scan plaque
@@ -550,6 +563,57 @@ function NouvelleInterventionContent() {
         : `Aucun champ détecté dans la dictée — réessaie avec plus de détails. Confiance ${extraction.confiance}.`;
     setVoiceInfo(summary);
     setVoiceOpen(false);
+  }
+
+  /**
+   * Construit un DraftIntervention depuis les states actuels du formulaire
+   * et lance les checks d'integrite. Retourne le rapport. Pure fonction —
+   * pas de side effect. Utilise par handleValidateThenSubmit (au click du
+   * bouton final) et eventuellement en V2 pour du live-feedback inline.
+   */
+  function runIntegrityChecks(): IntegrityReport {
+    const eqFromPark = eqIdParam ? listEquipements().find((e) => e.id === eqIdParam) : undefined;
+    const draft: DraftIntervention = {
+      typeIntervention,
+      fluide: { code: selectedFluide.code, gwp: selectedFluide.gwp },
+      weight: parseFloat(weight) || 0,
+      packagingNumero: packagingNumero.trim() || undefined,
+      clientName: clientName.trim() || null,
+      modeleEquipement: modeleEquipement.trim() || undefined,
+      numeroSerieEquipement: numeroSerieEquipement.trim() || undefined,
+      lieuIntervention: lieuIntervention.trim() || undefined,
+      controleDetails: config.needsControle
+        ? { detecteurPermanent: detecteurPermanent === "oui" }
+        : undefined,
+      notes: notes.trim() || undefined,
+      hasDetenteurSignature: Boolean(detenteurSignatureDataUrl),
+      detenteurName: detenteurName.trim() || undefined,
+      detenteurQuality: detenteurQuality.trim() || undefined,
+      hasOperateurSignature: Boolean(loadProfil().signatureDataUrl),
+      dateInterventionISO: new Date().toISOString(),
+    };
+    return checkInterventionIntegrity({
+      intervention: draft,
+      equipement: eqFromPark ?? null,
+      profil: loadProfil(),
+      historiqueInterventions: listInterventions(),
+    });
+  }
+
+  /**
+   * Wrapper du submit qui passe par le garde-fou qualite. Si on detecte
+   * des issues blocantes ou des alertes, on ouvre la modal au lieu de
+   * lancer la generation. Si rien ou que des "info", on submit direct.
+   */
+  async function handleValidateThenSubmit() {
+    const report = runIntegrityChecks();
+    if (report.hasBlocking || report.hasAlertes) {
+      setIntegrityReport(report);
+      setIntegrityModalOpen(true);
+      return;
+    }
+    // Que des infos OU rien → on laisse passer direct
+    await handleSubmit();
   }
 
   async function handleSubmit() {
@@ -1876,11 +1940,15 @@ function NouvelleInterventionContent() {
         </div>
       </InsetListSection>
 
-      {/* Submit */}
+      {/* Submit — passe par le garde-fou qualite (checkInterventionIntegrity)
+          AVANT la generation. Bloque les erreurs reglementaires graves et
+          alerte sur les incoherences metier. Si rien a signaler, lance le
+          submit direct. Sinon ouvre la modal qui demande correction ou
+          confirmation explicite. */}
       <div className="px-4 mt-8 mb-4">
         <button
           type="button"
-          onClick={handleSubmit}
+          onClick={handleValidateThenSubmit}
           disabled={isLoading}
           className="w-full px-6 py-4 rounded-2xl bg-[#111] text-white text-[15px] font-medium active:bg-black/90 transition-colors disabled:opacity-60 inline-flex items-center justify-center gap-3"
           style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
@@ -1901,6 +1969,144 @@ function NouvelleInterventionContent() {
           ❌ {status.message}
         </div>
       )}
+
+      {/* Modal du garde-fou qualite — s'ouvre si checkInterventionIntegrity
+          a detecte des issues. Drawer Vaul (memoir UI app). */}
+      <Drawer.Root open={integrityModalOpen} onOpenChange={setIntegrityModalOpen} shouldScaleBackground>
+        <Drawer.Portal>
+          <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40" />
+          <Drawer.Content
+            className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-3xl bg-[#F5F4F0] outline-none"
+            style={{ maxHeight: "92dvh" }}
+          >
+            <Drawer.Title className="sr-only">Verifications avant envoi</Drawer.Title>
+            <div className="mx-auto mt-2 mb-1 h-1.5 w-12 rounded-full bg-black/20" />
+
+            <div className="flex items-center justify-between px-5 py-3 border-b border-black/[0.06]">
+              <div className="min-w-0">
+                <div className="text-[10px] font-mono tracking-widest uppercase text-black/45">
+                  Garde-fou qualité
+                </div>
+                <div className="text-[16px] font-semibold text-[#111]">Vérifications avant envoi</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIntegrityModalOpen(false)}
+                aria-label="Fermer"
+                className="w-8 h-8 rounded-full bg-black/[0.06] flex items-center justify-center active:bg-black/[0.12] transition-colors shrink-0"
+                style={{ WebkitTapHighlightColor: "transparent" }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {integrityReport && (
+              <>
+                {/* Compteurs par severite */}
+                <div className="px-5 py-3 flex items-center gap-2 text-[12px] border-b border-black/[0.04]">
+                  {integrityReport.countBySeverite.blocant > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 text-red-700 ring-1 ring-red-200 font-medium">
+                      🚫 {integrityReport.countBySeverite.blocant} bloquant{integrityReport.countBySeverite.blocant > 1 ? "s" : ""}
+                    </span>
+                  )}
+                  {integrityReport.countBySeverite.alerte > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-50 text-orange-700 ring-1 ring-orange-200 font-medium">
+                      ⚠️ {integrityReport.countBySeverite.alerte} alerte{integrityReport.countBySeverite.alerte > 1 ? "s" : ""}
+                    </span>
+                  )}
+                  {integrityReport.countBySeverite.info > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200 font-medium">
+                      ℹ️ {integrityReport.countBySeverite.info} info
+                    </span>
+                  )}
+                </div>
+
+                {/* Liste des issues */}
+                <div className="overflow-y-auto overscroll-contain px-5 py-4 space-y-3 text-[#111] flex-1">
+                  {integrityReport.issues.map((issue, idx) => {
+                    const style = SEVERITE_STYLES[issue.severite];
+                    return (
+                      <div
+                        key={`${issue.code}-${idx}`}
+                        className={`rounded-2xl ${style.bg} ring-1 ${style.ring} px-4 py-3`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="shrink-0 text-[18px] leading-none mt-0.5">{style.icon}</div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={`text-[14px] font-semibold ${style.text}`}>{issue.titre}</span>
+                              <span className={`text-[9px] font-mono tracking-widest px-1.5 py-0.5 rounded ${style.bg} ${style.text} ring-1 ${style.ring}`}>
+                                {style.label}
+                              </span>
+                            </div>
+                            <p className={`mt-1 text-[12.5px] leading-snug ${style.text}/80`}>{issue.message}</p>
+                            {issue.suggestion && (
+                              <div className="mt-2 pl-3 border-l-2 border-current/30">
+                                <div className={`text-[10px] uppercase tracking-wider font-medium ${style.text}/70 mb-0.5`}>
+                                  À faire
+                                </div>
+                                <p className={`text-[12.5px] ${style.text}`}>{issue.suggestion}</p>
+                              </div>
+                            )}
+                            {issue.articleRef && (
+                              <div className={`mt-1.5 text-[10px] font-mono ${style.text}/55`}>
+                                Ref. {issue.articleRef}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Footer actions */}
+                <div className="px-5 py-3 border-t border-black/[0.06] flex flex-col gap-2 bg-white">
+                  {integrityReport.hasBlocking ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setIntegrityModalOpen(false)}
+                        className="w-full px-5 py-3.5 rounded-2xl bg-[#111] text-white text-[14px] font-medium active:bg-black/85"
+                        style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                      >
+                        Corriger maintenant
+                      </button>
+                      <div className="text-[11px] text-black/45 text-center leading-snug">
+                        Soumission impossible tant qu&apos;une issue bloquante est présente — ces erreurs entraîneraient un rejet réglementaire (DREAL, TrackDéchets) ou un CERFA juridiquement nul.
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIntegrityModalOpen(false);
+                          handleSubmit();
+                        }}
+                        className="w-full px-5 py-3.5 rounded-2xl bg-orange-600 text-white text-[14px] font-medium active:bg-orange-700"
+                        style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                      >
+                        Continuer quand même
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIntegrityModalOpen(false)}
+                        className="w-full px-5 py-2.5 rounded-2xl bg-white ring-1 ring-black/10 text-[#111] text-[13px] font-medium active:bg-black/[0.03]"
+                        style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                      >
+                        Corriger d&apos;abord
+                      </button>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </Drawer.Content>
+        </Drawer.Portal>
+      </Drawer.Root>
 
       <style jsx global>{`
         .input-mobile {
