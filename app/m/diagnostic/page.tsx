@@ -170,7 +170,7 @@ export default function DiagnosticPage() {
           </label>
 
           <div className="text-[11px] text-black/45 text-center px-3 leading-snug">
-            Compression auto à 2000px max + JPEG 80%. Analyse via Claude Opus 4.7 vision (~3-5 sec).
+            Compression auto à 2000px max + JPEG 80%. Analyse IA Vertxia (~3-5 sec).
           </div>
 
           <button
@@ -217,7 +217,7 @@ export default function DiagnosticPage() {
               <section>
                 <h3 className="text-[15px] font-semibold mb-2">Sur quoi est basé le diagnostic ?</h3>
                 <p className="text-[13.5px] text-black/70 leading-relaxed">
-                  Le diagnostic est fait par <strong>Claude Opus 4.7</strong> (modèle IA d&apos;Anthropic), entraîné sur des centaines de millions d&apos;images publiques (web, docs techniques, manuels de maintenance, forums techniciens). Il a vu des milliers d&apos;échangeurs corrodés, brasures défectueuses, raccords avec traces d&apos;huile, etc. Il reconnaît ces patterns visuels comme le ferait un expert humain avec 25 ans de terrain.
+                  Le diagnostic est fait par un <strong>modèle d&apos;IA d&apos;analyse visuelle</strong> de dernière génération, entraîné sur des centaines de millions d&apos;images publiques (web, docs techniques, manuels de maintenance, forums techniciens). Il a vu des milliers d&apos;échangeurs corrodés, brasures défectueuses, raccords avec traces d&apos;huile, etc. Il reconnaît ces patterns visuels comme le ferait un expert humain avec 25 ans de terrain.
                 </p>
                 <p className="text-[13.5px] text-black/70 leading-relaxed mt-2">
                   En plus, Vertxia lui injecte un contexte métier précis (réglementation UE 2024/573, fluides HFC/HFO, défauts typiques, barème devis terrain 2026 FR) pour cadrer ses réponses.
@@ -287,7 +287,7 @@ export default function DiagnosticPage() {
               </section>
 
               <div className="text-[11px] text-black/40 text-center pb-2">
-                Modèle : Claude Opus 4.7 vision · Anthropic
+                Technologie : analyse visuelle multimodale Vertxia
               </div>
             </div>
           </Drawer.Content>
@@ -308,7 +308,7 @@ export default function DiagnosticPage() {
             Analyse de l&apos;image en cours…
           </div>
           <div className="text-[11.5px] text-black/40 mt-1">
-            Claude Opus 4.7 inspecte la photo (~3-5 sec)
+            Vertxia inspecte la photo (~3-5 sec)
           </div>
         </div>
       )}
@@ -476,7 +476,7 @@ export default function DiagnosticPage() {
           </div>
 
           <div className="text-[10px] text-black/35 text-center pt-2">
-            Diagnostic généré par Claude Opus 4.7 vision · à valider sur site
+            Diagnostic généré par Vertxia · à valider sur site
           </div>
         </div>
       )}

@@ -284,7 +284,7 @@ export default function DiagnosticDetailPage() {
         </div>
 
         <div className="text-[10px] text-black/35 text-center pt-2">
-          Diagnostic généré par Claude Opus 4.7 vision · vertxia.com
+          Diagnostic généré par Vertxia · vertxia.com
         </div>
       </div>
 

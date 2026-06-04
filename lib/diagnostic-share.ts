@@ -56,7 +56,7 @@ export function formatDiagnosticForShare(r: DiagnosticResult): string {
     lines.push(`Devis estimé : ${r.devisEstimeMin}–${r.devisEstimeMax} € HT`);
   }
   lines.push("");
-  lines.push(`Diagnostic généré par Claude Opus 4.7 vision via vertxia.com`);
+  lines.push(`Diagnostic généré par Vertxia · vertxia.com`);
   return lines.join("\n");
 }
 
