@@ -58,6 +58,16 @@ export default function MobileInterventionDetailPage() {
   const [etiquetteError, setEtiquetteError] = useState<string | null>(null);
   const [rapportLoading, setRapportLoading] = useState(false);
   const [rapportError, setRapportError] = useState<string | null>(null);
+  // Devis depuis intervention — modale Vaul + handler POST
+  const [devisOpen, setDevisOpen] = useState(false);
+  const [devisLoading, setDevisLoading] = useState(false);
+  const [devisError, setDevisError] = useState<string | null>(null);
+  const [devisClientNom, setDevisClientNom] = useState("");
+  const [devisClientAdresse, setDevisClientAdresse] = useState("");
+  const [devisClientEmail, setDevisClientEmail] = useState("");
+  const [devisHeures, setDevisHeures] = useState<number>(1);
+  const [devisTauxHoraire, setDevisTauxHoraire] = useState<number>(65);
+  const [devisForfaitDeplacement, setDevisForfaitDeplacement] = useState<number>(60);
   // Edition rapide (modal Vaul)
   const [editOpen, setEditOpen] = useState(false);
   const [editClientName, setEditClientName] = useState("");
@@ -407,6 +417,122 @@ export default function MobileInterventionDetailPage() {
     }
   }
 
+  // Ouvre la modale de devis avec les valeurs pre-remplies depuis l'intervention
+  // + le profil (taux horaire). L'utilisateur ajuste puis valide.
+  function openDevisModal() {
+    if (!intervention) return;
+    const profil = loadProfil();
+    // Pre-remplit le nom client depuis l'intervention si dispo
+    setDevisClientNom(intervention.clientName ?? "");
+    setDevisClientAdresse(intervention.lieuIntervention ?? "");
+    setDevisClientEmail("");
+    // Heures defaut selon type intervention (helper lib/devis.ts)
+    import("@/lib/devis").then(({ estimerHeuresMOFromTypeIntervention }) => {
+      setDevisHeures(estimerHeuresMOFromTypeIntervention(intervention.typeIntervention));
+    });
+    // Taux horaire depuis profil si configure, sinon 65 EUR/h defaut
+    setDevisTauxHoraire(profil.tauxHoraireDevisHT && profil.tauxHoraireDevisHT > 0
+      ? profil.tauxHoraireDevisHT
+      : 65);
+    setDevisForfaitDeplacement(60);
+    setDevisError(null);
+    setDevisOpen(true);
+  }
+
+  async function handleGenerateDevisFromIntervention() {
+    if (!intervention) return;
+    if (!devisClientNom.trim()) {
+      setDevisError("Le nom du client est obligatoire pour générer un devis.");
+      return;
+    }
+    setDevisError(null);
+    setDevisLoading(true);
+    try {
+      let profil = loadProfil();
+      if (!profil.raisonSociale) {
+        try {
+          const res = await fetch("/api/public/my-profile", {
+            method: "GET",
+            headers: { "cache-control": "no-store" },
+          });
+          if (res.ok) {
+            const j = (await res.json()) as { data: Partial<typeof profil> | null };
+            if (j.data) {
+              const { saveProfil } = await import("@/lib/profil");
+              profil = saveProfil({ ...profil, ...j.data });
+            }
+          }
+        } catch {}
+      }
+      if (!profil.raisonSociale) {
+        throw new Error(
+          "Profil entreprise manquant. Renseigne au moins la raison sociale dans /m/profil avant de générer un devis."
+        );
+      }
+
+      const { buildDevisFromIntervention, generateDevisNumero } = await import("@/lib/devis");
+
+      const devis = buildDevisFromIntervention({
+        intervention: {
+          id: intervention.id,
+          typeIntervention: intervention.typeIntervention,
+          fluide: intervention.fluide,
+          weight: intervention.weight,
+          bsffId: intervention.bsffId,
+          modeleEquipement: intervention.modeleEquipement,
+          numeroSerieEquipement: intervention.numeroSerieEquipement,
+          createdAt: intervention.createdAt,
+        },
+        emetteur: {
+          raisonSociale: profil.raisonSociale,
+          siret: profil.siret,
+          adresseRue: profil.adresseRue,
+          adresseCp: profil.adresseCp,
+          adresseVille: profil.adresseVille,
+          telephone: profil.telephone,
+          email: profil.email,
+          siteWeb: profil.siteWeb,
+          numeroAttestation: profil.numeroAttestation,
+          logoDataUrl: profil.logoDataUrl,
+          signatureDataUrl: profil.signatureDataUrl,
+        },
+        destinataire: {
+          nom: devisClientNom.trim(),
+          adresse: devisClientAdresse.trim() || undefined,
+          email: devisClientEmail.trim() || undefined,
+        },
+        numero: generateDevisNumero(),
+        heuresMainOeuvre: devisHeures,
+        tauxHoraireHT: devisTauxHoraire,
+        forfaitDeplacementHt: devisForfaitDeplacement,
+      });
+
+      const res = await fetch("/api/devis/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(devis),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Échec génération du devis");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${devis.numero ?? "DEVIS"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setDevisOpen(false);
+    } catch (e) {
+      setDevisError(e instanceof Error ? e.message : "Erreur réseau");
+    } finally {
+      setDevisLoading(false);
+    }
+  }
+
   async function handleDownloadEtiquette() {
     if (!intervention) return;
     setEtiquetteError(null);
@@ -687,6 +813,21 @@ export default function MobileInterventionDetailPage() {
             ❌ {rapportError}
           </div>
         )}
+
+        {/* Devis depuis intervention - pre-rempli main d'oeuvre + fluide +
+            controle reglementaire + frais traitement BSFF + deplacement.
+            Ouvre une modale pour saisir le client + ajuster les heures. */}
+        <button
+          type="button"
+          onClick={openDevisModal}
+          className="block w-full px-6 py-4 rounded-2xl text-[15px] font-medium text-center transition-colors bg-white border-2 border-[#A16207] text-[#A16207] active:bg-[#A16207]/[0.05]"
+          style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+        >
+          💰 Générer un devis pour le client
+        </button>
+        <div className="text-[11px] text-black/45 leading-snug px-2 -mt-1">
+          Pré-rempli depuis l&apos;intervention : main d&apos;œuvre + fluide + contrôle réglementaire + déplacement.
+        </div>
 
         {/* Etiquette F-Gas reglementaire (a coller sur l'equipement) */}
         <button
@@ -1164,6 +1305,182 @@ export default function MobileInterventionDetailPage() {
               >
                 {editSaving ? "Enregistrement…" : "✓ Enregistrer"}
               </button>
+            </div>
+          </Drawer.Content>
+        </Drawer.Portal>
+      </Drawer.Root>
+
+      {/* Drawer Generer un devis depuis l'intervention - saisie client + heures */}
+      <Drawer.Root open={devisOpen} onOpenChange={setDevisOpen} shouldScaleBackground>
+        <Drawer.Portal>
+          <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40" />
+          <Drawer.Content
+            className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-3xl bg-[#F5F4F0] outline-none"
+            style={{ maxHeight: "92dvh" }}
+          >
+            <Drawer.Title className="sr-only">Générer un devis pour le client</Drawer.Title>
+            <div className="mx-auto mt-2 mb-1 h-1.5 w-12 rounded-full bg-black/20" />
+            <div className="flex items-center justify-between px-5 py-3 border-b border-black/[0.06]">
+              <div className="text-[16px] font-semibold text-[#111]">Devis depuis l&apos;intervention</div>
+              <button
+                type="button"
+                onClick={() => setDevisOpen(false)}
+                aria-label="Fermer"
+                className="w-8 h-8 rounded-full bg-black/[0.06] flex items-center justify-center active:bg-black/[0.12] transition-colors"
+                style={{ WebkitTapHighlightColor: "transparent" }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="overflow-y-auto overscroll-contain px-5 py-3 space-y-4 flex-1">
+              <div>
+                <label className="block text-[11px] tracking-widest uppercase font-mono text-black/40 mb-1">
+                  Client (destinataire du devis)
+                </label>
+                <input
+                  type="text"
+                  value={devisClientNom}
+                  onChange={(e) => setDevisClientNom(e.target.value)}
+                  placeholder="Nom ou raison sociale"
+                  required
+                  className="w-full px-4 py-3 rounded-2xl bg-white ring-1 ring-black/[0.06] text-[15px] focus:outline-none focus:ring-2 focus:ring-[#A16207]/30"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] tracking-widest uppercase font-mono text-black/40 mb-1">
+                  Adresse client (optionnelle)
+                </label>
+                <input
+                  type="text"
+                  value={devisClientAdresse}
+                  onChange={(e) => setDevisClientAdresse(e.target.value)}
+                  placeholder="Adresse de facturation"
+                  className="w-full px-4 py-3 rounded-2xl bg-white ring-1 ring-black/[0.06] text-[15px] focus:outline-none focus:ring-2 focus:ring-[#A16207]/30"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] tracking-widest uppercase font-mono text-black/40 mb-1">
+                  Email client (optionnel)
+                </label>
+                <input
+                  type="email"
+                  value={devisClientEmail}
+                  onChange={(e) => setDevisClientEmail(e.target.value)}
+                  placeholder="email@client.fr"
+                  className="w-full px-4 py-3 rounded-2xl bg-white ring-1 ring-black/[0.06] text-[15px] focus:outline-none focus:ring-2 focus:ring-[#A16207]/30"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] tracking-widest uppercase font-mono text-black/40 mb-1">
+                    Heures M.O.
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0.5"
+                    step="0.5"
+                    value={devisHeures}
+                    onChange={(e) => setDevisHeures(Math.max(0.5, parseFloat(e.target.value) || 0))}
+                    className="w-full px-4 py-3 rounded-2xl bg-white ring-1 ring-black/[0.06] text-[15px] font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-[#A16207]/30"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] tracking-widest uppercase font-mono text-black/40 mb-1">
+                    Taux €/h HT
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="1"
+                    value={devisTauxHoraire}
+                    onChange={(e) => setDevisTauxHoraire(Math.max(0, parseFloat(e.target.value) || 0))}
+                    className="w-full px-4 py-3 rounded-2xl bg-white ring-1 ring-black/[0.06] text-[15px] font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-[#A16207]/30"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] tracking-widest uppercase font-mono text-black/40 mb-1">
+                  Forfait déplacement HT
+                </label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="5"
+                  value={devisForfaitDeplacement}
+                  onChange={(e) => setDevisForfaitDeplacement(Math.max(0, parseFloat(e.target.value) || 0))}
+                  className="w-full px-4 py-3 rounded-2xl bg-white ring-1 ring-black/[0.06] text-[15px] font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-[#A16207]/30"
+                />
+                <div className="mt-1 text-[11px] text-black/45 leading-snug px-1">
+                  Mettre 0 pour ne pas inclure le déplacement.
+                </div>
+              </div>
+
+              {/* Resume lignes auto-generees */}
+              {intervention && (
+                <div className="px-4 py-3 rounded-2xl bg-[#A16207]/8 ring-1 ring-[#A16207]/15">
+                  <div className="text-[10px] font-mono tracking-widest uppercase text-[#A16207] mb-2">
+                    Lignes pré-remplies (modifiables après génération)
+                  </div>
+                  <ul className="space-y-1.5 text-[12px] text-[#111] leading-snug">
+                    <li>• Main d&apos;œuvre : {devisHeures}h × {devisTauxHoraire}€ = {(devisHeures * devisTauxHoraire).toFixed(2)}€</li>
+                    {intervention.weight > 0 &&
+                      intervention.typeIntervention !== "recuperation" &&
+                      intervention.typeIntervention !== "demantelement" && (
+                        <li>• Fluide {intervention.fluide.code} : {intervention.weight.toFixed(3)} kg</li>
+                      )}
+                    {(intervention.typeIntervention === "controle_periodique" ||
+                      intervention.typeIntervention === "controle_non_periodique") && (
+                      <li>• Contrôle d&apos;étanchéité CERFA 15497*04 : 45€</li>
+                    )}
+                    {intervention.bsffId &&
+                      (intervention.typeIntervention === "recuperation" ||
+                        intervention.typeIntervention === "demantelement") && (
+                        <li>• Frais traitement filière + BSFF officiel : {intervention.weight.toFixed(3)} kg</li>
+                      )}
+                    {devisForfaitDeplacement > 0 && (
+                      <li>• Déplacement : {devisForfaitDeplacement}€ HT</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+
+              {devisError && (
+                <div className="px-4 py-3 rounded-2xl bg-red-50 text-red-700 text-[13px] border border-red-200">
+                  ❌ {devisError}
+                </div>
+              )}
+            </div>
+
+            <div className="px-5 py-3 border-t border-black/[0.06]">
+              <button
+                type="button"
+                onClick={handleGenerateDevisFromIntervention}
+                disabled={devisLoading || !devisClientNom.trim()}
+                className="block w-full px-6 py-4 rounded-2xl bg-[#A16207] text-white text-[15px] font-medium text-center active:bg-[#8a5206] transition-colors disabled:opacity-60"
+                style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+              >
+                {devisLoading ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="inline-block w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                    Génération du devis…
+                  </span>
+                ) : (
+                  "💰 Générer le devis PDF"
+                )}
+              </button>
+              <div className="text-[10.5px] text-black/40 leading-snug text-center mt-2">
+                PDF avec ton logo + signature + CGV. Téléchargement direct.
+              </div>
             </div>
           </Drawer.Content>
         </Drawer.Portal>

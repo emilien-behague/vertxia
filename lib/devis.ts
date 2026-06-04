@@ -295,6 +295,241 @@ export function buildDevisFromDiagnostic(input: {
   };
 }
 
+// ─── Construction d'un devis depuis une INTERVENTION enregistree ────────
+//
+// Cas d'usage different du diagnostic IA : l'intervention a deja ete
+// effectuee (controle d'etancheite annuel, maintenance preventive,
+// recuperation BSFF, etc.). On veut generer le devis/facture pour
+// facturer le client APRES intervention.
+//
+// Strategie de ventilation :
+// - Main d'oeuvre : heures × taux horaire (heures par defaut selon type
+//   intervention, modifiable par l'utilisateur)
+// - Fluide : si recuperation/recharge → quantite kg × prix kg fluide
+// - Contrôle reglementaire : si type controle_* → ligne dediee CERFA
+// - BSFF/cession : si bsffId → ligne "frais de traitement filiere"
+// - Deplacement : forfait configurable (60 EUR HT par defaut)
+// - Ligne libre "Pieces" laissee a 0 pour edition manuelle V2
+
+// Heures de main d'oeuvre estimees par defaut selon type intervention
+// (basees sur fourchettes terrain frigoristes pros FR).
+const HEURES_MO_PAR_TYPE: Record<string, number> = {
+  recuperation: 2,
+  demantelement: 4,
+  controle_periodique: 1,
+  controle_non_periodique: 1.5,
+  mise_service: 4,
+  maintenance: 1.5,
+  assemblage: 6,
+  modification: 3,
+};
+
+export function estimerHeuresMOFromTypeIntervention(typeIntervention: string): number {
+  return HEURES_MO_PAR_TYPE[typeIntervention] ?? 1.5;
+}
+
+// Prix indicatif HT par kg de fluide frigorigene marche FR 2026.
+// Estimations marche (regle #26 CLAUDE.md), a affiner avec marges pro.
+const PRIX_KG_FLUIDE_HT: Record<string, number> = {
+  "R-22": 80, // HCFC legacy maintenance retrofit
+  "R-32": 35,
+  "R-134A": 55,
+  "R-410A": 65,
+  "R-404A": 95, // phase-out -> prix tendu
+  "R-407C": 60,
+  "R-407F": 55,
+  "R-448A": 75,
+  "R-449A": 75,
+  "R-452A": 70,
+  "R-454B": 75,
+  "R-454C": 80,
+  "R-1234YF": 150,
+  "R-1234ZE": 120,
+  "R-450A": 75,
+  "R-455A": 85,
+  "R-513A": 70,
+  "R-290": 25, // propane naturel
+  "R-744": 15, // CO2
+  "R-717": 12, // NH3
+  "R-600A": 30, // isobutane
+};
+
+export function prixKgFluideHt(codeFluide: string): number {
+  const code = codeFluide.toUpperCase().replace(/\s+/g, "");
+  return PRIX_KG_FLUIDE_HT[code] ?? 60; // defaut prudent 60 EUR/kg
+}
+
+const FORFAIT_DEPLACEMENT_HT = 60;
+
+const LABEL_TYPE_INTERVENTION: Record<string, string> = {
+  recuperation: "Récupération de fluide frigorigène",
+  demantelement: "Démantèlement d'équipement",
+  controle_periodique: "Contrôle d'étanchéité périodique",
+  controle_non_periodique: "Contrôle d'étanchéité suite fuite",
+  mise_service: "Mise en service",
+  maintenance: "Maintenance préventive",
+  assemblage: "Assemblage / montage initial",
+  modification: "Modification d'équipement",
+};
+
+/**
+ * Construit un devis pre-rempli depuis une intervention enregistree.
+ * Cas d'usage post-intervention : facturer ce qui a ete fait.
+ *
+ * Lignes generees automatiquement :
+ *  - Main d'oeuvre : heures × taux horaire (heures par defaut selon type
+ *    intervention, override possible via param heuresMainOeuvre)
+ *  - Fluide : si quantiteFluideKg > 0 → ligne fluide × prix kg
+ *  - Controle reglementaire : si type controle_* → ligne dediee CERFA
+ *  - Frais traitement BSFF : si hasBsff = true → ligne dediee filiere R5/D10
+ *  - Deplacement : forfait fixe (configurable via forfaitDeplacementHt)
+ */
+export function buildDevisFromIntervention(input: {
+  intervention: {
+    id: string;
+    typeIntervention: string;
+    fluide: { code: string; label: string };
+    weight: number;
+    bsffId?: string;
+    modeleEquipement?: string;
+    numeroSerieEquipement?: string;
+    createdAt: string;
+  };
+  emetteur: Devis["emetteur"];
+  destinataire: Devis["destinataire"];
+  numero?: string;
+  /** Override des heures de main d'oeuvre. Si non fourni, utilise la
+   *  valeur par defaut selon le type d'intervention. */
+  heuresMainOeuvre?: number;
+  /** Override du taux horaire HT. Defaut 65 EUR/h. */
+  tauxHoraireHT?: number;
+  /** Override du forfait deplacement. Defaut 60 EUR HT. */
+  forfaitDeplacementHt?: number;
+}): Devis {
+  const { intervention, emetteur, destinataire, numero } = input;
+  const tauxHoraire = input.tauxHoraireHT && input.tauxHoraireHT > 0
+    ? input.tauxHoraireHT
+    : TAUX_HORAIRE_DEFAUT;
+  const heures = input.heuresMainOeuvre && input.heuresMainOeuvre > 0
+    ? input.heuresMainOeuvre
+    : estimerHeuresMOFromTypeIntervention(intervention.typeIntervention);
+  const forfaitDeplacement = typeof input.forfaitDeplacementHt === "number"
+    ? input.forfaitDeplacementHt
+    : FORFAIT_DEPLACEMENT_HT;
+
+  const labelType = LABEL_TYPE_INTERVENTION[intervention.typeIntervention]
+    ?? intervention.typeIntervention;
+
+  const equipementLabel = intervention.modeleEquipement
+    ? `${intervention.modeleEquipement}${intervention.numeroSerieEquipement ? ` (n° ${intervention.numeroSerieEquipement})` : ""}`
+    : "équipement frigorifique";
+
+  const lignes: DevisLigne[] = [];
+
+  // Ligne 1 : Main d'oeuvre
+  const totalMO = round2(heures * tauxHoraire);
+  lignes.push({
+    designation: "Main d'œuvre",
+    detail: `${labelType} sur ${equipementLabel}`,
+    quantite: heures,
+    unite: "h",
+    prixUnitaireHT: round2(tauxHoraire),
+    montantHT: totalMO,
+  });
+
+  // Ligne 2 : Fluide (si quantite manipulee > 0)
+  const quantiteFluide = intervention.weight;
+  if (quantiteFluide > 0) {
+    const prixKg = prixKgFluideHt(intervention.fluide.code);
+    const totalFluide = round2(quantiteFluide * prixKg);
+    // Pour une recuperation : fluide recupere, pas facture au client (sauf
+    // si on facture des frais de traitement separes ci-dessous).
+    // Pour une recharge/maintenance/mise_service : fluide consomme facture.
+    if (
+      intervention.typeIntervention !== "recuperation" &&
+      intervention.typeIntervention !== "demantelement"
+    ) {
+      lignes.push({
+        designation: `Fluide ${intervention.fluide.code}`,
+        detail: `Recharge ${quantiteFluide.toFixed(3)} kg — ${intervention.fluide.label}`,
+        quantite: round2(quantiteFluide),
+        unite: "kg",
+        prixUnitaireHT: round2(prixKg),
+        montantHT: totalFluide,
+      });
+    }
+  }
+
+  // Ligne 3 : Controle reglementaire CERFA si type controle_*
+  if (
+    intervention.typeIntervention === "controle_periodique" ||
+    intervention.typeIntervention === "controle_non_periodique"
+  ) {
+    lignes.push({
+      designation: "Contrôle d'étanchéité réglementaire",
+      detail: "Génération CERFA 15497*04 + détection fuite NF EN 14624 + signature détenteur",
+      quantite: 1,
+      unite: "forfait",
+      prixUnitaireHT: 45,
+      montantHT: 45,
+    });
+  }
+
+  // Ligne 4 : Frais traitement BSFF si recuperation/demantelement
+  if (
+    intervention.bsffId &&
+    (intervention.typeIntervention === "recuperation" ||
+      intervention.typeIntervention === "demantelement")
+  ) {
+    // Estimation moyenne frais traitement filiere R5/D10 selon fluide
+    const prixKgTraitement = prixKgFluideHt(intervention.fluide.code) * 0.15; // ~15% prix neuf
+    const totalTraitement = round2(quantiteFluide * prixKgTraitement);
+    lignes.push({
+      designation: "Frais de traitement filière",
+      detail: `Récupération ${quantiteFluide.toFixed(3)} kg ${intervention.fluide.code} + BSFF officiel TrackDéchets`,
+      quantite: round2(quantiteFluide),
+      unite: "kg",
+      prixUnitaireHT: round2(prixKgTraitement),
+      montantHT: totalTraitement,
+    });
+  }
+
+  // Ligne 5 : Deplacement (forfait)
+  if (forfaitDeplacement > 0) {
+    lignes.push({
+      designation: "Frais de déplacement",
+      detail: "Aller-retour sur site",
+      quantite: 1,
+      unite: "forfait",
+      prixUnitaireHT: round2(forfaitDeplacement),
+      montantHT: round2(forfaitDeplacement),
+    });
+  }
+
+  const tauxTVA = TAUX_TVA_DEFAUT;
+  const totaux = computeTotaux(lignes, tauxTVA);
+
+  const today = new Date();
+  const validite = new Date(today);
+  validite.setDate(validite.getDate() + VALIDITE_JOURS_DEFAUT);
+
+  const noteIntro = `Suite à l'intervention ${labelType.toLowerCase()} réalisée le ${new Date(intervention.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })} sur ${equipementLabel}, voici le récapitulatif de la prestation.`;
+
+  return {
+    numero,
+    dateISO: today.toISOString(),
+    validiteISO: validite.toISOString(),
+    emetteur,
+    destinataire,
+    lignes,
+    tauxTVA,
+    totaux,
+    conditionsPaiement:
+      "Paiement à réception de facture sous 30 jours. Pénalités de retard : 3 fois le taux d'intérêt légal en vigueur.",
+    noteIntro,
+  };
+}
+
 /** Genere un numero de devis simple, idempotent dans la session : prefixe
  *  DEV + annee + timestamp court. Pour V2 on stockera en base et on
  *  incrementera un compteur entreprise. */
