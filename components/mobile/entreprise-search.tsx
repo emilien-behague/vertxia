@@ -6,17 +6,18 @@
 // Le user tape "Climalife" ou "31025920500014" → dropdown des établissements
 // matchant → clic = callback onSelect avec l'établissement complet.
 //
-// Utilisé pour la sélection du centre de destination du BSFF dans /m/profil.
+// Le dropdown est porté via createPortal vers document.body avec position
+// fixed pour sortir des overflow:hidden des ancêtres (InsetListSection clip
+// sinon les résultats à 50% sous le footer de la section).
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { searchEntreprises, type SiretLookupResult } from "@/lib/siret";
 
 type Props = {
   onSelect: (result: SiretLookupResult) => void;
   placeholder?: string;
-  /** Texte initial dans l'input (ex: nom de l'établissement déjà sélectionné) */
   initialValue?: string;
-  /** ID input pour focus auto + label association */
   inputId?: string;
 };
 
@@ -31,8 +32,13 @@ export function EntrepriseSearch({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState<CSSProperties>({});
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
   const lastQueryRef = useRef<string>("");
+
+  useEffect(() => setMounted(true), []);
 
   // Debounce search 300ms après dernière frappe
   useEffect(() => {
@@ -51,7 +57,6 @@ export function EntrepriseSearch({
       setError(null);
       try {
         const list = await searchEntreprises(trimmed, 8);
-        // Ignore réponse si la query a changé entre-temps
         if (trimmed !== lastQueryRef.current) return;
         setResults(list);
       } catch (e) {
@@ -65,11 +70,39 @@ export function EntrepriseSearch({
     return () => clearTimeout(t);
   }, [query]);
 
-  // Fermer le dropdown au clic en dehors
+  // Calcule la position du dropdown sous l'input à chaque ouverture / scroll / resize.
+  // Important : on utilise position:fixed pour échapper aux overflow:hidden des ancêtres
+  // (notamment <InsetListSection> qui clipperait sinon).
+  useEffect(() => {
+    if (!open) return;
+    function updatePosition() {
+      if (!inputRef.current) return;
+      const rect = inputRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        position: "fixed",
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 1000,
+        maxHeight: Math.min(320, window.innerHeight - rect.bottom - 16),
+      });
+    }
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open, results.length, busy, error]);
+
+  // Fermer le dropdown au clic en dehors (input ET dropdown)
   useEffect(() => {
     function onClick(e: MouseEvent | TouchEvent) {
-      if (!wrapRef.current) return;
-      if (!wrapRef.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (inputRef.current?.contains(target)) return;
+      if (dropdownRef.current?.contains(target)) return;
+      setOpen(false);
     }
     document.addEventListener("mousedown", onClick);
     document.addEventListener("touchstart", onClick);
@@ -86,11 +119,62 @@ export function EntrepriseSearch({
     setOpen(false);
   }
 
-  const showDropdown = open && (busy || error || results.length > 0 || (query.trim().length >= 2 && !busy && results.length === 0));
+  const trimmed = query.trim();
+  const showDropdown =
+    open &&
+    (busy ||
+      Boolean(error) ||
+      results.length > 0 ||
+      (trimmed.length >= 2 && !busy && results.length === 0));
+
+  const dropdown = showDropdown && mounted ? (
+    <div
+      ref={dropdownRef}
+      style={dropdownStyle}
+      className="bg-white rounded-2xl shadow-2xl border border-black/10 overflow-y-auto overscroll-contain"
+    >
+      {busy && (
+        <div className="px-4 py-3 text-[12px] text-black/55 flex items-center gap-2">
+          <span className="inline-block w-3 h-3 border-2 border-black/20 border-t-[#A16207] rounded-full animate-spin" />
+          Recherche dans l&apos;annuaire officiel…
+        </div>
+      )}
+      {!busy && error && (
+        <div className="px-4 py-3 text-[12px] text-red-600">{error}</div>
+      )}
+      {!busy && !error && results.length === 0 && trimmed.length >= 2 && (
+        <div className="px-4 py-3 text-[12px] text-black/45">
+          Aucun établissement trouvé. Vérifie l&apos;orthographe ou tape un SIRET.
+        </div>
+      )}
+      {!busy && !error && results.map((r) => (
+        <button
+          key={r.siret}
+          type="button"
+          onClick={() => handleSelect(r)}
+          className="w-full text-left px-4 py-3 border-b border-black/[0.04] last:border-b-0 active:bg-black/[0.04] transition-colors"
+          style={{ WebkitTapHighlightColor: "transparent" }}
+        >
+          <div className="text-[13px] font-medium text-[#111] leading-tight">
+            {r.raisonSociale}
+          </div>
+          <div className="text-[11px] text-black/55 font-mono mt-0.5">
+            SIRET {r.siret}
+          </div>
+          {(r.adresseRue || r.commune) && (
+            <div className="text-[11px] text-black/45 mt-0.5 truncate">
+              {[r.adresseRue, r.commune].filter(Boolean).join(" — ")}
+            </div>
+          )}
+        </button>
+      ))}
+    </div>
+  ) : null;
 
   return (
-    <div ref={wrapRef} className="relative">
+    <>
       <input
+        ref={inputRef}
         id={inputId}
         type="text"
         value={query}
@@ -104,45 +188,7 @@ export function EntrepriseSearch({
         spellCheck={false}
         className="input-mobile w-full"
       />
-      {showDropdown && (
-        <div className="absolute z-30 left-0 right-0 mt-1 bg-white rounded-2xl shadow-xl border border-black/10 max-h-72 overflow-y-auto overscroll-contain">
-          {busy && (
-            <div className="px-4 py-3 text-[12px] text-black/55 flex items-center gap-2">
-              <span className="inline-block w-3 h-3 border-2 border-black/20 border-t-[#A16207] rounded-full animate-spin" />
-              Recherche dans l&apos;annuaire officiel…
-            </div>
-          )}
-          {!busy && error && (
-            <div className="px-4 py-3 text-[12px] text-red-600">{error}</div>
-          )}
-          {!busy && !error && results.length === 0 && query.trim().length >= 2 && (
-            <div className="px-4 py-3 text-[12px] text-black/45">
-              Aucun établissement trouvé. Vérifie l&apos;orthographe ou tape un SIRET.
-            </div>
-          )}
-          {!busy && !error && results.map((r) => (
-            <button
-              key={r.siret}
-              type="button"
-              onClick={() => handleSelect(r)}
-              className="w-full text-left px-4 py-3 border-b border-black/[0.04] last:border-b-0 active:bg-black/[0.04] transition-colors"
-              style={{ WebkitTapHighlightColor: "transparent" }}
-            >
-              <div className="text-[13px] font-medium text-[#111] leading-tight">
-                {r.raisonSociale}
-              </div>
-              <div className="text-[11px] text-black/55 font-mono mt-0.5">
-                SIRET {r.siret}
-              </div>
-              {(r.adresseRue || r.commune) && (
-                <div className="text-[11px] text-black/45 mt-0.5 truncate">
-                  {[r.adresseRue, r.commune].filter(Boolean).join(" — ")}
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+      {dropdown && mounted && createPortal(dropdown, document.body)}
+    </>
   );
 }
