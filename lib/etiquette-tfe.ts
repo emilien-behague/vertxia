@@ -72,11 +72,21 @@ function nextControleDate(intervention: StoredIntervention): string | null {
 export async function generateEtiquetteTfe(
   intervention: StoredIntervention,
   profil: Profil,
-  origin: string
+  origin: string,
+  options: { equipementIdOverride?: string } = {}
 ): Promise<Blob> {
-  // QR code pointe vers la fiche intervention publique (a defaut, l'historique
-  // qui demande login). Le scan d'un futur technicien ouvre Vertxia.
-  const targetUrl = `${origin.replace(/\/$/, "")}/m/historique/${intervention.id}`;
+  // QR code pointe vers la fiche PUBLIQUE de l'equipement (/eq/<id>) qui
+  // fetch depuis Supabase sans auth. Le prochain technicien qui scanne
+  // (meme 6 mois plus tard sur un autre device) voit l'historique complet.
+  //
+  // Fallback : si l'intervention n'a pas d'equipementId stocke (interventions
+  // creees avant ce fix), on pointe vers la landing vertxia.com qui ne
+  // casse pas (mais perd la valeur du QR). L'override permet a l'appelant
+  // de fournir l'equipementId via lookup local par modele+serie.
+  const equipementId = options.equipementIdOverride ?? intervention.equipementId;
+  const targetUrl = equipementId
+    ? `${origin.replace(/\/$/, "")}/eq/${equipementId}`
+    : `${origin.replace(/\/$/, "")}`;
   const qrDataUrl = await QRCode.toDataURL(targetUrl, {
     errorCorrectionLevel: "M",
     margin: 1,

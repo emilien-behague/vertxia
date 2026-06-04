@@ -43,6 +43,10 @@ export type StoredIntervention = {
   /** Si l'intervention a ete creee depuis un diagnostic IA, on garde la ref
    *  pour afficher la photo + composant identifie sur la page detail. */
   diagnosticId?: string;
+  /** ID de l'equipement parent dans le parc. Persiste localement (pas
+   *  seulement dans le sync Supabase) pour pouvoir generer un QR de l'etiquette
+   *  TFE qui pointe vers /eq/<id> (page publique avec historique). */
+  equipementId?: string;
 };
 
 function isBrowser(): boolean {
@@ -78,6 +82,9 @@ export function saveIntervention(
     ...rest,
     id: uuid(),
     createdAt: new Date().toISOString(),
+    // Persiste l'equipementId en local pour pouvoir generer l'etiquette TFE
+    // avec QR -> /eq/<id> meme sans roundtrip Supabase.
+    equipementId,
   };
   const all = listInterventions();
   all.unshift(entry);

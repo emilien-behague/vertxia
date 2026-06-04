@@ -274,7 +274,29 @@ export default function MobileInterventionDetailPage() {
     try {
       const profil = loadProfil();
       const origin = typeof window !== "undefined" ? window.location.origin : "https://vertxia.com";
-      const blob = await generateEtiquetteTfe(intervention, profil, origin);
+
+      // Pour les interventions creees AVANT le fix qui stocke equipementId :
+      // lookup dans le parc local par modele + numero de serie pour retrouver
+      // l'equipement parent. Si trouve, on l'utilise pour le QR.
+      let equipementIdOverride: string | undefined;
+      if (!intervention.equipementId && (intervention.modeleEquipement || intervention.numeroSerieEquipement)) {
+        try {
+          const { listEquipements } = await import("@/lib/equipement");
+          const eqs = listEquipements();
+          const match = eqs.find(
+            (e) =>
+              (intervention.numeroSerieEquipement && e.numeroSerie === intervention.numeroSerieEquipement) ||
+              (intervention.modeleEquipement && e.modele === intervention.modeleEquipement && e.clientName === intervention.clientName)
+          );
+          if (match) equipementIdOverride = match.id;
+        } catch {
+          // Silencieux : si le lookup foire, on tombera sur le fallback landing
+        }
+      }
+
+      const blob = await generateEtiquetteTfe(intervention, profil, origin, {
+        equipementIdOverride,
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
