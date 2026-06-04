@@ -41,6 +41,7 @@ function HistoriqueContent() {
 
   const [allInterventions, setAllInterventions] = useState<StoredIntervention[]>([]);
   const [equipement, setEquipement] = useState<StoredEquipement | null>(null);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     // 1. Interventions locales (les miennes, stockées sur ce device)
@@ -106,13 +107,37 @@ function HistoriqueContent() {
   }, [eqIdParam]);
 
   // Filtre par numéro de série de l'équipement (lien : intervention.numeroSerieEquipement)
-  const interventions = useMemo(() => {
+  const byEquipement = useMemo(() => {
     if (!equipement) return allInterventions;
     const target = equipement.numeroSerie.trim().toLowerCase();
     return allInterventions.filter(
       (i) => i.numeroSerieEquipement?.trim().toLowerCase() === target
     );
   }, [allInterventions, equipement]);
+
+  // Recherche libre : match insensible casse sur client, modèle, n° de série,
+  // fluide (code + label), type d'intervention, lieu, notes. Multi-mots = AND
+  // (chaque mot doit matcher au moins un champ).
+  const interventions = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return byEquipement;
+    const terms = q.split(/\s+/).filter(Boolean);
+    return byEquipement.filter((i) => {
+      const haystack = [
+        i.clientName ?? "",
+        i.modeleEquipement ?? "",
+        i.numeroSerieEquipement ?? "",
+        i.fluide?.code ?? "",
+        i.fluide?.label ?? "",
+        TYPE_LABELS[i.typeIntervention] ?? i.typeIntervention,
+        i.lieuIntervention ?? "",
+        i.notes ?? "",
+      ]
+        .join(" ")
+        .toLowerCase();
+      return terms.every((t) => haystack.includes(t));
+    });
+  }, [byEquipement, search]);
 
   const stats = useMemo(() => getStats(interventions), [interventions]);
 
@@ -167,8 +192,45 @@ function HistoriqueContent() {
         </div>
       )}
 
-      {/* Stats inline */}
+      {/* Barre de recherche libre — match sur client, modèle, n° de série,
+          fluide, type, lieu, notes. */}
       <section className="px-4 mt-2">
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </span>
+          <input
+            type="search"
+            inputMode="search"
+            enterKeyHint="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Client, équipement, n° série, fluide…"
+            className="w-full h-11 pl-9 pr-9 rounded-2xl bg-black/[0.04] text-[14px] text-[#111] placeholder:text-black/40 outline-none focus:bg-black/[0.06] transition-colors"
+            style={{ WebkitTapHighlightColor: "transparent" }}
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 inline-flex items-center justify-center rounded-full text-black/45 active:bg-black/10"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+              aria-label="Effacer"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </section>
+
+      {/* Stats inline */}
+      <section className="px-4 mt-3">
         <div className="grid grid-cols-3 gap-2.5">
           <Stat label="Total" value={stats.total} />
           <Stat label="Ce mois" value={stats.thisMonth} />
@@ -185,11 +247,13 @@ function HistoriqueContent() {
             </svg>
           </div>
           <div className="text-[15px] text-black/55">
-            {equipement
-              ? "Aucune intervention sur cet équipement"
-              : "Aucune intervention enregistrée"}
+            {search
+              ? `Aucun résultat pour « ${search} »`
+              : equipement
+                ? "Aucune intervention sur cet équipement"
+                : "Aucune intervention enregistrée"}
           </div>
-          {equipement && (
+          {equipement && !search && (
             <Link
               href={`/m/intervention/nouvelle?equipement=${equipement.id}`}
               className="inline-block mt-4 px-5 py-3 rounded-2xl bg-[#111] text-white text-[14px] font-medium active:bg-black/90"
