@@ -13,7 +13,7 @@ import {
   type EquipementWithStatus,
   type ControleStatut,
 } from "@/lib/equipement";
-import { detectPredictiveSignals } from "@/lib/predictive-maintenance";
+import { detectPredictiveSignals, type SignalGravite } from "@/lib/predictive-maintenance";
 import { downloadStickerSheet } from "@/lib/qrcode-client";
 
 type Filter = "all" | "a_risque" | "en_retard" | "a_relancer" | "a_programmer" | "ok";
@@ -66,19 +66,32 @@ export default function MobileEquipementsPage() {
 
   const stats = useMemo(() => getEquipementStats(items), [items]);
 
-  // Set des IDs d'equipements avec signaux predictifs (alerte ou critique).
-  // Surveillance seul ne compte pas — trop bruyant pour un filtre dashboard.
+  // Map des IDs d'equipements -> gravite max du signal predictif detecte.
+  // Permet d'afficher visuellement le dot en rouge (critique) ou orange
+  // (alerte) directement sur la ligne dans la liste. Surveillance seul ne
+  // compte pas (trop bruyant pour un dashboard).
   const equipementsARisque = useMemo(() => {
     const allInterv = listInterventions();
     const allDiag = listDiagnostics();
-    const set = new Set<string>();
+    const map = new Map<string, SignalGravite>();
     for (const eq of items) {
       const sigs = detectPredictiveSignals(eq, allInterv, allDiag);
-      if (sigs.some((s) => s.gravite === "critique" || s.gravite === "alerte")) {
-        set.add(eq.id);
+      let worstGravite: SignalGravite | null = null;
+      for (const s of sigs) {
+        if (s.gravite === "critique") {
+          worstGravite = "critique";
+          break;
+        }
+        if (s.gravite === "alerte") {
+          worstGravite = "alerte";
+          // pas de break — on continue a chercher un eventuel "critique"
+        }
+      }
+      if (worstGravite) {
+        map.set(eq.id, worstGravite);
       }
     }
-    return set;
+    return map;
   }, [items]);
 
   const filtered = useMemo(() => {
@@ -176,9 +189,29 @@ export default function MobileEquipementsPage() {
               key={eq.id}
               href={`/eq/${eq.id}`}
               leading={
-                <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-black/[0.04]">
-                  <span className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT[eq.statut]}`} />
-                </span>
+                (() => {
+                  // Le dot reflete en priorite un signal predictif (rouge si
+                  // critique, orange si alerte), sinon le statut reglementaire.
+                  // Un eq en risque DOIT sauter aux yeux dans la liste, meme
+                  // s'il est techniquement "exempte" cote controle d'etancheite.
+                  const risque = equipementsARisque.get(eq.id);
+                  const dotClass = risque === "critique"
+                    ? "bg-red-500"
+                    : risque === "alerte"
+                      ? "bg-orange-500"
+                      : STATUS_DOT[eq.statut];
+                  const bgClass = risque
+                    ? risque === "critique" ? "bg-red-50" : "bg-orange-50"
+                    : "bg-black/[0.04]";
+                  return (
+                    <span className={`relative inline-flex items-center justify-center w-9 h-9 rounded-full ${bgClass}`}>
+                      {risque === "critique" && (
+                        <span className="absolute inset-0 rounded-full bg-red-500/30 animate-ping" />
+                      )}
+                      <span className={`relative w-2.5 h-2.5 rounded-full ${dotClass}`} />
+                    </span>
+                  );
+                })()
               }
               label={eq.modele}
               sublabel={
