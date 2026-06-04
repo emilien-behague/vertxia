@@ -901,6 +901,7 @@ function NouvelleInterventionContent() {
           hasDetenteurSignature: Boolean(detenteurSignaturePayload),
           detenteurName: detenteurSignaturePayload ? detenteurSignaturePayload.name : undefined,
           detenteurQuality: detenteurSignaturePayload?.quality,
+          diagnosticId: diagIdParam || undefined,
         });
       } catch {}
 

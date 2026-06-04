@@ -10,6 +10,9 @@ import {
   type StoredIntervention,
 } from "@/lib/intervention-storage";
 import { loadProfil } from "@/lib/profil";
+import { getDiagnostic, type StoredDiagnostic } from "@/lib/diagnostic-storage";
+import { GRAVITE_LABELS, GRAVITE_STYLES, DELAI_LABELS } from "@/lib/vision-diagnostic";
+import Link from "next/link";
 
 type BsffStatus = {
   bsffId: string;
@@ -44,6 +47,7 @@ export default function MobileInterventionDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [intervention, setIntervention] = useState<StoredIntervention | null>(null);
+  const [diagnostic, setDiagnostic] = useState<StoredDiagnostic | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [cerfaLoading, setCerfaLoading] = useState(false);
   const [cerfaError, setCerfaError] = useState<string | null>(null);
@@ -184,7 +188,13 @@ export default function MobileInterventionDetailPage() {
 
   useEffect(() => {
     if (!params?.id) return;
-    setIntervention(getIntervention(params.id));
+    const it = getIntervention(params.id);
+    setIntervention(it);
+    // Si l'intervention a ete creee depuis un diagnostic IA, charge le diag
+    // pour afficher photo + composant identifie. Silencieux si diag supprime.
+    if (it?.diagnosticId) {
+      setDiagnostic(getDiagnostic(it.diagnosticId));
+    }
     setLoaded(true);
   }, [params?.id]);
 
@@ -530,6 +540,85 @@ export default function MobileInterventionDetailPage() {
                 ↻ Actualiser
               </button>
             )}
+          </div>
+        </InsetListSection>
+      )}
+
+      {/* Diagnostic IA d'origine — affiche la photo + composant + defauts si
+          l'intervention a ete creee depuis un diag IA */}
+      {diagnostic && (
+        <InsetListSection title="Diagnostic IA d'origine">
+          <div className="px-4 py-3 space-y-3">
+            {/* Photo */}
+            <div className="rounded-xl overflow-hidden ring-1 ring-black/[0.06] bg-white">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={diagnostic.imageDataUrl}
+                alt="Composant diagnostiqué"
+                className="w-full h-auto block max-h-64 object-cover"
+              />
+            </div>
+
+            {/* Composant + confiance */}
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-black/45 font-medium mb-0.5">
+                Composant identifié
+              </div>
+              <div className="text-[15px] font-semibold text-[#111] leading-tight">
+                {diagnostic.result.composantIdentifie || "Non identifié"}
+              </div>
+            </div>
+
+            {/* Defauts list */}
+            {diagnostic.result.defautsDetectes.length > 0 && (
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-black/45 font-medium mb-1.5">
+                  Défauts détectés ({diagnostic.result.defautsDetectes.length})
+                </div>
+                <ul className="space-y-1.5">
+                  {diagnostic.result.defautsDetectes.map((d, i) => {
+                    const s = GRAVITE_STYLES[d.gravite];
+                    return (
+                      <li key={i} className="flex items-start gap-2">
+                        <div className={`shrink-0 w-2 h-2 rounded-full mt-1.5 ${s.dot}`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-medium text-[#111] leading-snug">
+                            {d.nom}
+                            <span className={`ml-1.5 text-[9px] uppercase tracking-wider font-medium px-1.5 py-0.5 rounded ring-1 ${s.bg} ${s.text} ${s.ring}`}>
+                              {GRAVITE_LABELS[d.gravite]}
+                            </span>
+                          </div>
+                          <div className="text-[12px] text-black/60 mt-0.5 leading-snug">
+                            {d.description}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+
+            {/* Action + delai */}
+            {diagnostic.result.actionRecommandee && (
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-black/45 font-medium mb-0.5">
+                  Action recommandée · {DELAI_LABELS[diagnostic.result.delaiIntervention]}
+                </div>
+                <div className="text-[13px] text-[#111] leading-snug">
+                  {diagnostic.result.actionRecommandee}
+                </div>
+              </div>
+            )}
+
+            {/* Lien vers le diagnostic complet */}
+            <Link
+              href={`/m/diagnostic/${diagnostic.id}`}
+              className="block w-full text-center px-4 py-2.5 rounded-xl bg-[#A16207]/10 text-[#A16207] text-[13px] font-medium active:bg-[#A16207]/20 transition-colors"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+            >
+              Voir le diagnostic complet
+            </Link>
           </div>
         </InsetListSection>
       )}

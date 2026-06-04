@@ -40,6 +40,9 @@ export type StoredIntervention = {
   detenteurQuality?: string;
   /** Notes libres saisies ou dictées par le technicien (observations terrain) */
   notes?: string;
+  /** Si l'intervention a ete creee depuis un diagnostic IA, on garde la ref
+   *  pour afficher la photo + composant identifie sur la page detail. */
+  diagnosticId?: string;
 };
 
 function isBrowser(): boolean {
