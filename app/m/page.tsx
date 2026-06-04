@@ -210,6 +210,13 @@ export default function MobileHomePage() {
             />
             <InsetRow href="/m/intervention" leading={<ActionIcon name="plus" />} label="Nouvelle intervention" showChevron />
             <InsetRow
+              href="/m/diagnostic"
+              leading={<ActionIcon name="camera" />}
+              label="Photo diagnostic IA"
+              sublabel="Composant suspect → cause + action + devis"
+              showChevron
+            />
+            <InsetRow
               href="/m/planning"
               leading={<ActionIcon name="calendar" />}
               label="Planning + carte"
@@ -333,7 +340,7 @@ function InterventionIcon({ type }: { type: string }) {
   );
 }
 
-function ActionIcon({ name }: { name: "plus" | "list" | "doc" | "warning" | "qr" | "calendar" }) {
+function ActionIcon({ name }: { name: "plus" | "list" | "doc" | "warning" | "qr" | "calendar" | "camera" }) {
   const colors = {
     plus: "bg-[#111] text-white",
     list: "bg-blue-50 text-blue-700",
@@ -341,6 +348,7 @@ function ActionIcon({ name }: { name: "plus" | "list" | "doc" | "warning" | "qr"
     warning: "bg-amber-50 text-amber-700",
     qr: "bg-[#A16207]/10 text-[#A16207]",
     calendar: "bg-emerald-50 text-emerald-700",
+    camera: "bg-pink-50 text-pink-700",
   };
   const paths = {
     plus: <path d="M12 5v14M5 12h14" />,
@@ -381,6 +389,12 @@ function ActionIcon({ name }: { name: "plus" | "list" | "doc" | "warning" | "qr"
         <line x1="16" y1="2" x2="16" y2="6" />
         <line x1="8" y1="2" x2="8" y2="6" />
         <line x1="3" y1="10" x2="21" y2="10" />
+      </>
+    ),
+    camera: (
+      <>
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+        <circle cx="12" cy="13" r="4" />
       </>
     ),
   };
