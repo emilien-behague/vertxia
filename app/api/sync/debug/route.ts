@@ -36,7 +36,7 @@ export async function GET() {
         (r) => r,
         () => ({ count: null, error: { message: "table diagnostics absente" } } as { count: number | null; error: { message: string } })
       ),
-      supabase.from("profiles").select("raison_sociale, telephone, email, numero_attestation").eq("user_id", user.id).maybeSingle(),
+      supabase.from("profils").select("raison_sociale, telephone, email, numero_attestation").eq("user_id", user.id).maybeSingle(),
     ]);
 
     const profilHasData = Boolean(

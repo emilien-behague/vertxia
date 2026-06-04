@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     // sur qu'elles existent (lues par /api/public/equipement/[id]) +
     // updated_at standard. Si tu veux pousser aussi siret/adresse/etc.,
     // verifie d'abord que les colonnes existent dans la table profiles.
-    const { error } = await supabase.from("profiles").upsert(
+    const { error } = await supabase.from("profils").upsert(
       {
         user_id: user.id,
         raison_sociale: body.raisonSociale?.trim() || null,
