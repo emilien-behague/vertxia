@@ -163,6 +163,86 @@ function ficheNumber(d: Date) {
   return `${yy}${m}${day}-${h}${mi}`;
 }
 
+// Remplace les caractères Unicode courants par leurs équivalents ASCII / Latin-1
+// pour éviter "WinAnsi cannot encode" — pdf-lib utilise Helvetica WinAnsi par
+// défaut sur les textfields du PDF officiel, qui ne supporte que ~190 glyphes.
+//
+// Si tu rencontres un nouveau caractère qui crash : ajoute-le dans la map.
+// Alternative future : embed une fonte Unicode (NotoSans) ~500KB — pour l'instant
+// on reste léger.
+function sanitizeForWinAnsi(s: string): string {
+  if (!s) return s;
+  const map: Record<string, string> = {
+    "→": "->",
+    "←": "<-",
+    "↑": "^",
+    "↓": "v",
+    "↔": "<->",
+    "⇒": "=>",
+    "✓": "OK",
+    "✗": "X",
+    "✘": "X",
+    "★": "*",
+    "☆": "*",
+    "●": "*",
+    "○": "o",
+    "•": "-",
+    "·": "-",
+    "—": "-",
+    "–": "-",
+    "‒": "-",
+    "‑": "-",
+    "“": '"',
+    "”": '"',
+    "„": '"',
+    "‘": "'",
+    "’": "'",
+    "‚": "'",
+    "…": "...",
+    "≈": "~",
+    "≠": "!=",
+    "≤": "<=",
+    "≥": ">=",
+    "±": "+/-",
+    "×": "x",
+    "÷": "/",
+    "∞": "inf",
+    "™": "(TM)",
+    "©": "(c)",
+    "®": "(R)",
+    "°": "deg",
+    "²": "2",
+    "³": "3",
+    "¹": "1",
+    "½": "1/2",
+    "¼": "1/4",
+    "¾": "3/4",
+    " ": " ", // NBSP
+    " ": " ", // NARROW NBSP
+    " ": " ", // THIN SPACE
+    "​": "",  // ZERO WIDTH SPACE
+    "﻿": "",  // BOM
+  };
+  // Replace mapped chars
+  let out = s;
+  for (const [from, to] of Object.entries(map)) {
+    if (out.includes(from)) out = out.split(from).join(to);
+  }
+  // Strip emojis (range BMP + supplemental) — pas dans WinAnsi
+  out = out.replace(
+    /[\u{1F300}-\u{1FAFF}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu,
+    ""
+  );
+  // Fallback : tout caractère hors Latin-1 restant → "?"
+  // (la BBox WinAnsi couvre ~0x00-0xFF + quelques extras 0x20AC etc.)
+  out = out.replace(/[Ā-￿]/g, (ch) => {
+    // Whitelist supplémentaires officiellement supportées par WinAnsi
+    if ("€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ".includes(ch)) return ch;
+    return "?";
+  });
+  return out;
+}
+
 export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
   const templatePath = path.join(
     process.cwd(),
@@ -197,7 +277,7 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
   const setText = (name: string, value: string, fontSize?: number) => {
     try {
       const f = form.getTextField(name);
-      f.setText(value);
+      f.setText(sanitizeForWinAnsi(value));
       if (fontSize !== undefined) f.setFontSize(fontSize);
     } catch {
       // champ absent : on ignore silencieusement
