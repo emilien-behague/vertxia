@@ -21,6 +21,12 @@ import {
   type DiagnosticResult,
 } from "@/lib/vision-diagnostic";
 import { saveDiagnostic, listDiagnostics } from "@/lib/diagnostic-storage";
+import { listInterventions } from "@/lib/intervention-storage";
+import { listEquipements } from "@/lib/equipement";
+import {
+  buildContextMemoryFromCurrentState,
+  type ContextMemory,
+} from "@/lib/context-memory";
 import {
   shareDiagnostic,
   buildDiagnosticWhatsAppUrl,
@@ -41,6 +47,10 @@ export default function DiagnosticPage() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [shareToast, setShareToast] = useState<string | null>(null);
   const [currentDiagId, setCurrentDiagId] = useState<string | null>(null);
+  // Memoire contextuelle utilisee pour le diagnostic en cours — sert a
+  // afficher un bandeau "L'IA a tenu compte de N elements de ton historique"
+  // apres le resultat, pour materialiser visuellement la difference.
+  const [ctxMemoryUsed, setCtxMemoryUsed] = useState<ContextMemory | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Compteur d'historique pour décider d'afficher le bouton "Historique" en haut
@@ -55,12 +65,31 @@ export default function DiagnosticPage() {
       const dataUrl = await compressImage(file);
       setImageDataUrl(dataUrl);
 
+      // Memoire contextuelle : on cherche dans l'historique du pro les
+      // diagnostics + interventions + equipements pertinents AVANT l'analyse.
+      // Le LLM recevra ce contexte injecte dans le user message et pourra
+      // ainsi citer des defauts deja vus, identifier des patterns, etc.
+      // En page diagnostic standalone on n'a pas d'equipement courant — la
+      // similitude se base donc sur le contexteNote libre du pro (ex: "fuite
+      // sur compresseur du restaurant Dupont" matchera les diagnostics ou
+      // interventions passes contenant ces tokens).
+      const ctxMemory = buildContextMemoryFromCurrentState(
+        { contexteNote: contexteNote.trim() || undefined },
+        {
+          interventions: listInterventions(),
+          diagnostics: listDiagnostics(),
+          equipements: listEquipements(),
+        }
+      );
+      setCtxMemoryUsed(ctxMemory.formattedForPrompt ? ctxMemory : null);
+
       const res = await fetch("/api/vision/diagnostic", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           imageDataUrl: dataUrl,
           contexteNote: contexteNote.trim() || undefined,
+          historiqueContexte: ctxMemory.formattedForPrompt || undefined,
         }),
       });
 
@@ -96,6 +125,7 @@ export default function DiagnosticPage() {
     setError(null);
     setContexteNote("");
     setCurrentDiagId(null);
+    setCtxMemoryUsed(null);
     setPhase("idle");
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -349,6 +379,58 @@ export default function DiagnosticPage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={imageDataUrl} alt="Composant analysé" className="w-full h-auto block max-h-64 object-cover" />
             </div>
+          )}
+
+          {/* Memoire contextuelle utilisee — materialise visuellement que
+              le diagnostic n'est PAS isole, l'IA a tenu compte du parc du pro.
+              Difference forte vs concurrent (F.i360°, ChatGPT brut). */}
+          {ctxMemoryUsed && (
+            <section className="rounded-2xl bg-[#A16207]/8 ring-1 ring-[#A16207]/20 px-4 py-3">
+              <div className="flex items-start gap-3">
+                <div className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#A16207] text-white">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 11H3v10h6V11zM21 3h-6v18h6V3zM15 7H9v14h6V7z" />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-[#A16207]">
+                    Mémoire contextuelle utilisée
+                  </div>
+                  <div className="mt-0.5 text-[12.5px] text-[#111] leading-snug">
+                    L&apos;IA a tenu compte de ton historique pour ce diagnostic :
+                  </div>
+                  <ul className="mt-1.5 space-y-0.5 text-[12px] text-black/70 leading-snug">
+                    {ctxMemoryUsed.pastInterventionsOnSameEquipement.length > 0 && (
+                      <li>
+                        • {ctxMemoryUsed.pastInterventionsOnSameEquipement.length} intervention
+                        {ctxMemoryUsed.pastInterventionsOnSameEquipement.length > 1 ? "s" : ""} sur ce même équipement
+                      </li>
+                    )}
+                    {ctxMemoryUsed.similarPastDiagnostics.length > 0 && (
+                      <li>
+                        • {ctxMemoryUsed.similarPastDiagnostics.length} diagnostic
+                        {ctxMemoryUsed.similarPastDiagnostics.length > 1 ? "s" : ""} similaire
+                        {ctxMemoryUsed.similarPastDiagnostics.length > 1 ? "s" : ""} dans ton historique
+                      </li>
+                    )}
+                    {ctxMemoryUsed.recurringDefauts.length > 0 && (
+                      <li>
+                        • {ctxMemoryUsed.recurringDefauts.length} pattern
+                        {ctxMemoryUsed.recurringDefauts.length > 1 ? "s" : ""} récurrent
+                        {ctxMemoryUsed.recurringDefauts.length > 1 ? "s" : ""} observé
+                        {ctxMemoryUsed.recurringDefauts.length > 1 ? "s" : ""} sur ton parc
+                      </li>
+                    )}
+                    {ctxMemoryUsed.similarEquipementsInPark.length > 0 && (
+                      <li>
+                        • {ctxMemoryUsed.similarEquipementsInPark.length} équipement
+                        {ctxMemoryUsed.similarEquipementsInPark.length > 1 ? "s" : ""} de modèle similaire dans le parc
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </section>
           )}
 
           {/* Composant identifié + confiance */}

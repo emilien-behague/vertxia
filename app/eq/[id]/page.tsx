@@ -21,6 +21,10 @@ import {
   SIGNAL_STYLES,
   type SignalPredictif,
 } from "@/lib/predictive-maintenance";
+import {
+  buildContextMemoryFromCurrentState,
+  type ContextMemory,
+} from "@/lib/context-memory";
 
 // Page mobile premium — affichée quand un technicien scanne le QR Code collé sur
 // un équipement. Doit s'afficher SANS bug sur Safari iOS (zéro animation initial:opacity:0
@@ -109,6 +113,7 @@ export default function EquipementScannedPage({
   const [mounted, setMounted] = useState(false);
   const [eq, setEq] = useState<EquipementWithStatus | null>(null);
   const [predictiveSignals, setPredictiveSignals] = useState<SignalPredictif[]>([]);
+  const [ctxMemory, setCtxMemory] = useState<ContextMemory | null>(null);
   const [profil, setProfil] = useState<Profil | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [qrError, setQrError] = useState<string | null>(null);
@@ -196,9 +201,23 @@ export default function EquipementScannedPage({
       if (found) {
         const interventions = listInterventions();
         const diagnostics = listDiagnostics();
+        const equipements = listEquipements();
         if (!cancelled) {
           setEq(computeStatus(found, interventions));
           setPredictiveSignals(detectPredictiveSignals(found, interventions, diagnostics));
+          setCtxMemory(
+            buildContextMemoryFromCurrentState(
+              {
+                equipement: {
+                  id: found.id,
+                  modele: found.modele,
+                  numeroSerie: found.numeroSerie,
+                  fluide: { code: found.fluide.code },
+                },
+              },
+              { interventions, diagnostics, equipements }
+            )
+          );
           setProfil(loadProfil());
           setIsReadOnly(false);
           setIsOwner(true);
@@ -226,16 +245,36 @@ export default function EquipementScannedPage({
         : [];
       if (cancelled) return;
       setEq(computeStatus(remote, remoteInterventions));
-      // Maintenance predictive : on l'execute uniquement en mode "full"
-      // (donnees historiques dispo). En mode public/confrere, on ne montre
-      // pas les signaux predictifs — c'est de la data commerciale du
-      // technicien titulaire.
+      // Maintenance predictive + memoire contextuelle : on les execute
+      // uniquement en mode "full" (donnees historiques dispo). En mode
+      // public/confrere, ce sont des donnees commerciales du technicien
+      // titulaire qu'on ne doit pas exposer.
       if (remote.mode === "full") {
+        const localDiagnostics = listDiagnostics();
+        const localEquipements = listEquipements();
         setPredictiveSignals(
-          detectPredictiveSignals(remote, remoteInterventions, listDiagnostics())
+          detectPredictiveSignals(remote, remoteInterventions, localDiagnostics)
+        );
+        setCtxMemory(
+          buildContextMemoryFromCurrentState(
+            {
+              equipement: {
+                id: remote.id,
+                modele: remote.modele,
+                numeroSerie: remote.numeroSerie,
+                fluide: { code: remote.fluide.code },
+              },
+            },
+            {
+              interventions: remoteInterventions,
+              diagnostics: localDiagnostics,
+              equipements: localEquipements,
+            }
+          )
         );
       } else {
         setPredictiveSignals([]);
+        setCtxMemory(null);
       }
       setIsReadOnly(remote.isReadOnly);
       setIsOwner(remote.isOwner);
@@ -654,6 +693,62 @@ export default function EquipementScannedPage({
             </div>
             <div className="px-5 py-2.5 bg-black/[0.02] border-t border-black/[0.05] text-[10px] text-black/40 text-center font-mono tracking-wider">
               Calcul automatique à partir de l&apos;historique de cet équipement
+            </div>
+          </div>
+        )}
+
+        {/* Memoire contextuelle — "deja vu" sur cet equipement + parc.
+            Visible uniquement en mode "full" et s'il y a au moins 1 piece
+            de contexte pertinente. */}
+        {mode === "full" && ctxMemory && (
+          ctxMemory.pastInterventionsOnSameEquipement.length > 0 ||
+          ctxMemory.similarEquipementsInPark.length > 0 ||
+          ctxMemory.recurringDefauts.length > 0
+        ) && (
+          <div className="rounded-2xl bg-[#A16207]/6 ring-1 ring-[#A16207]/15 mb-3 overflow-hidden">
+            <div className="px-5 pt-4 pb-2 flex items-baseline justify-between">
+              <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-[#A16207]">
+                Mémoire contextuelle
+              </div>
+              <div className="text-[10px] font-medium text-[#A16207]/75">
+                Vertxia connaît ton parc
+              </div>
+            </div>
+            <div className="px-5 pb-3 space-y-2.5">
+              {ctxMemory.pastInterventionsOnSameEquipement.length > 0 && (
+                <div className="text-[13px] text-[#111] leading-snug">
+                  <span className="font-semibold">{ctxMemory.pastInterventionsOnSameEquipement.length} intervention{ctxMemory.pastInterventionsOnSameEquipement.length > 1 ? "s" : ""} précédente{ctxMemory.pastInterventionsOnSameEquipement.length > 1 ? "s" : ""}</span> sur ce même équipement. Dernière : <span className="text-black/70">{(() => {
+                    const last = ctxMemory.pastInterventionsOnSameEquipement[0];
+                    const date = new Date(last.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+                    return `${last.typeLabel} le ${date}`;
+                  })()}</span>.
+                </div>
+              )}
+              {ctxMemory.similarEquipementsInPark.length > 0 && (
+                <div className="text-[13px] text-[#111] leading-snug">
+                  <span className="font-semibold">{ctxMemory.similarEquipementsInPark.length} équipement{ctxMemory.similarEquipementsInPark.length > 1 ? "s" : ""} de modèle similaire</span> dans ton parc
+                  {ctxMemory.similarEquipementsInPark.length === 1 && (
+                    <span className="text-black/70"> (chez {ctxMemory.similarEquipementsInPark[0].clientName})</span>
+                  )}.
+                </div>
+              )}
+              {ctxMemory.recurringDefauts.length > 0 && (
+                <div className="text-[13px] text-[#111] leading-snug">
+                  <span className="font-semibold">{ctxMemory.recurringDefauts.length} défaut{ctxMemory.recurringDefauts.length > 1 ? "s" : ""} récurrent{ctxMemory.recurringDefauts.length > 1 ? "s" : ""}</span> observé{ctxMemory.recurringDefauts.length > 1 ? "s" : ""} dans ton parc :{" "}
+                  <span className="text-black/70">
+                    {ctxMemory.recurringDefauts.slice(0, 2).map((r, idx) => (
+                      <span key={idx}>
+                        {idx > 0 && ", "}
+                        <em>{r.defautNom}</em> sur {r.composant} (×{r.occurrences})
+                      </span>
+                    ))}
+                  </span>
+                  .
+                </div>
+              )}
+            </div>
+            <div className="px-5 py-2 bg-[#A16207]/8 border-t border-[#A16207]/10 text-[10px] text-[#A16207]/85 font-mono tracking-wider text-center">
+              L&apos;IA exploite ces données dans les prochains diagnostics
             </div>
           </div>
         )}

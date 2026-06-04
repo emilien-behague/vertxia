@@ -87,6 +87,11 @@ type RequestBody = {
   imageDataUrl: string;
   /** Note libre optionnelle du technicien pour préciser le contexte (ex: "compresseur fait du bruit depuis 2 jours") */
   contexteNote?: string;
+  /** Memoire contextuelle pre-calculee cote client : interventions/diagnostics
+   *  similaires deja vus par ce pro. Injecte dans le user message pour enrichir
+   *  l'analyse (cite explicitement les defauts deja vus, identifie patterns
+   *  recurrents). Optionnel — si absent ou vide, comportement V1 inchange. */
+  historiqueContexte?: string;
 };
 
 function badRequest(message: string) {
@@ -105,7 +110,7 @@ export async function POST(req: Request) {
     return badRequest("Corps de requête invalide");
   }
 
-  const { imageDataUrl, contexteNote } = body;
+  const { imageDataUrl, contexteNote, historiqueContexte } = body;
   if (!imageDataUrl?.startsWith("data:image/")) {
     return badRequest("imageDataUrl manquante ou format invalide (attendu : data:image/...)");
   }
@@ -129,9 +134,24 @@ export async function POST(req: Request) {
     return serverError("ANTHROPIC_API_KEY manquant côté serveur");
   }
 
-  const userText = contexteNote?.trim()
-    ? `Analyse cette photo prise par un technicien. Contexte du technicien : "${contexteNote.trim()}". Retourne le diagnostic JSON.`
-    : "Analyse cette photo prise par un technicien. Retourne le diagnostic JSON.";
+  // Construction du user message en 3 blocs concatenes :
+  //  1. Memoire contextuelle (interventions/diagnostics passes du pro) si presente
+  //  2. Contexte note du pro sur la situation actuelle si presente
+  //  3. Instruction d'analyse + format de sortie
+  // L'ordre compte : le LLM commence par "lire" l'historique pour aborder la
+  // photo avec ce contexte deja en tete.
+  const userTextParts: string[] = [];
+  if (historiqueContexte?.trim()) {
+    userTextParts.push(
+      `## Memoire contextuelle de ce pro (utiliser pour affiner le diagnostic)
+${historiqueContexte.trim()}`
+    );
+  }
+  if (contexteNote?.trim()) {
+    userTextParts.push(`Contexte du technicien pour cette photo : "${contexteNote.trim()}".`);
+  }
+  userTextParts.push("Analyse cette photo prise par un technicien. Retourne le diagnostic JSON.");
+  const userText = userTextParts.join("\n\n");
 
   try {
     const res = await fetch(ANTHROPIC_API_URL, {
