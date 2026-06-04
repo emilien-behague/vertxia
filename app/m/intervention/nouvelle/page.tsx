@@ -9,6 +9,7 @@ import { Suspense, useEffect, useRef, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Drawer } from "vaul";
 import { MobileHeader } from "@/components/mobile/mobile-header";
+import { DocumentsForInterventionCard } from "@/components/mobile/documents-for-intervention-card";
 import { InsetListSection } from "@/components/mobile/inset-list";
 import { VoiceInput } from "@/components/mobile/voice-input";
 import { VoiceFullDictation, type ExtractionResult } from "@/components/mobile/voice-full-dictation";
@@ -1038,6 +1039,11 @@ function NouvelleInterventionContent() {
   return (
     <>
       <MobileHeader title="Nouvelle intervention" largeTitle backHref="/m/intervention" />
+
+      {/* Documents officiels lies au type d'intervention en cours -
+          le frigoriste a le CERFA + le modele de registre + la note DGEC
+          pertinents en 1 tap, meme offline. Plie par defaut (compteur visible). */}
+      <DocumentsForInterventionCard type={typeIntervention} />
 
       {/* Contexte équipement si pré-rempli */}
       {eqContext && (

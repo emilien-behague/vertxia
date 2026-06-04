@@ -17,6 +17,29 @@ export type CategorieDocument =
   | "guide_dgec"
   | "fluide_specifique";
 
+// Types d intervention de l app, alignes sur les valeurs utilisees dans
+// /m/intervention/page.tsx et /m/intervention/nouvelle?type=...
+export type TypeIntervention =
+  | "recuperation"
+  | "demantelement"
+  | "controle_periodique"
+  | "controle_non_periodique"
+  | "mise_service"
+  | "maintenance"
+  | "assemblage"
+  | "modification";
+
+export const TOUS_TYPES_INTERVENTION: TypeIntervention[] = [
+  "recuperation",
+  "demantelement",
+  "controle_periodique",
+  "controle_non_periodique",
+  "mise_service",
+  "maintenance",
+  "assemblage",
+  "modification",
+];
+
 export type DocumentOfficiel = {
   id: string;
   titre: string;
@@ -28,6 +51,11 @@ export type DocumentOfficiel = {
   categorie: CategorieDocument;
   motsClefs: string[];
   dateVerification: string;
+  // Types d intervention pour lesquels ce document est pertinent.
+  // Si le doc est transverse (utile partout) -> mettre tous les types.
+  // L UI affiche ces docs sous forme de carte sur la page de saisie
+  // de l intervention correspondante (raccourci offline).
+  interventionsApplicables: TypeIntervention[];
 };
 
 export const CATEGORIE_LABELS: Record<CategorieDocument, string> = {
@@ -50,6 +78,14 @@ export const DOCUMENTS_OFFICIELS: DocumentOfficiel[] = [
     categorie: "cerfa",
     motsClefs: ["cerfa", "15497", "fiche intervention", "f-gas", "fluide", "manipulation"],
     dateVerification: "2026-06-04",
+    interventionsApplicables: [
+      "recuperation",
+      "demantelement",
+      "controle_periodique",
+      "controle_non_periodique",
+      "maintenance",
+      "modification",
+    ],
   },
   {
     id: "afce-registre-equipement",
@@ -63,6 +99,7 @@ export const DOCUMENTS_OFFICIELS: DocumentOfficiel[] = [
     categorie: "registre_modele",
     motsClefs: ["registre", "détenteur", "équipement", "afce", "modèle", "carnet de suivi"],
     dateVerification: "2026-06-04",
+    interventionsApplicables: [...TOUS_TYPES_INTERVENTION],
   },
   {
     id: "afce-declaration-fuite-degazage",
@@ -76,6 +113,7 @@ export const DOCUMENTS_OFFICIELS: DocumentOfficiel[] = [
     categorie: "registre_modele",
     motsClefs: ["déclaration", "fuite", "dégazage", "préfet", "afce", "modèle"],
     dateVerification: "2026-06-04",
+    interventionsApplicables: ["recuperation", "controle_non_periodique", "controle_periodique"],
   },
   {
     id: "dgec-note-pedagogique-f-gas-iii",
@@ -99,6 +137,7 @@ export const DOCUMENTS_OFFICIELS: DocumentOfficiel[] = [
       "obligations",
     ],
     dateVerification: "2026-06-04",
+    interventionsApplicables: [...TOUS_TYPES_INTERVENTION],
   },
   {
     id: "dgec-faq-fluides-frigorigenes",
@@ -112,6 +151,13 @@ export const DOCUMENTS_OFFICIELS: DocumentOfficiel[] = [
     categorie: "guide_dgec",
     motsClefs: ["faq", "questions", "réponses", "dgec", "ministère", "obligations", "contrôle"],
     dateVerification: "2026-06-04",
+    interventionsApplicables: [
+      "recuperation",
+      "demantelement",
+      "controle_periodique",
+      "controle_non_periodique",
+      "maintenance",
+    ],
   },
   {
     id: "dgec-faq-webinaire-application-fluides",
@@ -126,6 +172,12 @@ export const DOCUMENTS_OFFICIELS: DocumentOfficiel[] = [
     categorie: "guide_dgec",
     motsClefs: ["faq", "webinaire", "dgec", "application", "réglementation", "cas pratiques"],
     dateVerification: "2026-06-04",
+    interventionsApplicables: [
+      "controle_non_periodique",
+      "controle_periodique",
+      "recuperation",
+      "demantelement",
+    ],
   },
   {
     id: "dgec-recap-usages-alternatives-hfc",
@@ -150,8 +202,38 @@ export const DOCUMENTS_OFFICIELS: DocumentOfficiel[] = [
       "naturels",
     ],
     dateVerification: "2026-06-04",
+    interventionsApplicables: [
+      "mise_service",
+      "assemblage",
+      "modification",
+      "recuperation",
+      "demantelement",
+    ],
   },
 ];
+
+// Retourne les documents officiels pertinents pour un type d intervention donne,
+// tries pour mettre en premier les docs CERFA / formulaire qui peuvent etre
+// imprimes/remplis manuellement en backup si l app crash.
+export function getDocumentsForIntervention(type: TypeIntervention): DocumentOfficiel[] {
+  const ordreCategorie: Record<CategorieDocument, number> = {
+    cerfa: 0,
+    registre_modele: 1,
+    guide_dgec: 2,
+    fluide_specifique: 3,
+  };
+  return DOCUMENTS_OFFICIELS.filter((doc) =>
+    doc.interventionsApplicables.includes(type)
+  ).sort((a, b) => ordreCategorie[a.categorie] - ordreCategorie[b.categorie]);
+}
+
+// Compteur de documents par type, utilise pour le badge sur la page liste
+// des types d intervention (ex: "+3 docs officiels").
+export function countDocumentsForIntervention(type: TypeIntervention): number {
+  return DOCUMENTS_OFFICIELS.filter((doc) =>
+    doc.interventionsApplicables.includes(type)
+  ).length;
+}
 
 export function formatTailleFichier(tailleKb: number): string {
   if (tailleKb < 1024) return `${Math.round(tailleKb)} Ko`;

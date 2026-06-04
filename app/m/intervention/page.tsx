@@ -5,12 +5,16 @@ import Link from "next/link";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection, InsetRow } from "@/components/mobile/inset-list";
 import { listEquipements, type StoredEquipement } from "@/lib/equipement";
+import {
+  countDocumentsForIntervention,
+  type TypeIntervention,
+} from "@/lib/documents-officiels";
 
 // Page intervention mobile — hub d'entrée vers le formulaire intervention.
 // 2 chemins : (a) intervention sur équipement existant → /bsff?equipement=ID
 //             (b) intervention libre → /bsff (form vierge)
 
-const INTERVENTION_TYPES = [
+const INTERVENTION_TYPES: { v: TypeIntervention; label: string; desc: string }[] = [
   { v: "recuperation", label: "Récupération de fluide", desc: "+ BSFF officiel" },
   { v: "demantelement", label: "Démantèlement", desc: "+ BSFF officiel" },
   { v: "controle_periodique", label: "Contrôle d'étanchéité", desc: "Annuel · CERFA 15497*04" },
@@ -87,29 +91,36 @@ export default function MobileInterventionPage() {
         title="Démarrer un formulaire vierge"
         footer="Si vous n'avez pas encore enregistré l'équipement, vous pourrez le saisir directement dans le formulaire."
       >
-        {INTERVENTION_TYPES.map((t) => (
-          <InsetRow
-            key={t.v}
-            href={`/m/intervention/nouvelle?type=${t.v}`}
-            label={t.label}
-            sublabel={t.desc}
-            leading={
-              <span
-                className={`inline-flex items-center justify-center w-8 h-8 rounded-full ${
-                  t.v === "recuperation" || t.v === "demantelement"
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-blue-50 text-blue-700"
-                }`}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                </svg>
-              </span>
-            }
-            showChevron
-          />
-        ))}
+        {INTERVENTION_TYPES.map((t) => {
+          const nbDocs = countDocumentsForIntervention(t.v);
+          const sublabel =
+            nbDocs > 0
+              ? `${t.desc} · 📄 ${nbDocs} doc${nbDocs > 1 ? "s" : ""} officiel${nbDocs > 1 ? "s" : ""}`
+              : t.desc;
+          return (
+            <InsetRow
+              key={t.v}
+              href={`/m/intervention/nouvelle?type=${t.v}`}
+              label={t.label}
+              sublabel={sublabel}
+              leading={
+                <span
+                  className={`inline-flex items-center justify-center w-8 h-8 rounded-full ${
+                    t.v === "recuperation" || t.v === "demantelement"
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-blue-50 text-blue-700"
+                  }`}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                  </svg>
+                </span>
+              }
+              showChevron
+            />
+          );
+        })}
       </InsetListSection>
     </>
   );
