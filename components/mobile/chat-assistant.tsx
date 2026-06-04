@@ -70,6 +70,7 @@ export function ChatAssistant({ equipementContext }: Props) {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [drawerHeight, setDrawerHeight] = useState<string>("92dvh");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -89,6 +90,30 @@ export function ChatAssistant({ equipementContext }: Props) {
       const t = setTimeout(() => inputRef.current?.focus(), 250);
       return () => clearTimeout(t);
     }
+  }, [open]);
+
+  // Ajuste la hauteur du drawer quand le clavier iOS s'ouvre/ferme.
+  // visualViewport.height reflète la zone réellement visible (innerHeight ne
+  // change pas quand le clavier sort). Sans ça, le drawer fait 92vh = il
+  // dépasse sous le clavier et les messages disparaissent.
+  useEffect(() => {
+    if (!open) return;
+    function updateHeight() {
+      const vp = window.visualViewport;
+      if (vp) {
+        // 4px de marge pour pas coller au bord
+        setDrawerHeight(`${vp.height - 4}px`);
+      } else {
+        setDrawerHeight("92dvh");
+      }
+    }
+    updateHeight();
+    window.visualViewport?.addEventListener("resize", updateHeight);
+    window.visualViewport?.addEventListener("scroll", updateHeight);
+    return () => {
+      window.visualViewport?.removeEventListener("resize", updateHeight);
+      window.visualViewport?.removeEventListener("scroll", updateHeight);
+    };
   }, [open]);
 
   async function handleSubmit(e?: FormEvent) {
@@ -185,7 +210,7 @@ export function ChatAssistant({ equipementContext }: Props) {
       <Drawer.Root open={open} onOpenChange={setOpen} shouldScaleBackground>
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40" />
-          <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-3xl bg-[#F5F4F0] outline-none" style={{ height: "92vh" }}>
+          <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-3xl bg-[#F5F4F0] outline-none" style={{ height: drawerHeight }}>
             <Drawer.Title className="sr-only">Assistant F-Gas Vertxia</Drawer.Title>
 
             {/* Handle */}
