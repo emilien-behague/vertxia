@@ -604,7 +604,34 @@ function NouvelleInterventionContent() {
       }
 
       setStatus({ type: "loading", step: "Génération du CERFA 15497*04…" });
-      const profil = loadProfil();
+      let profil = loadProfil();
+      // Si le profil local est vide (autre device / nouveau navigateur), pull
+      // depuis Supabase pour avoir au moins raison sociale + tel + email +
+      // numero attestation avant de generer CERFA + fiche de visite.
+      if (!profil.raisonSociale && !profil.numeroAttestation) {
+        try {
+          const res = await fetch("/api/public/my-profile", {
+            method: "GET",
+            headers: { "cache-control": "no-store" },
+          });
+          if (res.ok) {
+            const j = (await res.json()) as {
+              data: {
+                raisonSociale?: string;
+                telephone?: string;
+                email?: string;
+                numeroAttestation?: string;
+              } | null;
+            };
+            if (j.data && (j.data.raisonSociale || j.data.numeroAttestation)) {
+              const { saveProfil } = await import("@/lib/profil");
+              profil = saveProfil({ ...profil, ...j.data });
+            }
+          }
+        } catch {
+          /* silent : on continue avec profil local meme vide */
+        }
+      }
       const operateur = profil.raisonSociale
         ? {
             name: profil.raisonSociale,

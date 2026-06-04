@@ -54,7 +54,13 @@ export async function hydrateFromSupabaseIfNeeded(
 ): Promise<HydrationResult> {
   if (!isBrowser()) return EMPTY;
 
-  // Skip si deja fait cette session (sauf force=true depuis un bouton "Resync")
+  // PULL PROFIL : toujours tente si local vide, independamment du flag
+  // de session. Le profil est leger (1 row, 4 colonnes) et critique pour
+  // la generation CERFA / rapport / etiquette. Pas de cache session ici
+  // → si tu te connectes sur un nouveau device, le profil arrive au mount.
+  await pullProfilIfLocalEmpty();
+
+  // Skip equipements + interventions si deja fait cette session (sauf force).
   if (!options.force && sessionStorage.getItem(SESSION_FLAG) === "done") {
     return EMPTY;
   }
@@ -104,40 +110,16 @@ export async function hydrateFromSupabaseIfNeeded(
       }
     }
 
-    // Sync profil entreprise dans les deux sens :
-    //   - Si profil local non vide -> push vers Supabase (alimente bloc
-    //     "Technicien referent" /eq/[id])
-    //   - Si profil local VIDE mais profil en BDD -> pull pour hydrater
-    //     ce device (cas : nouveau navigateur / autre device)
+    // Push profil entreprise vers Supabase une fois par session.
+    // (Le PULL profil est gere separement par pullProfilIfLocalEmpty()
+    // appele tout en haut, sans dependre du flag de session.)
     try {
       const profil = loadProfil();
-      const hasLocal =
-        profil.raisonSociale || profil.telephone || profil.email || profil.numeroAttestation;
-      if (hasLocal) {
-        // saveProfil va trigger le sync automatiquement vers Supabase
+      if (profil.raisonSociale || profil.telephone || profil.email || profil.numeroAttestation) {
         saveProfil(profil);
-      } else {
-        // Local vide → tenter pull depuis Supabase
-        const res = await fetch("/api/public/my-profile", {
-          method: "GET",
-          headers: { "cache-control": "no-store" },
-        });
-        if (res.ok) {
-          const j = (await res.json()) as {
-            data: {
-              raisonSociale?: string;
-              telephone?: string;
-              email?: string;
-              numeroAttestation?: string;
-            } | null;
-          };
-          if (j.data && (j.data.raisonSociale || j.data.numeroAttestation)) {
-            saveProfil({ ...profil, ...j.data });
-          }
-        }
       }
     } catch (e) {
-      console.warn("[hydrate] profil sync failed:", e);
+      console.warn("[hydrate] profil push failed:", e);
     }
 
     sessionStorage.setItem(SESSION_FLAG, "done");
@@ -165,4 +147,38 @@ export async function hydrateFromSupabaseIfNeeded(
 export function clearHydrationFlag(): void {
   if (!isBrowser()) return;
   sessionStorage.removeItem(SESSION_FLAG);
+}
+
+/** Pull le profil depuis Supabase si le local est vide. Independant du
+ *  flag de session : appele systematiquement au mount du dashboard pour
+ *  qu'un user qui se connecte sur un nouveau navigateur recupere son
+ *  profil automatiquement (raison sociale + tel + email + n° attestation
+ *  + categorie + organisme + dates). Silent fail si offline / pas auth. */
+export async function pullProfilIfLocalEmpty(): Promise<boolean> {
+  if (!isBrowser()) return false;
+  try {
+    const current = loadProfil();
+    if (current.raisonSociale || current.telephone || current.email || current.numeroAttestation) {
+      return false; // local non vide, rien a faire
+    }
+    const res = await fetch("/api/public/my-profile", {
+      method: "GET",
+      headers: { "cache-control": "no-store" },
+    });
+    if (!res.ok) return false;
+    const j = (await res.json()) as {
+      data: {
+        raisonSociale?: string;
+        telephone?: string;
+        email?: string;
+        numeroAttestation?: string;
+      } | null;
+    };
+    if (!j.data || (!j.data.raisonSociale && !j.data.numeroAttestation)) return false;
+    saveProfil({ ...current, ...j.data });
+    return true;
+  } catch (e) {
+    console.warn("[hydrate] pullProfilIfLocalEmpty failed:", e);
+    return false;
+  }
 }
