@@ -20,6 +20,7 @@ import { listEquipements } from "@/lib/equipement";
 import { listInterventions } from "@/lib/intervention-storage";
 import { fetchMyEquipements, fetchMyInterventions } from "@/lib/public-sync";
 import { scopedKey } from "@/lib/user-scope";
+import { loadProfil, saveProfil } from "@/lib/profil";
 import type { StoredEquipement } from "@/lib/equipement";
 import type { StoredIntervention } from "@/lib/intervention-storage";
 
@@ -101,6 +102,22 @@ export async function hydrateFromSupabaseIfNeeded(
           console.warn("[hydrate] write interventions failed:", e);
         }
       }
+    }
+
+    // Push profil entreprise vers Supabase une fois par session.
+    // Sert a alimenter le bloc "Technicien referent" de la fiche publique
+    // /eq/[id] (raison sociale + tel + email + numero attestation).
+    // Si le profil est vide, saveProfil le push quand meme avec des null
+    // -> pas grave, ca cree une row vide qui sera mise a jour plus tard.
+    // On evite quand meme le call si VRAIMENT vide (zero champ rempli).
+    try {
+      const profil = loadProfil();
+      if (profil.raisonSociale || profil.telephone || profil.email || profil.numeroAttestation) {
+        // saveProfil va trigger le sync automatiquement
+        saveProfil(profil);
+      }
+    } catch (e) {
+      console.warn("[hydrate] profil push failed:", e);
     }
 
     sessionStorage.setItem(SESSION_FLAG, "done");

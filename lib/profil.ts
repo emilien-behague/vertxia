@@ -122,7 +122,41 @@ export function saveProfil(profil: Profil): Profil {
   if (!isBrowser()) throw new Error("localStorage indisponible");
   const next: Profil = { ...profil, updatedAt: new Date().toISOString() };
   localStorage.setItem(storageKey(), JSON.stringify(next));
+  // Sync background vers Supabase pour que le bloc "Technicien referent"
+  // de la fiche publique /eq/[id] affiche le nom de la societe, le tel,
+  // l'email et le n° d'attestation. Silent fail si pas connecte.
+  void syncProfilToSupabase(next);
   return next;
+}
+
+async function syncProfilToSupabase(profil: Profil): Promise<void> {
+  if (typeof window === "undefined") return;
+  try {
+    const res = await fetch("/api/public/profil/upsert", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        raisonSociale: profil.raisonSociale,
+        siret: profil.siret,
+        adresseRue: profil.adresseRue,
+        adresseCp: profil.adresseCp,
+        adresseVille: profil.adresseVille,
+        telephone: profil.telephone,
+        email: profil.email,
+        siteWeb: profil.siteWeb,
+        numeroAttestation: profil.numeroAttestation,
+        categorieAttestation: profil.categorieAttestation || undefined,
+        organismeAgree: profil.organismeAgree || undefined,
+        dateExpirationAttestation: profil.dateExpirationAttestation,
+      }),
+    });
+    if (!res.ok && res.status !== 401) {
+      const j = await res.json().catch(() => ({}));
+      console.warn("[profil-sync] failed:", j);
+    }
+  } catch (e) {
+    console.warn("[profil-sync] network failed:", e);
+  }
 }
 
 export function clearProfil(): void {
