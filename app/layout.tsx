@@ -36,12 +36,12 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Vertxia — La paperasse F-Gas finie en quelques secondes",
   description:
-    "Photo + voix → BSFF officiel signé Ministère, CERFA 15497*04, déclaration SYDEREP. Pour les techniciens, climaticiens et installateurs PAC. Connecté à TrackDéchets, Ministère de la Transition écologique. Beta privée ouverte.",
+    "Photo + voix → BSFF officiel signé Ministère, CERFA 15497*04, déclaration SYDEREP. Pour les frigoristes, techniciens froid, climaticiens et installateurs PAC. Connecté à TrackDéchets, Ministère de la Transition écologique. Beta privée ouverte.",
   metadataBase: new URL("https://vertxia.com"),
   openGraph: {
     title: "Vertxia — La paperasse F-Gas finie en quelques secondes",
     description:
-      "BSFF, CERFA, SYDEREP générés automatiquement depuis votre téléphone. Photo + voix → documents officiels signés Ministère. Pour techniciens, climaticiens, installateurs PAC. Beta gratuite à vie.",
+      "BSFF, CERFA, SYDEREP générés automatiquement depuis votre téléphone. Photo + voix → documents officiels signés Ministère. Pour frigoristes, techniciens froid, climaticiens, installateurs PAC. Beta gratuite à vie.",
     url: "https://vertxia.com",
     siteName: "Vertxia",
     type: "website",
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Vertxia — Paperasse F-Gas automatisée",
     description:
-      "Photo + voix → BSFF officiel signé Ministère en quelques secondes. Pour techniciens, climaticiens, installateurs PAC.",
+      "Photo + voix → BSFF officiel signé Ministère en quelques secondes. Pour frigoristes, techniciens froid, climaticiens, installateurs PAC.",
   },
   verification: {
     google: "e6dk6nKVPO5uBOexyYXzdxC8JZ775dLnashkXOnipss",

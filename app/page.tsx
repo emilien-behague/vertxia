@@ -162,7 +162,7 @@ export default function VertxiaPage() {
               transition: "opacity 1s cubic-bezier(0.16,1,0.3,1) 250ms, transform 1s cubic-bezier(0.16,1,0.3,1) 250ms",
             }}
           >
-            Photo + voix → l&apos;application génère votre BSFF officiel signé Ministère, votre CERFA d&apos;intervention, et votre déclaration annuelle SYDEREP. Pour les techniciens, climaticiens et installateurs PAC qui veulent en finir avec la paperasse F-Gas.
+            Photo + voix → l&apos;application génère votre BSFF officiel signé Ministère, votre CERFA d&apos;intervention, et votre déclaration annuelle SYDEREP. Pour les frigoristes, techniciens froid, climaticiens et installateurs PAC qui veulent en finir avec la paperasse F-Gas.
           </p>
 
           {/* 3 metrics */}
@@ -203,7 +203,7 @@ export default function VertxiaPage() {
               ESSAYER L&apos;APPLI
             </a>
             <a
-              href="mailto:emilien@vertxia.com?subject=Beta-test Vertxia F-Gas&body=Salut Emilien, je suis technicien / installateur PAC / climaticien et je veux tester Vertxia en beta privée. Mon contexte : "
+              href="mailto:emilien@vertxia.com?subject=Beta-test Vertxia F-Gas&body=Salut Emilien, je suis frigoriste / technicien froid / climaticien / installateur PAC et je veux tester Vertxia en beta privée. Mon contexte : "
               className="inline-flex items-center justify-center gap-2 px-8 py-3 border border-black/10 text-black/70 text-sm rounded-xl hover:border-black/25 hover:bg-black/[0.04] transition-colors tracking-widest whitespace-nowrap"
             >
               DEVENIR BETA-TESTEUR
@@ -566,7 +566,7 @@ export default function VertxiaPage() {
               {"10 techniciens beta-testeurs.\nGratuit. À vie."}
             </RevealText>
             <p className="mt-6 text-base text-black/50 leading-relaxed max-w-2xl mx-auto">
-              On cherche 10 techniciens, climaticiens ou installateurs PAC pour calibrer Vertxia sur de vraies interventions. En échange : accès gratuit à vie au produit final, mention au lancement, et ton retour qui shape directement le produit.
+              On cherche 10 frigoristes, techniciens froid, climaticiens ou installateurs PAC pour calibrer Vertxia sur de vraies interventions. En échange : accès gratuit à vie au produit final, mention au lancement, et ton retour qui shape directement le produit.
             </p>
           </div>
 
@@ -575,7 +575,7 @@ export default function VertxiaPage() {
             <ul className="space-y-3 text-sm text-black/65 mb-8 max-w-lg mx-auto text-left">
               <li className="flex items-start gap-3">
                 <span className="text-black/35 mt-1">·</span>
-                <span>Technicien, climaticien ou installateur PAC en activité</span>
+                <span>Frigoriste, technicien froid, climaticien ou installateur PAC en activité</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="text-black/35 mt-1">·</span>
@@ -591,7 +591,7 @@ export default function VertxiaPage() {
               </li>
             </ul>
             <a
-              href="mailto:emilien@vertxia.com?subject=Beta-test Vertxia F-Gas&body=Salut Emilien,%0D%0A%0D%0AJe veux rejoindre la beta privée Vertxia F-Gas.%0D%0A%0D%0AMon contexte :%0D%0A- Métier (technicien / climaticien / installateur PAC) : %0D%0A- Statut juridique : %0D%0A- Région : %0D%0A- Catégorie d'attestation F-Gas : %0D%0A- Interventions F-Gas / mois : %0D%0A- Type d'installations (résidentiel / tertiaire / agroalim) : %0D%0A%0D%0AContact : "
+              href="mailto:emilien@vertxia.com?subject=Beta-test Vertxia F-Gas&body=Salut Emilien,%0D%0A%0D%0AJe veux rejoindre la beta privée Vertxia F-Gas.%0D%0A%0D%0AMon contexte :%0D%0A- Métier (frigoriste / technicien froid / climaticien / installateur PAC) : %0D%0A- Statut juridique : %0D%0A- Région : %0D%0A- Catégorie d'attestation F-Gas : %0D%0A- Interventions F-Gas / mois : %0D%0A- Type d'installations (résidentiel / tertiaire / agroalim) : %0D%0A%0D%0AContact : "
               className="inline-flex items-center justify-center gap-2 px-8 py-3 bg-[#111] text-white text-sm rounded-xl hover:bg-[#333] transition-colors tracking-widest font-medium"
             >
               POSTULER À LA BETA
@@ -777,7 +777,7 @@ export default function VertxiaPage() {
               </p>
 
               <p className="text-sm text-black/50 leading-relaxed mb-5">
-                L&apos;idée vient d&apos;un constat simple : les techniciens, climaticiens et installateurs PAC passent un temps considérable sur la paperasse F-Gas. Bordereaux BSFF à remplir à chaque intervention, CERFA d&apos;intervention obligatoire, déclaration annuelle SYDEREP en fin d&apos;année. Tout ça à la main, en double saisie, le soir ou le week-end. Pendant ce temps, leur métier — la technique, le terrain, les clients — passe au second plan.
+                L&apos;idée vient d&apos;un constat simple : les frigoristes, techniciens froid, climaticiens et installateurs PAC passent un temps considérable sur la paperasse F-Gas. Bordereaux BSFF à remplir à chaque intervention, CERFA d&apos;intervention obligatoire, déclaration annuelle SYDEREP en fin d&apos;année. Tout ça à la main, en double saisie, le soir ou le week-end. Pendant ce temps, leur métier — la technique, le terrain, les clients — passe au second plan.
               </p>
 
               <p className="text-sm text-black/50 leading-relaxed mb-5">

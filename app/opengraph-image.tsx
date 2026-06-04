@@ -14,7 +14,7 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export const alt =
-  "Vertxia — La paperasse F-Gas finie en quelques secondes. Pour techniciens, climaticiens, installateurs PAC.";
+  "Vertxia — La paperasse F-Gas finie en quelques secondes. Pour frigoristes, techniciens froid, climaticiens, installateurs PAC.";
 
 export default async function OpenGraphImage() {
   return new ImageResponse(
@@ -116,7 +116,7 @@ export default async function OpenGraphImage() {
             }}
           >
             Photo + voix → BSFF officiel signé Ministère, CERFA 15497*04,
-            déclaration SYDEREP. Pour techniciens, climaticiens, installateurs PAC.
+            déclaration SYDEREP. Pour frigoristes, techniciens froid, climaticiens, installateurs PAC.
           </div>
         </div>
 
