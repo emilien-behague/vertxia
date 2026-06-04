@@ -27,7 +27,12 @@ import {
   buildContextMemoryFromCurrentState,
   type ContextMemory,
 } from "@/lib/context-memory";
-import { buildDevisFromDiagnostic, generateDevisNumero, whyDevisBlocked } from "@/lib/devis";
+import {
+  buildDevisFromDiagnostic,
+  generateDevisNumero,
+  whyDevisBlocked,
+  estimerHeuresMainOeuvre,
+} from "@/lib/devis";
 import {
   shareDiagnostic,
   buildDiagnosticWhatsAppUrl,
@@ -205,6 +210,21 @@ export default function DiagnosticPage() {
       ""
     ) || undefined;
 
+    // Heures de main d'œuvre : on suggere la valeur estimee depuis le
+    // diagnostic. L'utilisateur peut valider la suggestion en tapant OK,
+    // ou taper son propre nombre (ex: '4' ou '2.5'). Format FR : virgule
+    // ou point accepte.
+    const heuresEstimees = estimerHeuresMainOeuvre(result);
+    const heuresInput = window.prompt(
+      "Nombre d'heures de main d'œuvre prévues :",
+      String(heuresEstimees).replace(".", ",")
+    );
+    if (heuresInput === null) return; // cancel
+    const heuresParse = parseFloat(heuresInput.replace(",", "."));
+    const heuresMainOeuvre = !isNaN(heuresParse) && heuresParse > 0
+      ? heuresParse
+      : heuresEstimees;
+
     setShareToast("Génération du devis en cours…");
     try {
       const devis = buildDevisFromDiagnostic({
@@ -229,6 +249,7 @@ export default function DiagnosticPage() {
           adresse: clientAdresse?.trim() || undefined,
         },
         numero: generateDevisNumero(),
+        heuresMainOeuvre,
       });
 
       const res = await fetch("/api/devis/create", {

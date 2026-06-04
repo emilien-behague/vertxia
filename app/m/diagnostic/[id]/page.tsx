@@ -26,7 +26,12 @@ import {
   downloadDiagnosticImage,
 } from "@/lib/diagnostic-share";
 import { loadProfil } from "@/lib/profil";
-import { buildDevisFromDiagnostic, generateDevisNumero, whyDevisBlocked } from "@/lib/devis";
+import {
+  buildDevisFromDiagnostic,
+  generateDevisNumero,
+  whyDevisBlocked,
+  estimerHeuresMainOeuvre,
+} from "@/lib/devis";
 
 function fmtDateLong(iso: string): string {
   const d = new Date(iso);
@@ -119,6 +124,18 @@ export default function DiagnosticDetailPage() {
     if (!clientName?.trim()) return;
     const clientAdresse = window.prompt("Adresse du client (optionnel) :", "") || undefined;
 
+    // Heures main d'œuvre : suggere la valeur estimee depuis le diagnostic
+    const heuresEstimees = estimerHeuresMainOeuvre(diag.result);
+    const heuresInput = window.prompt(
+      "Nombre d'heures de main d'œuvre prévues :",
+      String(heuresEstimees).replace(".", ",")
+    );
+    if (heuresInput === null) return;
+    const heuresParse = parseFloat(heuresInput.replace(",", "."));
+    const heuresMainOeuvre = !isNaN(heuresParse) && heuresParse > 0
+      ? heuresParse
+      : heuresEstimees;
+
     setShareToast("Génération du devis en cours…");
     try {
       const devis = buildDevisFromDiagnostic({
@@ -143,6 +160,7 @@ export default function DiagnosticDetailPage() {
           adresse: clientAdresse?.trim() || undefined,
         },
         numero: generateDevisNumero(),
+        heuresMainOeuvre,
       });
       const res = await fetch("/api/devis/create", {
         method: "POST",

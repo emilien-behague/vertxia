@@ -133,6 +133,18 @@ function mentionFluide(diag: DiagnosticResult): boolean {
   return /\brecharg|\brecuper|\bbrasur|\bfluid|\bgaz|\bsoudure|\bbrasage|\betancheite/.test(text);
 }
 
+/**
+ * Estime le nombre d'heures de main d'oeuvre par defaut a partir du
+ * diagnostic. Calcul : 50% du devis cible / taux horaire de reference,
+ * arrondi a la 0.5h. Sert au pre-remplissage du prompt heures dans l'UI :
+ * l'utilisateur voit la valeur estimee et peut la modifier avant gen.
+ */
+export function estimerHeuresMainOeuvre(diagnostic: DiagnosticResult): number {
+  const totalCible = estimerMontantCible(diagnostic);
+  const totalMO = totalCible * 0.5; // part main d'oeuvre par defaut
+  return Math.max(0.5, Math.round((totalMO / TAUX_HORAIRE_DEFAUT) * 2) / 2);
+}
+
 /** Construit un devis pre-rempli depuis un diagnostic IA + l'identite du
  *  pro + le client. Le devis est pret a etre genere en PDF — V1 sans
  *  edition cote client. */
@@ -144,8 +156,21 @@ export function buildDevisFromDiagnostic(input: {
   destinataire: Devis["destinataire"];
   /** Reference unique optionnelle (ex : DEV-2026-001) */
   numero?: string;
+  /** Override du nombre d'heures de main d'oeuvre. Si fourni > 0, la
+   *  ligne "Main d'oeuvre" est recalculee avec ce nombre x taux horaire
+   *  (au lieu d'utiliser la ventilation 50% auto). Les autres lignes
+   *  (pieces, fluide, deplacement) restent calculees sur le devisEstime
+   *  IA — le total final est donc ajuste si les heures fournies different
+   *  du calcul auto. */
+  heuresMainOeuvre?: number;
+  /** Override du taux horaire HT en €/h. Par defaut 65 €/h. */
+  tauxHoraireHT?: number;
 }): Devis {
   const { diagnostic, diagnosticId, diagnosticDateISO, emetteur, destinataire, numero } = input;
+
+  const tauxHoraire = input.tauxHoraireHT && input.tauxHoraireHT > 0
+    ? input.tauxHoraireHT
+    : TAUX_HORAIRE_DEFAUT;
 
   const totalCible = estimerMontantCible(diagnostic);
   const composantLabel = diagnostic.composantIdentifie || "composant frigorifique";
@@ -168,14 +193,21 @@ export function buildDevisFromDiagnostic(input: {
   const partFluide = fluide ? 0.12 : 0;
   const partDeplacement = 0.15;
 
-  const totalMO = totalCible * partMO;
+  const totalMOAuto = totalCible * partMO;
   const totalPieces = totalCible * partPieces;
   const totalFluide = totalCible * partFluide;
   const totalDeplacement = totalCible * partDeplacement;
 
-  // Main d'oeuvre : heures = totalMO / taux horaire (arrondi 0.5h le plus proche)
-  const heures = Math.max(0.5, Math.round((totalMO / TAUX_HORAIRE_DEFAUT) * 2) / 2);
-  const prixUnitaireMO = round2(totalMO / heures);
+  // Main d'oeuvre : si l'utilisateur a fourni un nombre d'heures explicite,
+  // on l'utilise tel quel (le taux horaire reste fixe a tauxHoraire €/h →
+  // le montant MO devient heures × tauxHoraire). Sinon, on garde la
+  // ventilation auto (totalMOAuto / tauxHoraire arrondi 0.5h).
+  const heuresAuto = Math.max(0.5, Math.round((totalMOAuto / tauxHoraire) * 2) / 2);
+  const heures = input.heuresMainOeuvre && input.heuresMainOeuvre > 0
+    ? input.heuresMainOeuvre
+    : heuresAuto;
+  const totalMO = round2(heures * tauxHoraire);
+  const prixUnitaireMO = round2(tauxHoraire);
 
   const lignes: DevisLigne[] = [
     {
