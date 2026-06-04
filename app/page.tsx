@@ -332,6 +332,156 @@ export default function VertxiaPage() {
         </div>
       </section>
 
+      {/* ── INTELLIGENCE EMBARQUÉE (nouveautés) ─────────────────────────── */}
+      <section id="intelligence" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-16">
+            <div>
+              <Tag>INTELLIGENCE EMBARQUÉE</Tag>
+              <RevealText className="mt-5 text-4xl md:text-5xl font-light tracking-tight leading-[1.05]">
+                {"L'IA terrain qui pense\ncomme un frigoriste senior."}
+              </RevealText>
+            </div>
+            <p className="text-sm text-black/45 leading-relaxed max-w-xs">
+              Au-delà de la paperasse, Vertxia diagnostique, alerte, conseille et relance — comme un collègue expert qui ne dort jamais.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-12 gap-3">
+            {/* Big card — Diagnostic visuel IA */}
+            <BentoCard className="col-span-12 md:col-span-8 p-8 min-h-[280px] flex flex-col justify-between" delay={0}>
+              <div>
+                <div className="w-10 h-10 rounded-xl border border-black/10 bg-white flex items-center justify-center mb-6">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    <line x1="11" y1="8" x2="11" y2="14" />
+                    <line x1="8" y1="11" x2="14" y2="11" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-light mb-3">Diagnostic visuel d&apos;un composant</h3>
+                <p className="text-sm text-black/45 leading-relaxed max-w-md">
+                  Photo d&apos;un compresseur, échangeur, brasure ou raccord suspect → Vertxia identifie le composant, détecte les défauts (corrosion, traces d&apos;huile, encrassement, soudure défectueuse), donne la cause probable, l&apos;action recommandée, le délai et une fourchette de devis. En 3 à 5 secondes.
+                </p>
+              </div>
+              <div className="mt-6 flex items-center gap-3 flex-wrap">
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-mono bg-black text-white">Corrosion</span>
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-mono bg-black text-white">Fuite suspectée</span>
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-mono bg-black/[0.04] text-black/55">Calorifuge dégradé</span>
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-mono bg-black/[0.04] text-black/55">Encrassement</span>
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-mono bg-black/[0.04] text-black/55">Soudure défectueuse</span>
+              </div>
+            </BentoCard>
+
+            {/* Chat F-Gas expert */}
+            <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[280px]" delay={120}>
+              <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-light mb-2">Assistant F-Gas, 24/7 dans votre poche</h3>
+              <p className="text-sm text-black/45 leading-relaxed">
+                Une question terrain — délai de contrôle pour 8 tCO2eq, substitut R-410A, lecture d&apos;un manomètre, validité d&apos;une recharge — réponse experte en français, en moins de 3 secondes. Réglementation UE 2024/573 + fluides HFC/HFO + diagnostic terrain.
+              </p>
+            </BentoCard>
+
+            {/* Alerte infractions */}
+            <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[220px]" delay={160}>
+              <div className="w-10 h-10 rounded-xl border border-red-200 bg-red-50 flex items-center justify-center mb-5 text-red-600">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
+                  <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-light mb-2">Alerte infractions réglementaires</h3>
+              <p className="text-sm text-black/45 leading-relaxed">
+                Vertxia compare en continu vos équipements aux délais imposés par le règlement UE 2024/573 et signale les contrôles en retard, classés par sévérité — pour vous protéger des sanctions DREAL et de l&apos;art. L173-12 du Code de l&apos;environnement.
+              </p>
+            </BentoCard>
+
+            {/* Relance client 30j */}
+            <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[220px]" delay={200}>
+              <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-light mb-2">Relance client 30 jours avant échéance</h3>
+              <p className="text-sm text-black/45 leading-relaxed">
+                30 jours avant le contrôle obligatoire d&apos;un client, Vertxia bascule l&apos;équipement en « à relancer » et prépare un email personnalisé prêt à envoyer en un tap. Vous ne perdez plus un client par oubli.
+              </p>
+            </BentoCard>
+
+            {/* Dictée vocale intervention complète */}
+            <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[220px]" delay={240}>
+              <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="12" y1="19" x2="12" y2="22" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-light mb-2">Dictée vocale 30 secondes</h3>
+              <p className="text-sm text-black/45 leading-relaxed">
+                Parlez votre intervention comme à un collègue (« contrôle annuel, R-410A 12 kg, fuite côté évaporateur, réparée, détecteur fixe »). L&apos;IA range tout dans les bonnes cases du CERFA. Confiance affichée par champ.
+              </p>
+            </BentoCard>
+
+            {/* Lookup SIRET */}
+            <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[220px]" delay={280}>
+              <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M21 21l-4.35-4.35" />
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="M11 7v4l3 2" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-light mb-2">Lookup SIRET client automatique</h3>
+              <p className="text-sm text-black/45 leading-relaxed">
+                Tapez les 3 premières lettres du client ou son SIRET → raison sociale, SIRET, adresse postale et code NAF récupérés en direct depuis l&apos;INSEE / data.gouv. Plus de saisie manuelle, plus de fautes de frappe.
+              </p>
+            </BentoCard>
+
+            {/* Multi-unités */}
+            <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[220px]" delay={320}>
+              <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-light mb-2">Multi-unités : 1 extérieure + N intérieures</h3>
+              <p className="text-sm text-black/45 leading-relaxed">
+                Pour les VRV, splits multi-zones, chambres froides modulaires : une seule charge fluide côté extérieur, mais chaque unité intérieure suivie avec son propre n° de série. Indispensable pour le SAV.
+              </p>
+            </BentoCard>
+
+            {/* Historique diagnostics */}
+            <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[220px]" delay={360}>
+              <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <circle cx="9" cy="14" r="1.5" />
+                  <path d="M10.5 15.5L13 18" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-light mb-2">Historique des diagnostics IA</h3>
+              <p className="text-sm text-black/45 leading-relaxed">
+                Chaque photo diagnostiquée est rangée dans un dossier dédié. Re-consultable, partageable, transformable en intervention pré-remplie en un tap — la photo et le défaut détecté restent attachés à la fiche d&apos;intervention.
+              </p>
+            </BentoCard>
+          </div>
+        </div>
+      </section>
+
       {/* ── DOCUMENTS GÉNÉRÉS ─────────────────────────────────────────────── */}
       <section id="categories" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
         <div className="max-w-6xl mx-auto">
