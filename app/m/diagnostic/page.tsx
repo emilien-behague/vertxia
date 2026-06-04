@@ -9,7 +9,7 @@
 // Aucune persistence Supabase en V1 : juste la dernière analyse en localStorage
 // pour éviter de la perdre si la page se recharge accidentellement.
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import {
@@ -19,6 +19,7 @@ import {
   DELAI_LABELS,
   type DiagnosticResult,
 } from "@/lib/vision-diagnostic";
+import { saveDiagnostic, listDiagnostics } from "@/lib/diagnostic-storage";
 
 type Phase = "idle" | "analyzing" | "result" | "error";
 
@@ -28,7 +29,13 @@ export default function DiagnosticPage() {
   const [contexteNote, setContexteNote] = useState("");
   const [result, setResult] = useState<DiagnosticResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [historyCount, setHistoryCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Compteur d'historique pour décider d'afficher le bouton "Historique" en haut
+  useEffect(() => {
+    setHistoryCount(listDiagnostics().length);
+  }, []);
 
   async function handleFile(file: File) {
     setError(null);
@@ -53,6 +60,18 @@ export default function DiagnosticPage() {
       const data = (await res.json()) as DiagnosticResult;
       setResult(data);
       setPhase("result");
+
+      // Auto-save dans l'historique (localStorage user-scoped)
+      try {
+        saveDiagnostic({
+          imageDataUrl: dataUrl,
+          contexteNote: contexteNote.trim() || undefined,
+          result: data,
+        });
+        setHistoryCount(listDiagnostics().length);
+      } catch (e) {
+        console.warn("[diagnostic] save failed:", e);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur diagnostic");
       setPhase("error");
@@ -87,7 +106,16 @@ export default function DiagnosticPage() {
 
   return (
     <>
-      <MobileHeader title="Diagnostic" largeTitle backHref="/m" />
+      <MobileHeader
+        title="Diagnostic"
+        largeTitle
+        backHref="/m"
+        rightAction={
+          historyCount > 0
+            ? { label: `Historique (${historyCount})`, href: "/m/diagnostic/historique" }
+            : undefined
+        }
+      />
 
       {/* PHASE IDLE — capture photo */}
       {phase === "idle" && (
