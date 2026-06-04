@@ -427,6 +427,30 @@ export default function MobileProfilPage() {
           </FormRow>
         </InsetListSection>
 
+        {/* Tarification — sert au calcul de la ligne "Main d'œuvre" dans les
+            devis générés depuis un diagnostic IA. Si vide, le devis utilise
+            la valeur par défaut 65 €/h HT. */}
+        <InsetListSection
+          title="Tarification"
+          footer="Utilisé pour générer les devis depuis un diagnostic IA. Valeur typique frigoriste FR 2026 : 55 à 95 €/h HT selon zone."
+        >
+          <FormRow label="Taux horaire HT (€/h)">
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="0.5"
+              value={profil.tauxHoraireDevisHT ?? ""}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                update("tauxHoraireDevisHT", !isNaN(v) && v > 0 ? v : undefined);
+              }}
+              placeholder="65"
+              className="input-mobile"
+            />
+          </FormRow>
+        </InsetListSection>
+
         {/* Transport déchets */}
         <InsetListSection
           title="Transport de déchets dangereux"

@@ -124,10 +124,13 @@ export default function DiagnosticDetailPage() {
     if (!clientName?.trim()) return;
     const clientAdresse = window.prompt("Adresse du client (optionnel) :", "") || undefined;
 
-    // Heures main d'œuvre : suggere la valeur estimee depuis le diagnostic
-    const heuresEstimees = estimerHeuresMainOeuvre(diag.result);
+    // Heures main d'œuvre : taux horaire depuis profil + estimation auto
+    const tauxHoraire = profil.tauxHoraireDevisHT && profil.tauxHoraireDevisHT > 0
+      ? profil.tauxHoraireDevisHT
+      : 65;
+    const heuresEstimees = estimerHeuresMainOeuvre(diag.result, tauxHoraire);
     const heuresInput = window.prompt(
-      "Nombre d'heures de main d'œuvre prévues :",
+      `Nombre d'heures de main d'œuvre prévues (taux ${tauxHoraire} €/h) :`,
       String(heuresEstimees).replace(".", ",")
     );
     if (heuresInput === null) return;
@@ -161,6 +164,7 @@ export default function DiagnosticDetailPage() {
         },
         numero: generateDevisNumero(),
         heuresMainOeuvre,
+        tauxHoraireHT: tauxHoraire,
       });
       const res = await fetch("/api/devis/create", {
         method: "POST",

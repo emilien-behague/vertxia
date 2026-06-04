@@ -135,14 +135,23 @@ function mentionFluide(diag: DiagnosticResult): boolean {
 
 /**
  * Estime le nombre d'heures de main d'oeuvre par defaut a partir du
- * diagnostic. Calcul : 50% du devis cible / taux horaire de reference,
- * arrondi a la 0.5h. Sert au pre-remplissage du prompt heures dans l'UI :
- * l'utilisateur voit la valeur estimee et peut la modifier avant gen.
+ * diagnostic. Calcul : 50% du devis cible / taux horaire, arrondi a la
+ * 0.5h. Sert au pre-remplissage du prompt heures dans l'UI : l'utilisateur
+ * voit la valeur estimee et peut la modifier avant gen.
+ *
+ * @param tauxHoraireHT — taux horaire du pro en €/h (defaut 65). Doit
+ *   etre le meme que celui passe a buildDevisFromDiagnostic pour rester
+ *   coherent (sinon le user voit "2.5h" suggerees mais le devis final
+ *   utilise un autre taux et un autre montant).
  */
-export function estimerHeuresMainOeuvre(diagnostic: DiagnosticResult): number {
+export function estimerHeuresMainOeuvre(
+  diagnostic: DiagnosticResult,
+  tauxHoraireHT?: number
+): number {
+  const taux = tauxHoraireHT && tauxHoraireHT > 0 ? tauxHoraireHT : TAUX_HORAIRE_DEFAUT;
   const totalCible = estimerMontantCible(diagnostic);
   const totalMO = totalCible * 0.5; // part main d'oeuvre par defaut
-  return Math.max(0.5, Math.round((totalMO / TAUX_HORAIRE_DEFAUT) * 2) / 2);
+  return Math.max(0.5, Math.round((totalMO / taux) * 2) / 2);
 }
 
 /** Construit un devis pre-rempli depuis un diagnostic IA + l'identite du

@@ -211,12 +211,15 @@ export default function DiagnosticPage() {
     ) || undefined;
 
     // Heures de main d'œuvre : on suggere la valeur estimee depuis le
-    // diagnostic. L'utilisateur peut valider la suggestion en tapant OK,
-    // ou taper son propre nombre (ex: '4' ou '2.5'). Format FR : virgule
+    // diagnostic, calculee avec le taux horaire CONFIGURE par le pro
+    // dans /m/profil (defaut 65 €/h si non configure). Format FR : virgule
     // ou point accepte.
-    const heuresEstimees = estimerHeuresMainOeuvre(result);
+    const tauxHoraire = profil.tauxHoraireDevisHT && profil.tauxHoraireDevisHT > 0
+      ? profil.tauxHoraireDevisHT
+      : 65;
+    const heuresEstimees = estimerHeuresMainOeuvre(result, tauxHoraire);
     const heuresInput = window.prompt(
-      "Nombre d'heures de main d'œuvre prévues :",
+      `Nombre d'heures de main d'œuvre prévues (taux ${tauxHoraire} €/h) :`,
       String(heuresEstimees).replace(".", ",")
     );
     if (heuresInput === null) return; // cancel
@@ -250,6 +253,7 @@ export default function DiagnosticPage() {
         },
         numero: generateDevisNumero(),
         heuresMainOeuvre,
+        tauxHoraireHT: tauxHoraire,
       });
 
       const res = await fetch("/api/devis/create", {

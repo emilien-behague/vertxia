@@ -73,6 +73,12 @@ export type Profil = {
   /** Signature scannée du gérant en data URL — pour signer automatiquement les rapports */
   signatureDataUrl?: string;
 
+  // Tarification (configurable pour la generation de devis client)
+  /** Taux horaire main d'oeuvre HT en €/h. Par defaut 65 €/h (moyenne FR
+   *  frigoriste artisan). Sert au calcul de la ligne "Main d'oeuvre" dans
+   *  les devis generes depuis un diagnostic IA. */
+  tauxHoraireDevisHT?: number;
+
   // Métadonnées
   updatedAt: string;
 };
@@ -99,6 +105,7 @@ export const EMPTY_PROFIL: Profil = {
   bsffDestinationAddress: "",
   logoDataUrl: undefined,
   signatureDataUrl: undefined,
+  tauxHoraireDevisHT: 65,
   updatedAt: new Date(0).toISOString(),
 };
 
