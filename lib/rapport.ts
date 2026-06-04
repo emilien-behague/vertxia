@@ -338,7 +338,7 @@ function drawTwoColRow(
   ctx.y -= 22;
 }
 
-function drawHeader(ctx: DrawCtx, profil: Profil, dateFR: string): void {
+async function drawHeader(ctx: DrawCtx, profil: Profil, dateFR: string): Promise<void> {
   // Band ocre full width tout en haut
   ctx.page.drawRectangle({
     x: 0,
@@ -388,11 +388,31 @@ function drawHeader(ctx: DrawCtx, profil: Profil, dateFR: string): void {
     opacity: 0.85,
   });
 
-  // Bande entreprise sous le band ocre
-  ctx.y = PAGE_HEIGHT - HEADER_BAND_HEIGHT - 25;
+  // Bande entreprise sous le band ocre.
+  // Si logo present : logo a gauche (carré 55x55) + bloc texte decale de 70px.
+  // Si pas de logo : tout aligne a gauche (comportement initial).
+  const blockTopY = PAGE_HEIGHT - HEADER_BAND_HEIGHT - 20;
+  let textStartX = MARGIN;
+
+  if (profil.logoDataUrl) {
+    const logoImg = await embedImageFromDataUrl(ctx.pdf, profil.logoDataUrl);
+    if (logoImg) {
+      const LOGO_BOX = 55;
+      const scaled = logoImg.scaleToFit(LOGO_BOX, LOGO_BOX);
+      ctx.page.drawImage(logoImg, {
+        x: MARGIN,
+        y: blockTopY - scaled.height + 8,
+        width: scaled.width,
+        height: scaled.height,
+      });
+      textStartX = MARGIN + LOGO_BOX + 15;
+    }
+  }
+
+  ctx.y = blockTopY;
   if (profil.raisonSociale) {
     ctx.page.drawText(profil.raisonSociale, {
-      x: MARGIN,
+      x: textStartX,
       y: ctx.y,
       size: 13,
       font: ctx.fontBold,
@@ -413,7 +433,7 @@ function drawHeader(ctx: DrawCtx, profil: Profil, dateFR: string): void {
   if (contactLine) entrepriseLines.push(contactLine);
   for (const line of entrepriseLines) {
     ctx.page.drawText(line, {
-      x: MARGIN,
+      x: textStartX,
       y: ctx.y,
       size: 9,
       font: ctx.font,
@@ -1051,7 +1071,7 @@ export async function generateRapportPdf(input: RapportInput): Promise<Uint8Arra
     pageIndex: 1,
   };
 
-  drawHeader(ctx, input.profil, dateFR);
+  await drawHeader(ctx, input.profil, dateFR);
   drawClientSection(ctx, input);
   drawEquipementSection(ctx, input);
   drawInterventionSection(ctx, input);
