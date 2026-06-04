@@ -34,7 +34,32 @@ export async function POST(req: Request) {
       },
     });
   } catch (err) {
-    console.error("[CERFA] échec génération :", err);
+    // Logge la stack + un snapshot de l'input pour pouvoir reproduire offline.
+    // Les champs lourds (signature dataUrl, notes très longues) sont remplacés
+    // par leur taille pour éviter de spammer les logs Vercel.
+    const stack = err instanceof Error ? err.stack || err.message : String(err);
+    const inputSnapshot = {
+      typeIntervention: body.typeIntervention,
+      fluide: body.fluide,
+      weight: body.weight,
+      hasBsffId: Boolean(body.bsffId),
+      hasOperateurSig: Boolean(body.operateur?.signatureDataUrl),
+      operateurSigLen: body.operateur?.signatureDataUrl?.length ?? 0,
+      hasDetenteurSig: Boolean(body.detenteurSignature?.dataUrl),
+      detenteurSigLen: body.detenteurSignature?.dataUrl?.length ?? 0,
+      observationsLen: body.observationsLibres?.length ?? 0,
+      hasFluideManipule: Boolean(body.fluideManipule),
+      hasControleDetails: Boolean(body.controleDetails),
+      clientNameLen: body.clientName?.length ?? 0,
+      modeleEqLen: body.modeleEquipement?.length ?? 0,
+      lieuLen: body.lieuIntervention?.length ?? 0,
+    };
+    console.error(
+      "[CERFA] échec génération :",
+      JSON.stringify(inputSnapshot),
+      "\n",
+      stack
+    );
     return NextResponse.json(
       {
         error: "Échec génération CERFA",

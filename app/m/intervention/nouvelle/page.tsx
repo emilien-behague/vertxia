@@ -286,10 +286,13 @@ function NouvelleInterventionContent() {
     if (!diag) return;
     setDiagContext(diag);
 
-    // Type par défaut : maintenance (catch-all pour suivi d'un défaut visuel).
-    // Le technicien peut switcher vers "controle_non_periodique" si c'est une
-    // suspicion de fuite, ou autre. On ne force que si pas déjà override par ?type=
-    if (!typeParam) setTypeIntervention("maintenance");
+    // Type par défaut : contrôle non périodique (= contrôle suite à fuite /
+    // défaut détecté). C'est ce qui correspond le mieux au cas "un diagnostic
+    // IA a détecté un défaut sur la photo, donc on déclenche une vérification
+    // d'étanchéité hors du calendrier annuel". Le technicien peut switcher
+    // vers maintenance / mise_service si le diag montre autre chose qu'une fuite.
+    // On ne force que si pas déjà override par ?type=
+    if (!typeParam) setTypeIntervention("controle_non_periodique");
 
     // Pré-remplissage des notes : structure lisible que le technicien peut
     // garder telle quelle ou enrichir, et qui se retrouve dans la fiche
@@ -739,7 +742,10 @@ function NouvelleInterventionContent() {
       });
       if (!cerfaRes.ok) {
         const err = await cerfaRes.json().catch(() => ({}));
-        setStatus({ type: "error", message: err.error || "Échec CERFA" });
+        const msg = err.detail
+          ? `${err.error || "Échec CERFA"} — ${err.detail}`
+          : err.error || "Échec CERFA";
+        setStatus({ type: "error", message: msg });
         return;
       }
       const cerfaBlob = await cerfaRes.blob();
