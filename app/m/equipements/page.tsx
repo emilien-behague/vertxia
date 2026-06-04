@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection, InsetRow } from "@/components/mobile/inset-list";
 import { listInterventions } from "@/lib/intervention-storage";
+import { listDiagnostics } from "@/lib/diagnostic-storage";
 import {
   listEquipements,
   computeAllStatus,
@@ -12,12 +13,14 @@ import {
   type EquipementWithStatus,
   type ControleStatut,
 } from "@/lib/equipement";
+import { detectPredictiveSignals } from "@/lib/predictive-maintenance";
 import { downloadStickerSheet } from "@/lib/qrcode-client";
 
-type Filter = "all" | "en_retard" | "a_relancer" | "a_programmer" | "ok";
+type Filter = "all" | "a_risque" | "en_retard" | "a_relancer" | "a_programmer" | "ok";
 
 const FILTER_LABELS: Record<Filter, string> = {
   all: "Tous",
+  a_risque: "Risque",
   en_retard: "Retard",
   a_relancer: "Relance",
   a_programmer: "À prog.",
@@ -63,8 +66,26 @@ export default function MobileEquipementsPage() {
 
   const stats = useMemo(() => getEquipementStats(items), [items]);
 
+  // Set des IDs d'equipements avec signaux predictifs (alerte ou critique).
+  // Surveillance seul ne compte pas — trop bruyant pour un filtre dashboard.
+  const equipementsARisque = useMemo(() => {
+    const allInterv = listInterventions();
+    const allDiag = listDiagnostics();
+    const set = new Set<string>();
+    for (const eq of items) {
+      const sigs = detectPredictiveSignals(eq, allInterv, allDiag);
+      if (sigs.some((s) => s.gravite === "critique" || s.gravite === "alerte")) {
+        set.add(eq.id);
+      }
+    }
+    return set;
+  }, [items]);
+
   const filtered = useMemo(() => {
     if (filter === "all") return items;
+    if (filter === "a_risque") {
+      return items.filter((e) => equipementsARisque.has(e.id));
+    }
     if (filter === "a_programmer") {
       return items.filter((e) => e.statut === "a_programmer" || e.statut === "jamais");
     }
@@ -72,7 +93,7 @@ export default function MobileEquipementsPage() {
       return items.filter((e) => e.statut === "a_relancer");
     }
     return items.filter((e) => e.statut === filter);
-  }, [items, filter]);
+  }, [items, filter, equipementsARisque]);
 
   async function handleStickers() {
     if (stickersBusy || items.length === 0) return;
@@ -92,8 +113,14 @@ export default function MobileEquipementsPage() {
 
       {/* Stats inline */}
       <section className="px-4 mt-2">
-        <div className="grid grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-4 gap-2">
           <MiniStat label="Total" value={stats.total} color="text-[#111]" />
+          <MiniStat
+            label="Risque"
+            value={equipementsARisque.size}
+            color="text-orange-600"
+            pulse={equipementsARisque.size > 0}
+          />
           <MiniStat label="Retard" value={stats.enRetard} color="text-red-600" pulse={stats.enRetard > 0} />
           <MiniStat label="À jour" value={stats.ok} color="text-emerald-600" />
         </div>
