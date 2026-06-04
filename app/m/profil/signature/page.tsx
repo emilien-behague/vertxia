@@ -170,36 +170,99 @@ export default function MobileSignaturePage() {
     setHasContent(false);
   }
 
+  /** Downscale le canvas signature dans un offscreen canvas a 600x200 max
+   *  puis export en JPEG fond blanc qualite 60. Taille typique resultante :
+   *  15-30KB (contre 100-300KB avec le canvas natif iPhone @ dpr=3). */
+  function exportCompressedSignature(): string {
+    const src = canvasRef.current;
+    if (!src) throw new Error("Canvas indisponible");
+    const MAX_W = 600;
+    const MAX_H = 200;
+    const ratio = Math.min(MAX_W / src.width, MAX_H / src.height, 1);
+    const w = Math.round(src.width * ratio);
+    const h = Math.round(src.height * ratio);
+    const off = document.createElement("canvas");
+    off.width = w;
+    off.height = h;
+    const ctx = off.getContext("2d");
+    if (!ctx) throw new Error("Contexte 2D indisponible");
+    // Fond blanc explicite : la signature est noire sur transparent, et le
+    // JPEG ne gere pas la transparence -> sans fond on aurait un fond noir.
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(src, 0, 0, w, h);
+    return off.toDataURL("image/jpeg", 0.6);
+  }
+
+  /** Auto-cleanup des plus vieux diagnostics si le quota explose. Libere
+   *  environ 200KB par diagnostic (photo + resultat). On supprime jusqu'a
+   *  N anciens — l'user ne perd qu'un historique long, pas les recents. */
+  function cleanupOldDiagnostics(n: number): void {
+    try {
+      const STORAGE_KEY = "vertxia:diagnostics";
+      // On lit toutes les clés scoped par user (vertxia:diagnostics:<uid>)
+      const keys: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(STORAGE_KEY)) keys.push(k);
+      }
+      for (const key of keys) {
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+        try {
+          const parsed = JSON.parse(raw) as Array<{ createdAt: string }>;
+          if (!Array.isArray(parsed) || parsed.length === 0) continue;
+          // Tri desc par date, on garde les N plus recents, on supprime les autres
+          parsed.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+          const keep = parsed.slice(0, Math.max(0, parsed.length - n));
+          localStorage.setItem(key, JSON.stringify(keep));
+        } catch {
+          /* ignore parse errors */
+        }
+      }
+    } catch (e) {
+      console.warn("[signature] cleanup failed:", e);
+    }
+  }
+
   function handleSave() {
     const canvas = canvasRef.current;
     if (!canvas || saving) return;
     setError(null);
     setSaving(true);
     try {
-      // Export en PNG dataURL puis compress si gros (signature > 80KB rare).
-      // canvas.toDataURL peut throw "Tainted canvases may not be exported"
-      // si l'image existante chargee venait d'un domaine cross-origin (impossible
-      // ici puisque c'est une dataURL locale, mais defensif).
-      let dataUrl = canvas.toDataURL("image/png");
-      // Si la PNG depasse 80KB, on retombe sur du JPEG 80% pour eviter de
-      // remplir le localStorage iOS (5MB hard limit).
-      if (dataUrl.length > 80 * 1024) {
-        const jpeg = canvas.toDataURL("image/jpeg", 0.8);
-        if (jpeg.length < dataUrl.length) dataUrl = jpeg;
-      }
+      // Export compresse : downscale 600x200 + JPEG 60% -> typiquement <30KB
+      // au lieu de 100-300KB en PNG full size, ce qui evite de saturer le
+      // localStorage iPhone (5MB hard limit) deja occupe par les diagnostics.
+      const dataUrl = exportCompressedSignature();
       const profil = loadProfil();
-      saveProfil({ ...profil, signatureDataUrl: dataUrl });
-      router.push("/m/profil");
+      try {
+        saveProfil({ ...profil, signatureDataUrl: dataUrl });
+        router.push("/m/profil");
+        return;
+      } catch (innerErr) {
+        // Premier essai foire : si c'est QuotaExceeded, on cleanup 10 diags
+        // anciens et on retry une fois. Sinon on rethrow.
+        const ie = innerErr instanceof Error ? innerErr : new Error(String(innerErr));
+        const isQuota =
+          ie.name === "QuotaExceededError" || /quota|storage/i.test(ie.message);
+        if (!isQuota) throw ie;
+        cleanupOldDiagnostics(10);
+        // Retry apres cleanup
+        saveProfil({ ...profil, signatureDataUrl: dataUrl });
+        router.push("/m/profil");
+        return;
+      }
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
       console.error("[signature] save failed:", err);
-      // QuotaExceededError = localStorage full
       const isQuota =
-        err.name === "QuotaExceededError" ||
-        /quota|storage/i.test(err.message);
+        err.name === "QuotaExceededError" || /quota|storage/i.test(err.message);
       setError(
         isQuota
-          ? "Espace de stockage saturé sur le téléphone. Va dans l'historique et supprime quelques anciens diagnostics ou interventions, puis recommence."
+          ? "Espace de stockage saturé sur le téléphone. Va dans l'historique de diagnostics et supprime-en quelques-uns, puis recommence."
           : `Échec enregistrement : ${err.message}`
       );
       setSaving(false);
