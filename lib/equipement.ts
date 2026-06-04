@@ -340,6 +340,77 @@ export function getEquipementStats(items: EquipementWithStatus[]): EquipementSta
   };
 }
 
+// ─── Détection des infractions réglementaires F-Gas ────────────────────
+// Liste les équipements en non-conformité avec le règlement UE 2024/573 et
+// le décret F-Gas FR. Critères V1 :
+//  - Contrôle d'étanchéité dépassé (statut "en_retard")
+//  - Équipement ≥ 5 tCO2eq jamais contrôlé (statut "jamais")
+//
+// Évolutions V2 envisagées : R-22 rechargé (interdit), R-410A neuf < 12 kW
+// post-2025, R-404A neuf ≥ 40 tCO2eq post-2020, attestation cat I-V expirée.
+
+export type InfractionSeverite = "critique" | "haute" | "moyenne";
+
+export type Infraction = {
+  equipement: EquipementWithStatus;
+  raison: string;
+  /** Action concrète à mener pour résoudre l'infraction */
+  actionRecommandee: string;
+  severite: InfractionSeverite;
+  /** Référence textuelle de l'article réglementaire violé */
+  articleRef: string;
+};
+
+/**
+ * Retourne la liste des équipements en infraction réglementaire, classée
+ * par sévérité (critique > haute > moyenne) puis par ancienneté du retard.
+ */
+export function getInfractions(equipements: EquipementWithStatus[]): Infraction[] {
+  const out: Infraction[] = [];
+
+  for (const eq of equipements) {
+    if (eq.statut === "en_retard") {
+      const jours =
+        eq.joursAvantControle !== null ? Math.abs(eq.joursAvantControle) : 0;
+      const severite: InfractionSeverite =
+        jours > 180 ? "critique" : jours > 90 ? "haute" : "moyenne";
+      out.push({
+        equipement: eq,
+        raison: `Contrôle d'étanchéité en retard de ${jours} jour${jours > 1 ? "s" : ""}`,
+        actionRecommandee:
+          "Programmer un contrôle d'étanchéité immédiat + remettre le CERFA 15497*04 au détenteur",
+        severite,
+        articleRef: "Règlement UE 2024/573 art. 5",
+      });
+    } else if (eq.statut === "jamais") {
+      out.push({
+        equipement: eq,
+        raison: `Jamais contrôlé — équipement soumis à contrôle obligatoire (${eq.tCO2eq.toFixed(1)} tCO2eq)`,
+        actionRecommandee:
+          "Réaliser un contrôle d'étanchéité initial + démarrer le suivi périodique",
+        severite: "haute",
+        articleRef: "Règlement UE 2024/573 art. 5",
+      });
+    }
+  }
+
+  const severiteOrder: Record<InfractionSeverite, number> = {
+    critique: 0,
+    haute: 1,
+    moyenne: 2,
+  };
+  out.sort((a, b) => {
+    const diff = severiteOrder[a.severite] - severiteOrder[b.severite];
+    if (diff !== 0) return diff;
+    // À sévérité égale, on remonte les retards les plus anciens
+    const ja = a.equipement.joursAvantControle ?? 0;
+    const jb = b.equipement.joursAvantControle ?? 0;
+    return ja - jb;
+  });
+
+  return out;
+}
+
 /**
  * Génère un mailto: URL pour relancer le client avant l'échéance du contrôle.
  * Pré-rempli avec destinataire (clientEmail), CC frigoriste, objet, et corps complet.

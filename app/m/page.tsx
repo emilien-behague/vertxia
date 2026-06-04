@@ -3,10 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection, InsetRow } from "@/components/mobile/inset-list";
+import Link from "next/link";
 import {
   listEquipements,
   computeAllStatus,
   getEquipementStats,
+  getInfractions,
   type EquipementWithStatus,
 } from "@/lib/equipement";
 import { listInterventions, type StoredIntervention } from "@/lib/intervention-storage";
@@ -47,6 +49,7 @@ export default function MobileHomePage() {
   }, []);
 
   const stats = useMemo(() => getEquipementStats(equipements), [equipements]);
+  const infractions = useMemo(() => getInfractions(equipements), [equipements]);
   const urgents = useMemo(
     () =>
       equipements
@@ -76,6 +79,38 @@ export default function MobileHomePage() {
   return (
     <>
       <MobileHeader title="Vertxia" largeTitle />
+
+      {/* Bandeau alerte infractions réglementaires — affiché en haut si > 0
+          pour activer la peur réglementaire (UE 2024/573) et inciter à
+          ouvrir la page /m/infractions où l'enjeu est détaillé. */}
+      {infractions.length > 0 && (
+        <Link
+          href="/m/infractions"
+          className="block mx-4 mt-2 mb-3 rounded-2xl bg-red-50 border border-red-200 px-4 py-3 active:bg-red-100/70 transition-colors"
+          style={{ WebkitTapHighlightColor: "transparent" }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 animate-pulse">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[14.5px] font-semibold text-red-900 leading-tight">
+                {infractions.length} équipement{infractions.length > 1 ? "s" : ""} en infraction
+              </div>
+              <div className="text-[11.5px] text-red-800/80 leading-snug mt-0.5">
+                Non-conformité UE 2024/573. Risque sanctions DREAL.
+              </div>
+            </div>
+            <svg className="shrink-0 text-red-600/60" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+          </div>
+        </Link>
+      )}
 
       {/* Stats grid 2x2 */}
       <section className="px-4 mt-2">
