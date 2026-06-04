@@ -11,7 +11,8 @@
 //  - Récap par fluide (volumes totaux par type)
 //  - Pied de page avec signature opérateur
 
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { embedUnicodeFonts } from "./pdf-fonts";
 import type { Bouteille, Mouvement, MouvementType } from "./bouteille";
 import {
   computeChargeActuelle,
@@ -59,8 +60,10 @@ function fmtKg(n: number): string {
 
 export async function generateRegistrePdf(input: RegistreInput): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
-  const font = await doc.embedFont(StandardFonts.Helvetica);
-  const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
+  // Embed NotoSans Unicode (regular + bold) au lieu de StandardFonts.Helvetica
+  // pour ne pas crash sur les caracteres etendus (notes contenant emoji, ², ²,
+  // smart quotes, fleches Unicode, etc.) qui passaient avant en WinAnsi error.
+  const { regular: font, bold: fontBold } = await embedUnicodeFonts(doc);
 
   // Filtrer mouvements dans la période
   const tStart = new Date(input.periodeDebutISO).getTime();
