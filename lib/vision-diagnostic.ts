@@ -23,6 +23,39 @@ export type DiagnosticResult = {
   model?: string;
 };
 
+/** Compresse une dataURL deja existante (re-encodage canvas). Sert au
+ *  stockage local : l'image envoyee a Claude vision est en 2000px JPEG 80%
+ *  (qualite max pour analyse fine), mais pour stocker 20 diagnostics dans
+ *  le localStorage iPhone Safari (quota ~5MB), on recompresse a 1200px
+ *  JPEG 60% (~80KB/image vs ~250KB initial). Visuel encore tres correct
+ *  pour l'historique et le rapport client. */
+export async function recompressDataUrlForStorage(
+  dataUrl: string,
+  maxDim = 1200,
+  quality = 0.6
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onerror = () => reject(new Error("Image illisible pour recompression"));
+    img.onload = () => {
+      const ratio = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const targetW = Math.round(img.width * ratio);
+      const targetH = Math.round(img.height * ratio);
+      const canvas = document.createElement("canvas");
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Canvas 2D indisponible"));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, targetW, targetH);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.src = dataUrl;
+  });
+}
+
 /** Compresse + redimensionne une image client-side avant upload.
  *  Max width = 2000px, qualité JPEG 80%. Si l'image est plus petite, on
  *  garde la résolution d'origine. Renvoie data URL.

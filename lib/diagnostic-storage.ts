@@ -5,7 +5,7 @@
 
 import { uuid } from "./uuid";
 import { scopedKey } from "./user-scope";
-import type { DiagnosticResult } from "./vision-diagnostic";
+import { recompressDataUrlForStorage, type DiagnosticResult } from "./vision-diagnostic";
 
 const STORAGE_KEY_BASE = "vertxia:diagnostics";
 const MAX_STORED = 20;
@@ -44,16 +44,31 @@ export function listDiagnostics(): StoredDiagnostic[] {
   }
 }
 
-export function saveDiagnostic(input: {
+export async function saveDiagnostic(input: {
   imageDataUrl: string;
   contexteNote?: string;
   result: DiagnosticResult;
-}): StoredDiagnostic {
+}): Promise<StoredDiagnostic> {
   if (!isBrowser()) throw new Error("localStorage indisponible");
+
+  // Recompress l'image AVANT stockage : 1200px JPEG 60% (~80KB) au lieu de
+  // l'original 2000px JPEG 80% (~250KB). Permet de garder ~50 diagnostics
+  // dans 5MB de quota iPhone Safari au lieu de 15-20. La version originale
+  // a deja servi a l'analyse IA + au partage immediat — pour l'historique
+  // une qualite moindre suffit largement.
+  let imageForStorage = input.imageDataUrl;
+  try {
+    imageForStorage = await recompressDataUrlForStorage(input.imageDataUrl);
+  } catch (e) {
+    // Fallback : on garde l'original si recompress echoue (canvas non dispo,
+    // image corrompue, etc.). Le quota check ci-dessous fera son job.
+    console.warn("[diagnostic-storage] recompress failed, using original:", e);
+  }
+
   const entry: StoredDiagnostic = {
     id: uuid(),
     createdAt: new Date().toISOString(),
-    imageDataUrl: input.imageDataUrl,
+    imageDataUrl: imageForStorage,
     contexteNote: input.contexteNote,
     result: input.result,
   };

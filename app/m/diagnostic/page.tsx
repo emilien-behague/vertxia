@@ -117,7 +117,7 @@ export default function DiagnosticPage() {
       // toast au lieu de silent fail — sinon le compteur 'Historique (N)'
       // reste fige et l'utilisateur ne comprend pas pourquoi.
       try {
-        const saved = saveDiagnostic({
+        const saved = await saveDiagnostic({
           imageDataUrl: dataUrl,
           contexteNote: contexteNote.trim() || undefined,
           result: data,
