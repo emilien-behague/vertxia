@@ -720,6 +720,35 @@ export default function MobileProfilPage() {
 
       </form>
 
+      {/* Documents officiels embarqués — CERFA, registres modèles, guides
+          DGEC téléchargés depuis sources primaires et disponibles offline.
+          Utile en contrôle DREAL ou pour répondre à une question client. */}
+      <div className="px-4 mb-4 mt-2">
+        <a
+          href="/m/documents"
+          className="flex items-center gap-3 w-full px-5 py-3.5 rounded-2xl bg-white border border-black/10 active:bg-black/[0.03] transition-colors"
+          style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+        >
+          <span className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-[#A16207]/10 shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A16207" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+          </span>
+          <span className="flex-1 text-left">
+            <span className="block text-[14px] font-medium text-[#111]">
+              Documents officiels
+            </span>
+            <span className="block text-[12px] text-black/55 leading-snug">
+              CERFA, modèles registres, guides DGEC · offline
+            </span>
+          </span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </a>
+      </div>
+
       {/* Lien diagnostic sync — toujours visible meme sans profil rempli,
           pour les users qui se connectent sur un nouveau device et ne
           voient rien : ils peuvent ouvrir cette page pour comprendre
