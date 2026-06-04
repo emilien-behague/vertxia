@@ -275,13 +275,19 @@ export default function MobileInterventionDetailPage() {
       const profil = loadProfil();
       const origin = typeof window !== "undefined" ? window.location.origin : "https://vertxia.com";
 
-      // Pour les interventions creees AVANT le fix qui stocke equipementId :
-      // lookup dans le parc local par modele + numero de serie pour retrouver
-      // l'equipement parent. Si trouve, on l'utilise pour le QR.
-      let equipementIdOverride: string | undefined;
-      if (!intervention.equipementId && (intervention.modeleEquipement || intervention.numeroSerieEquipement)) {
-        try {
-          const { listEquipements } = await import("@/lib/equipement");
+      // Resolution de l'equipementId pour le QR :
+      //   1. Si stocke dans l'intervention -> on l'utilise
+      //   2. Sinon lookup dans le parc local par numeroSerie ou modele+client
+      //   3. Sinon creation auto d'un equipement minimum a partir des infos
+      //      de l'intervention (sync Supabase auto via saveEquipement)
+      //   4. Sinon (intervention sans modele/serie) -> erreur claire
+      let equipementIdOverride: string | undefined = intervention.equipementId;
+
+      if (!equipementIdOverride) {
+        const { listEquipements, saveEquipement } = await import("@/lib/equipement");
+
+        // Etape 2 : lookup dans le parc local
+        if (intervention.modeleEquipement || intervention.numeroSerieEquipement) {
           const eqs = listEquipements();
           const match = eqs.find(
             (e) =>
@@ -289,8 +295,39 @@ export default function MobileInterventionDetailPage() {
               (intervention.modeleEquipement && e.modele === intervention.modeleEquipement && e.clientName === intervention.clientName)
           );
           if (match) equipementIdOverride = match.id;
-        } catch {
-          // Silencieux : si le lookup foire, on tombera sur le fallback landing
+        }
+
+        // Etape 3 : creation auto si on a les infos minimum
+        if (!equipementIdOverride && intervention.modeleEquipement && intervention.numeroSerieEquipement) {
+          try {
+            const created = saveEquipement({
+              clientName: intervention.clientName || "Client à compléter",
+              siteAdresse: intervention.lieuIntervention,
+              modele: intervention.modeleEquipement,
+              numeroSerie: intervention.numeroSerieEquipement,
+              fluide: intervention.fluide,
+              chargeKg: intervention.weight > 0 ? intervention.weight : 0,
+              detecteurFixe: intervention.controleDetails?.detecteurPermanent ?? false,
+              dernierControleISO:
+                intervention.typeIntervention === "controle_periodique" ||
+                intervention.typeIntervention === "controle_non_periodique"
+                  ? intervention.createdAt
+                  : undefined,
+            });
+            equipementIdOverride = created.id;
+          } catch {
+            // Silencieux : si la creation foire (ex: quota localStorage), on
+            // tombe sur l'etape 4
+          }
+        }
+
+        // Etape 4 : impossible -> erreur claire
+        if (!equipementIdOverride) {
+          setEtiquetteError(
+            "Impossible de générer une étiquette traçable : il manque le modèle et le numéro de série dans l'intervention. Modifie l'intervention pour les ajouter — sans ça, le QR ne peut pas pointer vers une fiche équipement."
+          );
+          setEtiquetteLoading(false);
+          return;
         }
       }
 
