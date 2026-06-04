@@ -1,6 +1,28 @@
 import { PDFDocument } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+
+// Fonte Unicode embarquee dans le PDF (NotoSans-Regular ~556KB).
+// Avec { subset: true }, seuls les glyphes effectivement utilises sont embed
+// dans le PDF final (~50-100KB). Resout les "WinAnsi cannot encode" pour
+// fleches (->), smart quotes auto-iOS, exposants metier (degC, m2), etc.
+//
+// La fonte est cachee en module-level apres le 1er appel pour eviter de relire
+// 556KB du disque sur chaque request (gain ~150ms par CERFA).
+let cachedFontBytes: Uint8Array | null = null;
+async function loadUnicodeFontBytes(): Promise<Uint8Array> {
+  if (cachedFontBytes) return cachedFontBytes;
+  const fontPath = path.join(
+    process.cwd(),
+    "public",
+    "fonts",
+    "NotoSans-Regular.ttf"
+  );
+  const buf = await readFile(fontPath);
+  cachedFontBytes = new Uint8Array(buf);
+  return cachedFontBytes;
+}
 
 export type TypeIntervention =
   | "recuperation"
@@ -170,79 +192,18 @@ function ficheNumber(d: Date) {
 // Si tu rencontres un nouveau caractère qui crash : ajoute-le dans la map.
 // Alternative future : embed une fonte Unicode (NotoSans) ~500KB — pour l'instant
 // on reste léger.
+// Conserve uniquement les caracteres safes pour le rendu PDF :
+// - retire les zero-width / BOM (largeur 0, polluent le layout)
+// - normalise les NBSP variants en espace standard
+// Le reste passe tel quel : on embed NotoSans-Regular en custom font sur
+// updateFieldAppearances(), donc fleches, smart quotes, exposants, etc.
+// sont rendus nativement (plus de "WinAnsi cannot encode").
 function sanitizeForWinAnsi(s: string): string {
   if (!s) return s;
-  const map: Record<string, string> = {
-    "→": "->",
-    "←": "<-",
-    "↑": "^",
-    "↓": "v",
-    "↔": "<->",
-    "⇒": "=>",
-    "✓": "OK",
-    "✗": "X",
-    "✘": "X",
-    "★": "*",
-    "☆": "*",
-    "●": "*",
-    "○": "o",
-    "•": "-",
-    "·": "-",
-    "—": "-",
-    "–": "-",
-    "‒": "-",
-    "‑": "-",
-    "“": '"',
-    "”": '"',
-    "„": '"',
-    "‘": "'",
-    "’": "'",
-    "‚": "'",
-    "…": "...",
-    "≈": "~",
-    "≠": "!=",
-    "≤": "<=",
-    "≥": ">=",
-    "±": "+/-",
-    "×": "x",
-    "÷": "/",
-    "∞": "inf",
-    "™": "(TM)",
-    "©": "(c)",
-    "®": "(R)",
-    "°": "deg",
-    "²": "2",
-    "³": "3",
-    "¹": "1",
-    "½": "1/2",
-    "¼": "1/4",
-    "¾": "3/4",
-    " ": " ", // NBSP
-    " ": " ", // NARROW NBSP
-    " ": " ", // THIN SPACE
-    "​": "",  // ZERO WIDTH SPACE
-    "﻿": "",  // BOM
-  };
-  // Replace mapped chars
-  let out = s;
-  for (const [from, to] of Object.entries(map)) {
-    if (out.includes(from)) out = out.split(from).join(to);
-  }
-  // Strip emojis (range BMP + supplemental) — pas dans WinAnsi
-  out = out.replace(
-    /[\u{1F300}-\u{1FAFF}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu,
-    ""
-  );
-  // Fallback : tout caractère hors Latin-1 restant → "?"
-  // (la BBox WinAnsi couvre ~0x00-0xFF + quelques extras 0x20AC etc.)
-  out = out.replace(/[Ā-￿]/g, (ch) => {
-    // Whitelist supplémentaires officiellement supportées par WinAnsi
-    if ("€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ".includes(ch)) return ch;
-    return "?";
-  });
-  return out;
+  return s
+    .replace(/[​-‍﻿]/g, "")
+    .replace(/[   ]/g, " ");
 }
-
 export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
   const templatePath = path.join(
     process.cwd(),
@@ -251,6 +212,15 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
   );
   const bytes = await readFile(templatePath);
   const pdf = await PDFDocument.load(bytes);
+
+  // Register fontkit + embed NotoSans-Regular comme fonte des appearances de
+  // formulaire. Avec { subset: true }, le PDF final ne contient que les glyphes
+  // effectivement utilises (~50-100KB embed sur ~556KB source) -> support
+  // complet Unicode (fleches, smart quotes, exposants) sans exploser le poids.
+  pdf.registerFontkit(fontkit);
+  const unicodeFontBytes = await loadUnicodeFontBytes();
+  const customFont = await pdf.embedFont(unicodeFontBytes, { subset: true });
+
   const form = pdf.getForm();
 
   const now = new Date();
@@ -575,9 +545,11 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
     setText("Sign_Detenteur_Date", "");
   }
 
-  // Re-générer les appearances pour appliquer les setFontSize() personnalisés.
-  // Sans ça, pdf-lib garde l'apparence d'origine (fontSize auto du PDF source).
-  form.updateFieldAppearances();
+  // Re-generer les appearances avec la fonte Unicode custom (NotoSans).
+  // Sans le 2e arg, pdf-lib fallback sur Helvetica WinAnsi qui ne supporte
+  // pas les fleches (->), smart quotes, exposants. Avec customFont, on
+  // rend nativement quasi tout Unicode (fonte Google subsettee a la volee).
+  form.updateFieldAppearances(customFont);
 
   // Flatten = rend tous les champs non-éditables et imprime les valeurs
   // dans le document (PDF "officiel rempli", pas un formulaire à éditer).
