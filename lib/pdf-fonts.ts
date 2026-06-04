@@ -48,10 +48,21 @@ export async function embedUnicodeFonts(
   }
   const regular = await pdf.embedFont(cachedRegular, { subset: true });
 
+  // Embed Bold dans un try/catch separe : si le fichier existe mais qu'il
+  // n'est pas une vraie TTF (ex: HTML 404 telecharge par erreur via curl
+  // qui passe le size check mais crashe fontkit avec "Unknown font format"),
+  // on fallback sur la regular au lieu de planter tout le PDF.
   if (!cachedBold) cachedBold = await loadFontFile("NotoSans-Bold.ttf");
-  const bold = cachedBold
-    ? await pdf.embedFont(cachedBold, { subset: true })
-    : regular;
+  let bold: PDFFont = regular;
+  if (cachedBold) {
+    try {
+      bold = await pdf.embedFont(cachedBold, { subset: true });
+    } catch (e) {
+      console.warn("[pdf-fonts] NotoSans-Bold embed failed, fallback to regular:", e);
+      // Invalide le cache pour ne pas re-tenter ad nauseam si fichier corrompu
+      cachedBold = null;
+    }
+  }
 
   return { regular, bold };
 }

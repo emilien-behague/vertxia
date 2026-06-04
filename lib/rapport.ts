@@ -1024,10 +1024,18 @@ export async function generateRapportPdf(input: RapportInput): Promise<Uint8Arra
   // Embed Unicode font (regular + tentative bold). Subset:true -> ~50KB final.
   const regularBytes = await loadUnicodeFontBytes();
   const font = await pdf.embedFont(regularBytes, { subset: true });
+  // Bold dans un try/catch : si le fichier Bold existe mais est corrompu
+  // (ex: HTML 404 telecharge par erreur — c'etait le cas le 04/06/2026),
+  // on fallback sur regular au lieu de crash "Unknown font format".
   const boldBytes = await loadUnicodeFontBoldBytes();
-  const fontBold = boldBytes
-    ? await pdf.embedFont(boldBytes, { subset: true })
-    : font; // fallback : meme fonte (le bold sera moins marque mais lisible)
+  let fontBold: PDFFont = font;
+  if (boldBytes) {
+    try {
+      fontBold = await pdf.embedFont(boldBytes, { subset: true });
+    } catch (e) {
+      console.warn("[rapport] bold embed failed, fallback to regular:", e);
+    }
+  }
 
   const rapportNumber = generateRapportNumber();
   const dateFR = fmtDateFR(input.interventionDate);
