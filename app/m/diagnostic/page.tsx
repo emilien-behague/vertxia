@@ -27,6 +27,7 @@ import {
   buildContextMemoryFromCurrentState,
   type ContextMemory,
 } from "@/lib/context-memory";
+import { buildDevisFromDiagnostic, generateDevisNumero } from "@/lib/devis";
 import {
   shareDiagnostic,
   buildDiagnosticWhatsAppUrl,
@@ -154,6 +155,82 @@ export default function DiagnosticPage() {
     window.open(url, "_blank", "noopener,noreferrer");
     setShareToast("Photo téléchargée — attache-la dans WhatsApp avant d'envoyer");
     setTimeout(() => setShareToast(null), 5000);
+  }
+
+  /** Genere un devis structure depuis le diagnostic IA + identite du pro.
+   *  Telecharge directement le PDF (V1 sans ecran d'edition). Le pro fournit
+   *  le nom du client via prompt. V2 ajoutera une page de preview/edition
+   *  avec ajustement des montants. */
+  async function handleGenerateDevis() {
+    if (!result) return;
+    const profil = loadProfil();
+    if (!profil.raisonSociale?.trim()) {
+      setShareToast("Profil entreprise incomplet — renseigne au moins ta raison sociale dans /m/profil");
+      setTimeout(() => setShareToast(null), 5000);
+      return;
+    }
+    const clientName = window.prompt(
+      "Nom du client destinataire du devis :",
+      ""
+    );
+    if (!clientName?.trim()) return;
+    const clientAdresse = window.prompt(
+      "Adresse du client (optionnel) :",
+      ""
+    ) || undefined;
+
+    setShareToast("Génération du devis en cours…");
+    try {
+      const devis = buildDevisFromDiagnostic({
+        diagnostic: result,
+        diagnosticId: currentDiagId ?? "draft",
+        diagnosticDateISO: new Date().toISOString(),
+        emetteur: {
+          raisonSociale: profil.raisonSociale,
+          siret: profil.siret,
+          adresseRue: profil.adresseRue,
+          adresseCp: profil.adresseCp,
+          adresseVille: profil.adresseVille,
+          telephone: profil.telephone,
+          email: profil.email,
+          siteWeb: profil.siteWeb,
+          numeroAttestation: profil.numeroAttestation,
+          logoDataUrl: profil.logoDataUrl,
+          signatureDataUrl: profil.signatureDataUrl,
+        },
+        destinataire: {
+          nom: clientName.trim(),
+          adresse: clientAdresse?.trim() || undefined,
+        },
+        numero: generateDevisNumero(),
+      });
+
+      const res = await fetch("/api/devis/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(devis),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j?.error ?? `HTTP ${res.status}`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${devis.numero}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setShareToast("Devis téléchargé — prêt à envoyer au client");
+      setTimeout(() => setShareToast(null), 4000);
+    } catch (e) {
+      setShareToast(
+        "Échec génération devis : " + (e instanceof Error ? e.message : "erreur réseau")
+      );
+      setTimeout(() => setShareToast(null), 5000);
+    }
   }
 
   function handleSendEmail() {
@@ -598,6 +675,23 @@ export default function DiagnosticPage() {
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
               Nouveau diagnostic
+            </button>
+            {/* Generation d'un devis structure depuis le diagnostic — brief
+                Vertxia #7. Transforme le constat technique en devis chiffre
+                pret a envoyer au client (PDF en marque blanche du pro). */}
+            <button
+              type="button"
+              onClick={handleGenerateDevis}
+              className="w-full px-4 py-3 rounded-2xl bg-emerald-600 text-white text-[14px] font-semibold active:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="12" y1="18" x2="12" y2="12" />
+                <line x1="9" y1="15" x2="15" y2="15" />
+              </svg>
+              Générer un devis client
             </button>
             <Link
               href={
