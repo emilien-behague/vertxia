@@ -696,6 +696,23 @@ export default function MobileProfilPage() {
 
       </form>
 
+      {/* Lien diagnostic sync — toujours visible meme sans profil rempli,
+          pour les users qui se connectent sur un nouveau device et ne
+          voient rien : ils peuvent ouvrir cette page pour comprendre
+          pourquoi et forcer un resync. */}
+      <div className="px-4 mb-8 mt-2">
+        <a
+          href="/m/sync-debug"
+          className="block w-full px-5 py-3.5 rounded-2xl bg-white border border-black/10 text-[#A16207] text-[14px] font-medium text-center active:bg-[#A16207]/[0.04] transition-colors"
+          style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+        >
+          🔄 Diagnostic de synchronisation
+        </a>
+        <div className="text-[11px] text-black/45 text-center mt-2 leading-snug px-4">
+          Données manquantes sur ce device ? Compare local et serveur + force la resync.
+        </div>
+      </div>
+
       <style jsx global>{`
         .input-mobile {
           width: 100%;
