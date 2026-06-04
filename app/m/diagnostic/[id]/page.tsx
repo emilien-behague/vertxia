@@ -260,6 +260,13 @@ export default function DiagnosticDetailPage() {
             Partager
           </button>
           <Link
+            href={`/m/intervention/nouvelle?diagnosticId=${diag.id}`}
+            className="block w-full px-4 py-3 rounded-2xl bg-[#111] text-white text-[14px] font-medium text-center active:bg-black/80 transition-colors"
+            style={{ WebkitTapHighlightColor: "transparent" }}
+          >
+            Créer une intervention pour ce composant
+          </Link>
+          <Link
             href="/m/diagnostic"
             className="block w-full px-4 py-3 rounded-2xl bg-[#A16207] text-white text-[14px] font-medium text-center active:opacity-90 transition-opacity"
             style={{ WebkitTapHighlightColor: "transparent" }}

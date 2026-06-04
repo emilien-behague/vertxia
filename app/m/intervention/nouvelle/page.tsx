@@ -15,6 +15,8 @@ import { SignaturePad } from "@/components/mobile/signature-pad";
 import { listEquipements, saveEquipement, updateEquipement } from "@/lib/equipement";
 import { saveIntervention } from "@/lib/intervention-storage";
 import { loadProfil } from "@/lib/profil";
+import { getDiagnostic, type StoredDiagnostic } from "@/lib/diagnostic-storage";
+import { GRAVITE_LABELS, DELAI_LABELS } from "@/lib/vision-diagnostic";
 import {
   listBouteilles,
   indexMouvementsParBouteille,
@@ -91,6 +93,7 @@ function NouvelleInterventionContent() {
   const router = useRouter();
   const typeParam = searchParams.get("type") as TypeIntervention | null;
   const eqIdParam = searchParams.get("equipement");
+  const diagIdParam = searchParams.get("diagnosticId");
 
   const [typeIntervention, setTypeIntervention] = useState<TypeIntervention>(
     typeParam && INTERVENTIONS.find((i) => i.v === typeParam) ? typeParam : "controle_periodique"
@@ -133,6 +136,7 @@ function NouvelleInterventionContent() {
 
   const [status, setStatus] = useState<Status>({ type: "idle" });
   const [eqContext, setEqContext] = useState<{ modele: string; clientName: string } | null>(null);
+  const [diagContext, setDiagContext] = useState<StoredDiagnostic | null>(null);
 
   // Vision IA scan plaque
   const [scanning, setScanning] = useState(false);
@@ -273,6 +277,52 @@ function NouvelleInterventionContent() {
     if (eq.chargeKg > 0) setWeight(eq.chargeKg.toFixed(2));
     setEqContext({ modele: eq.modele, clientName: eq.clientName });
   }, [eqIdParam]);
+
+  // Pré-remplissage depuis ?diagnosticId=ID (depuis /m/diagnostic après une
+  // analyse photo IA → "Créer une intervention pour ce composant")
+  useEffect(() => {
+    if (!diagIdParam) return;
+    const diag = getDiagnostic(diagIdParam);
+    if (!diag) return;
+    setDiagContext(diag);
+
+    // Type par défaut : maintenance (catch-all pour suivi d'un défaut visuel).
+    // Le technicien peut switcher vers "controle_non_periodique" si c'est une
+    // suspicion de fuite, ou autre. On ne force que si pas déjà override par ?type=
+    if (!typeParam) setTypeIntervention("maintenance");
+
+    // Pré-remplissage des notes : structure lisible que le technicien peut
+    // garder telle quelle ou enrichir, et qui se retrouve dans la fiche
+    // de visite client + sur le CERFA (observations libres).
+    const r = diag.result;
+    const lines: string[] = [];
+    lines.push(`DIAGNOSTIC IA · Composant : ${r.composantIdentifie || "non identifié"}`);
+    if (diag.contexteNote?.trim()) {
+      lines.push(`Contexte technicien : ${diag.contexteNote.trim()}`);
+    }
+    if (r.defautsDetectes.length > 0) {
+      lines.push("");
+      lines.push("Défauts détectés :");
+      for (const d of r.defautsDetectes) {
+        lines.push(`- [${GRAVITE_LABELS[d.gravite]}] ${d.nom} — ${d.description}`);
+      }
+    }
+    if (r.causeProbable) {
+      lines.push("");
+      lines.push(`Cause probable : ${r.causeProbable}`);
+    }
+    if (r.actionRecommandee) {
+      lines.push(`Action recommandée : ${r.actionRecommandee}`);
+    }
+    lines.push(`Délai : ${DELAI_LABELS[r.delaiIntervention]}`);
+    if (r.devisEstimeMin !== null && r.devisEstimeMax !== null) {
+      lines.push(`Devis estimé IA : ${r.devisEstimeMin}–${r.devisEstimeMax} € HT (indicatif)`);
+    }
+    lines.push("");
+    lines.push("Photo du composant disponible dans Vertxia → Diagnostic → Historique.");
+
+    setNotes((prev) => (prev.trim() ? `${prev.trim()}\n\n${lines.join("\n")}` : lines.join("\n")));
+  }, [diagIdParam, typeParam]);
 
   async function handlePlaqueScan(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -893,6 +943,33 @@ function NouvelleInterventionContent() {
           </div>
           <div className="mt-1 text-[14px] text-emerald-900">
             <strong>{eqContext.modele}</strong> · {eqContext.clientName}
+          </div>
+        </div>
+      )}
+
+      {/* Contexte diagnostic IA si pré-rempli */}
+      {diagContext && (
+        <div className="mx-4 mt-2 mb-1 px-4 py-3 rounded-2xl bg-[#A16207]/8 ring-1 ring-[#A16207]/20">
+          <div className="flex items-start gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={diagContext.imageDataUrl}
+              alt="Composant diagnostiqué"
+              className="shrink-0 w-16 h-16 rounded-xl object-cover ring-1 ring-black/10"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-mono tracking-widest uppercase text-[#A16207]">
+                Intervention issue d&apos;un diagnostic IA
+              </div>
+              <div className="mt-0.5 text-[14px] text-[#111] font-medium leading-snug">
+                {diagContext.result.composantIdentifie || "Composant non identifié"}
+              </div>
+              <div className="mt-0.5 text-[12px] text-black/60 leading-snug">
+                {diagContext.result.defautsDetectes.length > 0
+                  ? `${diagContext.result.defautsDetectes.length} défaut${diagContext.result.defautsDetectes.length > 1 ? "s" : ""} · ${DELAI_LABELS[diagContext.result.delaiIntervention]}`
+                  : "État apparent nominal"}
+              </div>
+            </div>
           </div>
         </div>
       )}

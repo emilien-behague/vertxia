@@ -34,6 +34,7 @@ export default function DiagnosticPage() {
   const [historyCount, setHistoryCount] = useState(0);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [shareToast, setShareToast] = useState<string | null>(null);
+  const [currentDiagId, setCurrentDiagId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Compteur d'historique pour décider d'afficher le bouton "Historique" en haut
@@ -67,11 +68,12 @@ export default function DiagnosticPage() {
 
       // Auto-save dans l'historique (localStorage user-scoped)
       try {
-        saveDiagnostic({
+        const saved = saveDiagnostic({
           imageDataUrl: dataUrl,
           contexteNote: contexteNote.trim() || undefined,
           result: data,
         });
+        setCurrentDiagId(saved.id);
         setHistoryCount(listDiagnostics().length);
       } catch (e) {
         console.warn("[diagnostic] save failed:", e);
@@ -87,6 +89,7 @@ export default function DiagnosticPage() {
     setResult(null);
     setError(null);
     setContexteNote("");
+    setCurrentDiagId(null);
     setPhase("idle");
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -460,7 +463,11 @@ export default function DiagnosticPage() {
               Nouveau diagnostic
             </button>
             <Link
-              href="/m/intervention"
+              href={
+                currentDiagId
+                  ? `/m/intervention/nouvelle?diagnosticId=${currentDiagId}`
+                  : "/m/intervention/nouvelle"
+              }
               className="block w-full px-4 py-3 rounded-2xl bg-[#111] text-white text-[14px] font-medium text-center active:bg-black/80 transition-colors"
               style={{ WebkitTapHighlightColor: "transparent" }}
             >
