@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection } from "@/components/mobile/inset-list";
 import { VoiceInput } from "@/components/mobile/voice-input";
+import { ScanPlaqueButton, type PlaqueData } from "@/components/mobile/scan-plaque-button";
 import {
   VoiceFullDictationEquipement,
   type EquipementExtractionResult,
@@ -100,9 +101,8 @@ function MobileAjoutEquipementContent() {
   });
 
   // Scan plaque signalétique — IA vision pré-remplit modèle, n° série, fluide, charge
-  const [scanning, setScanning] = useState(false);
-  const [scanInfo, setScanInfo] = useState<string | null>(null);
-  const scanInputRef = useRef<HTMLInputElement | null>(null);
+  // L'état (loading, feedback) est géré par <ScanPlaqueButton/>.
+  // Ici on ne capture que le callback pour brancher les données dans le form.
 
   // Au mount, si on revient du scanner QR avec ?fromQr=<id>, pré-remplit
   // le formulaire avec les données publiques de l'équipement scanné.
@@ -204,6 +204,26 @@ function MobileAjoutEquipementContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Handoff depuis le scan plaque UNIVERSEL sur /m/equipements (liste parc).
+  // Quand le scan ne matche AUCUN n°série du parc, la liste pousse les données
+  // dans sessionStorage et redirige ici avec ?fromPlaqueScan=1. On les lit + on
+  // pré-remplit + on nettoie pour éviter résidu sur navigation suivante.
+  useEffect(() => {
+    if (searchParams.get("fromPlaqueScan") !== "1") return;
+    try {
+      const raw = sessionStorage.getItem("vertxia:plaqueScanHandoff");
+      if (raw) {
+        const plaque = JSON.parse(raw) as PlaqueData;
+        handlePlaqueScanned(plaque);
+      }
+      sessionStorage.removeItem("vertxia:plaqueScanHandoff");
+    } catch {
+      // sessionStorage indispo / JSON cassé → on laisse le form vide
+    }
+    router.replace("/m/equipements/nouveau", { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Dictée vocale plein écran — IA extrait tout l'équipement d'un coup
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [voiceInfo, setVoiceInfo] = useState<string | null>(null);
@@ -283,59 +303,19 @@ function MobileAjoutEquipementContent() {
     setVoiceOpen(false);
   }
 
-  async function handlePlaqueScan(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    // Fallback offline : OCR IA nécessite réseau
-    if (typeof navigator !== "undefined" && !navigator.onLine) {
-      setScanInfo(
-        "📷 Hors connexion : photo conservée mais l'OCR IA nécessite du réseau. Remplis les champs manuellement."
-      );
-      return;
+  function handlePlaqueScanned(plaque: PlaqueData) {
+    if (plaque.modele) {
+      const fullModele = [plaque.marque, plaque.modele].filter(Boolean).join(" ").trim();
+      update("modele", fullModele);
     }
-    setScanning(true);
-    setScanInfo(null);
-    try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error("Lecture échouée"));
-        reader.readAsDataURL(file);
-      });
-      const res = await fetch("/api/vision/plaque", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageDataUrl: dataUrl }),
-      });
-      if (!res.ok) {
-        setScanInfo("❌ Échec analyse. Réessaie avec une photo plus nette.");
-        return;
-      }
-      const plaque = await res.json();
-      const found: string[] = [];
-      if (plaque.modele) {
-        const fullModele = [plaque.marque, plaque.modele].filter(Boolean).join(" ").trim();
-        update("modele", fullModele);
-        found.push("modèle");
-      }
-      if (plaque.numeroSerie) {
-        update("numeroSerie", plaque.numeroSerie);
-        found.push("n° série");
-      }
-      if (plaque.fluide && FLUIDES.some((f) => f.code === plaque.fluide)) {
-        update("fluideCode", plaque.fluide);
-        found.push("fluide");
-      }
-      if (typeof plaque.chargeNominaleKg === "number" && plaque.chargeNominaleKg > 0) {
-        update("chargeKg", String(plaque.chargeNominaleKg));
-        found.push("charge");
-      }
-      setScanInfo(found.length ? `✅ Détecté : ${found.join(", ")}` : "❌ Rien détecté");
-    } catch (e) {
-      setScanInfo("❌ Erreur : " + (e instanceof Error ? e.message : "réseau"));
-    } finally {
-      setScanning(false);
-      if (scanInputRef.current) scanInputRef.current.value = "";
+    if (plaque.numeroSerie) {
+      update("numeroSerie", plaque.numeroSerie);
+    }
+    if (plaque.fluide && FLUIDES.some((f) => f.code === plaque.fluide)) {
+      update("fluideCode", plaque.fluide);
+    }
+    if (typeof plaque.chargeNominaleKg === "number" && plaque.chargeNominaleKg > 0) {
+      update("chargeKg", String(plaque.chargeNominaleKg));
     }
   }
 
@@ -426,7 +406,7 @@ function MobileAjoutEquipementContent() {
                 setVoiceInfo(null);
                 setVoiceOpen(true);
               }}
-              disabled={busy || scanning}
+              disabled={busy}
               className="w-full px-5 py-3.5 rounded-2xl bg-[#111] text-white text-[14px] font-medium active:bg-black/90 transition-colors disabled:opacity-60 inline-flex items-center justify-center gap-2.5"
               style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
             >
@@ -463,7 +443,7 @@ function MobileAjoutEquipementContent() {
               onClick={() =>
                 router.push("/m/scan?returnTo=/m/equipements/nouveau")
               }
-              disabled={busy || scanning || qrLoading}
+              disabled={busy || qrLoading}
               className="w-full px-5 py-3.5 rounded-2xl bg-white ring-1 ring-black/15 text-[#111] text-[14px] font-medium active:bg-black/[0.04] transition-colors disabled:opacity-60 inline-flex items-center justify-center gap-2.5"
               style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
             >
@@ -489,49 +469,7 @@ function MobileAjoutEquipementContent() {
           footer="Vise la plaque signalétique de l'unité extérieure. L'IA détecte modèle, n° série, fluide et charge nominale automatiquement."
         >
           <div className="px-4 py-3">
-            <input
-              ref={scanInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handlePlaqueScan}
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => scanInputRef.current?.click()}
-              disabled={scanning || busy}
-              className="w-full px-5 py-3.5 rounded-2xl bg-[#A16207] text-white text-[14px] font-medium active:bg-[#8a5206] transition-colors disabled:opacity-60 inline-flex items-center justify-center gap-2.5"
-              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-            >
-              {scanning ? (
-                <>
-                  <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                  <span>Analyse IA en cours…</span>
-                </>
-              ) : (
-                <>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                    <circle cx="12" cy="13" r="4" />
-                  </svg>
-                  <span>📷 Scanner la plaque signalétique</span>
-                </>
-              )}
-            </button>
-            {scanInfo && (
-              <div
-                className={`mt-2 px-3 py-2 rounded-xl text-[12px] leading-relaxed ${
-                  scanInfo.startsWith("✅")
-                    ? "bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800"
-                    : scanInfo.startsWith("📷")
-                      ? "bg-amber-50 ring-1 ring-amber-200 text-amber-800"
-                      : "bg-red-50 ring-1 ring-red-200 text-red-700"
-                }`}
-              >
-                {scanInfo}
-              </div>
-            )}
+            <ScanPlaqueButton onScanned={handlePlaqueScanned} disabled={busy} />
           </div>
         </InsetListSection>
 

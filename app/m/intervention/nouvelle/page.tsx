@@ -5,13 +5,14 @@
 // force-dynamic. On wrap le composant interne dans Suspense (cf. default export en bas).
 export const dynamic = "force-dynamic";
 
-import { Suspense, useEffect, useRef, useState, useMemo } from "react";
+import { Suspense, useEffect, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Drawer } from "vaul";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { DocumentsForInterventionCard } from "@/components/mobile/documents-for-intervention-card";
 import { InsetListSection } from "@/components/mobile/inset-list";
 import { VoiceInput } from "@/components/mobile/voice-input";
+import { ScanPlaqueButton, type PlaqueData } from "@/components/mobile/scan-plaque-button";
 import { VoiceFullDictation, type ExtractionResult } from "@/components/mobile/voice-full-dictation";
 import { SignaturePad } from "@/components/mobile/signature-pad";
 import { listEquipements, saveEquipement, updateEquipement } from "@/lib/equipement";
@@ -160,10 +161,7 @@ function NouvelleInterventionContent() {
   const [integrityModalOpen, setIntegrityModalOpen] = useState(false);
   const [diagContext, setDiagContext] = useState<StoredDiagnostic | null>(null);
 
-  // Vision IA scan plaque
-  const [scanning, setScanning] = useState(false);
-  const [scanInfo, setScanInfo] = useState<string | null>(null);
-  const scanInputRef = useRef<HTMLInputElement | null>(null);
+  // Vision IA scan plaque — état (loading, feedback) géré par <ScanPlaqueButton/>.
 
   // Dictée IA — modal plein écran + tracking des champs remplis vocalement
   const [voiceOpen, setVoiceOpen] = useState(false);
@@ -347,63 +345,18 @@ function NouvelleInterventionContent() {
     setNotes((prev) => (prev.trim() ? `${prev.trim()}\n${prefilled}` : prefilled));
   }, [diagIdParam, typeParam]);
 
-  async function handlePlaqueScan(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Fallback offline : l'API vision LLM nécessite un appel cloud.
-    // Si on est offline, on stocke la photo localement et on informe l'user
-    // qu'il faut remplir manuellement. La photo sera OCR-rotée plus tard si
-    // on implémente une queue de jobs vision en V2.
-    if (typeof navigator !== "undefined" && !navigator.onLine) {
-      setScanInfo(
-        "📷 Hors connexion : photo conservée, mais l'OCR IA nécessite une connexion. Saisis les champs manuellement et le scan sera traité dès que tu retrouveras du réseau."
-      );
-      return;
+  function handlePlaqueScanned(plaque: PlaqueData) {
+    if (plaque.modele) {
+      setModeleEquipement([plaque.marque, plaque.modele].filter(Boolean).join(" ").trim());
     }
-
-    setScanning(true);
-    setScanInfo(null);
-    try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error("Lecture échouée"));
-        reader.readAsDataURL(file);
-      });
-      const res = await fetch("/api/vision/plaque", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageDataUrl: dataUrl }),
-      });
-      if (!res.ok) {
-        setScanInfo("❌ Échec analyse. Réessayez avec une meilleure photo.");
-        return;
-      }
-      const plaque = await res.json();
-      const found: string[] = [];
-      if (plaque.modele) {
-        setModeleEquipement([plaque.marque, plaque.modele].filter(Boolean).join(" ").trim());
-        found.push("modèle");
-      }
-      if (plaque.numeroSerie) {
-        setNumeroSerieEquipement(plaque.numeroSerie);
-        found.push("n° série");
-      }
-      if (plaque.fluide && FLUIDES.some((f) => f.code === plaque.fluide)) {
-        setFluide(plaque.fluide);
-        found.push("fluide");
-      }
-      if (typeof plaque.chargeNominaleKg === "number" && plaque.chargeNominaleKg > 0) {
-        setWeight(String(plaque.chargeNominaleKg));
-        found.push("charge");
-      }
-      setScanInfo(found.length ? `✅ Détecté : ${found.join(", ")}` : "❌ Rien détecté");
-    } catch (e) {
-      setScanInfo("❌ Erreur : " + (e instanceof Error ? e.message : "réseau"));
-    } finally {
-      setScanning(false);
-      if (scanInputRef.current) scanInputRef.current.value = "";
+    if (plaque.numeroSerie) {
+      setNumeroSerieEquipement(plaque.numeroSerie);
+    }
+    if (plaque.fluide && FLUIDES.some((f) => f.code === plaque.fluide)) {
+      setFluide(plaque.fluide);
+    }
+    if (typeof plaque.chargeNominaleKg === "number" && plaque.chargeNominaleKg > 0) {
+      setWeight(String(plaque.chargeNominaleKg));
     }
   }
 
@@ -1218,43 +1171,11 @@ function NouvelleInterventionContent() {
       {!eqContext && (
         <InsetListSection title="Équipement (saisie ou scan)" footer="Photographiez la plaque signalétique, l'IA pré-remplit modèle, n° série, fluide et charge.">
           <div className="px-4 py-3">
-            <input
-              ref={scanInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handlePlaqueScan}
-              disabled={scanning || isLoading}
-              className="hidden"
-              id="plaque-scan-mobile"
+            <ScanPlaqueButton
+              onScanned={handlePlaqueScanned}
+              disabled={isLoading}
+              variant="secondary"
             />
-            <label
-              htmlFor="plaque-scan-mobile"
-              className={`flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-[14px] font-medium transition-colors cursor-pointer ${
-                scanning ? "bg-black/[0.04] text-black/40" : "bg-[#A16207]/10 text-[#A16207] active:bg-[#A16207]/20"
-              }`}
-              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-            >
-              {scanning ? (
-                <>
-                  <span className="inline-block w-4 h-4 rounded-full border-2 border-[#A16207]/30 border-t-[#A16207] animate-spin" />
-                  Analyse IA en cours…
-                </>
-              ) : (
-                <>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                    <circle cx="12" cy="13" r="4" />
-                  </svg>
-                  Scanner la plaque signalétique
-                </>
-              )}
-            </label>
-            {scanInfo && (
-              <div className="mt-2 px-3 py-2 rounded-lg bg-black/[0.03] text-[12px] text-black/70">
-                {scanInfo}
-              </div>
-            )}
           </div>
         </InsetListSection>
       )}

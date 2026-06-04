@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection, InsetRow } from "@/components/mobile/inset-list";
+import { ScanPlaqueButton, type PlaqueData } from "@/components/mobile/scan-plaque-button";
 import { listInterventions } from "@/lib/intervention-storage";
 import { listDiagnostics } from "@/lib/diagnostic-storage";
 import {
@@ -15,6 +17,11 @@ import {
 } from "@/lib/equipement";
 import { detectPredictiveSignals, type SignalGravite } from "@/lib/predictive-maintenance";
 import { downloadStickerSheet } from "@/lib/qrcode-client";
+
+// Cle sessionStorage utilisee pour passer les donnees de plaque scannees
+// vers l'ecran de creation. La cle est lue au mount par /m/equipements/nouveau
+// (et nettoyee apres lecture pour eviter pre-remplissage residuel).
+const PLAQUE_SCAN_HANDOFF_KEY = "vertxia:plaqueScanHandoff";
 
 type Filter = "all" | "a_risque" | "en_retard" | "a_relancer" | "a_programmer" | "ok";
 
@@ -56,6 +63,7 @@ const STATUS_TEXT: Record<ControleStatut, string> = {
 };
 
 export default function MobileEquipementsPage() {
+  const router = useRouter();
   const [items, setItems] = useState<EquipementWithStatus[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
   const [stickersBusy, setStickersBusy] = useState(false);
@@ -131,6 +139,31 @@ export default function MobileEquipementsPage() {
     }
   }
 
+  // Scan plaque UNIVERSEL : sur la liste parc, scanner une plaque doit
+  // soit ouvrir la fiche d'un equipement deja connu (matching n.serie),
+  // soit ouvrir le formulaire de creation pre-rempli avec les donnees
+  // de la plaque (handoff via sessionStorage).
+  function handleUniversalPlaqueScan(plaque: PlaqueData) {
+    const sn = plaque.numeroSerie?.toLowerCase().trim();
+    if (sn) {
+      const match = items.find(
+        (eq) => eq.numeroSerie.toLowerCase().trim() === sn
+      );
+      if (match) {
+        router.push(`/eq/${match.id}`);
+        return;
+      }
+    }
+    // Pas de match → on stocke la plaque pour pre-remplir le formulaire creation
+    try {
+      sessionStorage.setItem(PLAQUE_SCAN_HANDOFF_KEY, JSON.stringify(plaque));
+    } catch {
+      // sessionStorage indisponible (mode prive iOS rare) → on perd les donnees
+      // mais on continue vers le formulaire vide
+    }
+    router.push("/m/equipements/nouveau?fromPlaqueScan=1");
+  }
+
   return (
     <>
       <MobileHeader title="Parc équipements" largeTitle />
@@ -148,6 +181,23 @@ export default function MobileEquipementsPage() {
           <MiniStat label="Retard" value={stats.enRetard} color="text-red-600" pulse={stats.enRetard > 0} />
           <MiniStat label="À jour" value={stats.ok} color="text-emerald-600" />
         </div>
+      </section>
+
+      {/* Scan plaque UNIVERSEL — entrée terrain :
+          (a) équipement déjà en base → ouvre sa fiche
+          (b) inconnu → ouvre le formulaire création pré-rempli */}
+      <section className="px-4 mt-4">
+        <ScanPlaqueButton
+          onScanned={handleUniversalPlaqueScan}
+          label="Identifier un équipement par sa plaque"
+          successMessageFn={(p) => {
+            const sn = p.numeroSerie?.toLowerCase().trim();
+            if (sn && items.some((e) => e.numeroSerie.toLowerCase().trim() === sn)) {
+              return "✅ Équipement reconnu — ouverture de la fiche…";
+            }
+            return "✅ Nouvel équipement — ouverture du formulaire pré-rempli…";
+          }}
+        />
       </section>
 
       {/* Filter segmented control */}
