@@ -104,3 +104,74 @@ export async function lookupSiret(siret: string): Promise<SiretLookupResult | nu
     adresseComplete,
   };
 }
+
+/**
+ * Recherche par nom commercial OU SIRET partiel : renvoie jusqu'à `limit`
+ * établissements correspondants. Utilisé pour l'autocomplete dans la section
+ * "Centre destination" du profil — le user n'a pas besoin de connaître le
+ * SIRET du centre HFC, il tape "Climalife" et choisit dans la liste.
+ *
+ * Chaque résultat est un établissement précis (SIRET unique). Si une
+ * entreprise a plusieurs établissements matchés, ils apparaissent comme
+ * entries séparées (l'user choisit le bon site).
+ */
+export async function searchEntreprises(
+  query: string,
+  limit = 5
+): Promise<SiretLookupResult[]> {
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return [];
+
+  const url = `${SEARCH_URL}?q=${encodeURIComponent(trimmed)}&page=1&per_page=${Math.min(limit, 10)}`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) {
+    throw new Error(`API recherche-entreprises HTTP ${res.status}`);
+  }
+  const data = (await res.json()) as ApiResponse;
+
+  const out: SiretLookupResult[] = [];
+  const seenSirets = new Set<string>();
+
+  for (const r of data.results || []) {
+    const name = (r.nom_complet || r.nom_raison_sociale || "").trim();
+    if (!name) continue;
+
+    // matching_etablissements en premier (= ceux qui matchent le terme de
+    // recherche), puis le siège en complément si pas déjà inclus.
+    const matchings = r.matching_etablissements || [];
+    const includeSiege =
+      r.siege &&
+      r.siege.siret &&
+      !matchings.some((e) => e.siret === r.siege?.siret);
+    const etabs: ApiEtablissement[] = [
+      ...matchings,
+      ...(includeSiege && r.siege ? [r.siege] : []),
+    ];
+
+    for (const etab of etabs) {
+      if (!etab.siret || seenSirets.has(etab.siret)) continue;
+      seenSirets.add(etab.siret);
+
+      const adresseRue = (etab.adresse || "").trim();
+      const codePostal = (etab.code_postal || "").trim();
+      const commune = (etab.libelle_commune || "").trim();
+      const adresseComplete = [
+        adresseRue,
+        [codePostal, commune].filter(Boolean).join(" "),
+      ]
+        .filter(Boolean)
+        .join(", ");
+
+      out.push({
+        siret: etab.siret,
+        raisonSociale: name,
+        adresseRue,
+        codePostal,
+        commune,
+        adresseComplete,
+      });
+      if (out.length >= limit) return out;
+    }
+  }
+  return out;
+}
