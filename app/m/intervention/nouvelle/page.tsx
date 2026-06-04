@@ -13,7 +13,11 @@ import { VoiceInput } from "@/components/mobile/voice-input";
 import { VoiceFullDictation, type ExtractionResult } from "@/components/mobile/voice-full-dictation";
 import { SignaturePad } from "@/components/mobile/signature-pad";
 import { listEquipements, saveEquipement, updateEquipement } from "@/lib/equipement";
-import { saveIntervention } from "@/lib/intervention-storage";
+import {
+  saveIntervention,
+  listInterventions,
+  type StoredIntervention,
+} from "@/lib/intervention-storage";
 import { loadProfil } from "@/lib/profil";
 import { getDiagnostic, type StoredDiagnostic } from "@/lib/diagnostic-storage";
 import { summarizeDiagnosticForCerfa, DELAI_LABELS } from "@/lib/vision-diagnostic";
@@ -136,6 +140,10 @@ function NouvelleInterventionContent() {
 
   const [status, setStatus] = useState<Status>({ type: "idle" });
   const [eqContext, setEqContext] = useState<{ modele: string; clientName: string } | null>(null);
+  // Derniere intervention enregistree sur cet equipement (si on arrive via
+  // ?equipement=ID). Sert au bouton "Reprendre la meme intervention" qui
+  // pre-remplit le type + parametres metier (detecteur, detenteur, packaging).
+  const [lastInterventionOnEq, setLastInterventionOnEq] = useState<StoredIntervention | null>(null);
   const [diagContext, setDiagContext] = useState<StoredDiagnostic | null>(null);
 
   // Vision IA scan plaque
@@ -276,6 +284,24 @@ function NouvelleInterventionContent() {
     if (FLUIDES.some((f) => f.code === eq.fluide.code)) setFluide(eq.fluide.code);
     if (eq.chargeKg > 0) setWeight(eq.chargeKg.toFixed(2));
     setEqContext({ modele: eq.modele, clientName: eq.clientName });
+
+    // Cherche la derniere intervention sur cet equipement (par n° de serie)
+    // pour proposer "reprendre la meme intervention". On exclut la
+    // typeIntervention "recuperation" qui declenche un BSFF — on ne propose
+    // pas de la pre-cocher en aveugle (declenche un workflow TrackDechets
+    // qui doit etre un choix explicite).
+    const interventionsHere = listInterventions().filter(
+      (i) =>
+        i.numeroSerieEquipement?.trim().toLowerCase() ===
+          eq.numeroSerie.trim().toLowerCase() &&
+        i.typeIntervention !== "recuperation" &&
+        i.typeIntervention !== "demantelement"
+    );
+    if (interventionsHere.length > 0) {
+      // sort desc, plus recent en premier
+      interventionsHere.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      setLastInterventionOnEq(interventionsHere[0]);
+    }
   }, [eqIdParam]);
 
   // Pré-remplissage depuis ?diagnosticId=ID (depuis /m/diagnostic après une
@@ -957,6 +983,68 @@ function NouvelleInterventionContent() {
           </div>
           <div className="mt-1 text-[14px] text-emerald-900">
             <strong>{eqContext.modele}</strong> · {eqContext.clientName}
+          </div>
+        </div>
+      )}
+
+      {/* "Reprendre la meme intervention" — si on a une intervention precedente
+          enregistree sur cet equipement, on propose un raccourci qui pre-remplit
+          tous les champs metier identiques. Aligne avec le brief #6 et le north
+          star "l'utilisateur ne remplit plus rien". */}
+      {lastInterventionOnEq && (
+        <div className="mx-4 mt-2 mb-1 px-4 py-3 rounded-2xl bg-[#111]/5 ring-1 ring-[#111]/10">
+          <div className="flex items-start gap-3">
+            <div className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#111] text-white">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9" />
+                <path d="M3 4v5h5" />
+              </svg>
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-mono tracking-widest uppercase text-black/55">
+                Intervention précédente
+              </div>
+              <div className="mt-0.5 text-[13.5px] text-[#111] leading-snug">
+                {(INTERVENTIONS.find((i) => i.v === lastInterventionOnEq.typeIntervention)?.label ?? lastInterventionOnEq.typeIntervention)} · {new Date(lastInterventionOnEq.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const last = lastInterventionOnEq;
+                  if (INTERVENTIONS.find((i) => i.v === last.typeIntervention)) {
+                    setTypeIntervention(last.typeIntervention);
+                  }
+                  if (last.controleDetails?.detecteurPermanent !== undefined) {
+                    setDetecteurPermanent(last.controleDetails.detecteurPermanent ? "oui" : "non");
+                  }
+                  if (last.detenteurName) setDetenteurName(last.detenteurName);
+                  if (last.detenteurQuality) setDetenteurQuality(last.detenteurQuality);
+                  if (last.packagingNumero) setPackagingNumero(last.packagingNumero);
+                  if (last.lieuIntervention && !lieuIntervention.trim()) {
+                    setLieuIntervention(last.lieuIntervention);
+                  }
+                  const dateFR = new Date(last.createdAt).toLocaleDateString("fr-FR", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  });
+                  setNotes((prev) => {
+                    const ref = `Cf. intervention précédente du ${dateFR}.`;
+                    if (!prev.trim()) return ref;
+                    if (prev.includes(ref)) return prev;
+                    return `${prev.trim()}\n${ref}`;
+                  });
+                  setLastInterventionOnEq(null);
+                }}
+                className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#111] text-white text-[12px] font-medium active:bg-black/85 transition-colors"
+                style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Reprendre la même intervention
+              </button>
+            </div>
           </div>
         </div>
       )}
