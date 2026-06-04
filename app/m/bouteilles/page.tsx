@@ -56,12 +56,7 @@ export default function MobileBouteillesPage() {
 
   return (
     <>
-      <MobileHeader
-        title="Bouteilles"
-        largeTitle
-        backHref="/m"
-        rightAction={{ label: "Ajouter", href: "/m/bouteilles/nouvelle" }}
-      />
+      <MobileHeader title="Bouteilles" largeTitle />
 
       {items.length === 0 && (
         <div className="px-5 mt-8 text-center">
