@@ -13,6 +13,7 @@ import {
 } from "@/lib/equipement";
 import { listInterventions, type StoredIntervention } from "@/lib/intervention-storage";
 import { loadProfil, type Profil } from "@/lib/profil";
+import { hydrateFromSupabaseIfNeeded } from "@/lib/hydrate-on-login";
 
 // Dashboard mobile — l'écran d'accueil de l'app Vertxia.
 // 3 sections : KPIs grid 2x2 / Équipements urgents / Dernières interventions.
@@ -40,12 +41,44 @@ export default function MobileHomePage() {
   const [equipements, setEquipements] = useState<EquipementWithStatus[]>([]);
   const [interventions, setInterventions] = useState<StoredIntervention[]>([]);
   const [profil, setProfil] = useState<Profil | null>(null);
+  const [hydrationToast, setHydrationToast] = useState<string | null>(null);
 
+  // Charge depuis localStorage immediatement (UX snappy : pas d'ecran blanc)
   useEffect(() => {
     const ints = listInterventions();
     setInterventions(ints);
     setEquipements(computeAllStatus(listEquipements(), ints));
     setProfil(loadProfil());
+  }, []);
+
+  // Hydrate depuis Supabase au mount (1ere fois session) si user connecte.
+  // Recharge l'UI si des donnees ont ete ajoutees (nouveau device).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const result = await hydrateFromSupabaseIfNeeded();
+      if (cancelled || !result.attempted || !result.ok) return;
+      const added = result.equipementsAdded + result.interventionsAdded;
+      if (added > 0) {
+        // Recharge l'UI avec les nouvelles donnees
+        const ints = listInterventions();
+        setInterventions(ints);
+        setEquipements(computeAllStatus(listEquipements(), ints));
+        // Toast discret
+        const parts: string[] = [];
+        if (result.equipementsAdded > 0) {
+          parts.push(`${result.equipementsAdded} équipement${result.equipementsAdded > 1 ? "s" : ""}`);
+        }
+        if (result.interventionsAdded > 0) {
+          parts.push(`${result.interventionsAdded} intervention${result.interventionsAdded > 1 ? "s" : ""}`);
+        }
+        setHydrationToast(`✓ Synchronisé : ${parts.join(" + ")} récupéré${added > 1 ? "s" : ""}`);
+        setTimeout(() => setHydrationToast(null), 4000);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const stats = useMemo(() => getEquipementStats(equipements), [equipements]);
@@ -264,6 +297,17 @@ export default function MobileHomePage() {
             showChevron
           />
         </InsetListSection>
+      )}
+
+      {/* Toast hydratation Supabase (multi-device sync) */}
+      {hydrationToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed left-1/2 -translate-x-1/2 bottom-24 z-50 px-4 py-2.5 rounded-full bg-emerald-600 text-white text-[12.5px] font-medium shadow-lg"
+        >
+          {hydrationToast}
+        </div>
       )}
     </>
   );

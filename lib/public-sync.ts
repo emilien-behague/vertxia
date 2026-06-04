@@ -227,6 +227,103 @@ export async function countPublicEquipements(): Promise<number | { error: string
   }
 }
 
+// ── PULL MULTI-DEVICE (Supabase -> localStorage, hydratation au login) ──────
+
+/** Mappe une row Supabase equipements -> StoredEquipement camelCase.
+ *  Utilise par fetchMyEquipements + tout endpoint qui retourne du raw DB. */
+function mapEquipementRow(row: Record<string, unknown>): StoredEquipement {
+  return {
+    id: row.id as string,
+    createdAt: (row.created_at as string) ?? new Date().toISOString(),
+    clientName: (row.client_name as string) ?? "",
+    clientEmail: (row.client_email as string) ?? undefined,
+    clientTelephone: (row.client_telephone as string) ?? undefined,
+    siteAdresse: (row.site_adresse as string) ?? undefined,
+    modele: (row.modele as string) ?? "",
+    numeroSerie: (row.numero_serie as string) ?? "",
+    fluide: {
+      code: (row.fluide_code as string) ?? "",
+      label: (row.fluide_label as string) ?? (row.fluide_code as string) ?? "",
+      gwp: Number(row.fluide_gwp) || 0,
+    },
+    chargeKg: Number(row.charge_kg) || 0,
+    detecteurFixe: Boolean(row.detecteur_fixe),
+    dernierControleISO: (row.dernier_controle_iso as string) ?? undefined,
+    unitesInterieures: (row.unites_interieures as UniteInterieure[]) ?? undefined,
+    notes: (row.notes as string) ?? undefined,
+  };
+}
+
+function mapInterventionRow(row: Record<string, unknown>): StoredIntervention {
+  return {
+    id: row.id as string,
+    createdAt: (row.date_iso as string) ?? new Date().toISOString(),
+    typeIntervention: row.type_intervention as StoredIntervention["typeIntervention"],
+    fluide: {
+      code: (row.fluide_code as string) ?? "",
+      label: (row.fluide_label as string) ?? (row.fluide_code as string) ?? "",
+      gwp: Number(row.fluide_gwp) || 0,
+    },
+    weight: Number(row.weight_kg) || 0,
+    packagingNumero: (row.packaging_numero as string) ?? "",
+    clientName: (row.client_name as string) ?? null,
+    modeleEquipement: (row.modele_equipement as string) ?? undefined,
+    numeroSerieEquipement: (row.numero_serie_equipement as string) ?? undefined,
+    lieuIntervention: (row.lieu_intervention as string) ?? undefined,
+    bsffId: (row.bsff_id as string) ?? undefined,
+    controleDetails: (row.controle_details as StoredIntervention["controleDetails"]) ?? undefined,
+    notes: (row.notes as string) ?? undefined,
+    hasDetenteurSignature: Boolean(row.has_detenteur_signature),
+    detenteurName: (row.detenteur_name as string) ?? undefined,
+    detenteurQuality: (row.detenteur_quality as StoredIntervention["detenteurQuality"]) ?? undefined,
+  };
+}
+
+/** Fetch tous les equipements de l'user connecte depuis Supabase.
+ *  Retourne [] si pas connecte (auth check serveur, response 200 + data vide).
+ *  Retourne null si erreur reseau / 500. */
+export async function fetchMyEquipements(): Promise<StoredEquipement[] | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const res = await fetch("/api/public/my-equipements", {
+      method: "GET",
+      headers: { "cache-control": "no-store" },
+    });
+    if (!res.ok) {
+      console.warn("[public-sync] fetchMyEquipements HTTP", res.status);
+      return null;
+    }
+    const json = (await res.json()) as { data: Record<string, unknown>[] };
+    if (!Array.isArray(json.data)) return [];
+    return json.data.map(mapEquipementRow);
+  } catch (e) {
+    console.warn("[public-sync] fetchMyEquipements failed:", e);
+    return null;
+  }
+}
+
+/** Fetch toutes les interventions liees aux equipements de l'user connecte.
+ *  Inclut les interventions des confreres via lien magique. */
+export async function fetchMyInterventions(): Promise<StoredIntervention[] | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const res = await fetch("/api/public/my-interventions", {
+      method: "GET",
+      headers: { "cache-control": "no-store" },
+    });
+    if (!res.ok) {
+      console.warn("[public-sync] fetchMyInterventions HTTP", res.status);
+      return null;
+    }
+    const json = (await res.json()) as { data: Record<string, unknown>[] };
+    if (!Array.isArray(json.data)) return [];
+    return json.data.map(mapInterventionRow);
+  } catch (e) {
+    console.warn("[public-sync] fetchMyInterventions failed:", e);
+    return null;
+  }
+}
+
 export type PublicIntervention = StoredIntervention;
 
 export async function fetchPublicInterventions(equipementId: string): Promise<PublicIntervention[]> {
