@@ -10,6 +10,8 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Drawer } from "vaul";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { scopedKey } from "@/lib/user-scope";
 
 type ChatMessage = {
@@ -261,13 +263,44 @@ export function ChatAssistant({ equipementContext }: Props) {
                   className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-[14px] leading-relaxed whitespace-pre-wrap ${
+                    className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-[14px] leading-relaxed ${
                       m.role === "user"
-                        ? "bg-[#A16207] text-white rounded-br-sm"
+                        ? "bg-[#A16207] text-white rounded-br-sm whitespace-pre-wrap"
                         : "bg-white text-[#111] border border-black/[0.06] rounded-bl-sm"
                     }`}
                   >
-                    {m.content || (
+                    {m.role === "user" ? (
+                      m.content
+                    ) : m.content ? (
+                      <div className="chat-markdown">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({ ...props }) => <p className="mb-2 last:mb-0 leading-relaxed" {...props} />,
+                            strong: ({ ...props }) => <strong className="font-semibold text-[#111]" {...props} />,
+                            em: ({ ...props }) => <em className="italic" {...props} />,
+                            ul: ({ ...props }) => <ul className="list-disc pl-5 mb-2 space-y-1 last:mb-0" {...props} />,
+                            ol: ({ ...props }) => <ol className="list-decimal pl-5 mb-2 space-y-1 last:mb-0" {...props} />,
+                            li: ({ ...props }) => <li className="leading-snug" {...props} />,
+                            h1: ({ ...props }) => <h3 className="font-semibold text-[14px] mt-3 mb-1.5 first:mt-0" {...props} />,
+                            h2: ({ ...props }) => <h3 className="font-semibold text-[14px] mt-3 mb-1.5 first:mt-0" {...props} />,
+                            h3: ({ ...props }) => <h3 className="font-semibold text-[14px] mt-3 mb-1.5 first:mt-0" {...props} />,
+                            h4: ({ ...props }) => <h4 className="font-semibold text-[13px] mt-2 mb-1 first:mt-0" {...props} />,
+                            code: ({ ...props }) => <code className="bg-black/[0.05] px-1.5 py-0.5 rounded text-[12px] font-mono" {...props} />,
+                            pre: ({ ...props }) => <pre className="bg-black/[0.05] p-2.5 rounded-lg text-[12px] font-mono overflow-x-auto my-2" {...props} />,
+                            hr: () => <hr className="my-2 border-black/10" />,
+                            blockquote: ({ ...props }) => <blockquote className="border-l-2 border-[#A16207]/40 pl-3 italic text-black/70 my-2" {...props} />,
+                            a: ({ ...props }) => <a className="text-[#A16207] underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                            table: ({ ...props }) => <div className="overflow-x-auto my-2"><table className="text-[12px] border-collapse" {...props} /></div>,
+                            thead: ({ ...props }) => <thead className="bg-black/[0.04]" {...props} />,
+                            th: ({ ...props }) => <th className="border border-black/10 px-2 py-1 text-left font-semibold" {...props} />,
+                            td: ({ ...props }) => <td className="border border-black/10 px-2 py-1 align-top" {...props} />,
+                          }}
+                        >
+                          {m.content}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
                       <span className="inline-flex items-center gap-1.5 text-black/40">
                         <span className="w-1.5 h-1.5 rounded-full bg-black/30 animate-pulse" />
                         <span className="w-1.5 h-1.5 rounded-full bg-black/30 animate-pulse" style={{ animationDelay: "0.15s" }} />
