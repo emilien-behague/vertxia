@@ -723,7 +723,7 @@ export default function MobileProfilPage() {
       {/* Documents officiels embarqués — CERFA, registres modèles, guides
           DGEC téléchargés depuis sources primaires et disponibles offline.
           Utile en contrôle DREAL ou pour répondre à une question client. */}
-      <div className="px-4 mb-4 mt-2">
+      <div className="px-4 mb-4 mt-2 space-y-2">
         <a
           href="/m/documents"
           className="flex items-center gap-3 w-full px-5 py-3.5 rounded-2xl bg-white border border-black/10 active:bg-black/[0.03] transition-colors"
@@ -742,6 +742,35 @@ export default function MobileProfilPage() {
             <span className="block text-[12px] text-black/55 leading-snug">
               CERFA, modèles registres, guides DGEC · offline
             </span>
+          </span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </a>
+
+        {/* Marketplace pieces detachees — 25 fournisseurs FR verifies +
+            catalogue pieces. Commission Vertxia 4-6% HT par piece vendue.
+            Argument de vente fort vs F.i360 (qui n'a pas de marketplace). */}
+        <a
+          href="/m/marketplace"
+          className="flex items-center gap-3 w-full px-5 py-3.5 rounded-2xl bg-white border border-black/10 active:bg-black/[0.03] transition-colors"
+          style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+        >
+          <span className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-[#A16207]/10 shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A16207" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+            </svg>
+          </span>
+          <span className="flex-1 text-left">
+            <span className="block text-[14px] font-medium text-[#111]">
+              Marketplace pièces détachées
+            </span>
+            <span className="block text-[12px] text-black/55 leading-snug">
+              25 fournisseurs FR vérifiés · commission Vertxia
+            </span>
+          </span>
+          <span className="shrink-0 text-[9.5px] font-mono tracking-wider text-[#A16207] bg-[#A16207]/10 px-1.5 py-0.5 rounded mr-1">
+            BETA
           </span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
             <path d="m9 18 6-6-6-6" />
