@@ -71,28 +71,51 @@ export function EntrepriseSearch({
   }, [query]);
 
   // Calcule la position du dropdown sous l'input à chaque ouverture / scroll / resize.
-  // Important : on utilise position:fixed pour échapper aux overflow:hidden des ancêtres
-  // (notamment <InsetListSection> qui clipperait sinon).
+  // Important :
+  //  - position:fixed pour échapper aux overflow:hidden des ancêtres (InsetListSection
+  //    clipperait sinon).
+  //  - visualViewport.height au lieu de innerHeight : sur iOS Safari, innerHeight ne
+  //    change PAS quand le clavier est ouvert ; visualViewport.height reflète la zone
+  //    réellement visible. Sans ça, le dropdown s'étend sous le clavier et les résultats
+  //    du bas sont invisibles.
+  //  - Si pas assez de place sous l'input (clavier ouvert), on bascule le dropdown
+  //    au-dessus de l'input.
   useEffect(() => {
     if (!open) return;
     function updatePosition() {
       if (!inputRef.current) return;
       const rect = inputRef.current.getBoundingClientRect();
+      const viewportHeight =
+        window.visualViewport?.height ?? window.innerHeight;
+      const viewportOffsetTop = window.visualViewport?.offsetTop ?? 0;
+      // Espace disponible sous l'input (jusqu'au bas du viewport visible)
+      const spaceBelow = viewportHeight + viewportOffsetTop - rect.bottom - 16;
+      // Espace disponible au-dessus de l'input
+      const spaceAbove = rect.top - viewportOffsetTop - 16;
+      const placeAbove = spaceBelow < 180 && spaceAbove > spaceBelow;
+      const maxHeight = Math.max(120, Math.min(320, placeAbove ? spaceAbove : spaceBelow));
+
       setDropdownStyle({
         position: "fixed",
-        top: rect.bottom + 4,
+        ...(placeAbove
+          ? { bottom: viewportHeight + viewportOffsetTop - rect.top + 4 }
+          : { top: rect.bottom + 4 }),
         left: rect.left,
         width: rect.width,
         zIndex: 1000,
-        maxHeight: Math.min(320, window.innerHeight - rect.bottom - 16),
+        maxHeight,
       });
     }
     updatePosition();
     window.addEventListener("resize", updatePosition);
     window.addEventListener("scroll", updatePosition, true);
+    window.visualViewport?.addEventListener("resize", updatePosition);
+    window.visualViewport?.addEventListener("scroll", updatePosition);
     return () => {
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
+      window.visualViewport?.removeEventListener("resize", updatePosition);
+      window.visualViewport?.removeEventListener("scroll", updatePosition);
     };
   }, [open, results.length, busy, error]);
 
@@ -182,7 +205,14 @@ export function EntrepriseSearch({
           setQuery(e.target.value);
           setOpen(true);
         }}
-        onFocus={() => setOpen(true)}
+        onFocus={() => {
+          setOpen(true);
+          // Scroll l'input vers le haut pour libérer max d'espace sous lui
+          // avant que le clavier iOS ne mange la moitié inférieure.
+          setTimeout(() => {
+            inputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 100);
+        }}
         placeholder={placeholder}
         autoComplete="off"
         spellCheck={false}
