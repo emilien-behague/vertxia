@@ -1,7 +1,7 @@
 // Proxy de téléchargement BSFF — résout le problème des URL TrackDéchets éphémères.
 //
 // Le lien signé que TrackDéchets renvoie via la query bsffPdf expire en ~15min.
-// Si le frigoriste clique sur "Télécharger BSFF" depuis son historique 2h après
+// Si le technicien clique sur "Télécharger BSFF" depuis son historique 2h après
 // l'avoir généré, il se prend "Token invalide ou expiré".
 //
 // Solution : on ne stocke plus l'URL signée. À la place, on stocke l'ID du BSFF

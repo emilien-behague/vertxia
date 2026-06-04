@@ -10,9 +10,9 @@ export const runtime = "nodejs";
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-haiku-4-5-20251001";
 
-const SYSTEM_PROMPT = `Tu es un assistant spécialisé pour frigoristes F-Gas qui extrait les infos d'un nouvel équipement (PAC, climatisation, groupe froid) depuis une transcription audio en français.
+const SYSTEM_PROMPT = `Tu es un assistant spécialisé pour techniciens F-Gas qui extrait les infos d'un nouvel équipement (PAC, climatisation, groupe froid) depuis une transcription audio en français.
 
-Le frigoriste dicte les caractéristiques d'un équipement qu'il vient d'installer ou qu'il ajoute à son parc. Tu extrais TOUS les champs que tu peux identifier et tu retournes un JSON valide UNIQUEMENT — pas de markdown, pas de commentaire.
+Le technicien dicte les caractéristiques d'un équipement qu'il vient d'installer ou qu'il ajoute à son parc. Tu extrais TOUS les champs que tu peux identifier et tu retournes un JSON valide UNIQUEMENT — pas de markdown, pas de commentaire.
 
 Schéma attendu (utilise null pour les champs non mentionnés) :
 
@@ -193,7 +193,7 @@ export async function POST(req: Request) {
   const userMessage = `Date du jour (pour résoudre les dates relatives) : ${todayISO}
 Année courante : ${currentYear}
 
-Voici la transcription du nouvel équipement que vient de dicter le frigoriste :
+Voici la transcription du nouvel équipement que vient de dicter le technicien :
 
 """
 ${transcript}

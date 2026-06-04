@@ -75,7 +75,7 @@ export type PublicEquipement = StoredEquipement & {
    *  - "confrere" : pro Vertxia d'une autre boîte → vue technique sans données commerciales
    *  - "full" : owner ou technicien ayant déjà intervenu → tout visible */
   mode: "full" | "public" | "confrere";
-  /** Présent UNIQUEMENT en mode "public" : coordonnées du frigoriste référent. */
+  /** Présent UNIQUEMENT en mode "public" : coordonnées du technicien référent. */
   ownerPublic?: {
     raisonSociale: string | null;
     telephone: string | null;

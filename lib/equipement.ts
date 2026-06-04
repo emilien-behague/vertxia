@@ -413,17 +413,17 @@ export function getInfractions(equipements: EquipementWithStatus[]): Infraction[
 
 /**
  * Génère un mailto: URL pour relancer le client avant l'échéance du contrôle.
- * Pré-rempli avec destinataire (clientEmail), CC frigoriste, objet, et corps complet.
+ * Pré-rempli avec destinataire (clientEmail), CC technicien, objet, et corps complet.
  * L'utilisateur clique → app Mail iPhone s'ouvre → tap Envoyer.
  */
 export function buildRelanceMailto(args: {
   eq: EquipementWithStatus;
-  frigoristeEmail?: string;
-  frigoristeRaisonSociale?: string;
-  frigoristeNumeroAttestation?: string;
-  frigoristeTelephone?: string;
+  technicienEmail?: string;
+  technicienRaisonSociale?: string;
+  technicienNumeroAttestation?: string;
+  technicienTelephone?: string;
 }): string {
-  const { eq, frigoristeEmail, frigoristeRaisonSociale, frigoristeNumeroAttestation, frigoristeTelephone } = args;
+  const { eq, technicienEmail, technicienRaisonSociale, technicienNumeroAttestation, technicienTelephone } = args;
 
   const fmtFR = (iso: string | null | undefined): string => {
     if (!iso) return "non renseigné";
@@ -432,7 +432,7 @@ export function buildRelanceMailto(args: {
   };
 
   const to = eq.clientEmail ?? "";
-  const cc = frigoristeEmail ?? "";
+  const cc = technicienEmail ?? "";
 
   const subject = `Rappel : contrôle d'étanchéité réglementaire de votre installation ${eq.modele} à programmer`;
 
@@ -456,13 +456,13 @@ export function buildRelanceMailto(args: {
     `• Prochain contrôle requis avant le : ${fmtFR(eq.prochainControleISO)}`,
     `• Fréquence : tous les ${eq.frequenceMois} mois`,
     ``,
-    `Je vous remercie de me recontacter pour planifier cette intervention dans les meilleurs délais. Vous pouvez me joindre directement${frigoristeTelephone ? ` au ${frigoristeTelephone}` : ""}${frigoristeEmail ? ` ou par retour de mail` : ""}.`,
+    `Je vous remercie de me recontacter pour planifier cette intervention dans les meilleurs délais. Vous pouvez me joindre directement${technicienTelephone ? ` au ${technicienTelephone}` : ""}${technicienEmail ? ` ou par retour de mail` : ""}.`,
     ``,
     `Cordialement,`,
-    frigoristeRaisonSociale ?? "",
-    frigoristeNumeroAttestation ? `Attestation F-Gas n° ${frigoristeNumeroAttestation}` : "",
-    frigoristeTelephone ?? "",
-    frigoristeEmail ?? "",
+    technicienRaisonSociale ?? "",
+    technicienNumeroAttestation ? `Attestation F-Gas n° ${technicienNumeroAttestation}` : "",
+    technicienTelephone ?? "",
+    technicienEmail ?? "",
   ].filter(Boolean);
 
   const body = lines.join("\n");

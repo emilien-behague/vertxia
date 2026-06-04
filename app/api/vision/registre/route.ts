@@ -1,5 +1,5 @@
 // Extraction batch d'équipements depuis une PAGE de registre papier (tableau,
-// liste, fiches archivées) via Claude vision. Le frigoriste prend chaque page
+// liste, fiches archivées) via Claude vision. Le technicien prend chaque page
 // en photo, on extrait TOUS les équipements visibles → import bulk dans le parc.
 //
 // Modèle utilisé : claude-opus-4-7 (cohérent avec /api/vision/plaque, meilleur
@@ -15,7 +15,7 @@ export const runtime = "nodejs";
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-opus-4-7";
 
-const SYSTEM_PROMPT = `Tu es un expert frigoriste F-Gas qui lit les registres papier (carnets d'installations, tableaux Excel imprimés, fiches archivées) des frigoristes et installateurs PAC. Ton job : extraire CHAQUE équipement visible sur la page photographiée.
+const SYSTEM_PROMPT = `Tu es un expert technicien F-Gas qui lit les registres papier (carnets d'installations, tableaux Excel imprimés, fiches archivées) des techniciens et installateurs PAC. Ton job : extraire CHAQUE équipement visible sur la page photographiée.
 
 Une page de registre contient typiquement plusieurs lignes/colonnes/blocs, chacun représentant un équipement chez un client. Format manuscrit, dactylographié, ou tableau imprimé.
 
@@ -188,7 +188,7 @@ export async function POST(req: Request) {
               },
               {
                 type: "text",
-                text: "Voici une page d'un registre papier de frigoriste. Extrais TOUS les équipements visibles selon le schéma. Réponds UNIQUEMENT le JSON.",
+                text: "Voici une page d'un registre papier de technicien. Extrais TOUS les équipements visibles selon le schéma. Réponds UNIQUEMENT le JSON.",
               },
             ],
           },

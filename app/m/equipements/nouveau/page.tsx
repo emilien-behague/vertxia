@@ -106,7 +106,7 @@ function MobileAjoutEquipementContent() {
 
   // Au mount, si on revient du scanner QR avec ?fromQr=<id>, pré-remplit
   // le formulaire avec les données publiques de l'équipement scanné.
-  // Use case : reprendre une machine sur laquelle un autre frigoriste
+  // Use case : reprendre une machine sur laquelle un autre technicien
   // était déjà passé — gain de temps massif (pas de re-saisie).
   useEffect(() => {
     const fromQr = searchParams.get("fromQr");
@@ -451,11 +451,11 @@ function MobileAjoutEquipementContent() {
           </div>
         </InsetListSection>
 
-        {/* Scan QR Vertxia — rapatrie un équipement existant (autre frigoriste,
+        {/* Scan QR Vertxia — rapatrie un équipement existant (autre technicien,
             ou ton propre équipement à dupliquer) en pré-remplissant tout le form. */}
         <InsetListSection
           title="Scanner un QR Vertxia (optionnel)"
-          footer="Si la machine porte déjà une étiquette QR Vertxia (collée par un autre frigoriste ou par toi), scanne-la pour récupérer toutes les infos d'un coup."
+          footer="Si la machine porte déjà une étiquette QR Vertxia (collée par un autre technicien ou par toi), scanne-la pour récupérer toutes les infos d'un coup."
         >
           <div className="px-4 py-3">
             <button

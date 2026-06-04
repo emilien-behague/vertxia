@@ -1,5 +1,5 @@
 // Diagnostic visuel IA d'un composant frigorifique via Claude vision.
-// Le frigoriste prend une photo d'un compresseur, échangeur, raccord brasure,
+// Le technicien prend une photo d'un compresseur, échangeur, raccord brasure,
 // évaporateur, etc. → on retourne identification du composant + défauts
 // détectés (corrosion, traces huile, givre anormal, encrassement…) + cause
 // probable + action recommandée + estimation devis.
@@ -16,7 +16,7 @@ const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-opus-4-7";
 const MAX_BYTES = 5 * 1024 * 1024;
 
-const SYSTEM_PROMPT = `Tu es un expert frigoriste F-Gas et thermicien avec 25 ans de terrain (résidentiel, tertiaire, commercial agroalimentaire, PAC). Le frigoriste te présente une photo d'un composant ou d'une zone de son installation. Ton job : identifier le composant + détecter les défauts visuels + diagnostiquer la cause + recommander une action + estimer un devis range réaliste.
+const SYSTEM_PROMPT = `Tu es un expert technicien F-Gas et thermicien avec 25 ans de terrain (résidentiel, tertiaire, commercial agroalimentaire, PAC). Le technicien te présente une photo d'un composant ou d'une zone de son installation. Ton job : identifier le composant + détecter les défauts visuels + diagnostiquer la cause + recommander une action + estimer un devis range réaliste.
 
 Tu DOIS retourner UNIQUEMENT un objet JSON valide (pas de markdown, pas de \`\`\`, pas de commentaire) avec ce schéma EXACT :
 
@@ -53,7 +53,7 @@ RÈGLES STRICTES :
 
 3. CAUSE PROBABLE : hypothèse technique la plus probable des défauts détectés. Cite la cause racine, pas juste le symptôme. Ex : "Condensats stagnants en zone froide + pile galvanique entre cuivre et aluminium" / "Fuite de fluide frigorigène par micro-fissure de brasure sous l'effet vibratoire" / "Manque de maintenance préventive : pas de nettoyage condenseur sur > 2 ans" / "Sous-dimensionnement du condenseur pour la charge thermique". Si plusieurs causes possibles équivalentes, mentionne les 2-3 principales.
 
-4. ACTION RECOMMANDÉE : DIRECTIVE concrète et actionnable pour le frigoriste. Pas de "il faudrait peut-être". Format : verbe d'action + objet + spec technique. Ex : "Nettoyer chimiquement le condenseur (produit alcalin type Trex Clean) + traiter les ailettes anti-corrosion" / "Brasurer joint d'étanchéité, contrôler 24h à l'azote 25 bars, mise sous vide triple <500 microns, recharger fluide" / "Remplacer le calorifuge sur 1m + appliquer anti-condensation". Si critique → première phrase = "ARRÊTER l'installation, [action]".
+4. ACTION RECOMMANDÉE : DIRECTIVE concrète et actionnable pour le technicien. Pas de "il faudrait peut-être". Format : verbe d'action + objet + spec technique. Ex : "Nettoyer chimiquement le condenseur (produit alcalin type Trex Clean) + traiter les ailettes anti-corrosion" / "Brasurer joint d'étanchéité, contrôler 24h à l'azote 25 bars, mise sous vide triple <500 microns, recharger fluide" / "Remplacer le calorifuge sur 1m + appliquer anti-condensation". Si critique → première phrase = "ARRÊTER l'installation, [action]".
 
 5. DEVIS ESTIMÉ (en EUROS HT, fourchette terrain typique 2026 FR) :
    - Action low (juste contrôle/observation) → null pour les 2 champs
@@ -80,12 +80,12 @@ CONTRAINTES :
 - Ne JAMAIS recommander une opération illégale (recharge R-22 vierge, manipulation sans attestation cat appropriée, etc.).
 - Ne JAMAIS sortir du JSON. Pas de texte avant/après.
 - Si la photo ne montre PAS un composant frigorifique/climatique/PAC (ex : photo d'une personne, paysage, document texte) → composantIdentifie=null, defautsDetectes=[], causeProbable="Image non liée à un composant frigorifique. Reprends une photo du composant à diagnostiquer.", actionRecommandee="Reprendre la photo", confiance="basse".
-- Ton diagnostic est UNE AIDE — la responsabilité reste celle du frigoriste qui interviendra.`;
+- Ton diagnostic est UNE AIDE — la responsabilité reste celle du technicien qui interviendra.`;
 
 type RequestBody = {
   /** Data URL base64 de l'image (image/jpeg ou image/png) */
   imageDataUrl: string;
-  /** Note libre optionnelle du frigoriste pour préciser le contexte (ex: "compresseur fait du bruit depuis 2 jours") */
+  /** Note libre optionnelle du technicien pour préciser le contexte (ex: "compresseur fait du bruit depuis 2 jours") */
   contexteNote?: string;
 };
 
@@ -130,8 +130,8 @@ export async function POST(req: Request) {
   }
 
   const userText = contexteNote?.trim()
-    ? `Analyse cette photo prise par un frigoriste. Contexte du frigoriste : "${contexteNote.trim()}". Retourne le diagnostic JSON.`
-    : "Analyse cette photo prise par un frigoriste. Retourne le diagnostic JSON.";
+    ? `Analyse cette photo prise par un technicien. Contexte du technicien : "${contexteNote.trim()}". Retourne le diagnostic JSON.`
+    : "Analyse cette photo prise par un technicien. Retourne le diagnostic JSON.";
 
   try {
     const res = await fetch(ANTHROPIC_API_URL, {

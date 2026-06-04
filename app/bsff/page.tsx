@@ -298,15 +298,15 @@ export default function BsffPage() {
       // ÉTAPE 2 — CERFA 15497*04 PDF (toujours généré)
       setStatus({ type: "loading", step: "Génération du CERFA 15497*04…" });
 
-      // Profil entreprise du frigoriste (depuis localStorage /profil).
-      // Si vide → fallback démo "Emilien Behague / Frigoriste Cat. I" côté serveur.
+      // Profil entreprise du technicien (depuis localStorage /profil).
+      // Si vide → fallback démo "Emilien Behague / Technicien Cat. I" côté serveur.
       const profil = loadProfil();
       const operateur = profil.raisonSociale
         ? {
             name: profil.raisonSociale,
             quality: profil.categorieAttestation
-              ? `Frigoriste Cat. ${profil.categorieAttestation}`
-              : "Frigoriste",
+              ? `Technicien Cat. ${profil.categorieAttestation}`
+              : "Technicien",
             signatureDataUrl: profil.signatureDataUrl,
           }
         : undefined;

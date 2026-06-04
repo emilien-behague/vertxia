@@ -1,6 +1,6 @@
 // Génération d'une étiquette PDF A6 (105×148mm) à coller sur l'équipement.
 // QR code → URL publique /eq/[id] qui ouvre la fiche complète sur le téléphone
-// du frigoriste qui scanne.
+// du technicien qui scanne.
 //
 // Usage :
 //   const blob = await generateQrLabel(equipement, window.location.origin);

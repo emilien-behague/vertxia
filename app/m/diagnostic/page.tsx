@@ -1,7 +1,7 @@
 "use client";
 
 // Photo diagnostic visuel IA — Rank 11 du brainstorm features.
-// Le frigoriste prend une photo d'un composant suspect (échangeur, brasure,
+// Le technicien prend une photo d'un composant suspect (échangeur, brasure,
 // compresseur, raccord…) + note libre optionnelle → Claude Opus 4.7 vision
 // retourne : composant identifié, défauts détectés avec gravité, cause
 // probable, action recommandée, devis estimé, délai intervention.
@@ -214,7 +214,7 @@ export default function DiagnosticPage() {
               <section>
                 <h3 className="text-[15px] font-semibold mb-2">Sur quoi est basé le diagnostic ?</h3>
                 <p className="text-[13.5px] text-black/70 leading-relaxed">
-                  Le diagnostic est fait par <strong>Claude Opus 4.7</strong> (modèle IA d&apos;Anthropic), entraîné sur des centaines de millions d&apos;images publiques (web, docs techniques, manuels de maintenance, forums frigoristes). Il a vu des milliers d&apos;échangeurs corrodés, brasures défectueuses, raccords avec traces d&apos;huile, etc. Il reconnaît ces patterns visuels comme le ferait un expert humain avec 25 ans de terrain.
+                  Le diagnostic est fait par <strong>Claude Opus 4.7</strong> (modèle IA d&apos;Anthropic), entraîné sur des centaines de millions d&apos;images publiques (web, docs techniques, manuels de maintenance, forums techniciens). Il a vu des milliers d&apos;échangeurs corrodés, brasures défectueuses, raccords avec traces d&apos;huile, etc. Il reconnaît ces patterns visuels comme le ferait un expert humain avec 25 ans de terrain.
                 </p>
                 <p className="text-[13.5px] text-black/70 leading-relaxed mt-2">
                   En plus, Vertxia lui injecte un contexte métier précis (réglementation UE 2024/573, fluides HFC/HFO, défauts typiques, barème devis terrain 2026 FR) pour cadrer ses réponses.
@@ -278,7 +278,7 @@ export default function DiagnosticPage() {
                     <line x1="12" y1="17" x2="12.01" y2="17" />
                   </svg>
                   <div className="text-[12.5px] text-amber-900 leading-relaxed">
-                    <strong>Le diagnostic IA est une AIDE, pas un remplacement.</strong> La responsabilité technique et réglementaire reste celle du frigoriste qui intervient. Toujours valider sur site avec tes outils (détecteur de fuite, manomètre, station de récup) avant toute action irréversible.
+                    <strong>Le diagnostic IA est une AIDE, pas un remplacement.</strong> La responsabilité technique et réglementaire reste celle du technicien qui intervient. Toujours valider sur site avec tes outils (détecteur de fuite, manomètre, station de récup) avant toute action irréversible.
                   </div>
                 </div>
               </section>

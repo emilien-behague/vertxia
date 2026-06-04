@@ -16,7 +16,7 @@ import { loadProfil, type Profil } from "@/lib/profil";
 import { generateQrLabel } from "@/lib/qr-label";
 import { fetchPublicEquipement, fetchPublicInterventions, syncEquipementToSupabase, lastFetchDebug, type PublicEquipement } from "@/lib/public-sync";
 
-// Page mobile premium — affichée quand un frigoriste scanne le QR Code collé sur
+// Page mobile premium — affichée quand un technicien scanne le QR Code collé sur
 // un équipement. Doit s'afficher SANS bug sur Safari iOS (zéro animation initial:opacity:0
 // pour éviter le bug d'hydration React 19 + framer-motion 12 qui bloque l'opacity à 0).
 // Le wow factor vient du design typographique + couleurs statut + CTA géant, pas des anims.
@@ -106,7 +106,7 @@ export default function EquipementScannedPage({
   const [qrLoading, setQrLoading] = useState(false);
   const [qrError, setQrError] = useState<string | null>(null);
   // Mode lecture seule = équipement chargé depuis Supabase, pas en local
-  // (visiteur qui scan le QR d'un équipement d'un autre frigoriste)
+  // (visiteur qui scan le QR d'un équipement d'un autre technicien)
   // isReadOnly est stocké côté serveur mais on raisonne en UI via isOwner /
   // canCreateIntervention / mode (plus précis). On garde le state pour
   // d'éventuelles évolutions sans rebrasser tout.
@@ -199,7 +199,7 @@ export default function EquipementScannedPage({
         return;
       }
       // 2. Fallback Supabase (cas partage public : visiteur scan le QR d'un
-      //    équipement d'un autre frigoriste). RLS policy "equipements_select_public"
+      //    équipement d'un autre technicien). RLS policy "equipements_select_public"
       //    autorise la lecture sans login.
       setFetching(true);
       const remote = await fetchPublicEquipement(id);
@@ -211,7 +211,7 @@ export default function EquipementScannedPage({
       }
       // L'historique est fetch UNIQUEMENT en mode "full" (owner ou technicien
       // ayant déjà intervenu). En mode "public" et "confrere", on n'expose pas
-      // l'historique d'interventions — donnée commerciale du frigoriste.
+      // l'historique d'interventions — donnée commerciale du technicien.
       const remoteInterventions = remote.mode === "full"
         ? await fetchPublicInterventions(id)
         : [];
@@ -265,10 +265,10 @@ export default function EquipementScannedPage({
     if (!eq || eq.statut !== "a_relancer") return null;
     return buildRelanceMailto({
       eq,
-      frigoristeEmail: profil?.email || undefined,
-      frigoristeRaisonSociale: profil?.raisonSociale || undefined,
-      frigoristeNumeroAttestation: profil?.numeroAttestation || undefined,
-      frigoristeTelephone: profil?.telephone || undefined,
+      technicienEmail: profil?.email || undefined,
+      technicienRaisonSociale: profil?.raisonSociale || undefined,
+      technicienNumeroAttestation: profil?.numeroAttestation || undefined,
+      technicienTelephone: profil?.telephone || undefined,
     });
   }, [eq, profil]);
 
@@ -462,7 +462,7 @@ export default function EquipementScannedPage({
 
         {/* Bandeau "Confrère Vertxia" — pro Vertxia d'une autre boîte qui n'a
             jamais intervenu sur cette installation. Voit la donnée technique
-            objective MAIS PAS la donnée commerciale du frigoriste owner. */}
+            objective MAIS PAS la donnée commerciale du technicien owner. */}
         {mode === "confrere" && (
           <div className="mb-4 px-4 py-3 rounded-2xl bg-amber-50 ring-1 ring-amber-200">
             <div className="flex items-start gap-3">
@@ -675,7 +675,7 @@ export default function EquipementScannedPage({
           </button>
         )}
 
-        {/* Bloc "Contacter le frigoriste référent" — visible pour visiteur
+        {/* Bloc "Contacter le technicien référent" — visible pour visiteur
             anonyme ET pour confrère Vertxia (qui veut prendre contact pour
             reprise officielle). Caché pour owner (connaît ses propres infos)
             et pour technicien admis (déjà en contact). */}
@@ -683,7 +683,7 @@ export default function EquipementScannedPage({
           <div className="rounded-2xl bg-[#111] text-white mb-3 overflow-hidden shadow-lg shadow-black/15">
             <div className="px-5 py-4">
               <div className="font-mono text-[9px] tracking-[0.3em] uppercase text-white/55 mb-1">
-                Frigoriste référent
+                Technicien référent
               </div>
               {ownerPublic.raisonSociale && (
                 <div className="text-base font-medium tracking-wide">
@@ -987,10 +987,10 @@ export default function EquipementScannedPage({
               Suivez votre parc F-Gas en 30 secondes par installation
             </div>
             <div className="mt-1 text-[12px] text-black/60 leading-relaxed">
-              Contrôles d&apos;étanchéité, registre, CERFA, BSFF — Vertxia automatise toute la paperasse réglementaire pour les frigoristes, climaticiens et techniciens du froid.
+              Contrôles d&apos;étanchéité, registre, CERFA, BSFF — Vertxia automatise toute la paperasse réglementaire pour les techniciens, climaticiens et techniciens du froid.
             </div>
             <a
-              href="https://vertxia.com/frigoriste"
+              href="https://vertxia.com/technicien"
               target="_blank"
               rel="noopener noreferrer"
               className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#111] text-white text-[13px] font-medium active:bg-black/90 transition-colors"

@@ -37,12 +37,12 @@ type RequestBody = {
   /** Immatriculation du véhicule transporteur (depuis profil). Fallback "AB123CD" si absent. */
   immatriculation?: string;
   // ─── Mode officiel TrackDéchets (BSFF signé Ministère) ───────────────
-  /** Token API personnel TrackDéchets du frigoriste. Si présent → mode
-   *  officiel, le BSFF est signé sous le SIRET du frigoriste sur l'API prod. */
+  /** Token API personnel TrackDéchets du technicien. Si présent → mode
+   *  officiel, le BSFF est signé sous le SIRET du technicien sur l'API prod. */
   userToken?: string;
   /** "sandbox" (défaut, démo Vertxia) ou "production" (officiel) */
   apiMode?: "sandbox" | "production";
-  /** Entreprise émettrice + transporteur (le frigoriste). Si absent → Vertxia TEST. */
+  /** Entreprise émettrice + transporteur (le technicien). Si absent → Vertxia TEST. */
   emitterCompany?: CompanyOverride;
   /** Centre agréé de régénération HFC (Climalife, Arkema...). Si absent → Vertxia TEST. */
   destinationCompany?: CompanyOverride;
@@ -121,7 +121,7 @@ export async function POST(req: Request) {
   // sous le SIRET sandbox sur l'API prod → rejet).
   if (isLive && (!emitterCompany?.siret || !emitterCompany?.name)) {
     return badRequest(
-      "Mode officiel TrackDéchets : SIRET + raison sociale du frigoriste requis (depuis le profil)."
+      "Mode officiel TrackDéchets : SIRET + raison sociale du technicien requis (depuis le profil)."
     );
   }
   if (isLive && (!destinationCompany?.siret || !destinationCompany?.name)) {
@@ -135,7 +135,7 @@ export async function POST(req: Request) {
         siret: emitterCompany.siret,
         name: emitterCompany.name,
         address: emitterCompany.address,
-        contact: emitterCompany.contact || "Frigoriste Vertxia",
+        contact: emitterCompany.contact || "Technicien Vertxia",
         phone: emitterCompany.phone || "",
         mail: emitterCompany.mail || "",
       }
@@ -162,7 +162,7 @@ export async function POST(req: Request) {
     ? `Fluide frigorigène ${fluide.code} récupéré — Client : ${clientName}`
     : `Fluide frigorigène ${fluide.code} récupéré`;
 
-  const authorName = emitter.contact || "Frigoriste Vertxia";
+  const authorName = emitter.contact || "Technicien Vertxia";
 
   const createInput = {
     type: "COLLECTE_PETITES_QUANTITES",
@@ -182,7 +182,7 @@ export async function POST(req: Request) {
       },
     ],
     transporter: {
-      company: emitter, // le frigoriste collecte ET transporte (SCOLLAC = transporteur agréé)
+      company: emitter, // le technicien collecte ET transporte (SCOLLAC = transporteur agréé)
       transport: {
         mode: "ROAD",
         plates: [immatriculation?.trim() || "AB123CD"],

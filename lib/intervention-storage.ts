@@ -38,7 +38,7 @@ export type StoredIntervention = {
   hasDetenteurSignature?: boolean;
   detenteurName?: string;
   detenteurQuality?: string;
-  /** Notes libres saisies ou dictées par le frigoriste (observations terrain) */
+  /** Notes libres saisies ou dictées par le technicien (observations terrain) */
   notes?: string;
 };
 

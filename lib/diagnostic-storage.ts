@@ -24,7 +24,7 @@ export type StoredDiagnostic = {
   createdAt: string;
   /** Data URL JPEG compressée (déjà 2000px max 80% qualité) */
   imageDataUrl: string;
-  /** Note libre tapée par le frigoriste avant la capture (peut être vide) */
+  /** Note libre tapée par le technicien avant la capture (peut être vide) */
   contexteNote?: string;
   /** Résultat structuré renvoyé par /api/vision/diagnostic */
   result: DiagnosticResult;

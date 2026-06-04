@@ -80,7 +80,7 @@ export default function InfractionsPage() {
                 {infractions.length} équipement{infractions.length > 1 ? "s" : ""} en infraction réglementaire
               </div>
               <div className="text-[12.5px] text-red-800/85 mt-1 leading-snug">
-                Non-conformité au règlement UE 2024/573. La responsabilité pénale du détenteur ET du frigoriste est engagée. Sanctions possibles : amende administrative et pénale, suspension d&apos;activité.
+                Non-conformité au règlement UE 2024/573. La responsabilité pénale du détenteur ET du technicien est engagée. Sanctions possibles : amende administrative et pénale, suspension d&apos;activité.
               </div>
               <div className="text-[11px] text-red-700/70 mt-2 leading-snug">
                 Référence : Code de l&apos;environnement, art. L173-1 et L173-12.

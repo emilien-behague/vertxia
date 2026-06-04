@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// Modal plein écran de dictée libre : le frigoriste appuie sur DICTER,
+// Modal plein écran de dictée libre : le technicien appuie sur DICTER,
 // parle 30s en langage naturel, on transcrit en live via Web Speech API
 // natif iOS/Android, puis on envoie à /api/voice/extract-intervention
 // qui retourne un JSON structuré pré-remplissant le formulaire.

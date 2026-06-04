@@ -400,7 +400,7 @@ function NouvelleInterventionContent() {
     }
     if (typeof extraction.fluideRecycle === "number" && extraction.fluideRecycle > 0) {
       setFluideRecycle(extraction.fluideRecycle.toFixed(3));
-      // Recyclé = aussi du gaz ajouté côté pratique frigoriste
+      // Recyclé = aussi du gaz ajouté côté pratique technicien
       setGazAjouteKg((prev) =>
         (parseFloat(prev || "0") + (extraction.fluideRecycle ?? 0)).toFixed(3)
       );
@@ -425,7 +425,7 @@ function NouvelleInterventionContent() {
     }
     if (typeof extraction.fluideReutilisation === "number" && extraction.fluideReutilisation > 0) {
       setFluideReutilisation(extraction.fluideReutilisation.toFixed(3));
-      // Réutilisé = aussi du gaz retiré côté pratique frigoriste
+      // Réutilisé = aussi du gaz retiré côté pratique technicien
       setGazRetireKg((prev) =>
         (parseFloat(prev || "0") + (extraction.fluideReutilisation ?? 0)).toFixed(3)
       );
@@ -576,8 +576,8 @@ function NouvelleInterventionContent() {
         ? {
             name: profil.raisonSociale,
             quality: profil.categorieAttestation
-              ? `Frigoriste Cat. ${profil.categorieAttestation}`
-              : "Frigoriste",
+              ? `Technicien Cat. ${profil.categorieAttestation}`
+              : "Technicien",
             signatureDataUrl: profil.signatureDataUrl,
           }
         : undefined;

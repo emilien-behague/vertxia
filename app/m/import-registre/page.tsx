@@ -1,10 +1,10 @@
 "use client";
 
-// Import batch d'équipements depuis registre papier — le frigoriste prend
+// Import batch d'équipements depuis registre papier — le technicien prend
 // chaque page en photo, l'IA vision extrait TOUS les équipements visibles,
 // le user review/édite la liste, puis import bulk dans son parc.
 //
-// Use case principal : un frigoriste installé depuis 15 ans qui veut
+// Use case principal : un technicien installé depuis 15 ans qui veut
 // reconstituer son parc sans ressaisir 200 lignes à la main. Effort : 10 min
 // (prendre les photos + valider la liste) au lieu d'une journée de saisie.
 

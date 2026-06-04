@@ -11,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Vertxia — F-Gas en quelques secondes",
     short_name: "Vertxia",
     description:
-      "BSFF, CERFA 15497*04, SYDEREP — photo + voix → documents officiels signés Ministère. Pour frigoristes, climaticiens, installateurs PAC.",
+      "BSFF, CERFA 15497*04, SYDEREP — photo + voix → documents officiels signés Ministère. Pour techniciens, climaticiens, installateurs PAC.",
     start_url: "/m",
     scope: "/",
     display: "standalone",

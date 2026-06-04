@@ -73,9 +73,9 @@ export type SignatureDetenteur = {
 };
 
 export type OperateurInfo = {
-  /** Nom du frigoriste / opérateur F-Gas (depuis le profil entreprise) */
+  /** Nom du technicien / opérateur F-Gas (depuis le profil entreprise) */
   name: string;
-  /** Qualité — typiquement "Frigoriste Cat. I/II/III/IV/V" */
+  /** Qualité — typiquement "Technicien Cat. I/II/III/IV/V" */
   quality: string;
   /** Signature manuscrite de l'opérateur (data URL PNG, depuis le profil). Optionnel. */
   signatureDataUrl?: string;
@@ -107,13 +107,13 @@ export type CerfaInput = {
   /** Décomposition du fluide manipulé (sections [11A-E] du CERFA).
    *  Si absent : on remplit juste 11_Quantite (total) + 11_QE (assume tout réutilisé). */
   fluideManipule?: FluideManipule;
-  /** Observations libres du frigoriste (notes terrain, dictée vocale, etc.).
+  /** Observations libres du technicien (notes terrain, dictée vocale, etc.).
    *  Concaténé après les observations auto-générées dans la case [14]. */
   observationsLibres?: string;
-  /** Infos de l'opérateur (frigoriste) depuis son profil entreprise Vertxia.
+  /** Infos de l'opérateur (technicien) depuis son profil entreprise Vertxia.
    *  Si présent : remplit Sign_Operateur_Nom/Qualite/Date + appose la signature
-   *  manuscrite du frigoriste si signatureDataUrl est fournie.
-   *  Si absent : fallback "Emilien Behague / Frigoriste Cat. I" (mode démo). */
+   *  manuscrite du technicien si signatureDataUrl est fournie.
+   *  Si absent : fallback "Emilien Behague / Technicien Cat. I" (mode démo). */
   operateur?: OperateurInfo | null;
 };
 
@@ -466,7 +466,7 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
   } else if (typeIntervention === "modification") {
     observationsParts.push("Modification de l'équipement.");
   }
-  // Observations libres saisies par le frigoriste (notes terrain / dictée vocale).
+  // Observations libres saisies par le technicien (notes terrain / dictée vocale).
   // Placées AVANT le footer "Fiche générée par Vertxia" pour rester lisibles
   // si jamais le texte total dépasse la zone et est tronqué.
   if (input.observationsLibres?.trim()) {
@@ -481,7 +481,7 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
   // Côté opérateur : valeurs issues du profil entreprise Vertxia si fourni,
   // sinon fallback démo (Emilien — c'est le compte SIRET sandbox).
   const opName = input.operateur?.name || "Emilien Behague";
-  const opQuality = input.operateur?.quality || "Frigoriste Cat. I";
+  const opQuality = input.operateur?.quality || "Technicien Cat. I";
   setText("Sign_Operateur_Nom", opName, 8);
   setText("Sign_Operateur_Qualite", opQuality, 8);
   setText("Sign_Operateur_Date", dateFR, 8);
@@ -532,7 +532,7 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
     });
   }
 
-  // ─── Signature opérateur (frigoriste, depuis le profil Vertxia) ─────────
+  // ─── Signature opérateur (technicien, depuis le profil Vertxia) ─────────
   // Même convention que côté détenteur, mais position miroir à GAUCHE.
   // Sign_Operateur_Date va de x=127.5 à x=337.3, y=44.9 à y=63.4.
   // Signature apposée moitié droite de cette zone.

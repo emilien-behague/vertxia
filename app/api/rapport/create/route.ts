@@ -1,6 +1,6 @@
 // Génère le rapport d'intervention F-Gas (PDF "client final").
 // Différent du CERFA officiel et du BSFF TrackDéchets — c'est le livrable
-// que le frigoriste remet à son client (hôtel, restaurant, usine) avec
+// que le technicien remet à son client (hôtel, restaurant, usine) avec
 // son entête entreprise, son logo et sa signature manuscrite.
 
 import { NextResponse } from "next/server";

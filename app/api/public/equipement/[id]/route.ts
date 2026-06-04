@@ -12,7 +12,7 @@
 //      détecteur, unités intérieures, contact pro
 //    ✗ PAS de client (nom/email/tel/adresse), PAS de notes, PAS d'historique
 //    Permet de reprendre une machine techniquement sans voler la donnée
-//    commerciale du frigoriste précédent.
+//    commerciale du technicien précédent.
 //
 // 3. Technicien AYANT DÉJÀ INTERVENU sur cet eq → mode "full"
 //    = vue complète (le pro a déjà été "admis" par une 1ère intervention).
@@ -22,7 +22,7 @@
 //    = vue complète + toutes actions (relance client, QR PDF, etc.).
 //
 // Objectif business : un concurrent qui scanne ne peut pas voler les clients
-// du frigoriste owner. Mais il peut techniquement reprendre la machine si
+// du technicien owner. Mais il peut techniquement reprendre la machine si
 // l'owner l'admet via une 1ère intervention.
 
 import { NextResponse } from "next/server";

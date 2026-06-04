@@ -1,4 +1,4 @@
-// Bouteilles fluides frigorigènes — stock et traçabilité interne frigoriste.
+// Bouteilles fluides frigorigènes — stock et traçabilité interne technicien.
 //
 // 2 types distincts (terrain pro Emilien, 02/06/2026) :
 //  - RECHARGE : ton stock de fluide neuf pour charger les équipements clients

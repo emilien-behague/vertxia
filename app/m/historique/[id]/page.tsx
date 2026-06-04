@@ -59,7 +59,7 @@ export default function MobileInterventionDetailPage() {
   bsffStatusRef.current = bsffStatus;
   const bsffIdRef = useRef<string | undefined>(undefined);
 
-  // Signature transport (cas où le frigoriste = transporteur)
+  // Signature transport (cas où le technicien = transporteur)
   const [transportSigning, setTransportSigning] = useState(false);
   const [transportError, setTransportError] = useState<string | null>(null);
   // Date de prise en charge — initialisée lazy au moment où l'utilisateur déplie
@@ -149,7 +149,7 @@ export default function MobileInterventionDetailPage() {
   async function handleSignTransport() {
     if (!intervention?.bsffId) return;
     const profil = loadProfil();
-    const author = (profil.raisonSociale || "Frigoriste").trim();
+    const author = (profil.raisonSociale || "Technicien").trim();
     setTransportError(null);
     setTransportSigning(true);
     try {
@@ -198,8 +198,8 @@ export default function MobileInterventionDetailPage() {
         ? {
             name: profil.raisonSociale,
             quality: profil.categorieAttestation
-              ? `Frigoriste Cat. ${profil.categorieAttestation}`
-              : "Frigoriste",
+              ? `Technicien Cat. ${profil.categorieAttestation}`
+              : "Technicien",
             signatureDataUrl: profil.signatureDataUrl,
           }
         : undefined;

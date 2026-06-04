@@ -1,4 +1,4 @@
-// Profil entreprise du frigoriste / opérateur F-Gas.
+// Profil entreprise du technicien / opérateur F-Gas.
 // Stocké localement (localStorage) tant qu'OAuth2 TrackDéchets n'est pas branché.
 // Quand OAuth2 sera prêt, SIRET/raisonSociale/adresse seront pré-remplis
 // automatiquement depuis l'API TrackDéchets — le user n'aura plus qu'à compléter
@@ -50,7 +50,7 @@ export type Profil = {
   immatriculationVehicule?: string;
 
   // BSFF OFFICIEL TrackDéchets — quand renseigné, le BSFF est signé
-  // au nom du frigoriste (son SIRET, son token) sur le serveur prod
+  // au nom du technicien (son SIRET, son token) sur le serveur prod
   // au lieu du sandbox Vertxia TEST. Le bordereau a alors une vraie
   // valeur légale opposable au Ministère.
   // Token = obtenu depuis trackdechets.beta.gouv.fr → Mon compte → API.

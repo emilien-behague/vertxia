@@ -52,7 +52,7 @@ export async function GET(
 
   // Le schéma TrackDéchets place l'opération de traitement sur CHAQUE packaging
   // individuellement (BsffPackagingOperation), pas sur destination. On prend le
-  // premier packaging (cas mono-bouteille = 99% des récupérations frigoristes).
+  // premier packaging (cas mono-bouteille = 99% des récupérations techniciens).
   const r = await gql(
     token,
     `query BsffStatus($id: ID!) {

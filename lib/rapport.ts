@@ -1,9 +1,9 @@
 // Rapport d'intervention F-Gas pour le client final.
 //
 // Différent du BSFF (technique TrackDéchets) et du CERFA (réglementaire ADEME) :
-// c'est un PDF "humain" que le frigoriste remet à son client final (hôtel,
+// c'est un PDF "humain" que le technicien remet à son client final (hôtel,
 // restaurant, usine) après une intervention. Avec entête entreprise + logo +
-// signature manuscrite du frigoriste.
+// signature manuscrite du technicien.
 //
 // Génère un PDF A4 from-scratch via pdf-lib (pas de template officiel ici).
 
@@ -307,7 +307,7 @@ export async function generateRapportPdf(input: RapportInput): Promise<Uint8Arra
   ctx.y -= 30;
 
   // Bloc signature
-  drawText(ctx, "Le frigoriste opérateur :", { size: 9, color: COLOR_LIGHT });
+  drawText(ctx, "Le technicien opérateur :", { size: 9, color: COLOR_LIGHT });
   ctx.y -= 18;
 
   // Signature manuscrite (si présente dans profil)
@@ -343,7 +343,7 @@ export async function generateRapportPdf(input: RapportInput): Promise<Uint8Arra
     ctx.y -= 14;
   }
   if (profil.categorieAttestation) {
-    drawText(ctx, `Frigoriste — Attestation de capacité Catégorie ${profil.categorieAttestation}`, {
+    drawText(ctx, `Technicien — Attestation de capacité Catégorie ${profil.categorieAttestation}`, {
       size: 9,
       color: COLOR_MUTED,
     });

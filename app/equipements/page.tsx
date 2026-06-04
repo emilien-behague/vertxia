@@ -828,7 +828,7 @@ export default function EquipementsPage() {
                 </a>
 
                 <p className="text-[11px] text-black/40 leading-relaxed text-center pt-1">
-                  Collez ce QR Code sur l&apos;équipement. Quand un frigoriste le scanne,
+                  Collez ce QR Code sur l&apos;équipement. Quand un technicien le scanne,
                   il accède directement à la fiche pour démarrer une intervention.
                 </p>
               </motion.div>

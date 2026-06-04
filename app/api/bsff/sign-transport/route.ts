@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 // Signature de la prise en charge transport d'un BSFF existant.
-// Cas d'usage : le frigoriste joue aussi le rôle de transporteur (il apporte
+// Cas d'usage : le technicien joue aussi le rôle de transporteur (il apporte
 // lui-même les bouteilles au centre de traitement). Au lieu d'aller sur
 // l'interface TrackDéchets web depuis son PC, il signe en 3 taps sur l'app
 // mobile à la fin de sa tournée.

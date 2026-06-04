@@ -3,7 +3,7 @@
 /**
  * Page /start — Présentation guidée du flow mobile Vertxia.
  *
- * Cible : frigoristes / climaticiens qui arrivent via lien WhatsApp/SMS/mail.
+ * Cible : techniciens / climaticiens qui arrivent via lien WhatsApp/SMS/mail.
  * Objectif : en 30s comprendre ce que fait l'appli + cliquer sur "OUVRIR L'APPLI" → /m.
  *
  * URL à partager pour démos rapides et verbatims.
@@ -223,7 +223,7 @@ export default function StartPage() {
                 Tu préfères qu&apos;on en parle de vive voix ? Je prends 15 min pour te montrer.
               </p>
               <a
-                href="mailto:emilien@vertxia.com?subject=Vertxia — j'aimerais en parler&body=Salut Emilien,%0D%0A%0D%0AJ'ai vu Vertxia et j'aimerais qu'on en parle.%0D%0A%0D%0AMoi : (frigoriste / climaticien / installateur PAC)%0D%0ARégion : %0D%0AIntervention F-Gas / mois : %0D%0A%0D%0ATéléphone : "
+                href="mailto:emilien@vertxia.com?subject=Vertxia — j'aimerais en parler&body=Salut Emilien,%0D%0A%0D%0AJ'ai vu Vertxia et j'aimerais qu'on en parle.%0D%0A%0D%0AMoi : (technicien / climaticien / installateur PAC)%0D%0ARégion : %0D%0AIntervention F-Gas / mois : %0D%0A%0D%0ATéléphone : "
                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl border border-black/15 bg-white text-[13px] text-[#111] hover:border-black/30 transition-colors"
               >
                 emilien@vertxia.com
