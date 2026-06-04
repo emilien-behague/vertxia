@@ -19,23 +19,42 @@ import type { StoredIntervention } from "@/lib/intervention-storage";
 
 // ── ECRITURES (sync local → Supabase) ───────────────────────────────────────
 
-export async function syncEquipementToSupabase(eq: StoredEquipement): Promise<void> {
-  if (typeof window === "undefined") return;
+/** Resultat detaille du sync, pour les flows critiques (etiquette F-Gas)
+ *  qui ont besoin de savoir si l'eq est BIEN en BDD avant de generer un QR. */
+export type SyncResult =
+  | { ok: true }
+  | { ok: false; reason: "auth"; message: string }
+  | { ok: false; reason: "network"; message: string }
+  | { ok: false; reason: "server"; message: string; code?: string };
+
+export async function syncEquipementToSupabase(eq: StoredEquipement): Promise<SyncResult> {
+  if (typeof window === "undefined") return { ok: false, reason: "network", message: "SSR" };
   try {
     const res = await fetch("/api/public/equipement/upsert", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(eq),
     });
-    if (!res.ok) {
-      // 401 = pas connecté → skip silencieux normal
-      if (res.status !== 401) {
-        const j = await res.json().catch(() => ({}));
-        console.warn("[public-sync] equipement upsert failed:", j);
-      }
+    if (res.ok) return { ok: true };
+    if (res.status === 401) {
+      return {
+        ok: false,
+        reason: "auth",
+        message: "Tu dois être connecté à Vertxia pour synchroniser l'équipement.",
+      };
     }
+    const j = (await res.json().catch(() => ({}))) as { error?: string; code?: string };
+    console.warn("[public-sync] equipement upsert failed:", j);
+    return {
+      ok: false,
+      reason: "server",
+      message: j.error || `Erreur serveur HTTP ${res.status}`,
+      code: j.code,
+    };
   } catch (e) {
-    console.warn("[public-sync] equipement sync failed:", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn("[public-sync] equipement sync failed:", msg);
+    return { ok: false, reason: "network", message: msg };
   }
 }
 

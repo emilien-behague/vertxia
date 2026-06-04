@@ -291,11 +291,18 @@ export default function MobileInterventionDetailPage() {
       //   3. Sinon creation auto d'un equipement minimum a partir des infos
       //      de l'intervention (sync Supabase auto via saveEquipement)
       //   4. Sinon (intervention sans modele/serie) -> erreur claire
+      const { listEquipements, saveEquipement } = await import("@/lib/equipement");
+      const { syncEquipementToSupabase } = await import("@/lib/public-sync");
+
       let equipementIdOverride: string | undefined = intervention.equipementId;
+      // Garde l'objet eq complet pour pouvoir forcer le re-sync apres
+      let resolvedEq: import("@/lib/equipement").StoredEquipement | undefined;
+
+      if (equipementIdOverride) {
+        resolvedEq = listEquipements().find((e) => e.id === equipementIdOverride);
+      }
 
       if (!equipementIdOverride) {
-        const { listEquipements, saveEquipement } = await import("@/lib/equipement");
-
         // Etape 2 : lookup dans le parc local
         if (intervention.modeleEquipement || intervention.numeroSerieEquipement) {
           const eqs = listEquipements();
@@ -304,7 +311,10 @@ export default function MobileInterventionDetailPage() {
               (intervention.numeroSerieEquipement && e.numeroSerie === intervention.numeroSerieEquipement) ||
               (intervention.modeleEquipement && e.modele === intervention.modeleEquipement && e.clientName === intervention.clientName)
           );
-          if (match) equipementIdOverride = match.id;
+          if (match) {
+            equipementIdOverride = match.id;
+            resolvedEq = match;
+          }
         }
 
         // Etape 3 : creation auto si on a les infos minimum
@@ -325,6 +335,7 @@ export default function MobileInterventionDetailPage() {
                   : undefined,
             });
             equipementIdOverride = created.id;
+            resolvedEq = created;
           } catch {
             // Silencieux : si la creation foire (ex: quota localStorage), on
             // tombe sur l'etape 4
@@ -336,6 +347,31 @@ export default function MobileInterventionDetailPage() {
           setEtiquetteError(
             "Impossible de générer une étiquette traçable : il manque le modèle et le numéro de série dans l'intervention. Modifie l'intervention pour les ajouter — sans ça, le QR ne peut pas pointer vers une fiche équipement."
           );
+          setEtiquetteLoading(false);
+          return;
+        }
+      }
+
+      // CRITIQUE : force un re-sync await de l'eq vers Supabase AVANT de
+      // generer la PDF. Sinon le QR pointe vers un ID qui n'existe pas en
+      // BDD (sync background avait foire silencieusement -> scan = page
+      // "Equipement introuvable"). L'upsert est idempotent (onConflict:id).
+      if (resolvedEq) {
+        const syncResult = await syncEquipementToSupabase(resolvedEq);
+        if (!syncResult.ok) {
+          if (syncResult.reason === "auth") {
+            setEtiquetteError(
+              "Tu dois être connecté à ton compte Vertxia pour générer une étiquette traçable. Reconnecte-toi puis réessaye."
+            );
+          } else if (syncResult.reason === "network") {
+            setEtiquetteError(
+              "Impossible de synchroniser l'équipement avec le serveur. Vérifie ta connexion internet et réessaye — sinon le QR pointerait vers une fiche introuvable."
+            );
+          } else {
+            setEtiquetteError(
+              `Synchronisation impossible : ${syncResult.message}. Réessaye dans un instant.`
+            );
+          }
           setEtiquetteLoading(false);
           return;
         }
