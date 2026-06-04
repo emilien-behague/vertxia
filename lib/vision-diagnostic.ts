@@ -75,3 +75,70 @@ export const DELAI_LABELS: Record<DelaiIntervention, string> = {
   "1 mois": "Dans le mois",
   urgent: "Sous 7 jours",
 };
+
+/** Labels DELAI courts pour rentrer dans la case Observations du CERFA. */
+const DELAI_LABELS_SHORT: Record<DelaiIntervention, string> = {
+  preventif: "préventif",
+  "1-3 mois": "1-3 mois",
+  "1 mois": "<1 mois",
+  urgent: "urgent",
+};
+
+/** Labels GRAVITE courts (une lettre) pour densifier le resume CERFA :
+ *  Info / Surveiller / Urgent / Critique → I / S / U / C */
+const GRAVITE_SHORT: Record<DefautGravite, string> = {
+  info: "I",
+  surveiller: "S",
+  urgent: "U",
+  critique: "C",
+};
+
+/**
+ * Resume le diagnostic IA en une seule ligne dense (~200-250 chars) qui
+ * rentre dans la case "Observations" du CERFA 15497*04 (zone limitee).
+ *
+ * Format : "Diag IA Vertxia · <composant> · <N defauts: noms (G)> · Action: <act> · Delai: <delai>"
+ *
+ * Exemple :
+ *   "Diag IA Vertxia · Évaporateur · 2 défauts : Givrage anormal (U), Bavures cuivre (S) · Action : décompression circuit + contrôle joints · Délai : <1 mois"
+ *
+ * On tronque l'action a ~80 chars si elle deborde, et on coupe les noms de
+ * defauts a 40 chars chacun pour garantir une longueur stable.
+ */
+export function summarizeDiagnosticForCerfa(result: DiagnosticResult): string {
+  const truncate = (s: string, max: number): string =>
+    s.length <= max ? s : s.slice(0, max - 1).trimEnd() + "…";
+
+  const parts: string[] = ["Diag IA Vertxia"];
+
+  if (result.composantIdentifie) {
+    parts.push(truncate(result.composantIdentifie, 50));
+  }
+
+  if (result.defautsDetectes.length > 0) {
+    const n = result.defautsDetectes.length;
+    const defautsTxt = result.defautsDetectes
+      .map((d) => `${truncate(d.nom, 40)} (${GRAVITE_SHORT[d.gravite]})`)
+      .join(", ");
+    parts.push(`${n} défaut${n > 1 ? "s" : ""} : ${defautsTxt}`);
+  }
+
+  if (result.actionRecommandee) {
+    parts.push(`Action : ${truncate(result.actionRecommandee, 90)}`);
+  }
+
+  parts.push(`Délai : ${DELAI_LABELS_SHORT[result.delaiIntervention]}`);
+
+  let line = parts.join(" · ");
+
+  // Garde-fou final : si on depasse 350 chars (cas defauts tres nombreux),
+  // on coupe en preservant le suffixe "Délai" qui est important.
+  const MAX = 350;
+  if (line.length > MAX) {
+    const delaiSuffix = ` · Délai : ${DELAI_LABELS_SHORT[result.delaiIntervention]}`;
+    const head = line.slice(0, MAX - delaiSuffix.length - 1).trimEnd() + "…";
+    line = head + delaiSuffix;
+  }
+
+  return line;
+}

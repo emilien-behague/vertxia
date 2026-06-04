@@ -16,7 +16,7 @@ import { listEquipements, saveEquipement, updateEquipement } from "@/lib/equipem
 import { saveIntervention } from "@/lib/intervention-storage";
 import { loadProfil } from "@/lib/profil";
 import { getDiagnostic, type StoredDiagnostic } from "@/lib/diagnostic-storage";
-import { GRAVITE_LABELS, DELAI_LABELS } from "@/lib/vision-diagnostic";
+import { summarizeDiagnosticForCerfa, DELAI_LABELS } from "@/lib/vision-diagnostic";
 import {
   listBouteilles,
   indexMouvementsParBouteille,
@@ -294,37 +294,17 @@ function NouvelleInterventionContent() {
     // On ne force que si pas déjà override par ?type=
     if (!typeParam) setTypeIntervention("controle_non_periodique");
 
-    // Pré-remplissage des notes : structure lisible que le technicien peut
-    // garder telle quelle ou enrichir, et qui se retrouve dans la fiche
-    // de visite client + sur le CERFA (observations libres).
-    const r = diag.result;
-    const lines: string[] = [];
-    lines.push(`DIAGNOSTIC IA · Composant : ${r.composantIdentifie || "non identifié"}`);
-    if (diag.contexteNote?.trim()) {
-      lines.push(`Contexte technicien : ${diag.contexteNote.trim()}`);
-    }
-    if (r.defautsDetectes.length > 0) {
-      lines.push("");
-      lines.push("Défauts détectés :");
-      for (const d of r.defautsDetectes) {
-        lines.push(`- [${GRAVITE_LABELS[d.gravite]}] ${d.nom} — ${d.description}`);
-      }
-    }
-    if (r.causeProbable) {
-      lines.push("");
-      lines.push(`Cause probable : ${r.causeProbable}`);
-    }
-    if (r.actionRecommandee) {
-      lines.push(`Action recommandée : ${r.actionRecommandee}`);
-    }
-    lines.push(`Délai : ${DELAI_LABELS[r.delaiIntervention]}`);
-    if (r.devisEstimeMin !== null && r.devisEstimeMax !== null) {
-      lines.push(`Devis estimé IA : ${r.devisEstimeMin}–${r.devisEstimeMax} € HT (indicatif)`);
-    }
-    lines.push("");
-    lines.push("Photo du composant disponible dans Vertxia → Diagnostic → Historique.");
-
-    setNotes((prev) => (prev.trim() ? `${prev.trim()}\n\n${lines.join("\n")}` : lines.join("\n")));
+    // Pre-remplissage des notes : version CONDENSEE (~250 chars) qui rentre
+    // dans la case "Observations" du CERFA 15497*04. Le diagnostic complet
+    // (photo + tous les defauts detailles + cause + devis) reste accessible
+    // dans la page detail intervention via le lien diagnosticId — pas besoin
+    // de tout repeter dans les observations CERFA qui ont peu de place.
+    const summary = summarizeDiagnosticForCerfa(diag.result);
+    const contextePrefix = diag.contexteNote?.trim()
+      ? `Contexte : ${diag.contexteNote.trim()}. `
+      : "";
+    const prefilled = `${contextePrefix}${summary}`;
+    setNotes((prev) => (prev.trim() ? `${prev.trim()}\n${prefilled}` : prefilled));
   }, [diagIdParam, typeParam]);
 
   async function handlePlaqueScan(e: React.ChangeEvent<HTMLInputElement>) {
