@@ -11,6 +11,7 @@ import {
 } from "@/lib/intervention-storage";
 import { loadProfil } from "@/lib/profil";
 import { getDiagnostic, type StoredDiagnostic } from "@/lib/diagnostic-storage";
+import { generateEtiquetteTfe } from "@/lib/etiquette-tfe";
 import { GRAVITE_LABELS, GRAVITE_STYLES, DELAI_LABELS } from "@/lib/vision-diagnostic";
 import Link from "next/link";
 
@@ -51,6 +52,8 @@ export default function MobileInterventionDetailPage() {
   const [loaded, setLoaded] = useState(false);
   const [cerfaLoading, setCerfaLoading] = useState(false);
   const [cerfaError, setCerfaError] = useState<string | null>(null);
+  const [etiquetteLoading, setEtiquetteLoading] = useState(false);
+  const [etiquetteError, setEtiquetteError] = useState<string | null>(null);
 
   // Suivi BSFF — statut des 4 signatures TrackDéchets
   const [bsffStatus, setBsffStatus] = useState<BsffStatus | null>(null);
@@ -264,6 +267,29 @@ export default function MobileInterventionDetailPage() {
     }
   }
 
+  async function handleDownloadEtiquette() {
+    if (!intervention) return;
+    setEtiquetteError(null);
+    setEtiquetteLoading(true);
+    try {
+      const profil = loadProfil();
+      const origin = typeof window !== "undefined" ? window.location.origin : "https://vertxia.com";
+      const blob = await generateEtiquetteTfe(intervention, profil, origin);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Etiquette_FGas_${intervention.id.slice(0, 8)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      setEtiquetteError(e instanceof Error ? e.message : "Erreur génération étiquette");
+    } finally {
+      setEtiquetteLoading(false);
+    }
+  }
+
   function handleDelete() {
     if (!intervention) return;
     if (!confirm("Supprimer cette intervention de l'historique local ?")) return;
@@ -366,6 +392,32 @@ export default function MobileInterventionDetailPage() {
         {cerfaError && (
           <div className="px-4 py-3 rounded-2xl bg-red-50 text-red-700 text-[13px] border border-red-200">
             ❌ {cerfaError}
+          </div>
+        )}
+
+        {/* Etiquette F-Gas reglementaire (a coller sur l'equipement) */}
+        <button
+          type="button"
+          onClick={handleDownloadEtiquette}
+          disabled={etiquetteLoading}
+          className="block w-full px-6 py-4 rounded-2xl text-[15px] font-medium text-center transition-colors disabled:opacity-60 bg-white border border-[#A16207] text-[#A16207] active:bg-[#A16207]/[0.05]"
+          style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+        >
+          {etiquetteLoading ? (
+            <span className="inline-flex items-center gap-2">
+              <span className="inline-block w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+              Génération…
+            </span>
+          ) : (
+            "🏷️ Télécharger l'étiquette F-Gas"
+          )}
+        </button>
+        <div className="text-[11px] text-black/45 leading-snug px-2 -mt-1">
+          Étiquette obligatoire à apposer sur l&apos;équipement après intervention (art. R543-83 Code env.). Format A6 imprimable sur autocollant.
+        </div>
+        {etiquetteError && (
+          <div className="px-4 py-3 rounded-2xl bg-red-50 text-red-700 text-[13px] border border-red-200">
+            ❌ {etiquetteError}
           </div>
         )}
       </div>
