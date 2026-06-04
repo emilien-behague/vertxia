@@ -7,8 +7,10 @@ import { InsetListSection } from "@/components/mobile/inset-list";
 import {
   getIntervention,
   deleteIntervention,
+  updateIntervention,
   type StoredIntervention,
 } from "@/lib/intervention-storage";
+import { Drawer } from "vaul";
 import { loadProfil } from "@/lib/profil";
 import { getDiagnostic, type StoredDiagnostic } from "@/lib/diagnostic-storage";
 import { generateEtiquetteTfe } from "@/lib/etiquette-tfe";
@@ -54,6 +56,14 @@ export default function MobileInterventionDetailPage() {
   const [cerfaError, setCerfaError] = useState<string | null>(null);
   const [etiquetteLoading, setEtiquetteLoading] = useState(false);
   const [etiquetteError, setEtiquetteError] = useState<string | null>(null);
+  // Edition rapide (modal Vaul)
+  const [editOpen, setEditOpen] = useState(false);
+  const [editClientName, setEditClientName] = useState("");
+  const [editModele, setEditModele] = useState("");
+  const [editNumeroSerie, setEditNumeroSerie] = useState("");
+  const [editLieu, setEditLieu] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
 
   // Suivi BSFF — statut des 4 signatures TrackDéchets
   const [bsffStatus, setBsffStatus] = useState<BsffStatus | null>(null);
@@ -346,6 +356,38 @@ export default function MobileInterventionDetailPage() {
       setEtiquetteError(e instanceof Error ? e.message : "Erreur génération étiquette");
     } finally {
       setEtiquetteLoading(false);
+    }
+  }
+
+  function openEdit() {
+    if (!intervention) return;
+    setEditClientName(intervention.clientName ?? "");
+    setEditModele(intervention.modeleEquipement ?? "");
+    setEditNumeroSerie(intervention.numeroSerieEquipement ?? "");
+    setEditLieu(intervention.lieuIntervention ?? "");
+    setEditNotes(intervention.notes ?? "");
+    setEditOpen(true);
+  }
+
+  function handleEditSave() {
+    if (!intervention || editSaving) return;
+    setEditSaving(true);
+    try {
+      const updated = updateIntervention(intervention.id, {
+        clientName: editClientName.trim() || null,
+        modeleEquipement: editModele.trim() || undefined,
+        numeroSerieEquipement: editNumeroSerie.trim() || undefined,
+        lieuIntervention: editLieu.trim() || undefined,
+        notes: editNotes.trim() || undefined,
+      });
+      if (updated) {
+        setIntervention(updated);
+        // Clear l'erreur etiquette si elle etait liee a un manque d'infos
+        setEtiquetteError(null);
+      }
+      setEditOpen(false);
+    } finally {
+      setEditSaving(false);
     }
   }
 
@@ -800,16 +842,140 @@ export default function MobileInterventionDetailPage() {
       )}
 
       {/* Actions secondaires */}
-      <div className="px-4 mt-6 mb-8">
+      <div className="px-4 mt-6 mb-8 space-y-2">
+        <button
+          type="button"
+          onClick={openEdit}
+          className="w-full px-6 py-3 rounded-2xl bg-white border border-black/10 text-[#111] text-[14px] font-medium active:bg-black/[0.03] transition-colors"
+          style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+        >
+          ✏️ Modifier cette intervention
+        </button>
         <button
           type="button"
           onClick={handleDelete}
           className="w-full px-6 py-3 rounded-2xl bg-white border border-red-200 text-red-600 text-[14px] font-medium active:bg-red-50 transition-colors"
           style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
         >
-          Supprimer de l'historique
+          Supprimer de l&apos;historique
         </button>
       </div>
+
+      {/* Drawer edition rapide — utile notamment pour completer modele/serie
+          quand on veut generer l'etiquette F-Gas */}
+      <Drawer.Root open={editOpen} onOpenChange={setEditOpen} shouldScaleBackground>
+        <Drawer.Portal>
+          <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40" />
+          <Drawer.Content
+            className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-3xl bg-[#F5F4F0] outline-none"
+            style={{ maxHeight: "92dvh" }}
+          >
+            <Drawer.Title className="sr-only">Modifier l&apos;intervention</Drawer.Title>
+            <div className="mx-auto mt-2 mb-1 h-1.5 w-12 rounded-full bg-black/20" />
+            <div className="flex items-center justify-between px-5 py-3 border-b border-black/[0.06]">
+              <div className="text-[16px] font-semibold text-[#111]">Modifier l&apos;intervention</div>
+              <button
+                type="button"
+                onClick={() => setEditOpen(false)}
+                aria-label="Fermer"
+                className="w-8 h-8 rounded-full bg-black/[0.06] flex items-center justify-center active:bg-black/[0.12] transition-colors"
+                style={{ WebkitTapHighlightColor: "transparent" }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="overflow-y-auto overscroll-contain px-5 py-5 space-y-4">
+              <p className="text-[12.5px] text-black/55 leading-relaxed">
+                Tu peux corriger les infos clés de l&apos;intervention ici. Les champs réglementaires figés (type, fluide, BSFF) ne sont pas modifiables — pour les changer, supprime et recrée.
+              </p>
+
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider text-black/45 font-medium mb-1.5">
+                  Client / Détenteur
+                </label>
+                <input
+                  type="text"
+                  value={editClientName}
+                  onChange={(e) => setEditClientName(e.target.value)}
+                  placeholder="Nom ou raison sociale"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-black/[0.08] text-[14px] text-[#111] placeholder:text-black/35 outline-none focus:border-[#A16207]/40"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider text-black/45 font-medium mb-1.5">
+                  Modèle équipement <span className="text-[#A16207]">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={editModele}
+                  onChange={(e) => setEditModele(e.target.value)}
+                  placeholder="Ex : Daikin FTXM35M"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-black/[0.08] text-[14px] text-[#111] placeholder:text-black/35 outline-none focus:border-[#A16207]/40"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider text-black/45 font-medium mb-1.5">
+                  N° de série équipement <span className="text-[#A16207]">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={editNumeroSerie}
+                  onChange={(e) => setEditNumeroSerie(e.target.value)}
+                  placeholder="Ex : DK24042587"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-black/[0.08] text-[14px] text-[#111] placeholder:text-black/35 outline-none focus:border-[#A16207]/40 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider text-black/45 font-medium mb-1.5">
+                  Lieu d&apos;intervention
+                </label>
+                <input
+                  type="text"
+                  value={editLieu}
+                  onChange={(e) => setEditLieu(e.target.value)}
+                  placeholder="Adresse du chantier"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-black/[0.08] text-[14px] text-[#111] placeholder:text-black/35 outline-none focus:border-[#A16207]/40"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] uppercase tracking-wider text-black/45 font-medium mb-1.5">
+                  Notes / Observations
+                </label>
+                <textarea
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  rows={4}
+                  placeholder="Observations terrain, contexte…"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-black/[0.08] text-[14px] text-[#111] placeholder:text-black/35 outline-none focus:border-[#A16207]/40 resize-none"
+                />
+              </div>
+
+              <div className="text-[11px] text-black/45 leading-snug -mt-2">
+                <span className="text-[#A16207]">*</span> Modèle + n° de série sont obligatoires pour générer l&apos;étiquette F-Gas traçable.
+              </div>
+            </div>
+
+            <div className="px-5 py-4 border-t border-black/[0.06] bg-[#F5F4F0]" style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}>
+              <button
+                type="button"
+                onClick={handleEditSave}
+                disabled={editSaving}
+                className="w-full px-6 py-3.5 rounded-2xl bg-[#111] text-white text-[15px] font-medium active:bg-black/90 transition-colors disabled:opacity-60"
+                style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+              >
+                {editSaving ? "Enregistrement…" : "✓ Enregistrer"}
+              </button>
+            </div>
+          </Drawer.Content>
+        </Drawer.Portal>
+      </Drawer.Root>
     </>
   );
 }

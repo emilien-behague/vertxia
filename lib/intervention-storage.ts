@@ -98,6 +98,27 @@ export function saveIntervention(
   return entry;
 }
 
+/** Met a jour les champs editables d'une intervention existante.
+ *  Resync vers Supabase en background si l'intervention a un equipementId.
+ *  Retourne l'intervention mise a jour ou null si introuvable. */
+export function updateIntervention(
+  id: string,
+  patch: Partial<Omit<StoredIntervention, "id" | "createdAt">>
+): StoredIntervention | null {
+  if (!isBrowser()) return null;
+  const all = listInterventions();
+  const idx = all.findIndex(i => i.id === id);
+  if (idx === -1) return null;
+  const updated: StoredIntervention = { ...all[idx], ...patch };
+  all[idx] = updated;
+  localStorage.setItem(storageKey(), JSON.stringify(all));
+  // Resync Supabase en background (silent fail si offline ou pas connecte)
+  import("@/lib/public-sync")
+    .then((m) => m.syncInterventionToSupabase(updated, updated.equipementId))
+    .catch(() => {});
+  return updated;
+}
+
 export function deleteIntervention(id: string): void {
   if (!isBrowser()) return;
   const filtered = listInterventions().filter(i => i.id !== id);
