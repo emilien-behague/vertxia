@@ -11,6 +11,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Drawer } from "vaul";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import {
   compressImage,
@@ -30,6 +31,7 @@ export default function DiagnosticPage() {
   const [result, setResult] = useState<DiagnosticResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [historyCount, setHistoryCount] = useState(0);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Compteur d'historique pour décider d'afficher le bouton "Historique" en haut
@@ -167,8 +169,127 @@ export default function DiagnosticPage() {
           <div className="text-[11px] text-black/45 text-center px-3 leading-snug">
             Compression auto à 2000px max + JPEG 80%. Analyse via Claude Opus 4.7 vision (~3-5 sec).
           </div>
+
+          <button
+            type="button"
+            onClick={() => setAboutOpen(true)}
+            className="w-full px-4 py-2.5 rounded-2xl bg-white border border-black/[0.08] text-[13px] text-[#111] font-medium active:bg-black/[0.03] transition-colors flex items-center justify-center gap-2"
+            style={{ WebkitTapHighlightColor: "transparent" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            Comment ça marche ? Limites et fiabilité
+          </button>
         </div>
       )}
+
+      {/* Drawer "Comment ça marche ?" — transparence sur capacités et limites IA */}
+      <Drawer.Root open={aboutOpen} onOpenChange={setAboutOpen} shouldScaleBackground>
+        <Drawer.Portal>
+          <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40" />
+          <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-3xl bg-[#F5F4F0] outline-none" style={{ maxHeight: "92dvh" }}>
+            <Drawer.Title className="sr-only">Comment fonctionne le diagnostic IA</Drawer.Title>
+            <div className="mx-auto mt-2 mb-1 h-1.5 w-12 rounded-full bg-black/20" />
+
+            <div className="flex items-center justify-between px-5 py-3 border-b border-black/[0.06]">
+              <div className="text-[16px] font-semibold text-[#111]">Comment ça marche ?</div>
+              <button
+                type="button"
+                onClick={() => setAboutOpen(false)}
+                aria-label="Fermer"
+                className="w-8 h-8 rounded-full bg-black/[0.06] flex items-center justify-center active:bg-black/[0.12] transition-colors"
+                style={{ WebkitTapHighlightColor: "transparent" }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="overflow-y-auto overscroll-contain px-5 py-5 space-y-5 text-[#111]">
+              {/* Sur quoi se base le diagnostic */}
+              <section>
+                <h3 className="text-[15px] font-semibold mb-2">Sur quoi est basé le diagnostic ?</h3>
+                <p className="text-[13.5px] text-black/70 leading-relaxed">
+                  Le diagnostic est fait par <strong>Claude Opus 4.7</strong> (modèle IA d&apos;Anthropic), entraîné sur des centaines de millions d&apos;images publiques (web, docs techniques, manuels de maintenance, forums frigoristes). Il a vu des milliers d&apos;échangeurs corrodés, brasures défectueuses, raccords avec traces d&apos;huile, etc. Il reconnaît ces patterns visuels comme le ferait un expert humain avec 25 ans de terrain.
+                </p>
+                <p className="text-[13.5px] text-black/70 leading-relaxed mt-2">
+                  En plus, Vertxia lui injecte un contexte métier précis (réglementation UE 2024/573, fluides HFC/HFO, défauts typiques, barème devis terrain 2026 FR) pour cadrer ses réponses.
+                </p>
+              </section>
+
+              {/* Ce qu'il peut faire */}
+              <section className="rounded-2xl bg-emerald-50 border border-emerald-200 p-4">
+                <div className="flex items-center gap-2 text-[14px] font-semibold text-emerald-800 mb-2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                  Ce que l&apos;IA peut faire
+                </div>
+                <ul className="text-[13px] text-emerald-900/85 space-y-1.5 leading-snug">
+                  <li>• Identifier le composant (compresseur, échangeur, raccord, etc.)</li>
+                  <li>• Détecter corrosion, oxydation, traces d&apos;huile (= fuite probable)</li>
+                  <li>• Repérer givre anormal, encrassement, calorifuge dégradé</li>
+                  <li>• Voir soudure défectueuse, fissure visible</li>
+                  <li>• Proposer une cause probable + une action recommandée</li>
+                  <li>• Estimer une fourchette devis €HT indicative</li>
+                </ul>
+              </section>
+
+              {/* Ce qu'il ne peut PAS faire */}
+              <section className="rounded-2xl bg-red-50 border border-red-200 p-4">
+                <div className="flex items-center gap-2 text-[14px] font-semibold text-red-800 mb-2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                  Ce que l&apos;IA NE peut PAS faire
+                </div>
+                <ul className="text-[13px] text-red-900/85 space-y-1.5 leading-snug">
+                  <li>• Mesurer pression, température, courant, débit</li>
+                  <li>• Entendre un bruit anormal (compresseur, détendeur)</li>
+                  <li>• Sentir une odeur (huile brûlée, NH3)</li>
+                  <li>• Tester l&apos;étanchéité (azote + savon, détecteur électronique)</li>
+                  <li>• Voir l&apos;intérieur d&apos;un compresseur hermétique</li>
+                  <li>• Détecter une fuite invisible (micro-fissure sans trace d&apos;huile)</li>
+                  <li>• Connaître l&apos;historique terrain non-visible</li>
+                </ul>
+              </section>
+
+              {/* Niveau de fiabilité réel */}
+              <section>
+                <h3 className="text-[15px] font-semibold mb-2">Niveau de fiabilité réel</h3>
+                <div className="rounded-2xl bg-white ring-1 ring-black/[0.06] divide-y divide-black/[0.06] overflow-hidden">
+                  <FiabiliteRow label="Identification du composant" value="~90%" sub="si photo nette" />
+                  <FiabiliteRow label="Détection défauts évidents" value="~85%" sub="corrosion, huile, encrassement" />
+                  <FiabiliteRow label="Diagnostic cause probable" value="~70%" sub="hypothèse plausible, pas certitude" />
+                  <FiabiliteRow label="Devis estimé" value="±30-50%" sub="indicatif, chiffrage final sur site" />
+                </div>
+              </section>
+
+              {/* Disclaimer responsabilité */}
+              <section className="rounded-2xl bg-amber-50 border border-amber-200 p-4">
+                <div className="flex items-start gap-2.5">
+                  <svg className="shrink-0 mt-0.5 text-amber-700" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                  <div className="text-[12.5px] text-amber-900 leading-relaxed">
+                    <strong>Le diagnostic IA est une AIDE, pas un remplacement.</strong> La responsabilité technique et réglementaire reste celle du frigoriste qui intervient. Toujours valider sur site avec tes outils (détecteur de fuite, manomètre, station de récup) avant toute action irréversible.
+                  </div>
+                </div>
+              </section>
+
+              <div className="text-[11px] text-black/40 text-center pb-2">
+                Modèle : Claude Opus 4.7 vision · Anthropic
+              </div>
+            </div>
+          </Drawer.Content>
+        </Drawer.Portal>
+      </Drawer.Root>
 
       {/* PHASE ANALYZING */}
       {phase === "analyzing" && (
@@ -370,6 +491,20 @@ export default function DiagnosticPage() {
         </div>
       )}
     </>
+  );
+}
+
+function FiabiliteRow({ label, value, sub }: { label: string; value: string; sub: string }) {
+  return (
+    <div className="flex items-center justify-between px-4 py-2.5">
+      <div className="min-w-0 flex-1">
+        <div className="text-[13px] text-[#111] font-medium leading-tight">{label}</div>
+        <div className="text-[11px] text-black/50 mt-0.5">{sub}</div>
+      </div>
+      <div className="text-[15px] font-semibold text-[#A16207] tabular-nums shrink-0 ml-3">
+        {value}
+      </div>
+    </div>
   );
 }
 
