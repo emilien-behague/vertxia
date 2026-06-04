@@ -26,7 +26,7 @@ import {
   downloadDiagnosticImage,
 } from "@/lib/diagnostic-share";
 import { loadProfil } from "@/lib/profil";
-import { buildDevisFromDiagnostic, generateDevisNumero } from "@/lib/devis";
+import { buildDevisFromDiagnostic, generateDevisNumero, whyDevisBlocked } from "@/lib/devis";
 
 function fmtDateLong(iso: string): string {
   const d = new Date(iso);
@@ -102,6 +102,13 @@ export default function DiagnosticDetailPage() {
    *  direct le PDF (V1). Le pro saisit le client via prompt. */
   async function handleGenerateDevis() {
     if (!diag) return;
+    // Garde-fou : refuse si diagnostic invalide (cf lib/devis whyDevisBlocked).
+    const blocked = whyDevisBlocked(diag.result);
+    if (blocked) {
+      setShareToast(blocked);
+      setTimeout(() => setShareToast(null), 6000);
+      return;
+    }
     const profil = loadProfil();
     if (!profil.raisonSociale?.trim()) {
       setShareToast("Profil entreprise incomplet — renseigne ta raison sociale dans /m/profil");
@@ -387,21 +394,40 @@ export default function DiagnosticDetailPage() {
             </svg>
             Autre app (Messages, Drive…)
           </button>
-          {/* Generer un devis client depuis ce diagnostic — brief Vertxia #7 */}
-          <button
-            type="button"
-            onClick={handleGenerateDevis}
-            className="w-full px-4 py-3 rounded-2xl bg-emerald-600 text-white text-[14px] font-semibold active:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
-            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="12" y1="18" x2="12" y2="12" />
-              <line x1="9" y1="15" x2="15" y2="15" />
-            </svg>
-            Générer un devis client
-          </button>
+          {/* Generer un devis client depuis ce diagnostic — brief Vertxia #7.
+              Bouton remplace par un bloc explicatif si le diagnostic n'est
+              pas fiable (composant non identifie / photo non frigorifique). */}
+          {(() => {
+            const blocked = whyDevisBlocked(diag.result);
+            if (blocked) {
+              return (
+                <div className="rounded-2xl bg-black/[0.04] ring-1 ring-black/[0.06] px-4 py-3 text-center">
+                  <div className="text-[10px] uppercase tracking-wider text-black/45 font-mono mb-1">
+                    Devis indisponible
+                  </div>
+                  <div className="text-[12.5px] text-black/65 leading-snug">
+                    {blocked}
+                  </div>
+                </div>
+              );
+            }
+            return (
+              <button
+                type="button"
+                onClick={handleGenerateDevis}
+                className="w-full px-4 py-3 rounded-2xl bg-emerald-600 text-white text-[14px] font-semibold active:bg-emerald-700 transition-colors flex items-center justify-center gap-2"
+                style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="12" y1="18" x2="12" y2="12" />
+                  <line x1="9" y1="15" x2="15" y2="15" />
+                </svg>
+                Générer un devis client
+              </button>
+            );
+          })()}
           <Link
             href={`/m/intervention/nouvelle?diagnosticId=${diag.id}`}
             className="block w-full px-4 py-3 rounded-2xl bg-[#111] text-white text-[14px] font-medium text-center active:bg-black/80 transition-colors"

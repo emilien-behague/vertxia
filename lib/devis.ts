@@ -263,6 +263,59 @@ export function generateDevisNumero(): string {
   return `DEV-${year}-${stamp}`;
 }
 
+/**
+ * Verifie si un DiagnosticResult est suffisamment fiable pour generer un
+ * devis credible. Cas a EXCLURE :
+ *
+ *  - composantIdentifie null : l'IA n'a pas reconnu de composant
+ *    frigorifique. Cas typique : photo d'un ecran d'ordi, d'un papier,
+ *    d'une plaque non-FCgaz. Generer un devis = inventer une intervention
+ *    qui n'existe pas → arnaque du client.
+ *
+ *  - confiance "basse" : l'IA elle-meme se mefie de son output. Un devis
+ *    base la-dessus serait fragile (mauvais composant identifie, mauvais
+ *    montant). Mieux vaut demander une nouvelle photo.
+ *
+ *  - causeProbable contient "non liee/non lie/reprendre la photo" : le
+ *    system prompt force ces phrases quand la photo ne montre pas un
+ *    composant frigorifique. Garde-fou supplementaire au cas ou
+ *    composantIdentifie aurait ete defini par hasard.
+ *
+ * Retourne null si OK, sinon une raison (string courte) pour afficher en UI.
+ */
+export function whyDevisBlocked(diagnostic: {
+  composantIdentifie?: string | null;
+  confiance?: "haute" | "moyenne" | "basse";
+  causeProbable?: string;
+  defautsDetectes?: { gravite: string }[];
+}): string | null {
+  if (!diagnostic.composantIdentifie) {
+    return "Composant non identifié — reprends la photo en cadrant sur le composant à diagnostiquer";
+  }
+  if (diagnostic.confiance === "basse") {
+    return "Confiance IA trop faible — reprends une photo plus nette et mieux cadrée avant de générer un devis";
+  }
+  const cause = (diagnostic.causeProbable ?? "").toLowerCase();
+  if (
+    cause.includes("non lie") ||
+    cause.includes("non liée") ||
+    cause.includes("reprendre la photo") ||
+    cause.includes("reprends la photo")
+  ) {
+    return "Image non liée à un composant frigorifique — reprends une photo du composant à diagnostiquer";
+  }
+  return null;
+}
+
+/** Helper boolean simple pour les UI conditionnelles */
+export function canGenerateDevis(diagnostic: {
+  composantIdentifie?: string | null;
+  confiance?: "haute" | "moyenne" | "basse";
+  causeProbable?: string;
+}): boolean {
+  return whyDevisBlocked(diagnostic) === null;
+}
+
 /** Format montant en EUR FR (ex : 1 234,50 €) */
 export function fmtEUR(n: number): string {
   return new Intl.NumberFormat("fr-FR", {
