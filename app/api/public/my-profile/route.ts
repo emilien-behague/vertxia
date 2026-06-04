@@ -1,9 +1,13 @@
 // Fetch le profil de l'user connecte depuis Supabase.
 //
 // Sert au multi-device : quand l'user ouvre l'app sur un nouveau navigateur,
-// son localStorage est vide. Cette route permet de re-hydrater le profil
-// localement depuis la BDD (push via /api/public/profil/upsert effectue a
-// chaque saveProfil + une fois par session via hydrate-on-login).
+// son localStorage est vide. Cette route re-hydrate le profil localement
+// depuis la BDD (push via /api/public/profil/upsert effectue a chaque
+// saveProfil + au mount /m via hydrate-on-login).
+//
+// Retourne TOUS les champs supportes par la table profils — raison sociale,
+// SIRET, adresse, attestation, signature, logo, immatriculation vehicule —
+// pour que le passage iPhone -> ordi (ou inverse) ne perde rien.
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -20,7 +24,9 @@ export async function GET() {
 
     const { data, error } = await supabase
       .from("profils")
-      .select("raison_sociale, telephone, email, numero_attestation")
+      .select(
+        "raison_sociale, siret, adresse, code_postal, ville, telephone, email, categorie_attestation, numero_attestation, immatriculation_vehicule, signature_data_url, logo_data_url"
+      )
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -35,14 +41,23 @@ export async function GET() {
       return NextResponse.json({ data: null }, { status: 200 });
     }
 
-    // Map snake_case BDD -> camelCase client
+    // Map snake_case BDD -> camelCase client (aligne sur le type Profil
+    // dans lib/profil.ts).
     return NextResponse.json(
       {
         data: {
           raisonSociale: data.raison_sociale ?? "",
+          siret: data.siret ?? "",
+          adresseRue: data.adresse ?? "",
+          adresseCp: data.code_postal ?? "",
+          adresseVille: data.ville ?? "",
           telephone: data.telephone ?? "",
           email: data.email ?? "",
+          categorieAttestation: data.categorie_attestation ?? "",
           numeroAttestation: data.numero_attestation ?? "",
+          immatriculationVehicule: data.immatriculation_vehicule ?? "",
+          signatureDataUrl: data.signature_data_url ?? undefined,
+          logoDataUrl: data.logo_data_url ?? undefined,
         },
       },
       { status: 200 }

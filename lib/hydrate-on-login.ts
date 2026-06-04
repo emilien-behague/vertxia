@@ -54,11 +54,16 @@ export async function hydrateFromSupabaseIfNeeded(
 ): Promise<HydrationResult> {
   if (!isBrowser()) return EMPTY;
 
-  // PULL PROFIL : toujours tente si local vide, independamment du flag
-  // de session. Le profil est leger (1 row, 4 colonnes) et critique pour
-  // la generation CERFA / rapport / etiquette. Pas de cache session ici
-  // → si tu te connectes sur un nouveau device, le profil arrive au mount.
+  // SYNC PROFIL bidirectionnel, decouple du SESSION_FLAG :
+  //   - pullProfilIfLocalEmpty : si local vide -> pull depuis Supabase
+  //   - pushProfilIfLocalNotEmpty : si local rempli -> push vers Supabase
+  // Les deux sont legers (1 row, ~12 colonnes) et idempotents (onConflict:
+  // user_id). Pas de cache de session : a chaque ouverture de /m, le profil
+  // est resynchronise dans le bon sens. Critique pour multi-device :
+  // l'iPhone qui ajoute un n° d'attestation pousse aussitot vers Supabase
+  // au prochain mount, et l'ordi qui n'a rien pull le pousse en local.
   await pullProfilIfLocalEmpty();
+  await pushProfilIfLocalNotEmpty();
 
   // Skip equipements + interventions si deja fait cette session (sauf force).
   if (!options.force && sessionStorage.getItem(SESSION_FLAG) === "done") {
@@ -110,17 +115,8 @@ export async function hydrateFromSupabaseIfNeeded(
       }
     }
 
-    // Push profil entreprise vers Supabase une fois par session.
-    // (Le PULL profil est gere separement par pullProfilIfLocalEmpty()
-    // appele tout en haut, sans dependre du flag de session.)
-    try {
-      const profil = loadProfil();
-      if (profil.raisonSociale || profil.telephone || profil.email || profil.numeroAttestation) {
-        saveProfil(profil);
-      }
-    } catch (e) {
-      console.warn("[hydrate] profil push failed:", e);
-    }
+    // Le sync profil (push + pull) est gere par pullProfilIfLocalEmpty +
+    // pushProfilIfLocalNotEmpty appeles tout en haut, decouples du flag.
 
     sessionStorage.setItem(SESSION_FLAG, "done");
 
@@ -149,16 +145,41 @@ export function clearHydrationFlag(): void {
   sessionStorage.removeItem(SESSION_FLAG);
 }
 
+/** Type du payload retourne par /api/public/my-profile — aligne sur tous
+ *  les champs supportes par la table profils. */
+type ServerProfilPayload = {
+  raisonSociale?: string;
+  siret?: string;
+  adresseRue?: string;
+  adresseCp?: string;
+  adresseVille?: string;
+  telephone?: string;
+  email?: string;
+  categorieAttestation?: string;
+  numeroAttestation?: string;
+  immatriculationVehicule?: string;
+  signatureDataUrl?: string;
+  logoDataUrl?: string;
+};
+
 /** Pull le profil depuis Supabase si le local est vide. Independant du
  *  flag de session : appele systematiquement au mount du dashboard pour
  *  qu'un user qui se connecte sur un nouveau navigateur recupere son
- *  profil automatiquement (raison sociale + tel + email + n° attestation
- *  + categorie + organisme + dates). Silent fail si offline / pas auth. */
+ *  profil automatiquement (TOUS les champs : raison sociale, SIRET,
+ *  adresse, attestation, signature, logo, immatriculation vehicule).
+ *  Silent fail si offline / pas auth. */
 export async function pullProfilIfLocalEmpty(): Promise<boolean> {
   if (!isBrowser()) return false;
   try {
     const current = loadProfil();
-    if (current.raisonSociale || current.telephone || current.email || current.numeroAttestation) {
+    if (
+      current.raisonSociale ||
+      current.telephone ||
+      current.email ||
+      current.numeroAttestation ||
+      current.siret ||
+      current.signatureDataUrl
+    ) {
       return false; // local non vide, rien a faire
     }
     const res = await fetch("/api/public/my-profile", {
@@ -166,19 +187,52 @@ export async function pullProfilIfLocalEmpty(): Promise<boolean> {
       headers: { "cache-control": "no-store" },
     });
     if (!res.ok) return false;
-    const j = (await res.json()) as {
-      data: {
-        raisonSociale?: string;
-        telephone?: string;
-        email?: string;
-        numeroAttestation?: string;
-      } | null;
-    };
-    if (!j.data || (!j.data.raisonSociale && !j.data.numeroAttestation)) return false;
-    saveProfil({ ...current, ...j.data });
+    const j = (await res.json()) as { data: ServerProfilPayload | null };
+    if (!j.data) return false;
+    const hasAny =
+      j.data.raisonSociale ||
+      j.data.numeroAttestation ||
+      j.data.siret ||
+      j.data.telephone ||
+      j.data.signatureDataUrl;
+    if (!hasAny) return false;
+    // Merge tous les champs serveur dans le profil local. Cast force
+    // necessaire car le serveur renvoie categorieAttestation en string
+    // generique alors que le type Profil l'attend en union litterale
+    // ("" | "I" | ... | "V"). Si la valeur serveur n'est pas dans l'union,
+    // le saveProfil l'acceptera quand meme (juste affichage UI moins
+    // strict ensuite).
+    saveProfil({ ...current, ...j.data } as Parameters<typeof saveProfil>[0]);
     return true;
   } catch (e) {
     console.warn("[hydrate] pullProfilIfLocalEmpty failed:", e);
+    return false;
+  }
+}
+
+/** Push le profil local vers Supabase si non vide. Independant du flag de
+ *  session : appele systematiquement au mount du dashboard pour que les
+ *  modifs profil iPhone remontent aussitot en BDD et soient pull-ables
+ *  sur d'autres devices. Idempotent grace a onConflict:user_id cote BDD. */
+export async function pushProfilIfLocalNotEmpty(): Promise<boolean> {
+  if (!isBrowser()) return false;
+  try {
+    const current = loadProfil();
+    const hasAny =
+      current.raisonSociale ||
+      current.telephone ||
+      current.email ||
+      current.numeroAttestation ||
+      current.siret ||
+      current.signatureDataUrl;
+    if (!hasAny) return false;
+    // saveProfil declenche le push via syncProfilToSupabase en background.
+    // On le rappelle ici pour forcer le push meme si l'utilisateur n'a pas
+    // re-clique "Enregistrer" depuis le dernier deploy.
+    saveProfil(current);
+    return true;
+  } catch (e) {
+    console.warn("[hydrate] pushProfilIfLocalNotEmpty failed:", e);
     return false;
   }
 }
