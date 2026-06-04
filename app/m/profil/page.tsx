@@ -694,34 +694,6 @@ export default function MobileProfilPage() {
           </InsetListSection>
         )}
 
-        <InsetListSection title="Outils">
-          <a
-            href="/m/admin/seed"
-            className="flex items-center justify-between px-4 py-3 active:bg-black/[0.04] transition-colors"
-            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-          >
-            <div>
-              <div className="text-[15px] text-[#111]">Préparation démo CAPEB</div>
-              <div className="text-[12px] text-black/50 mt-0.5">Zone admin · seed/clear</div>
-            </div>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m9 18 6-6-6-6" />
-            </svg>
-          </a>
-          <a
-            href="/m/syderep"
-            className="flex items-center justify-between px-4 py-3 active:bg-black/[0.04] transition-colors"
-            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-          >
-            <div>
-              <div className="text-[15px] text-[#111]">Déclaration SYDEREP</div>
-              <div className="text-[12px] text-black/50 mt-0.5">Bilan annuel HFC</div>
-            </div>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m9 18 6-6-6-6" />
-            </svg>
-          </a>
-        </InsetListSection>
       </form>
 
       <style jsx global>{`
