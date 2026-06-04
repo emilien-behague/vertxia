@@ -21,6 +21,7 @@ import {
   type DiagnosticResult,
 } from "@/lib/vision-diagnostic";
 import { saveDiagnostic, listDiagnostics } from "@/lib/diagnostic-storage";
+import { shareDiagnostic } from "@/lib/diagnostic-share";
 
 type Phase = "idle" | "analyzing" | "result" | "error";
 
@@ -32,6 +33,7 @@ export default function DiagnosticPage() {
   const [error, setError] = useState<string | null>(null);
   const [historyCount, setHistoryCount] = useState(0);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [shareToast, setShareToast] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Compteur d'historique pour décider d'afficher le bouton "Historique" en haut
@@ -89,20 +91,18 @@ export default function DiagnosticPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  function handleShare() {
-    if (!result) return;
-    const txt = formatDiagnosticForShare(result);
-    if (navigator.share) {
-      navigator
-        .share({
-          title: "Diagnostic Vertxia",
-          text: txt,
-        })
-        .catch(() => {
-          navigator.clipboard.writeText(txt);
-        });
-    } else {
-      navigator.clipboard.writeText(txt);
+  async function handleShare() {
+    if (!result || !imageDataUrl) return;
+    const outcome = await shareDiagnostic({ imageDataUrl, result });
+    if (outcome === "clipboard") {
+      setShareToast("Diagnostic copié dans le presse-papier (image non partageable)");
+      setTimeout(() => setShareToast(null), 3000);
+    } else if (outcome === "shared_text_only") {
+      setShareToast("Partagé en texte seul (image non supportée par cible)");
+      setTimeout(() => setShareToast(null), 3000);
+    } else if (outcome === "failed") {
+      setShareToast("Échec du partage");
+      setTimeout(() => setShareToast(null), 3000);
     }
   }
 
@@ -474,6 +474,17 @@ export default function DiagnosticPage() {
         </div>
       )}
 
+      {/* Toast partage (fallback non-natif uniquement) */}
+      {shareToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed left-1/2 -translate-x-1/2 bottom-6 z-50 px-4 py-2.5 rounded-full bg-black/85 text-white text-[12.5px] font-medium shadow-lg backdrop-blur"
+        >
+          {shareToast}
+        </div>
+      )}
+
       {/* PHASE ERROR */}
       {phase === "error" && (
         <div className="px-4 pt-4">
@@ -522,31 +533,3 @@ function ConfianceChip({ confiance }: { confiance: "haute" | "moyenne" | "basse"
   );
 }
 
-function formatDiagnosticForShare(r: DiagnosticResult): string {
-  const lines: string[] = [];
-  lines.push("DIAGNOSTIC VERTXIA");
-  if (r.composantIdentifie) lines.push(`Composant : ${r.composantIdentifie}`);
-  if (r.defautsDetectes.length > 0) {
-    lines.push("");
-    lines.push("Défauts détectés :");
-    for (const d of r.defautsDetectes) {
-      lines.push(`• [${GRAVITE_LABELS[d.gravite]}] ${d.nom} — ${d.description}`);
-    }
-  } else {
-    lines.push("État apparent nominal.");
-  }
-  if (r.causeProbable) {
-    lines.push("");
-    lines.push(`Cause probable : ${r.causeProbable}`);
-  }
-  if (r.actionRecommandee) {
-    lines.push(`Action : ${r.actionRecommandee}`);
-  }
-  lines.push(`Délai : ${DELAI_LABELS[r.delaiIntervention]}`);
-  if (r.devisEstimeMin !== null && r.devisEstimeMax !== null) {
-    lines.push(`Devis estimé : ${r.devisEstimeMin}–${r.devisEstimeMax} € HT`);
-  }
-  lines.push("");
-  lines.push(`Diagnostic généré par Claude Opus 4.7 vision via vertxia.com`);
-  return lines.join("\n");
-}

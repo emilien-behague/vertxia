@@ -18,8 +18,8 @@ import {
   GRAVITE_LABELS,
   GRAVITE_STYLES,
   DELAI_LABELS,
-  type DiagnosticResult,
 } from "@/lib/vision-diagnostic";
+import { shareDiagnostic } from "@/lib/diagnostic-share";
 
 function fmtDateLong(iso: string): string {
   const d = new Date(iso);
@@ -38,6 +38,7 @@ export default function DiagnosticDetailPage() {
   const router = useRouter();
   const [diag, setDiag] = useState<StoredDiagnostic | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [shareToast, setShareToast] = useState<string | null>(null);
 
   useEffect(() => {
     const id = typeof params.id === "string" ? params.id : Array.isArray(params.id) ? params.id[0] : "";
@@ -45,15 +46,22 @@ export default function DiagnosticDetailPage() {
     setLoaded(true);
   }, [params.id]);
 
-  function handleShare() {
+  async function handleShare() {
     if (!diag) return;
-    const txt = formatDiagnosticForShare(diag.result);
-    if (navigator.share) {
-      navigator
-        .share({ title: "Diagnostic Vertxia", text: txt })
-        .catch(() => navigator.clipboard.writeText(txt));
-    } else {
-      navigator.clipboard.writeText(txt);
+    const outcome = await shareDiagnostic({
+      imageDataUrl: diag.imageDataUrl,
+      result: diag.result,
+      filenameHint: diag.createdAt.slice(0, 10),
+    });
+    if (outcome === "clipboard") {
+      setShareToast("Diagnostic copié dans le presse-papier (image non partageable)");
+      setTimeout(() => setShareToast(null), 3000);
+    } else if (outcome === "shared_text_only") {
+      setShareToast("Partagé en texte seul (image non supportée par cible)");
+      setTimeout(() => setShareToast(null), 3000);
+    } else if (outcome === "failed") {
+      setShareToast("Échec du partage");
+      setTimeout(() => setShareToast(null), 3000);
     }
   }
 
@@ -272,6 +280,16 @@ export default function DiagnosticDetailPage() {
           Diagnostic généré par Claude Opus 4.7 vision · vertxia.com
         </div>
       </div>
+
+      {shareToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed left-1/2 -translate-x-1/2 bottom-6 z-50 px-4 py-2.5 rounded-full bg-black/85 text-white text-[12.5px] font-medium shadow-lg backdrop-blur"
+        >
+          {shareToast}
+        </div>
+      )}
     </>
   );
 }
@@ -290,31 +308,3 @@ function ConfianceChip({ confiance }: { confiance: "haute" | "moyenne" | "basse"
   );
 }
 
-function formatDiagnosticForShare(r: DiagnosticResult): string {
-  const lines: string[] = [];
-  lines.push("DIAGNOSTIC VERTXIA");
-  if (r.composantIdentifie) lines.push(`Composant : ${r.composantIdentifie}`);
-  if (r.defautsDetectes.length > 0) {
-    lines.push("");
-    lines.push("Défauts détectés :");
-    for (const d of r.defautsDetectes) {
-      lines.push(`• [${GRAVITE_LABELS[d.gravite]}] ${d.nom} — ${d.description}`);
-    }
-  } else {
-    lines.push("État apparent nominal.");
-  }
-  if (r.causeProbable) {
-    lines.push("");
-    lines.push(`Cause probable : ${r.causeProbable}`);
-  }
-  if (r.actionRecommandee) {
-    lines.push(`Action : ${r.actionRecommandee}`);
-  }
-  lines.push(`Délai : ${DELAI_LABELS[r.delaiIntervention]}`);
-  if (r.devisEstimeMin !== null && r.devisEstimeMax !== null) {
-    lines.push(`Devis estimé : ${r.devisEstimeMin}–${r.devisEstimeMax} € HT`);
-  }
-  lines.push("");
-  lines.push(`Diagnostic généré par Claude Opus 4.7 vision via vertxia.com`);
-  return lines.join("\n");
-}
