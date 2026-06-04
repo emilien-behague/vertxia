@@ -185,7 +185,7 @@ function scoreBsffComplets(interventions: StoredIntervention[]): ScoreCategory {
     statut,
     message,
     actions: manquants > 0
-      ? [{ titre: "Compléter les BSFF manquants", href: "/m/historique" }]
+      ? [{ titre: "Voir les récupérations sans BSFF", href: "/m/historique?filter=bsff_manquant" }]
       : undefined,
   };
 }
@@ -227,7 +227,7 @@ function scoreSignaturesCerfa(interventions: StoredIntervention[]): ScoreCategor
     statut,
     message,
     actions: manquantes > 0
-      ? [{ titre: "Voir les CERFA non signés", href: "/m/historique" }]
+      ? [{ titre: "Voir les CERFA non signés", href: "/m/historique?filter=cerfa_non_signe" }]
       : undefined,
   };
 }

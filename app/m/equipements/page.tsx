@@ -62,6 +62,17 @@ export default function MobileEquipementsPage() {
 
   useEffect(() => {
     setItems(computeAllStatus(listEquipements(), listInterventions()));
+    // Pre-applique le filtre si ?filter=X est present dans l'URL. Cas
+    // d'usage : le drawer du compliance-score (header) propose des liens
+    // vers /m/equipements?filter=en_retard pour aller directement aux eqs
+    // concernes par une categorie de score basse.
+    if (typeof window !== "undefined") {
+      const f = new URLSearchParams(window.location.search).get("filter");
+      const valid: Filter[] = ["all", "a_risque", "en_retard", "a_relancer", "a_programmer", "ok"];
+      if (f && (valid as string[]).includes(f)) {
+        setFilter(f as Filter);
+      }
+    }
   }, []);
 
   const stats = useMemo(() => getEquipementStats(items), [items]);

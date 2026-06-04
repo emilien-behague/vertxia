@@ -71,6 +71,11 @@ function fmtTime(iso: string): string {
 function HistoriqueContent() {
   const searchParams = useSearchParams();
   const eqIdParam = searchParams.get("equipement");
+  // Filtres specifiques poussee depuis le drawer compliance-score :
+  // - cerfa_non_signe : controles d'etancheite sans signature detenteur
+  // - bsff_manquant : recuperations/demantelements sans bsffId
+  // Si absent ou autre valeur, comportement V1 inchange.
+  const filterParam = searchParams.get("filter");
 
   const [allInterventions, setAllInterventions] = useState<StoredIntervention[]>([]);
   const [diagnostics, setDiagnostics] = useState<StoredDiagnostic[]>([]);
@@ -171,13 +176,44 @@ function HistoriqueContent() {
     });
   }, [allTimeline, equipement]);
 
+  // Filtre poussee depuis le drawer compliance-score (param ?filter=).
+  // S'applique APRES le filtre equipement et AVANT la recherche libre.
+  // - cerfa_non_signe : controles d'etancheite sans signature detenteur
+  // - bsff_manquant : recuperations/demantelements sans bsffId
+  const byPushedFilter = useMemo<TimelineItem[]>(() => {
+    if (!filterParam) return byEquipement;
+    if (filterParam === "cerfa_non_signe") {
+      return byEquipement.filter((item) => {
+        if (item.kind !== "intervention") return false;
+        const i = item.data;
+        const estControle =
+          i.typeIntervention === "controle_periodique" ||
+          i.typeIntervention === "controle_non_periodique";
+        if (!estControle) return false;
+        return !i.hasDetenteurSignature;
+      });
+    }
+    if (filterParam === "bsff_manquant") {
+      return byEquipement.filter((item) => {
+        if (item.kind !== "intervention") return false;
+        const i = item.data;
+        const necessiteBsff =
+          i.typeIntervention === "recuperation" ||
+          i.typeIntervention === "demantelement";
+        if (!necessiteBsff) return false;
+        return !i.bsffId;
+      });
+    }
+    return byEquipement;
+  }, [byEquipement, filterParam]);
+
   // Recherche libre — étendue aux 2 kinds. Pour les diagnostics on indexe
   // le composant identifié, le contexte note, et les noms de défauts.
   const timeline = useMemo<TimelineItem[]>(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return byEquipement;
+    if (!q) return byPushedFilter;
     const terms = q.split(/\s+/).filter(Boolean);
-    return byEquipement.filter((item) => {
+    return byPushedFilter.filter((item) => {
       let haystack = "";
       if (item.kind === "intervention") {
         const i = item.data;
@@ -208,7 +244,7 @@ function HistoriqueContent() {
       }
       return terms.every((t) => haystack.includes(t));
     });
-  }, [byEquipement, search]);
+  }, [byPushedFilter, search]);
 
   // Stats : restent calculées sur les interventions visibles dans la
   // timeline (post-filtre). Les diagnostics ne polluent pas les compteurs
@@ -250,6 +286,42 @@ function HistoriqueContent() {
   return (
     <>
       <MobileHeader title={title} largeTitle backHref={backHref} />
+
+      {/* Bandeau contexte filter pousse depuis le drawer compliance-score */}
+      {filterParam === "cerfa_non_signe" && (
+        <div className="mx-4 mt-2 mb-3 px-4 py-3 rounded-2xl bg-orange-50 ring-1 ring-orange-200">
+          <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-orange-700">
+            Vue filtrée
+          </div>
+          <div className="mt-1 text-[14px] font-medium text-[#111]">
+            CERFA sans signature détenteur
+          </div>
+          <Link
+            href="/m/historique"
+            className="mt-2 inline-block text-[11px] text-orange-700 underline active:opacity-70"
+            style={{ WebkitTapHighlightColor: "transparent" }}
+          >
+            Voir tout l&apos;historique →
+          </Link>
+        </div>
+      )}
+      {filterParam === "bsff_manquant" && (
+        <div className="mx-4 mt-2 mb-3 px-4 py-3 rounded-2xl bg-orange-50 ring-1 ring-orange-200">
+          <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-orange-700">
+            Vue filtrée
+          </div>
+          <div className="mt-1 text-[14px] font-medium text-[#111]">
+            Récupérations sans BSFF signé
+          </div>
+          <Link
+            href="/m/historique"
+            className="mt-2 inline-block text-[11px] text-orange-700 underline active:opacity-70"
+            style={{ WebkitTapHighlightColor: "transparent" }}
+          >
+            Voir tout l&apos;historique →
+          </Link>
+        </div>
+      )}
 
       {/* Bandeau contexte équipement si filtré */}
       {equipement && (
