@@ -54,9 +54,19 @@ export default function DiagnosticPage() {
   const [ctxMemoryUsed, setCtxMemoryUsed] = useState<ContextMemory | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Compteur d'historique pour décider d'afficher le bouton "Historique" en haut
+  // Compteur d'historique pour décider d'afficher le bouton "Historique" en haut.
+  // Rafraichi : (a) au mount, (b) quand l'onglet redevient visible (l'utilisateur
+  // revient depuis Historique ou depuis un autre app), (c) sur focus (idem
+  // pour les browsers desktop qui ne firent pas visibilitychange).
   useEffect(() => {
-    setHistoryCount(listDiagnostics().length);
+    const refresh = () => setHistoryCount(listDiagnostics().length);
+    refresh();
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
   }, []);
 
   async function handleFile(file: File) {
@@ -102,7 +112,10 @@ export default function DiagnosticPage() {
       setResult(data);
       setPhase("result");
 
-      // Auto-save dans l'historique (localStorage user-scoped)
+      // Auto-save dans l'historique (localStorage user-scoped). Si echec
+      // (quota plein iPhone Safari principalement), on SURFACE l'erreur en
+      // toast au lieu de silent fail — sinon le compteur 'Historique (N)'
+      // reste fige et l'utilisateur ne comprend pas pourquoi.
       try {
         const saved = saveDiagnostic({
           imageDataUrl: dataUrl,
@@ -113,6 +126,9 @@ export default function DiagnosticPage() {
         setHistoryCount(listDiagnostics().length);
       } catch (e) {
         console.warn("[diagnostic] save failed:", e);
+        const msg = e instanceof Error ? e.message : "Echec sauvegarde";
+        setShareToast(`⚠️ ${msg}`);
+        setTimeout(() => setShareToast(null), 8000);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur diagnostic");

@@ -63,17 +63,25 @@ export function saveDiagnostic(input: {
   const trimmed = all.slice(0, MAX_STORED);
   try {
     localStorage.setItem(storageKey(), JSON.stringify(trimmed));
+    return entry;
   } catch (e) {
     // QuotaExceededError : on tente de retirer les 5 plus anciens et de re-save
     console.warn("[diagnostic-storage] storage full, trimming", e);
     const compact = trimmed.slice(0, Math.max(5, MAX_STORED - 5));
     try {
       localStorage.setItem(storageKey(), JSON.stringify(compact));
-    } catch {
-      // Tant pis, on ne sauve pas
+      return entry;
+    } catch (e2) {
+      // 2eme echec apres trim agressif : on THROW au lieu d'echouer en
+      // silence. Sinon le caller croit que le save a marche, le compteur
+      // d'historique ne bouge pas, et l'utilisateur ne sait pas pourquoi
+      // son nouveau diagnostic n'apparait pas dans /m/diagnostic/historique.
+      console.error("[diagnostic-storage] save failed after trim:", e2);
+      throw new Error(
+        "Stockage local plein sur cet appareil. Va dans Historique diagnostics et supprime quelques anciens diagnostics pour continuer."
+      );
     }
   }
-  return entry;
 }
 
 export function getDiagnostic(id: string): StoredDiagnostic | null {
