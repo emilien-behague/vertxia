@@ -46,8 +46,17 @@ const securityHeaders = [
     value: "strict-origin-when-cross-origin",
   },
   {
+    // Autorise camera/microphone/geolocation sur vertxia.com (self uniquement)
+    // - camera : scan QR equipement, scan plaque IA, photo diagnostic
+    // - microphone : dictee vocale de l'intervention
+    // - geolocation : page Planning (markers position installations)
+    // interest-cohort=() bloque FLoC Google (anti-tracking par defaut).
+    //
+    // Chrome Android applique strictement Permissions-Policy. Safari iOS plus
+    // permissif sur PWA. Avant ce fix : "camera=()" -> deny all -> camera
+    // inaccessible sur Android.
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+    value: "camera=(self), microphone=(self), geolocation=(self), interest-cohort=()",
   },
   {
     key: "Strict-Transport-Security",
