@@ -30,7 +30,7 @@ export default function MobileInterventionPage() {
 
   return (
     <>
-      <MobileHeader title="Nouvelle intervention" largeTitle backHref="/m" />
+      <MobileHeader title="Nouvelle intervention" largeTitle />
 
       <div className="px-5 mt-1 mb-2">
         <p className="text-[13px] text-black/55 leading-relaxed">

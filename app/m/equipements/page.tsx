@@ -88,7 +88,7 @@ export default function MobileEquipementsPage() {
 
   return (
     <>
-      <MobileHeader title="Parc équipements" largeTitle backHref="/m" />
+      <MobileHeader title="Parc équipements" largeTitle />
 
       {/* Stats inline */}
       <section className="px-4 mt-2">

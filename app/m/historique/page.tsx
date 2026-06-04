@@ -131,8 +131,10 @@ function HistoriqueContent() {
     return d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
   }
 
-  // Retour : si on est en mode filtré, retour sur la fiche équipement
-  const backHref = equipement ? `/eq/${equipement.id}` : "/m";
+  // Retour : uniquement si on est en mode filtré sur une fiche équipement.
+  // Sur l'historique global (accès via bottom tab), pas de bouton retour
+  // (redondant avec la tab bar).
+  const backHref = equipement ? `/eq/${equipement.id}` : undefined;
   const title = equipement ? "Historique équipement" : "Historique";
 
   return (

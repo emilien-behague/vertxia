@@ -184,7 +184,7 @@ export default function MobileProfilPage() {
 
   return (
     <>
-      <MobileHeader title="Profil" largeTitle backHref="/m" />
+      <MobileHeader title="Profil" largeTitle />
 
       {tdJustConnected && (
         <div
