@@ -22,11 +22,13 @@ export async function GET() {
       return NextResponse.json({ error: "not authenticated" }, { status: 401 });
     }
 
+    // SELECT * (au lieu de lister les colonnes) pour etre robuste si la
+    // BDD prod n'a pas EXACTEMENT toutes les colonnes du schema.sql (ex:
+    // signature_data_url ajoutee plus tard dans une migration manuelle).
+    // On map en safe avec defaults cote serveur.
     const { data, error } = await supabase
       .from("profils")
-      .select(
-        "raison_sociale, siret, adresse, code_postal, ville, telephone, email, categorie_attestation, numero_attestation, immatriculation_vehicule, signature_data_url, logo_data_url"
-      )
+      .select("*")
       .eq("user_id", user.id)
       .maybeSingle();
 

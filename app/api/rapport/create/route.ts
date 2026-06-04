@@ -42,7 +42,26 @@ export async function POST(req: Request) {
       },
     });
   } catch (err) {
+    // Log structure pour pouvoir debug via Vercel runtime logs. On stripe
+    // les data URLs (logo/signature/photo diag) qui peuvent peser 2-4MB
+    // et polluent les logs.
+    const stripDataUrls = (obj: unknown): unknown => {
+      if (typeof obj === "string" && obj.startsWith("data:")) {
+        return `[dataUrl truncated, ${obj.length} chars]`;
+      }
+      if (Array.isArray(obj)) return obj.map(stripDataUrls);
+      if (obj && typeof obj === "object") {
+        const r: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+          r[k] = stripDataUrls(v);
+        }
+        return r;
+      }
+      return obj;
+    };
     console.error("[rapport] génération échouée :", err);
+    console.error("[rapport] stack :", err instanceof Error ? err.stack : "(no stack)");
+    console.error("[rapport] payload :", JSON.stringify(stripDataUrls(body)));
     return NextResponse.json(
       {
         error: "Échec génération rapport",

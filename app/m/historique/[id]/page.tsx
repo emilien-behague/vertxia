@@ -377,8 +377,15 @@ export default function MobileInterventionDetailPage() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || err.detail || "Échec génération rapport");
+        const err = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
+        // On expose le detail (message technique) en priorite sur l'erreur
+        // generique, parce que "Échec génération rapport" tout court ne dit
+        // rien a l'utilisateur. Le detail typique : "WinAnsi cannot encode",
+        // "Profil entreprise manquant", "Cannot read image", etc.
+        const fullMsg = err.detail
+          ? `${err.error ?? "Échec"} — ${err.detail}`
+          : err.error || "Échec génération rapport (raison inconnue)";
+        throw new Error(fullMsg);
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
