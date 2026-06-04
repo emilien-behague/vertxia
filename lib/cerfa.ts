@@ -2,6 +2,7 @@ import { PDFDocument } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { embedDataUrl } from "./pdf-image";
 
 // Fonte Unicode embarquee dans le PDF (NotoSans-Regular ~556KB).
 // Avec { subset: true }, seuls les glyphes effectivement utilises sont embed
@@ -568,20 +569,19 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
   // Position : moitié droite de la zone Date, taille réduite pour ne pas masquer
   // le texte de date (aligné à gauche).
   if (input.detenteurSignature?.dataUrl) {
-    const base64 = input.detenteurSignature.dataUrl.replace(
-      /^data:image\/png;base64,/,
-      ""
-    );
-    const pngBytes = Buffer.from(base64, "base64");
-    const sigImg = await pdf.embedPng(pngBytes);
-    const scaled = sigImg.scaleToFit(120, 18);
-    const page = pdf.getPage(0);
-    page.drawImage(sigImg, {
-      x: 440,
-      y: 45,
-      width: scaled.width,
-      height: scaled.height,
-    });
+    // Auto-detect PNG / JPEG : le SignaturePad client exporte en PNG mais
+    // d'autres canvas (post-fix quota localStorage) peuvent exporter en JPEG.
+    const sigImg = await embedDataUrl(pdf, input.detenteurSignature.dataUrl);
+    if (sigImg) {
+      const scaled = sigImg.scaleToFit(120, 18);
+      const page = pdf.getPage(0);
+      page.drawImage(sigImg, {
+        x: 440,
+        y: 45,
+        width: scaled.width,
+        height: scaled.height,
+      });
+    }
   }
 
   // ─── Signature opérateur (technicien, depuis le profil Vertxia) ─────────
@@ -589,20 +589,19 @@ export async function fillCerfaPdf(input: CerfaInput): Promise<Uint8Array> {
   // Sign_Operateur_Date va de x=127.5 à x=337.3, y=44.9 à y=63.4.
   // Signature apposée moitié droite de cette zone.
   if (input.operateur?.signatureDataUrl) {
-    const base64 = input.operateur.signatureDataUrl.replace(
-      /^data:image\/png;base64,/,
-      ""
-    );
-    const pngBytes = Buffer.from(base64, "base64");
-    const sigImg = await pdf.embedPng(pngBytes);
-    const scaled = sigImg.scaleToFit(120, 18);
-    const page = pdf.getPage(0);
-    page.drawImage(sigImg, {
-      x: 220,
-      y: 45,
-      width: scaled.width,
-      height: scaled.height,
-    });
+    // Auto-detect PNG / JPEG (signature profil operateur est en JPEG depuis
+    // le fix quota localStorage du commit b824c7e).
+    const sigImg = await embedDataUrl(pdf, input.operateur.signatureDataUrl);
+    if (sigImg) {
+      const scaled = sigImg.scaleToFit(120, 18);
+      const page = pdf.getPage(0);
+      page.drawImage(sigImg, {
+        x: 220,
+        y: 45,
+        width: scaled.width,
+        height: scaled.height,
+      });
+    }
   }
 
   return await pdf.save();
