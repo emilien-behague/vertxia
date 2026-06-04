@@ -12,9 +12,15 @@ import {
   type ControleStatut,
 } from "@/lib/equipement";
 import { listInterventions } from "@/lib/intervention-storage";
+import { listDiagnostics } from "@/lib/diagnostic-storage";
 import { loadProfil, type Profil } from "@/lib/profil";
 import { generateQrLabel } from "@/lib/qr-label";
 import { fetchPublicEquipement, fetchPublicInterventions, syncEquipementToSupabase, lastFetchDebug, type PublicEquipement } from "@/lib/public-sync";
+import {
+  detectPredictiveSignals,
+  SIGNAL_STYLES,
+  type SignalPredictif,
+} from "@/lib/predictive-maintenance";
 
 // Page mobile premium — affichée quand un technicien scanne le QR Code collé sur
 // un équipement. Doit s'afficher SANS bug sur Safari iOS (zéro animation initial:opacity:0
@@ -102,6 +108,7 @@ export default function EquipementScannedPage({
   const { id } = use(params);
   const [mounted, setMounted] = useState(false);
   const [eq, setEq] = useState<EquipementWithStatus | null>(null);
+  const [predictiveSignals, setPredictiveSignals] = useState<SignalPredictif[]>([]);
   const [profil, setProfil] = useState<Profil | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [qrError, setQrError] = useState<string | null>(null);
@@ -188,8 +195,10 @@ export default function EquipementScannedPage({
       const found = all.find((e) => e.id === id);
       if (found) {
         const interventions = listInterventions();
+        const diagnostics = listDiagnostics();
         if (!cancelled) {
           setEq(computeStatus(found, interventions));
+          setPredictiveSignals(detectPredictiveSignals(found, interventions, diagnostics));
           setProfil(loadProfil());
           setIsReadOnly(false);
           setIsOwner(true);
@@ -217,6 +226,17 @@ export default function EquipementScannedPage({
         : [];
       if (cancelled) return;
       setEq(computeStatus(remote, remoteInterventions));
+      // Maintenance predictive : on l'execute uniquement en mode "full"
+      // (donnees historiques dispo). En mode public/confrere, on ne montre
+      // pas les signaux predictifs — c'est de la data commerciale du
+      // technicien titulaire.
+      if (remote.mode === "full") {
+        setPredictiveSignals(
+          detectPredictiveSignals(remote, remoteInterventions, listDiagnostics())
+        );
+      } else {
+        setPredictiveSignals([]);
+      }
       setIsReadOnly(remote.isReadOnly);
       setIsOwner(remote.isOwner);
       setCanCreateIntervention(remote.canCreateIntervention);
@@ -578,6 +598,65 @@ export default function EquipementScannedPage({
             </div>
           )}
         </div>
+
+        {/* Maintenance predictive — signaux detectes a partir de l'historique
+            (fuites recurrentes, defauts chroniques, fluide en phase-out, etc.).
+            Visible uniquement en mode "full" et s'il y a au moins 1 signal. */}
+        {mode === "full" && predictiveSignals.length > 0 && (
+          <div className="rounded-2xl bg-white ring-1 ring-black/[0.06] mb-3 overflow-hidden">
+            <div className="px-5 pt-4 pb-2 flex items-baseline justify-between">
+              <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/45">
+                Maintenance prédictive
+              </div>
+              <div className="text-[11px] font-medium text-black/55">
+                {predictiveSignals.length} signal{predictiveSignals.length > 1 ? "ux" : ""}
+              </div>
+            </div>
+            <div className="divide-y divide-black/[0.05]">
+              {predictiveSignals.map((s) => {
+                const style = SIGNAL_STYLES[s.gravite];
+                return (
+                  <div key={s.id} className="px-5 py-3.5">
+                    <div className="flex items-start gap-3">
+                      <span className="shrink-0 flex w-2.5 h-2.5 mt-1.5">
+                        {s.gravite === "critique" && (
+                          <span className={`absolute w-2.5 h-2.5 rounded-full ${style.dot} opacity-50 animate-ping`} />
+                        )}
+                        <span className={`relative w-2.5 h-2.5 rounded-full ${style.dot}`} />
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[14px] font-semibold text-[#111] leading-snug">
+                            {s.titre}
+                          </span>
+                          <span
+                            className={`text-[9px] font-mono tracking-widest px-1.5 py-0.5 rounded ring-1 ${style.bg} ${style.text} ${style.ring}`}
+                          >
+                            {style.label}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[12.5px] text-black/65 leading-snug">
+                          {s.description}
+                        </p>
+                        <div className="mt-2 pl-3 border-l-2 border-black/[0.08]">
+                          <div className="text-[10px] uppercase tracking-wider font-medium text-black/45 mb-0.5">
+                            Action recommandée
+                          </div>
+                          <p className="text-[12.5px] text-[#111] leading-snug">
+                            {s.actionRecommandee}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="px-5 py-2.5 bg-black/[0.02] border-t border-black/[0.05] text-[10px] text-black/40 text-center font-mono tracking-wider">
+              Calcul automatique à partir de l&apos;historique de cet équipement
+            </div>
+          </div>
+        )}
 
         {/* Encart RELANCE CLIENT — owner uniquement (action commerciale) */}
         {eq.statut === "a_relancer" && isOwner && (
