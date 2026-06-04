@@ -56,6 +56,8 @@ export default function MobileInterventionDetailPage() {
   const [cerfaError, setCerfaError] = useState<string | null>(null);
   const [etiquetteLoading, setEtiquetteLoading] = useState(false);
   const [etiquetteError, setEtiquetteError] = useState<string | null>(null);
+  const [rapportLoading, setRapportLoading] = useState(false);
+  const [rapportError, setRapportError] = useState<string | null>(null);
   // Edition rapide (modal Vaul)
   const [editOpen, setEditOpen] = useState(false);
   const [editClientName, setEditClientName] = useState("");
@@ -274,6 +276,115 @@ export default function MobileInterventionDetailPage() {
       setCerfaError(e instanceof Error ? e.message : "Erreur réseau");
     } finally {
       setCerfaLoading(false);
+    }
+  }
+
+  async function handleDownloadRapport() {
+    if (!intervention) return;
+    setRapportError(null);
+    setRapportLoading(true);
+    try {
+      const profil = loadProfil();
+      if (!profil.raisonSociale || !profil.numeroAttestation) {
+        setRapportError(
+          "Profil incomplet — il manque la raison sociale ou le n° d'attestation F-Gas. Complète ton profil sur /m/profil pour pouvoir générer un rapport client."
+        );
+        setRapportLoading(false);
+        return;
+      }
+
+      // Charge le diagnostic IA si l'intervention en vient
+      let diagPayload: import("@/lib/rapport").RapportDiagnostic | undefined;
+      if (diagnostic) {
+        diagPayload = {
+          imageDataUrl: diagnostic.imageDataUrl,
+          composantIdentifie: diagnostic.result.composantIdentifie || "",
+          defautsDetectes: diagnostic.result.defautsDetectes.map((d) => ({
+            nom: d.nom,
+            description: d.description,
+            gravite: d.gravite,
+          })),
+          actionRecommandee: diagnostic.result.actionRecommandee,
+          delaiIntervention: diagnostic.result.delaiIntervention,
+        };
+      }
+
+      // Calcul prochain controle reglementaire si on retrouve l'eq parent
+      let prochainControleISO: string | undefined;
+      let frequenceControleMois: number | undefined;
+      try {
+        const { listEquipements, computeStatus } = await import("@/lib/equipement");
+        const eqs = listEquipements();
+        const eq = eqs.find(
+          (e) =>
+            (intervention.equipementId && e.id === intervention.equipementId) ||
+            (intervention.numeroSerieEquipement && e.numeroSerie === intervention.numeroSerieEquipement)
+        );
+        if (eq) {
+          const status = computeStatus(eq, [intervention]);
+          prochainControleISO = status.prochainControleISO ?? undefined;
+          frequenceControleMois = status.frequenceMois ?? undefined;
+        }
+      } catch {
+        // Pas grave, le rapport sera juste sans la section prochain controle
+      }
+
+      const operateur = {
+        name: profil.raisonSociale,
+        quality: profil.categorieAttestation
+          ? `Technicien Cat. ${profil.categorieAttestation}`
+          : "Technicien",
+        signatureDataUrl: profil.signatureDataUrl,
+      };
+
+      const payload = {
+        fluide: intervention.fluide,
+        weight: intervention.weight,
+        packagingNumero: intervention.packagingNumero,
+        clientName: intervention.clientName,
+        modeleEquipement: intervention.modeleEquipement,
+        numeroSerieEquipement: intervention.numeroSerieEquipement,
+        lieuIntervention: intervention.lieuIntervention,
+        bsffId: intervention.bsffId,
+        destination: intervention.destination ?? null,
+        typeIntervention: intervention.typeIntervention,
+        operateur,
+        observationsLibres: intervention.notes,
+        observationsTerrain: intervention.notes,
+        controleDetails: intervention.controleDetails,
+        interventionDate: intervention.createdAt,
+        diagnostic: diagPayload ?? null,
+        prochainControleISO,
+        frequenceControleMois,
+        profil,
+      };
+
+      const res = await fetch("/api/rapport/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || err.detail || "Échec génération rapport");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const clientSlug = (intervention.clientName || "client")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .slice(0, 30);
+      a.download = `Rapport_intervention_${clientSlug}_${intervention.id.slice(0, 8)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      setRapportError(e instanceof Error ? e.message : "Erreur réseau");
+    } finally {
+      setRapportLoading(false);
     }
   }
 
@@ -529,6 +640,32 @@ export default function MobileInterventionDetailPage() {
         {cerfaError && (
           <div className="px-4 py-3 rounded-2xl bg-red-50 text-red-700 text-[13px] border border-red-200">
             ❌ {cerfaError}
+          </div>
+        )}
+
+        {/* Rapport client (PDF humain, branding Vertxia, partage WhatsApp/mail) */}
+        <button
+          type="button"
+          onClick={handleDownloadRapport}
+          disabled={rapportLoading}
+          className="block w-full px-6 py-4 rounded-2xl text-[15px] font-medium text-center transition-colors disabled:opacity-60 bg-[#A16207] text-white active:bg-[#8a5206]"
+          style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+        >
+          {rapportLoading ? (
+            <span className="inline-flex items-center gap-2">
+              <span className="inline-block w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+              Génération…
+            </span>
+          ) : (
+            "📄 Télécharger le rapport client"
+          )}
+        </button>
+        <div className="text-[11px] text-black/45 leading-snug px-2 -mt-1">
+          PDF brandé à ton nom, avec photo du diagnostic IA et prochain contrôle réglementaire — à envoyer au client final par mail ou WhatsApp.
+        </div>
+        {rapportError && (
+          <div className="px-4 py-3 rounded-2xl bg-red-50 text-red-700 text-[13px] border border-red-200">
+            ❌ {rapportError}
           </div>
         )}
 
