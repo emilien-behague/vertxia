@@ -4,6 +4,7 @@ import { NetworkIndicator } from "@/components/mobile/network-indicator";
 import { ServiceWorkerRegister } from "@/components/mobile/service-worker-register";
 import { AuthSync } from "@/components/mobile/auth-sync";
 import { ScrollToTopOnNav } from "@/components/mobile/scroll-to-top-on-nav";
+import { ChatAssistant } from "@/components/mobile/chat-assistant";
 
 // Layout app mobile — wrapper minimal qui ajoute la BottomTabBar fixée en bas
 // + le badge réseau (NetworkIndicator) en haut + l'enregistrement Service Worker
@@ -28,6 +29,7 @@ export default function MobileAppLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
       <BottomTabBar />
+      <ChatAssistant />
     </div>
   );
 }
