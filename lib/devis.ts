@@ -149,7 +149,11 @@ export function buildDevisFromDiagnostic(input: {
 
   const totalCible = estimerMontantCible(diagnostic);
   const composantLabel = diagnostic.composantIdentifie || "composant frigorifique";
-  const actionLabel = (diagnostic.actionRecommandee || "intervention").slice(0, 80);
+  // Libelle court pour la colonne "designation" du tableau (sera wrappe
+  // de toute facon, mais on evite des phrases entieres style 'ATTENTION :
+  // intervention hors champ F-Gas...'). On garde l'action complete dans la
+  // note intro + dans le detail de la ligne.
+  const composantCourt = composantLabel.length > 45 ? `${composantLabel.slice(0, 42)}…` : composantLabel;
 
   // Ventilation :
   // - Main d'oeuvre : 50%
@@ -175,8 +179,8 @@ export function buildDevisFromDiagnostic(input: {
 
   const lignes: DevisLigne[] = [
     {
-      designation: `Main d'œuvre — ${actionLabel}`,
-      detail: `Intervention sur ${composantLabel}`,
+      designation: "Main d'œuvre",
+      detail: `Intervention sur ${composantCourt}${diagnostic.actionRecommandee ? ` — ${diagnostic.actionRecommandee}` : ""}`,
       quantite: heures,
       unite: "h",
       prixUnitaireHT: prixUnitaireMO,
@@ -184,7 +188,7 @@ export function buildDevisFromDiagnostic(input: {
     },
     {
       designation: "Pièces et consommables",
-      detail: `Selon préconisation technique sur ${composantLabel}`,
+      detail: `Selon préconisation technique sur ${composantCourt}`,
       quantite: 1,
       unite: "U",
       prixUnitaireHT: round2(totalPieces),

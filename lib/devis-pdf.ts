@@ -77,6 +77,31 @@ function drawWrappedText(
   return currentY;
 }
 
+/** Compte le nombre de lignes qu'un texte prendra apres wrap dans une
+ *  largeur donnee. Sert a pre-calculer la hauteur d'une ligne du tableau
+ *  AVANT de dessiner son fond (bg alterne). */
+function countWrappedLines(
+  text: string,
+  opts: { font: PDFFont; size: number; maxWidth: number }
+): number {
+  if (!text) return 0;
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return 0;
+  let line = "";
+  let count = 0;
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (opts.font.widthOfTextAtSize(test, opts.size) > opts.maxWidth && line) {
+      count++;
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) count++;
+  return count;
+}
+
 export async function generateDevisPdf(devis: Devis): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   const { regular, bold } = await embedUnicodeFonts(pdf);
@@ -278,10 +303,36 @@ export async function generateDevisPdf(devis: Devis): Promise<Uint8Array> {
   });
   y -= 22;
 
-  // Lignes
+  // Lignes — wrap propre du texte designation + detail, hauteur dynamique
+  // selon le contenu reel. Evite le debordement sur la colonne QTE.
+  const DESIGN_MAX_W = COL_QTE_X - COL_DESIGN_X - 16; // 8 pad gauche + 8 marge droite
+  const DESIGN_SIZE = 9.5;
+  const DESIGN_LINE_H = 12;
+  const DETAIL_SIZE = 8;
+  const DETAIL_LINE_H = 10;
+  const PAD_VERT = 8;
+  const MIN_LINE_H = 22;
+
   for (let i = 0; i < devis.lignes.length; i++) {
     const ligne = devis.lignes[i];
-    const lineH = ligne.detail ? 34 : 22;
+
+    // Pre-calcule la hauteur reelle de la ligne en simulant le wrap
+    const designLines = countWrappedLines(ligne.designation, {
+      font: bold,
+      size: DESIGN_SIZE,
+      maxWidth: DESIGN_MAX_W,
+    });
+    const detailLines = ligne.detail
+      ? countWrappedLines(ligne.detail, {
+          font: regular,
+          size: DETAIL_SIZE,
+          maxWidth: DESIGN_MAX_W,
+        })
+      : 0;
+    const contentH =
+      designLines * DESIGN_LINE_H +
+      (detailLines > 0 ? 2 + detailLines * DETAIL_LINE_H : 0);
+    const lineH = Math.max(MIN_LINE_H, contentH + PAD_VERT * 2);
 
     // bg alterne tres leger
     if (i % 2 === 0) {
@@ -294,50 +345,63 @@ export async function generateDevisPdf(devis: Devis): Promise<Uint8Array> {
       });
     }
 
-    page.drawText(ligne.designation.slice(0, 55), {
+    // Designation (wrap, bold)
+    const designY = y - PAD_VERT - 2;
+    drawWrappedText(page, ligne.designation, {
       x: COL_DESIGN_X + 8,
-      y: y - 14,
+      y: designY,
+      maxWidth: DESIGN_MAX_W,
       font: bold,
-      size: 9.5,
+      size: DESIGN_SIZE,
       color: COLOR_TEXT,
+      lineHeight: DESIGN_LINE_H,
     });
+
+    // Detail sous la designation (wrap, regular, plus petit, gris)
     if (ligne.detail) {
-      page.drawText(ligne.detail.slice(0, 70), {
+      const detailY = designY - designLines * DESIGN_LINE_H;
+      drawWrappedText(page, ligne.detail, {
         x: COL_DESIGN_X + 8,
-        y: y - 25,
+        y: detailY,
+        maxWidth: DESIGN_MAX_W,
         font: regular,
-        size: 8,
+        size: DETAIL_SIZE,
         color: COLOR_LIGHT,
+        lineHeight: DETAIL_LINE_H,
       });
     }
+
+    // Colonnes QTE / UNITE / PU / TOTAL — alignees verticalement avec la
+    // PREMIERE ligne de la designation (centre visuel).
+    const valueY = y - PAD_VERT - 2;
     page.drawText(String(ligne.quantite), {
       x: COL_QTE_X,
-      y: y - 14,
+      y: valueY,
       font: regular,
-      size: 9.5,
+      size: DESIGN_SIZE,
       color: COLOR_TEXT,
     });
     page.drawText(ligne.unite, {
       x: COL_UNIT_X,
-      y: y - 14,
+      y: valueY,
       font: regular,
-      size: 9.5,
+      size: DESIGN_SIZE,
       color: COLOR_TEXT,
     });
     const puText = fmtEUR(ligne.prixUnitaireHT);
     page.drawText(puText, {
-      x: COL_PU_X + 60 - regular.widthOfTextAtSize(puText, 9.5),
-      y: y - 14,
+      x: COL_PU_X + 60 - regular.widthOfTextAtSize(puText, DESIGN_SIZE),
+      y: valueY,
       font: regular,
-      size: 9.5,
+      size: DESIGN_SIZE,
       color: COLOR_TEXT,
     });
     const totalText = fmtEUR(ligne.montantHT);
     page.drawText(totalText, {
-      x: COL_TOTAL_X - bold.widthOfTextAtSize(totalText, 9.5),
-      y: y - 14,
+      x: COL_TOTAL_X - bold.widthOfTextAtSize(totalText, DESIGN_SIZE),
+      y: valueY,
       font: bold,
-      size: 9.5,
+      size: DESIGN_SIZE,
       color: COLOR_TEXT,
     });
     y -= lineH;
