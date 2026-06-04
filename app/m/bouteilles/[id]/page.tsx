@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { MobileHeader } from "@/components/mobile/mobile-header";
+import { BouteilleRepriseCard } from "@/components/mobile/bouteille-reprise-card";
 import { InsetListSection } from "@/components/mobile/inset-list";
 import {
   getBouteille,
@@ -226,6 +227,17 @@ export default function BouteilleDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Module Reprise bouteille - affiche les distributeurs agrees ou
+          le frigoriste peut deposer cette bouteille pleine + genere un
+          mailto pre-rempli vers le distributeur prioritaire. Auto-deplie
+          quand bouteille en zone rouge (>=80% capacite). */}
+      <BouteilleRepriseCard
+        bouteille={bouteille}
+        chargeActuelleKg={chargeActuelle}
+        pourcentageRemplissage={pct}
+        expandedDefault={niveau === "rouge"}
+      />
 
       {/* Bouton ajout mouvement */}
       {bouteille.statut === "active" && (
