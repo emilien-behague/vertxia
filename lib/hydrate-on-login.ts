@@ -104,20 +104,40 @@ export async function hydrateFromSupabaseIfNeeded(
       }
     }
 
-    // Push profil entreprise vers Supabase une fois par session.
-    // Sert a alimenter le bloc "Technicien referent" de la fiche publique
-    // /eq/[id] (raison sociale + tel + email + numero attestation).
-    // Si le profil est vide, saveProfil le push quand meme avec des null
-    // -> pas grave, ca cree une row vide qui sera mise a jour plus tard.
-    // On evite quand meme le call si VRAIMENT vide (zero champ rempli).
+    // Sync profil entreprise dans les deux sens :
+    //   - Si profil local non vide -> push vers Supabase (alimente bloc
+    //     "Technicien referent" /eq/[id])
+    //   - Si profil local VIDE mais profil en BDD -> pull pour hydrater
+    //     ce device (cas : nouveau navigateur / autre device)
     try {
       const profil = loadProfil();
-      if (profil.raisonSociale || profil.telephone || profil.email || profil.numeroAttestation) {
-        // saveProfil va trigger le sync automatiquement
+      const hasLocal =
+        profil.raisonSociale || profil.telephone || profil.email || profil.numeroAttestation;
+      if (hasLocal) {
+        // saveProfil va trigger le sync automatiquement vers Supabase
         saveProfil(profil);
+      } else {
+        // Local vide → tenter pull depuis Supabase
+        const res = await fetch("/api/public/my-profile", {
+          method: "GET",
+          headers: { "cache-control": "no-store" },
+        });
+        if (res.ok) {
+          const j = (await res.json()) as {
+            data: {
+              raisonSociale?: string;
+              telephone?: string;
+              email?: string;
+              numeroAttestation?: string;
+            } | null;
+          };
+          if (j.data && (j.data.raisonSociale || j.data.numeroAttestation)) {
+            saveProfil({ ...profil, ...j.data });
+          }
+        }
       }
     } catch (e) {
-      console.warn("[hydrate] profil push failed:", e);
+      console.warn("[hydrate] profil sync failed:", e);
     }
 
     sessionStorage.setItem(SESSION_FLAG, "done");

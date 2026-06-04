@@ -284,13 +284,25 @@ export default function MobileInterventionDetailPage() {
     setRapportError(null);
     setRapportLoading(true);
     try {
-      const profil = loadProfil();
-      if (!profil.raisonSociale || !profil.numeroAttestation) {
-        setRapportError(
-          "Profil incomplet — il manque la raison sociale ou le n° d'attestation F-Gas. Complète ton profil sur /m/profil pour pouvoir générer un rapport client."
-        );
-        setRapportLoading(false);
-        return;
+      // Si le profil local est vide (autre device / nouveau navigateur),
+      // on tente un pull depuis Supabase avant de generer.
+      let profil = loadProfil();
+      if (!profil.raisonSociale && !profil.numeroAttestation) {
+        try {
+          const res = await fetch("/api/public/my-profile", {
+            method: "GET",
+            headers: { "cache-control": "no-store" },
+          });
+          if (res.ok) {
+            const j = (await res.json()) as { data: Partial<typeof profil> | null };
+            if (j.data) {
+              const { saveProfil } = await import("@/lib/profil");
+              profil = saveProfil({ ...profil, ...j.data });
+            }
+          }
+        } catch {
+          /* pas grave, on continue avec ce qu'on a */
+        }
       }
 
       // Charge le diagnostic IA si l'intervention en vient
