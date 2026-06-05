@@ -71,6 +71,10 @@ const nextConfig: NextConfig = {
   // l'IP locale du PC — indispensable pour tester PWA / mobile sur réseau local.
   // À retirer en prod (Vercel gère ça automatiquement).
   allowedDevOrigins: ["192.168.1.42", "localhost"],
+  // Désactive le badge "N" rouge de Next.js en bas à gauche pendant le dev :
+  // il chevauche la bottom nav bar mobile (PWA Vertxia) et perturbe le test
+  // visuel sur iPhone. N'apparaît jamais en prod de toute façon.
+  devIndicators: false,
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
