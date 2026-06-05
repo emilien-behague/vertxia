@@ -745,8 +745,8 @@ export default function BsffPage() {
                       </label>
                       <input
                         type="number"
-                        step="0.1"
-                        min="0.1"
+                        step="any"
+                        min="0"
                         required={needsBsff}
                         value={weight}
                         onChange={e => setWeight(e.target.value)}

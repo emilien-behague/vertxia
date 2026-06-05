@@ -639,7 +639,7 @@ export default function EquipementsPage() {
                         required
                         type="number"
                         min="0"
-                        step="0.01"
+                        step="any"
                         value={form.chargeKg}
                         onChange={(e) => setForm({ ...form, chargeKg: e.target.value })}
                         placeholder="Ex : 2.5"

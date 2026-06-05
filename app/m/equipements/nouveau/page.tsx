@@ -568,7 +568,7 @@ function MobileAjoutEquipementContent() {
               type="number"
               required
               min="0"
-              step="0.1"
+              step="any"
               inputMode="decimal"
               value={form.chargeKg}
               onChange={(e) => update("chargeKg", e.target.value)}

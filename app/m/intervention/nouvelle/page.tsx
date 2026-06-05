@@ -1278,8 +1278,8 @@ function NouvelleInterventionContent() {
             <FormRow label="Quantité (kg)">
               <input
                 type="number"
-                step="0.1"
-                min="0.1"
+                step="any"
+                min="0"
                 inputMode="decimal"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
