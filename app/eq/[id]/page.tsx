@@ -34,6 +34,51 @@ import { ModePresentationClient } from "@/components/mobile/mode-presentation-cl
 // pour éviter le bug d'hydration React 19 + framer-motion 12 qui bloque l'opacity à 0).
 // Le wow factor vient du design typographique + couleurs statut + CTA géant, pas des anims.
 
+// Style "drapeau" coloré XL en haut de fiche (refonte 05/06/2026 post-feedback
+// SIDV). Bandeau plein largeur avec emoji + label gros + jours restants.
+// Cohérent avec /m/equipements (cartes avec bordure colorée par statut).
+const STATUT_FLAG: Record<
+  ControleStatut,
+  { emoji: string; label: string; gradient: string; urgenceColor: string }
+> = {
+  en_retard: {
+    emoji: "🚨",
+    label: "EN RETARD",
+    gradient: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)",
+    urgenceColor: "#fecaca",
+  },
+  a_relancer: {
+    emoji: "📧",
+    label: "À RELANCER",
+    gradient: "linear-gradient(135deg, #f97316 0%, #c2410c 100%)",
+    urgenceColor: "#fed7aa",
+  },
+  a_programmer: {
+    emoji: "📅",
+    label: "À PROGRAMMER",
+    gradient: "linear-gradient(135deg, #f59e0b 0%, #b45309 100%)",
+    urgenceColor: "#fde68a",
+  },
+  jamais: {
+    emoji: "🆕",
+    label: "JAMAIS CONTRÔLÉ",
+    gradient: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+    urgenceColor: "#bfdbfe",
+  },
+  ok: {
+    emoji: "✅",
+    label: "À JOUR",
+    gradient: "linear-gradient(135deg, #10b981 0%, #047857 100%)",
+    urgenceColor: "#a7f3d0",
+  },
+  exempt: {
+    emoji: "🌿",
+    label: "EXEMPTÉ",
+    gradient: "linear-gradient(135deg, #64748b 0%, #334155 100%)",
+    urgenceColor: "#cbd5e1",
+  },
+};
+
 const STATUT_VISUAL: Record<
   ControleStatut,
   { label: string; bg: string; text: string; dot: string; ring: string; pulse: boolean }
@@ -324,7 +369,8 @@ export default function EquipementScannedPage({
     };
   }, [id, redeemStatus, grantExpiresAt]);
 
-  const visual = useMemo(() => (eq ? STATUT_VISUAL[eq.statut] : null), [eq]);
+  // visual = legacy mapping STATUT_VISUAL (utilise nulle part dans le JSX
+  // apres la refonte hero 05/06/2026). Le early-return verifie juste eq.
 
   const relanceMailto = useMemo(() => {
     if (!eq || eq.statut !== "a_relancer") return null;
@@ -452,7 +498,7 @@ export default function EquipementScannedPage({
   }
 
   if (!mounted || fetching) return <LoadingState />;
-  if (!eq || !visual) return <NotFoundState id={id} debug={lastFetchDebug} />;
+  if (!eq) return <NotFoundState id={id} debug={lastFetchDebug} />;
 
   return (
     <>
@@ -609,50 +655,102 @@ export default function EquipementScannedPage({
           </a>
         </div>
 
-        {/* Hero card — statut + modèle */}
-        <div className={`rounded-3xl ${visual.bg} ring-1 ${visual.ring} px-6 py-7 mb-4 shadow-sm`}>
-          {/* Statut badge */}
-          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 ${visual.text}`}>
-            <span className="relative flex w-2 h-2">
-              {visual.pulse && (
-                <span className={`absolute inset-0 rounded-full ${visual.dot} opacity-50 animate-ping`} />
-              )}
-              <span className={`relative w-2 h-2 rounded-full ${visual.dot}`} />
-            </span>
-            <span className="font-mono text-[10px] tracking-[0.2em] uppercase font-semibold">
-              {visual.label}
-            </span>
-          </div>
-
-          <h1 className="mt-5 text-3xl font-light leading-[1.1] tracking-tight text-[#111] break-words">
-            {eq.modele || "(modèle inconnu)"}
-          </h1>
-
-          {mode === "full" && (
-            <div className="mt-2 text-sm text-black/65 leading-relaxed">
-              <strong className="text-black/85 font-medium">{eq.clientName}</strong>
-              {eq.siteAdresse && (
-                <span className="block text-xs text-black/50 mt-0.5">{eq.siteAdresse}</span>
-              )}
-            </div>
-          )}
-
-          {eq.prochainControleISO && (
-            <div className="mt-5 pt-5 border-t border-black/[0.06]">
-              <div className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/40">
-                Prochain contrôle
-              </div>
-              <div className={`mt-1 text-base font-medium ${visual.text}`}>
-                {fmtDateLong(eq.prochainControleISO)}
-              </div>
-              {eq.joursAvantControle !== null && (
-                <div className="text-xs text-black/50 mt-0.5">
-                  {fmtJours(eq.joursAvantControle)}
+        {/* HERO refonte 05/06/2026 — bandeau drapeau coloré + carte modèle
+            avec pilules de specs. Style cohérent /m/equipements (couleur statut
+            dominante) et fi360 page bouteille (bandeau + pilules). */}
+        {(() => {
+          const flag = STATUT_FLAG[eq.statut];
+          return (
+            <>
+              {/* Bandeau drapeau coloré */}
+              <div
+                className="rounded-2xl px-5 py-4 mb-3 shadow-md shadow-black/10 flex items-center gap-4"
+                style={{ background: flag.gradient }}
+              >
+                <div className="text-4xl leading-none drop-shadow shrink-0">
+                  {flag.emoji}
                 </div>
-              )}
-            </div>
-          )}
-        </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11px] font-mono tracking-[0.25em] uppercase font-bold text-white/85">
+                    État
+                  </div>
+                  <div className="text-[18px] font-bold tracking-wide text-white leading-tight">
+                    {flag.label}
+                  </div>
+                </div>
+                {eq.joursAvantControle !== null && (
+                  <div className="text-right shrink-0">
+                    <div className="text-[10px] font-mono tracking-wider uppercase text-white/75">
+                      Contrôle
+                    </div>
+                    <div
+                      className="text-[14px] font-bold leading-tight"
+                      style={{ color: flag.urgenceColor }}
+                    >
+                      {fmtJours(eq.joursAvantControle)}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Carte info principale — modèle + client + adresse + pilules */}
+              <div className="rounded-2xl bg-white ring-1 ring-black/[0.06] px-5 py-5 mb-3 shadow-sm">
+                <h1 className="text-[26px] font-bold leading-[1.15] tracking-tight text-[#111] break-words">
+                  {eq.modele || "(modèle inconnu)"}
+                </h1>
+                {mode === "full" && (
+                  <>
+                    <div className="mt-1 text-[14px] font-medium text-black/75">
+                      {eq.clientName}
+                    </div>
+                    {eq.siteAdresse && (
+                      <div className="text-[12px] text-black/50 mt-0.5">
+                        {eq.siteAdresse}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Pilules specs — repere visuel rapide style fi360 bouteille */}
+                <div className="flex items-center gap-2 mt-4 flex-wrap">
+                  <SpecPill bg="#1e3a8a" text="#ffffff">
+                    ❄️ {eq.fluide.code}
+                  </SpecPill>
+                  {mode !== "public" && (
+                    <SpecPill bg="#065f46" text="#ffffff">
+                      ⚖️ {eq.chargeKg.toFixed(2).replace(".", ",")} kg
+                    </SpecPill>
+                  )}
+                  {mode !== "public" && (
+                    <SpecPill bg="#5b21b6" text="#ffffff">
+                      GWP {eq.fluide.gwp.toLocaleString("fr-FR")}
+                    </SpecPill>
+                  )}
+                  {mode !== "public" && eq.detecteurFixe && (
+                    <SpecPill bg="#7c2d12" text="#ffffff">
+                      📡 Détecteur fixe
+                    </SpecPill>
+                  )}
+                  {eq.prochainControleISO && (
+                    <SpecPill bg="#f3f4f6" text="#111111">
+                      ⏰ {fmtDateLong(eq.prochainControleISO)}
+                    </SpecPill>
+                  )}
+                </div>
+
+                {/* N serie en monospace, discret en bas */}
+                <div className="mt-3 pt-3 border-t border-black/[0.05] flex items-center justify-between gap-3">
+                  <div className="text-[10px] font-mono tracking-[0.25em] uppercase text-black/40 shrink-0">
+                    N° série
+                  </div>
+                  <div className="font-mono text-[12px] text-black/75 truncate text-right">
+                    {eq.numeroSerie}
+                  </div>
+                </div>
+              </div>
+            </>
+          );
+        })()}
 
         {/* Maintenance predictive — signaux detectes a partir de l'historique
             (fuites recurrentes, defauts chroniques, fluide en phase-out, etc.).
@@ -1447,6 +1545,29 @@ function SpecRow({
         {sub && <div className="text-[10px] text-black/40 mt-0.5">{sub}</div>}
       </div>
     </div>
+  );
+}
+
+// Pilule colorée pour les specs équipement dans le hero (refonte 05/06/2026).
+// Couleurs passees en style inline (#hex) pour echapper Tailwind dynamic
+// (meme raison que les VARIANTS de tuiles home — tree-shaker classes
+// composees = invisibles).
+function SpecPill({
+  bg,
+  text,
+  children,
+}: {
+  bg: string;
+  text: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      className="inline-flex items-center px-2.5 py-1 rounded-lg text-[11.5px] font-semibold leading-tight"
+      style={{ background: bg, color: text }}
+    >
+      {children}
+    </span>
   );
 }
 
