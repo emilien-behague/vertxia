@@ -114,6 +114,8 @@ type Status =
   | { kind: "open" }
   | { kind: "busy" }
   | { kind: "done"; occurrences: number }
+  /** Mode offline : panne stockee localement, sera publiee au retour de connexion. */
+  | { kind: "queued" }
   | { kind: "error"; message: string };
 
 export function DocumenterPanneButton({ signal, marque, modele }: Props) {
@@ -141,16 +143,28 @@ export function DocumenterPanneButton({ signal, marque, modele }: Props) {
       return;
     }
     setStatus({ kind: "busy" });
+    const payload = {
+      marque,
+      modele,
+      typePanne,
+      localisation: localisationFinale,
+    };
+    // Offline detecte cote client : on enqueue direct, message "sera publie"
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      try {
+        const { enqueueOperation } = await import("@/lib/offline-queue");
+        await enqueueOperation("/api/catalog/failure/upsert", "POST", payload);
+        setStatus({ kind: "queued" });
+      } catch {
+        setStatus({ kind: "error", message: "Impossible de mettre en file d'attente locale." });
+      }
+      return;
+    }
     try {
       const res = await fetch("/api/catalog/failure/upsert", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          marque,
-          modele,
-          typePanne,
-          localisation: localisationFinale,
-        }),
+        body: JSON.stringify(payload),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -168,10 +182,17 @@ export function DocumenterPanneButton({ signal, marque, modele }: Props) {
             : 1,
       });
     } catch (e) {
-      setStatus({
-        kind: "error",
-        message: e instanceof Error ? e.message : "Erreur réseau",
-      });
+      // Network error : enqueue pour rejouer plus tard plutot que perdre la contribution
+      try {
+        const { enqueueOperation } = await import("@/lib/offline-queue");
+        await enqueueOperation("/api/catalog/failure/upsert", "POST", payload);
+        setStatus({ kind: "queued" });
+      } catch {
+        setStatus({
+          kind: "error",
+          message: e instanceof Error ? e.message : "Erreur réseau",
+        });
+      }
     }
   }
 
@@ -180,8 +201,17 @@ export function DocumenterPanneButton({ signal, marque, modele }: Props) {
       <div className="mt-2.5 px-3 py-2 rounded-xl bg-emerald-50 ring-1 ring-emerald-200 text-[12px] text-emerald-900 leading-snug">
         <strong>✓ Ajouté à la mémoire collective.</strong>{" "}
         {status.occurrences > 1
-          ? `${status.occurrences} frigoristes ont déjà observé cette panne sur ce modèle.`
+          ? `${status.occurrences} techniciens ont déjà observé cette panne sur ce modèle.`
           : "Tu es le premier à documenter cette panne sur ce modèle."}
+      </div>
+    );
+  }
+
+  if (status.kind === "queued") {
+    return (
+      <div className="mt-2.5 px-3 py-2 rounded-xl bg-amber-50 ring-1 ring-amber-200 text-[12px] text-amber-900 leading-snug">
+        <strong>📡 En file d&apos;attente locale.</strong>{" "}
+        Ta contribution sera publiée à la mémoire collective dès que ton téléphone retrouve du réseau.
       </div>
     );
   }

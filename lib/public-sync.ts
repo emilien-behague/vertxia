@@ -29,6 +29,15 @@ export type SyncResult =
 
 export async function syncEquipementToSupabase(eq: StoredEquipement): Promise<SyncResult> {
   if (typeof window === "undefined") return { ok: false, reason: "network", message: "SSR" };
+  // Si on sait deja qu'on est offline, on saute le fetch (timeout inutile)
+  // et on enqueue directement pour rejouer au retour de connexion.
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    try {
+      const { enqueueOperation } = await import("@/lib/offline-queue");
+      await enqueueOperation("/api/public/equipement/upsert", "POST", eq);
+    } catch {}
+    return { ok: false, reason: "network", message: "Hors connexion — sera synchronise au retour de reseau." };
+  }
   try {
     const res = await fetch("/api/public/equipement/upsert", {
       method: "POST",
@@ -54,17 +63,31 @@ export async function syncEquipementToSupabase(eq: StoredEquipement): Promise<Sy
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.warn("[public-sync] equipement sync failed:", msg);
+    // Network error (offline transitoire, DNS, timeout) → enqueue pour rejouer
+    try {
+      const { enqueueOperation } = await import("@/lib/offline-queue");
+      await enqueueOperation("/api/public/equipement/upsert", "POST", eq);
+    } catch {}
     return { ok: false, reason: "network", message: msg };
   }
 }
 
 export async function syncInterventionToSupabase(int: StoredIntervention, equipementId?: string): Promise<void> {
   if (typeof window === "undefined") return;
+  const payload = { ...int, equipementId };
+  // Offline detecte cote client → on saute le fetch et on enqueue direct
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    try {
+      const { enqueueOperation } = await import("@/lib/offline-queue");
+      await enqueueOperation("/api/public/intervention/upsert", "POST", payload);
+    } catch {}
+    return;
+  }
   try {
     const res = await fetch("/api/public/intervention/upsert", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ...int, equipementId }),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) {
       if (res.status !== 401) {
@@ -74,6 +97,11 @@ export async function syncInterventionToSupabase(int: StoredIntervention, equipe
     }
   } catch (e) {
     console.warn("[public-sync] intervention sync failed:", e);
+    // Network error → enqueue pour rejouer au retour de connexion
+    try {
+      const { enqueueOperation } = await import("@/lib/offline-queue");
+      await enqueueOperation("/api/public/intervention/upsert", "POST", payload);
+    } catch {}
   }
 }
 
@@ -83,16 +111,26 @@ export async function syncInterventionToSupabase(int: StoredIntervention, equipe
  *  les confreres ayant un acces magique a l'equipement. */
 export async function deleteInterventionFromSupabase(id: string): Promise<void> {
   if (typeof window === "undefined") return;
+  const endpoint = `/api/public/intervention/${encodeURIComponent(id)}`;
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    try {
+      const { enqueueOperation } = await import("@/lib/offline-queue");
+      await enqueueOperation(endpoint, "DELETE", { id });
+    } catch {}
+    return;
+  }
   try {
-    const res = await fetch(`/api/public/intervention/${encodeURIComponent(id)}`, {
-      method: "DELETE",
-    });
+    const res = await fetch(endpoint, { method: "DELETE" });
     if (!res.ok && res.status !== 401) {
       const j = await res.json().catch(() => ({}));
       console.warn("[public-sync] intervention delete failed:", j);
     }
   } catch (e) {
     console.warn("[public-sync] intervention delete failed:", e);
+    try {
+      const { enqueueOperation } = await import("@/lib/offline-queue");
+      await enqueueOperation(endpoint, "DELETE", { id });
+    } catch {}
   }
 }
 
