@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { MobileHeader } from "@/components/mobile/mobile-header";
+import { Tile } from "@/components/mobile/tile";
 import Link from "next/link";
 import {
   listEquipements,
@@ -228,7 +229,7 @@ function MobileHomePage() {
           differencier de fi360. */}
       <section className="px-4 mt-4 space-y-3">
         {/* Tuile XL — Nouvelle intervention (l'action principale du metier) */}
-        <Tuile
+        <Tile
           href="/m/intervention"
           size="xl"
           variant="emerald"
@@ -239,7 +240,7 @@ function MobileHomePage() {
 
         {/* Grille 2x2 — outils terrain quotidiens */}
         <div className="grid grid-cols-2 gap-3">
-          <Tuile
+          <Tile
             href="/m/equipements"
             variant="sky"
             emoji="🏭"
@@ -247,21 +248,21 @@ function MobileHomePage() {
             sublabel={`${stats.total} installation${stats.total > 1 ? "s" : ""}`}
             badge={aGererCount > 0 ? aGererCount : undefined}
           />
-          <Tuile
+          <Tile
             href="/m/scan"
             variant="violet"
             emoji="📷"
             label="Scanner QR"
             sublabel="Reprendre une machine"
           />
-          <Tuile
+          <Tile
             href="/m/diagnostic"
             variant="rose"
             emoji="🤖"
             label="Diagnostic IA"
             sublabel="Photo → cause"
           />
-          <Tuile
+          <Tile
             href="/m/planning"
             variant="teal"
             emoji="🗓️"
@@ -271,7 +272,7 @@ function MobileHomePage() {
         </div>
 
         {/* Tuile XL — Paperasse officielle */}
-        <Tuile
+        <Tile
           href="/m/registre"
           size="xl"
           variant="bronze"
@@ -282,28 +283,28 @@ function MobileHomePage() {
 
         {/* Grille 2x2 — gestion matos + paperasse annuelle */}
         <div className="grid grid-cols-2 gap-3">
-          <Tuile
+          <Tile
             href="/m/bouteilles"
             variant="slate"
             emoji="🛢️"
             label="Bouteilles"
             sublabel="Stock + récup"
           />
-          <Tuile
+          <Tile
             href="/m/syderep"
             variant="amber"
             emoji="📊"
             label="SYDEREP"
             sublabel="Bilan annuel"
           />
-          <Tuile
+          <Tile
             href="/m/historique"
             variant="indigo"
             emoji="📂"
             label="Historique"
             sublabel={`${interventions.length} intervention${interventions.length > 1 ? "s" : ""}`}
           />
-          <Tuile
+          <Tile
             href="/m/documents"
             variant="zinc"
             emoji="📎"
@@ -355,117 +356,7 @@ function MobileHomePage() {
 }
 
 export default MobileHomePage;
-
-// ──────────────────────────────────────────────────────────────────────────
-// Composant Tuile — l'unite visuelle de la home post-refonte SIDV.
-// Inspire des tuiles plates "Fluid 360" mais retravaillee identite Vertxia :
-//   - Gradient diagonal subtil (pas plat fi360)
-//   - Rounded-3xl (plus arrondi)
-//   - Typo bold uppercase white + emoji XL en coin
-//   - Badge chiffre rouge en coin haut-droit si actions a faire
-//   - Fleche -> blanche translucide sur les tuiles XL (pas le triangle play)
-//
-// 2 tailles : "xl" (full-width, hero) + default (grid item).
-// 8 variants de couleurs pour eviter monotone et bien differencier les sections.
-// ──────────────────────────────────────────────────────────────────────────
-
-type TuileVariant =
-  | "emerald"
-  | "bronze"
-  | "sky"
-  | "slate"
-  | "rose"
-  | "violet"
-  | "teal"
-  | "amber"
-  | "indigo"
-  | "zinc";
-
-// IMPORTANT : gradients passes en STYLE INLINE et non en classes Tailwind.
-// Raison : si on met "bg-gradient-to-br from-X to-Y" dans un objet JS, le
-// tree-shaker Tailwind ne voit pas les classes (composees dynamiquement) et
-// ne genere pas le CSS correspondant -> fond blanc + texte blanc = illisible.
-// Bug observe 05/06/2026 sur la home post-refonte fi360-inspired.
-const VARIANTS: Record<TuileVariant, string> = {
-  emerald: "linear-gradient(135deg, #10b981 0%, #0f766e 100%)",
-  bronze: "linear-gradient(135deg, #A16207 0%, #7A4A05 100%)",
-  sky: "linear-gradient(135deg, #0ea5e9 0%, #1d4ed8 100%)",
-  slate: "linear-gradient(135deg, #334155 0%, #0f172a 100%)",
-  rose: "linear-gradient(135deg, #f43f5e 0%, #db2777 100%)",
-  violet: "linear-gradient(135deg, #7c3aed 0%, #6b21a8 100%)",
-  teal: "linear-gradient(135deg, #14b8a6 0%, #0891b2 100%)",
-  amber: "linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)",
-  indigo: "linear-gradient(135deg, #6366f1 0%, #1d4ed8 100%)",
-  zinc: "linear-gradient(135deg, #52525b 0%, #27272a 100%)",
-};
-
-function Tuile({
-  href,
-  variant,
-  emoji,
-  label,
-  sublabel,
-  size = "regular",
-  badge,
-}: {
-  href: string;
-  variant: TuileVariant;
-  emoji: string;
-  label: string;
-  sublabel?: string;
-  size?: "xl" | "regular";
-  badge?: number;
-}) {
-  const isXl = size === "xl";
-  return (
-    <Link
-      href={href}
-      className={`relative block rounded-3xl shadow-lg shadow-black/10 active:scale-[0.98] transition-transform overflow-hidden ${
-        isXl ? "px-5 py-6" : "px-4 py-5 min-h-[120px]"
-      }`}
-      style={{
-        background: VARIANTS[variant],
-        WebkitTapHighlightColor: "transparent",
-        touchAction: "manipulation",
-      }}
-    >
-      {/* Badge chiffre (notif) en haut-droite. Visible meme sur tuile reguliere. */}
-      {typeof badge === "number" && badge > 0 && (
-        <span className="absolute top-3 right-3 min-w-[26px] h-[26px] px-1.5 rounded-full bg-red-500 text-white text-[12px] font-bold flex items-center justify-center shadow-md ring-2 ring-white/80">
-          {badge > 99 ? "99+" : badge}
-        </span>
-      )}
-
-      {isXl ? (
-        <div className="flex items-center gap-4">
-          <div className="text-5xl leading-none drop-shadow">{emoji}</div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[18px] font-bold uppercase tracking-wide text-white leading-tight">
-              {label}
-            </div>
-            {sublabel && (
-              <div className="text-[12.5px] text-white/80 mt-1 leading-snug">
-                {sublabel}
-              </div>
-            )}
-          </div>
-          <svg className="shrink-0 text-white/70" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m9 18 6-6-6-6" />
-          </svg>
-        </div>
-      ) : (
-        <div className="flex flex-col h-full">
-          <div className="text-[34px] leading-none drop-shadow mb-2">{emoji}</div>
-          <div className="text-[14px] font-bold uppercase tracking-wide text-white leading-tight">
-            {label}
-          </div>
-          {sublabel && (
-            <div className="text-[11px] text-white/75 mt-0.5 leading-snug">
-              {sublabel}
-            </div>
-          )}
-        </div>
-      )}
-    </Link>
-  );
-}
+// Tuile a ete migree vers le composant partage components/mobile/tile.tsx.
+// Ne pas redefinir localement : si on a deux versions du meme composant,
+// React peut hydrater avec l'une et le serveur rendre avec l'autre selon
+// le tree-shaking, causant un hydration mismatch.
