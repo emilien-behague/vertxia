@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { MobileHeader } from "@/components/mobile/mobile-header";
-import { InsetListSection, InsetRow } from "@/components/mobile/inset-list";
+import { InsetListSection } from "@/components/mobile/inset-list";
+import { Tile } from "@/components/mobile/tile";
 import { listInterventions } from "@/lib/intervention-storage";
 import {
   aggregateForYear,
@@ -285,45 +286,58 @@ export default function MobileSyderepPage() {
             })}
           </InsetListSection>
 
-          {/* Actions */}
-          <InsetListSection title="Soumettre la déclaration">
-            <InsetRow
+          {/* Actions — tuiles XL coherentes home (sky / bronze) */}
+          <section className="px-4 mt-5 space-y-3">
+            <div className="text-[10px] font-mono tracking-[0.25em] uppercase text-black/45 px-1">
+              📤 Soumettre la déclaration
+            </div>
+            <Tile
               onClick={handleExportCsv}
-              leading={
-                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-700">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
-                </span>
-              }
-              label="Exporter CSV"
-              sublabel="Copier-coller dans le portail ADEME ou Excel FR"
+              size="xl"
+              variant="sky"
+              emoji="📥"
+              label="Exporter en CSV"
+              sublabel="Copier-coller dans le portail ADEME ou Excel"
             />
             <a
               href={SYDEREP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 px-4 py-3 active:bg-black/[0.04] transition-colors"
-              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+              className="relative block rounded-3xl shadow-lg shadow-black/10 active:scale-[0.98] transition-transform overflow-hidden px-5 py-6"
+              style={{
+                background: "linear-gradient(135deg, #A16207 0%, #7A4A05 100%)",
+                WebkitTapHighlightColor: "transparent",
+                touchAction: "manipulation",
+              }}
             >
-              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#A16207]/10 text-[#A16207] shrink-0">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div className="flex items-center gap-4">
+                <div className="text-5xl leading-none drop-shadow shrink-0">🌐</div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[18px] font-bold uppercase tracking-wide text-white leading-tight">
+                    Portail ADEME
+                  </div>
+                  <div className="text-[12.5px] text-white/85 mt-1 leading-snug">
+                    syderep.ademe.fr · pour soumettre la déclaration
+                  </div>
+                </div>
+                <svg
+                  className="shrink-0 text-white/70"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                   <polyline points="15 3 21 3 21 9" />
                   <line x1="10" y1="14" x2="21" y2="3" />
                 </svg>
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="text-[15px] text-[#111]">Ouvrir le portail ADEME</div>
-                <div className="text-[12px] text-black/50 mt-0.5">syderep.ademe.fr</div>
               </div>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m9 18 6-6-6-6" />
-              </svg>
             </a>
-          </InsetListSection>
+          </section>
 
           {/* Totaux pédagogiques */}
           <InsetListSection title="Récapitulatif annuel">

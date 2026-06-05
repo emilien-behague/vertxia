@@ -235,9 +235,66 @@ export default function DiagnosticDetailPage() {
       <MobileHeader title="🤖 Diagnostic" largeTitle backHref="/m/diagnostic/historique" />
 
       <div className="px-4 pt-2 pb-4 space-y-4">
-        <div className="text-[12px] text-black/55 px-1">
-          {fmtDateLong(diag.createdAt)}
-        </div>
+        {/* Bandeau drapeau diagnostic — couleur = gravite max defaut */}
+        {(() => {
+          const order: Record<string, number> = {
+            critique: 0,
+            urgent: 1,
+            surveiller: 2,
+            info: 3,
+          };
+          let worst: string | null = null;
+          for (const d of r.defautsDetectes) {
+            if (worst === null || (order[d.gravite] ?? 5) < (order[worst] ?? 5)) {
+              worst = d.gravite;
+            }
+          }
+          const flagStyle =
+            worst === "critique"
+              ? {
+                  gradient: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)",
+                  emoji: "🚨",
+                  label: "CRITIQUE",
+                }
+              : worst === "urgent"
+                ? {
+                    gradient: "linear-gradient(135deg, #f97316 0%, #c2410c 100%)",
+                    emoji: "⚠️",
+                    label: "URGENT",
+                  }
+                : worst === "surveiller"
+                  ? {
+                      gradient: "linear-gradient(135deg, #f59e0b 0%, #b45309 100%)",
+                      emoji: "👀",
+                      label: "À SURVEILLER",
+                    }
+                  : {
+                      gradient: "linear-gradient(135deg, #10b981 0%, #047857 100%)",
+                      emoji: "✅",
+                      label: r.defautsDetectes.length === 0 ? "AUCUN DÉFAUT" : "INFO",
+                    };
+          return (
+            <div
+              className="rounded-2xl px-5 py-4 shadow-md shadow-black/10 flex items-center gap-4"
+              style={{ background: flagStyle.gradient }}
+            >
+              <div className="text-4xl leading-none drop-shadow shrink-0">
+                {flagStyle.emoji}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] font-mono tracking-[0.25em] uppercase font-bold text-white/85">
+                  Diagnostic IA
+                </div>
+                <div className="text-[17px] font-bold tracking-wide text-white leading-tight">
+                  {flagStyle.label}
+                </div>
+                <div className="text-[11.5px] text-white/80 mt-0.5">
+                  {fmtDateLong(diag.createdAt)}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Photo */}
         <div className="rounded-2xl overflow-hidden ring-1 ring-black/[0.06] bg-white">

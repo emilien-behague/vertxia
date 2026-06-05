@@ -633,22 +633,67 @@ export default function MobileProfilPage() {
           </div>
         )}
 
-        {/* Submit + lien d'ajout signature si pas encore créée */}
-        <div className={`px-4 ${profil.signatureDataUrl ? "" : "mt-8"} mb-4 space-y-2`}>
+        {/* CTA submit en tuile emerald + lien signature en tuile bronze */}
+        <div className={`px-4 ${profil.signatureDataUrl ? "" : "mt-8"} mb-4 space-y-3`}>
           <button
             type="submit"
-            className="w-full px-6 py-4 rounded-2xl bg-[#111] text-white text-[15px] font-medium active:bg-black/90 transition-colors"
-            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            className="relative block w-full text-left rounded-3xl shadow-lg shadow-black/10 active:scale-[0.98] transition-transform overflow-hidden px-5 py-5"
+            style={{
+              background: savedFlash
+                ? "linear-gradient(135deg, #10b981 0%, #047857 100%)"
+                : "linear-gradient(135deg, #10b981 0%, #0f766e 100%)",
+              WebkitTapHighlightColor: "transparent",
+              touchAction: "manipulation",
+            }}
           >
-            {savedFlash ? "✓ Profil enregistré" : "Enregistrer le profil"}
+            <div className="flex items-center gap-4">
+              <div className="text-4xl leading-none drop-shadow shrink-0">
+                {savedFlash ? "✅" : "💾"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[17px] font-bold uppercase tracking-wide text-white leading-tight">
+                  {savedFlash ? "Profil enregistré" : "Enregistrer le profil"}
+                </div>
+                <div className="text-[12px] text-white/85 mt-0.5">
+                  {savedFlash ? "Modifications sauvegardées" : "Sauvegarder les modifications"}
+                </div>
+              </div>
+            </div>
           </button>
           {!profil.signatureDataUrl && (
             <a
               href="/m/profil/signature"
-              className="block w-full px-6 py-3 rounded-2xl bg-white border border-black/10 text-black/70 text-[13px] font-medium text-center active:bg-black/[0.03] transition-colors"
-              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+              className="relative block rounded-3xl shadow-lg shadow-black/10 active:scale-[0.98] transition-transform overflow-hidden px-5 py-5"
+              style={{
+                background: "linear-gradient(135deg, #A16207 0%, #7A4A05 100%)",
+                WebkitTapHighlightColor: "transparent",
+                touchAction: "manipulation",
+              }}
             >
-              ✍️ Ajouter ma signature
+              <div className="flex items-center gap-4">
+                <div className="text-4xl leading-none drop-shadow shrink-0">✍️</div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[16px] font-bold uppercase tracking-wide text-white leading-tight">
+                    Ajouter ma signature
+                  </div>
+                  <div className="text-[12px] text-white/85 mt-0.5">
+                    Pour les CERFA et BSFF officiels
+                  </div>
+                </div>
+                <svg
+                  className="shrink-0 text-white/70"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </div>
             </a>
           )}
         </div>

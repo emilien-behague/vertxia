@@ -722,31 +722,31 @@ export default function MobileInterventionDetailPage() {
         backHref="/m/historique"
       />
 
-      {/* Badge statut */}
-      <div className="px-5 mt-2">
+      {/* Bandeau drapeau XL statut intervention — style coherent /eq/[id] hero */}
+      <div className="px-4 mt-2">
         <div
-          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full ring-1 ${
-            i.bsffId
-              ? "bg-emerald-50 ring-emerald-200"
-              : "bg-blue-50 ring-blue-200"
-          }`}
+          className="rounded-2xl px-5 py-4 shadow-md shadow-black/10 flex items-center gap-4"
+          style={{
+            background: i.bsffId
+              ? "linear-gradient(135deg, #10b981 0%, #047857 100%)"
+              : "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+          }}
         >
-          <span className="relative flex w-2 h-2">
-            <span
-              className={`relative w-2 h-2 rounded-full ${
-                i.bsffId ? "bg-emerald-500" : "bg-blue-500"
-              }`}
-            />
-          </span>
-          <span
-            className={`font-mono text-[11px] tracking-widest uppercase font-semibold ${
-              i.bsffId ? "text-emerald-700" : "text-blue-700"
-            }`}
-          >
-            {i.bsffId ? "BSFF signé · officiel" : "CERFA généré"}
-          </span>
+          <div className="text-4xl leading-none drop-shadow shrink-0">
+            {i.bsffId ? "📦" : "📋"}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[11px] font-mono tracking-[0.25em] uppercase font-bold text-white/85">
+              Intervention
+            </div>
+            <div className="text-[17px] font-bold tracking-wide text-white leading-tight">
+              {i.bsffId ? "BSFF SIGNÉ · OFFICIEL" : "CERFA GÉNÉRÉ"}
+            </div>
+            <div className="text-[11.5px] text-white/80 mt-0.5">
+              {fmtDateTime(i.createdAt)}
+            </div>
+          </div>
         </div>
-        <div className="mt-3 text-[13px] text-black/55">{fmtDateTime(i.createdAt)}</div>
       </div>
 
       {/* Documents */}

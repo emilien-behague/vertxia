@@ -239,17 +239,55 @@ export default function BouteilleDetailPage() {
         expandedDefault={niveau === "rouge"}
       />
 
-      {/* Bouton ajout mouvement */}
+      {/* Tuile CTA ajout mouvement — coherent avec home / autres pages */}
       {bouteille.statut === "active" && (
         <div className="px-4 mb-3">
-          <button
-            type="button"
-            onClick={() => setShowAddMvmt((v) => !v)}
-            className="w-full px-5 py-3 rounded-2xl bg-[#111] text-white text-[14px] font-medium active:bg-black/90 transition-colors"
-            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-          >
-            {showAddMvmt ? "Annuler" : "+ Ajouter un mouvement"}
-          </button>
+          {showAddMvmt ? (
+            <button
+              type="button"
+              onClick={() => setShowAddMvmt(false)}
+              className="w-full px-5 py-3 rounded-2xl bg-black/[0.06] text-[#111] text-[14px] font-medium active:bg-black/[0.1] transition-colors"
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            >
+              Annuler
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowAddMvmt(true)}
+              className="relative block w-full text-left rounded-3xl shadow-lg shadow-black/10 active:scale-[0.98] transition-transform overflow-hidden px-5 py-5"
+              style={{
+                background: "linear-gradient(135deg, #10b981 0%, #0f766e 100%)",
+                WebkitTapHighlightColor: "transparent",
+                touchAction: "manipulation",
+              }}
+            >
+              <div className="flex items-center gap-4">
+                <div className="text-4xl leading-none drop-shadow shrink-0">➕</div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[16px] font-bold uppercase tracking-wide text-white leading-tight">
+                    Ajouter un mouvement
+                  </div>
+                  <div className="text-[12px] text-white/85 mt-0.5">
+                    Recharge / récupération / cession
+                  </div>
+                </div>
+                <svg
+                  className="shrink-0 text-white/70"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </div>
+            </button>
+          )}
         </div>
       )}
 
