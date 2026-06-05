@@ -17,6 +17,8 @@ import {
   type EquipementWithStatus,
 } from "@/lib/equipement";
 import { listInterventions, type StoredIntervention } from "@/lib/intervention-storage";
+import { listDiagnostics } from "@/lib/diagnostic-storage";
+import { detectPredictiveSignals, type SignalGravite } from "@/lib/predictive-maintenance";
 import { geocodeAddress, type GeoPoint } from "@/lib/geocoding";
 
 // ─── Calendrier helpers ──────────────────────────────────────────────────────
@@ -71,6 +73,13 @@ function buildMonthGrid(month: Date): Date[] {
 export default function PlanningPage() {
   const [equipements, setEquipements] = useState<EquipementWithStatus[]>([]);
   const [interventions, setInterventions] = useState<StoredIntervention[]>([]);
+  // Map eqId -> pire signal predictif detecte (critique > alerte). Permet de
+  // rendre les markers ROUGES quand un eq a un signal critique meme s'il est
+  // techniquement "ok" cote controle d'etancheite reglementaire. Coherent avec
+  // l'affichage de la liste parc (/m/equipements).
+  const [equipementsARisque, setEquipementsARisque] = useState<Map<string, SignalGravite>>(
+    new Map()
+  );
   const [month, setMonth] = useState<Date>(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -79,8 +88,29 @@ export default function PlanningPage() {
 
   useEffect(() => {
     const ints = listInterventions();
+    const eqs = listEquipements();
+    const diags = listDiagnostics();
     setInterventions(ints);
-    setEquipements(computeAllStatus(listEquipements(), ints));
+    const withStatus = computeAllStatus(eqs, ints);
+    setEquipements(withStatus);
+
+    // Calcul des signaux predictifs pour chaque eq (critique > alerte > rien).
+    // Meme logique que la liste parc, pour que la map soit ROUGE quand le
+    // dot dans la liste est ROUGE (signal critique).
+    const risk = new Map<string, SignalGravite>();
+    for (const eq of withStatus) {
+      const signals = detectPredictiveSignals(eq, ints, diags);
+      let worst: SignalGravite | null = null;
+      for (const s of signals) {
+        if (s.gravite === "critique") {
+          worst = "critique";
+          break;
+        }
+        if (s.gravite === "alerte") worst = "alerte";
+      }
+      if (worst) risk.set(eq.id, worst);
+    }
+    setEquipementsARisque(risk);
   }, []);
 
   const monthCells = useMemo(() => buildMonthGrid(month), [month]);
@@ -146,6 +176,13 @@ export default function PlanningPage() {
         link.setAttribute("data-leaflet-css", "true");
         document.head.appendChild(link);
       }
+      // Animation pulse pour les markers critiques (rouge clignotant)
+      if (!document.querySelector("style[data-vertxia-pulse]")) {
+        const styleEl = document.createElement("style");
+        styleEl.setAttribute("data-vertxia-pulse", "true");
+        styleEl.textContent = `@keyframes vertxia-pulse { 0% { transform: scale(0.85); opacity: 0.55; } 100% { transform: scale(1.7); opacity: 0; } }`;
+        document.head.appendChild(styleEl);
+      }
       LRef = L;
 
       if (cancelled || !mapRef.current) return;
@@ -189,11 +226,18 @@ export default function PlanningPage() {
         }
         points.push({ eq, point });
 
-        // Couleur du marker selon le statut
+        // Couleur du marker = priorite au signal predictif (critique/alerte)
+        // sinon statut reglementaire. Coherent avec le dot de la liste parc :
+        //   critique / en_retard         → ROUGE
+        //   alerte / a_relancer          → ORANGE
+        //   a_programmer                 → AMBRE
+        //   jamais (controle initial du) → BLEU
+        //   ok / exempt                  → VERT
+        const risque = equipementsARisque.get(eq.id);
         const color =
-          eq.statut === "en_retard"
+          risque === "critique" || eq.statut === "en_retard"
             ? "#dc2626"
-            : eq.statut === "a_relancer"
+            : risque === "alerte" || eq.statut === "a_relancer"
               ? "#ea580c"
               : eq.statut === "a_programmer"
                 ? "#d97706"
@@ -201,9 +245,18 @@ export default function PlanningPage() {
                   ? "#2563eb"
                   : "#059669";
 
+        // Anneau pulsant pour les markers critiques (visibilite immediate).
+        const html =
+          risque === "critique" || eq.statut === "en_retard"
+            ? `<div style="position:relative;width:18px;height:18px;">
+                 <span style="position:absolute;inset:-4px;border-radius:50%;background:${color};opacity:0.35;animation:vertxia-pulse 1.4s ease-out infinite;"></span>
+                 <span style="position:relative;display:block;width:18px;height:18px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></span>
+               </div>`
+            : `<div style="width:18px;height:18px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>`;
+
         const icon = L.divIcon({
           className: "vertxia-marker",
-          html: `<div style="width:18px;height:18px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);"></div>`,
+          html,
           iconSize: [18, 18],
           iconAnchor: [9, 9],
         });
@@ -237,7 +290,7 @@ export default function PlanningPage() {
         leafletMapRef.current = null;
       }
     };
-  }, [equipements]);
+  }, [equipements, equipementsARisque]);
 
   // ─── Render ──────────────────────────────────────────────────────────
 
