@@ -298,7 +298,7 @@ export default function DiagnosticPage() {
   return (
     <>
       <MobileHeader
-        title="Diagnostic"
+        title="🤖 Diagnostic photo"
         largeTitle
         backHref="/m"
         rightAction={

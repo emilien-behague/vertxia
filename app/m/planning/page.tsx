@@ -296,7 +296,7 @@ export default function PlanningPage() {
 
   return (
     <>
-      <MobileHeader title="Planning" largeTitle backHref="/m" />
+      <MobileHeader title="🗓️ Mon planning" largeTitle backHref="/m" />
 
       {/* Header navigation mois */}
       <div className="px-4 mt-2 flex items-center justify-between">

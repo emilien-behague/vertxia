@@ -150,7 +150,7 @@ export default function MobileSyderepPage() {
 
   return (
     <>
-      <MobileHeader title="SYDEREP" largeTitle backHref="/m" />
+      <MobileHeader title="📊 Bilan SYDEREP" largeTitle backHref="/m" />
 
       <div className="px-5 mt-1 text-[14px] text-black/55 leading-relaxed">
         Déclaration annuelle obligatoire des fluides HFC manipulés (Règlement UE 2024/573).

@@ -29,12 +29,14 @@ function fmtJours(j: number | null): string {
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  recuperation: "Récupération",
-  demantelement: "Démantèlement",
-  controle_periodique: "Contrôle étanchéité",
-  controle_non_periodique: "Contrôle (suite fuite)",
-  mise_service: "Mise en service",
-  maintenance: "Maintenance",
+  recuperation: "🧊 Récupération de gaz",
+  demantelement: "🔧 Démantèlement",
+  controle_periodique: "🔍 Contrôle anti-fuite",
+  controle_non_periodique: "🔎 Contrôle après réparation",
+  mise_service: "⚡ Mise en route",
+  maintenance: "🛠️ Entretien",
+  assemblage: "🔩 Assemblage",
+  modification: "✏️ Modification",
 };
 
 export default function MobileHomePage() {
@@ -102,6 +104,95 @@ export default function MobileHomePage() {
   );
   const recentes = useMemo(() => interventions.slice(0, 3), [interventions]);
 
+  // Hero card "Action du jour" — détermine l'unique chose la plus urgente
+  // que l'artisan doit faire MAINTENANT, en mode ludique style Pokémon Go.
+  // Logique de priorité descendante : retard > relance > jamais contrôlé >
+  // équipement à créer > tout va bien.
+  const actionDuJour = useMemo<{
+    emoji: string;
+    couleur: "rouge" | "orange" | "bleu" | "vert";
+    titre: string;
+    sous: string;
+    bouton: string;
+    href: string;
+  }>(() => {
+    if (stats.enRetard > 0) {
+      return {
+        emoji: "🚨",
+        couleur: "rouge",
+        titre: `${stats.enRetard} contrôle${stats.enRetard > 1 ? "s" : ""} en retard !`,
+        sous: "Il faut agir vite — risque amende DREAL",
+        bouton: "Voir les retards",
+        href: "/m/equipements?filter=en_retard",
+      };
+    }
+    if (stats.aRelancer > 0) {
+      return {
+        emoji: "📧",
+        couleur: "orange",
+        titre: `${stats.aRelancer} client${stats.aRelancer > 1 ? "s" : ""} à relancer`,
+        sous: "Contrôle dans moins de 30 jours — envoie le rappel",
+        bouton: "Envoyer les rappels",
+        href: "/m/equipements?filter=a_relancer",
+      };
+    }
+    if (stats.jamais > 0) {
+      return {
+        emoji: "🆕",
+        couleur: "bleu",
+        titre: `${stats.jamais} équipement${stats.jamais > 1 ? "s" : ""} jamais contrôlé${stats.jamais > 1 ? "s" : ""}`,
+        sous: "Démarre le suivi périodique sur ces machines",
+        bouton: "Faire un contrôle",
+        href: "/m/equipements",
+      };
+    }
+    if (stats.total === 0) {
+      return {
+        emoji: "👋",
+        couleur: "bleu",
+        titre: "Ajoute ton premier équipement",
+        sous: "Scanne une plaque signalétique en 3 secondes",
+        bouton: "Scanner une plaque",
+        href: "/m/equipements/nouveau",
+      };
+    }
+    return {
+      emoji: "✅",
+      couleur: "vert",
+      titre: "Tout est à jour !",
+      sous: "Profite de ta journée — rien à faire en urgence",
+      bouton: "Voir mon parc",
+      href: "/m/equipements",
+    };
+  }, [stats]);
+
+  const heroStyles = {
+    rouge: {
+      bg: "bg-gradient-to-br from-red-500 to-red-600",
+      text: "text-white",
+      sub: "text-red-50/90",
+      btn: "bg-white text-red-700 active:bg-red-50",
+    },
+    orange: {
+      bg: "bg-gradient-to-br from-orange-500 to-amber-500",
+      text: "text-white",
+      sub: "text-orange-50/90",
+      btn: "bg-white text-orange-700 active:bg-orange-50",
+    },
+    bleu: {
+      bg: "bg-gradient-to-br from-blue-500 to-indigo-600",
+      text: "text-white",
+      sub: "text-blue-50/90",
+      btn: "bg-white text-blue-700 active:bg-blue-50",
+    },
+    vert: {
+      bg: "bg-gradient-to-br from-emerald-500 to-teal-600",
+      text: "text-white",
+      sub: "text-emerald-50/90",
+      btn: "bg-white text-emerald-700 active:bg-emerald-50",
+    },
+  }[actionDuJour.couleur];
+
   // Le dashboard est rendu DANS TOUS LES CAS — même parc vide / zéro
   // intervention. On veut que la page d'accueil de l'app expose toujours
   // les raccourcis et actions rapides, pas un EmptyState "Bienvenue" qui
@@ -145,13 +236,48 @@ export default function MobileHomePage() {
         </Link>
       )}
 
-      {/* Stats grid 2x2 */}
-      <section className="px-4 mt-2">
+      {/* Hero Card — "Action du jour" : UNE seule chose claire à faire,
+          style Pokémon Go badge géant. C'est le premier truc que l'artisan
+          voit. Pas de chichi : emoji XL + 1 titre + 1 bouton. */}
+      <section className="px-4 mt-3">
+        <Link
+          href={actionDuJour.href}
+          className={`block rounded-3xl ${heroStyles.bg} px-5 py-6 shadow-lg active:scale-[0.99] transition-transform`}
+          style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+        >
+          <div className="flex items-center gap-4">
+            <div className="text-5xl leading-none drop-shadow-sm">
+              {actionDuJour.emoji}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className={`text-[10px] font-mono tracking-[0.25em] uppercase ${heroStyles.sub} mb-1`}>
+                Action du jour
+              </div>
+              <div className={`text-[18px] font-bold leading-tight ${heroStyles.text}`}>
+                {actionDuJour.titre}
+              </div>
+              <div className={`text-[12.5px] mt-1 leading-snug ${heroStyles.sub}`}>
+                {actionDuJour.sous}
+              </div>
+            </div>
+          </div>
+          <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full ${heroStyles.btn} text-[13px] font-semibold transition-colors`}>
+            {actionDuJour.bouton}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+          </div>
+        </Link>
+      </section>
+
+      {/* Stats grid 2x2 — mini compteurs avec emoji devant */}
+      <section className="px-4 mt-3">
             <div className="grid grid-cols-2 gap-3">
-              <StatCard label="Équipements" value={stats.total} sub="au parc" color="text-[#111]" />
-              <StatCard label="En retard" value={stats.enRetard} sub="à traiter" color="text-red-600" pulse={stats.enRetard > 0} />
-              <StatCard label="À relancer" value={stats.aRelancer} sub="≤ 30 j" color="text-orange-600" pulse={stats.aRelancer > 0} />
+              <StatCard emoji="🏭" label="Équipements" value={stats.total} sub="au parc" color="text-[#111]" />
+              <StatCard emoji="🚨" label="En retard" value={stats.enRetard} sub="à traiter" color="text-red-600" pulse={stats.enRetard > 0} />
+              <StatCard emoji="📧" label="À relancer" value={stats.aRelancer} sub="≤ 30 j" color="text-orange-600" pulse={stats.aRelancer > 0} />
               <StatCard
+                emoji="✅"
                 label="Interventions"
                 value={interventions.length}
                 sub={`${interventions.filter((i) => i.bsffId).length} avec BSFF`}
@@ -193,8 +319,8 @@ export default function MobileHomePage() {
           {/* Équipements urgents */}
           {urgents.length > 0 && (
             <InsetListSection
-              title="À traiter en priorité"
-              footer={`${stats.enRetard + stats.aRelancer + stats.aProgrammer + stats.jamais} équipements nécessitent un contrôle d'étanchéité.`}
+              title="🎯 À gérer en priorité"
+              footer={`${stats.enRetard + stats.aRelancer + stats.aProgrammer + stats.jamais} installation${stats.enRetard + stats.aRelancer + stats.aProgrammer + stats.jamais > 1 ? "s" : ""} attendent un contrôle anti-fuite.`}
             >
               {urgents.map((eq) => (
                 <InsetRow
@@ -211,7 +337,7 @@ export default function MobileHomePage() {
 
           {/* Dernières interventions */}
           {recentes.length > 0 && (
-            <InsetListSection title="Activité récente">
+            <InsetListSection title="📋 Dernières interventions">
               {recentes.map((i) => (
                 <InsetRow
                   key={i.id}
@@ -232,68 +358,78 @@ export default function MobileHomePage() {
             </InsetListSection>
           )}
 
-          {/* Quick actions */}
-          <InsetListSection title="Actions rapides">
+          {/* Actions principales — gros boutons accessibles, emoji devant */}
+          <InsetListSection title="Que veux-tu faire ?">
             <InsetRow
-              href="/m/scan"
-              leading={<ActionIcon name="qr" />}
-              label="Scanner QR équipement"
-              sublabel="Caméra → fiche en 1 sec"
+              href="/m/intervention"
+              leading={<BigEmoji>➕</BigEmoji>}
+              label="Démarrer un chantier"
+              sublabel="Nouvelle intervention sur une installation"
               showChevron
             />
-            <InsetRow href="/m/intervention" leading={<ActionIcon name="plus" />} label="Nouvelle intervention" showChevron />
+            <InsetRow
+              href="/m/scan"
+              leading={<BigEmoji>📷</BigEmoji>}
+              label="Scanner un QR code"
+              sublabel="Reprendre une machine en 1 sec"
+              showChevron
+            />
             <InsetRow
               href="/m/diagnostic"
-              leading={<ActionIcon name="camera" />}
-              label="Photo diagnostic IA"
-              sublabel="Composant suspect → cause + action + devis"
+              leading={<BigEmoji>🤖</BigEmoji>}
+              label="Diagnostiquer une panne"
+              sublabel="Une photo → l'IA trouve la cause"
               showChevron
             />
             <InsetRow
               href="/m/planning"
-              leading={<ActionIcon name="calendar" />}
-              label="Planning + carte"
-              sublabel="Calendrier mensuel + lieux des installations"
+              leading={<BigEmoji>🗓️</BigEmoji>}
+              label="Voir mon planning"
+              sublabel="Calendrier + carte des chantiers"
               showChevron
             />
+          </InsetListSection>
+
+          {/* Mon matos — gestion équipements, bouteilles, paperasse */}
+          <InsetListSection title="Mon matos & paperasse">
             <InsetRow
               href="/m/equipements"
-              leading={<ActionIcon name="list" />}
-              label="Voir tout le parc"
+              leading={<BigEmoji>🏭</BigEmoji>}
+              label="Mon parc d'installations"
               trailingValue={`${stats.total}`}
               showChevron
             />
             <InsetRow
               href="/m/bouteilles"
-              leading={<ActionIcon name="list" />}
-              label="Mes bouteilles"
-              sublabel="Stock recharge + récupération"
+              leading={<BigEmoji>🛢️</BigEmoji>}
+              label="Mes bouteilles de gaz"
+              sublabel="Stock recharge + récup"
               showChevron
             />
             <InsetRow
               href="/m/registre"
-              leading={<ActionIcon name="doc" />}
-              label="Registre fluides (PDF)"
-              sublabel="Traçabilité attestation F-Gas"
+              leading={<BigEmoji>📋</BigEmoji>}
+              label="Mon registre officiel"
+              sublabel="Pour les contrôles DREAL"
               showChevron
             />
             <InsetRow
               href="/m/syderep"
-              leading={<ActionIcon name="doc" />}
-              label="Déclaration SYDEREP"
-              sublabel="Bilan annuel HFC"
+              leading={<BigEmoji>📊</BigEmoji>}
+              label="Bilan annuel SYDEREP"
+              sublabel="Déclaration HFC une fois par an"
               showChevron
             />
           </InsetListSection>
 
       {/* Profil section */}
       {!profil?.raisonSociale && (
-        <InsetListSection footer="Renseignez votre raison sociale et numéro d'attestation pour signer les CERFA automatiquement.">
+        <InsetListSection footer="Ton nom + numéro d'attestation pour que les papiers officiels soient à ton nom.">
           <InsetRow
             href="/m/profil"
-            leading={<ActionIcon name="warning" />}
-            label="Compléter mon profil"
-            sublabel="Profil entreprise incomplet"
+            leading={<BigEmoji>⚠️</BigEmoji>}
+            label="Finis ton profil"
+            sublabel="Quelques infos manquantes — 1 min"
             showChevron
           />
         </InsetListSection>
@@ -314,12 +450,14 @@ export default function MobileHomePage() {
 }
 
 function StatCard({
+  emoji,
   label,
   value,
   sub,
   color,
   pulse,
 }: {
+  emoji?: string;
   label: string;
   value: number;
   sub: string;
@@ -329,6 +467,7 @@ function StatCard({
   return (
     <div className="rounded-2xl bg-white px-4 py-4 ring-1 ring-black/[0.04]">
       <div className="flex items-center gap-1.5">
+        {emoji && <span className="text-[15px] leading-none">{emoji}</span>}
         <div className="text-[11px] font-medium text-black/45 uppercase tracking-wide">{label}</div>
         {pulse && (
           <span className="relative flex w-1.5 h-1.5">
@@ -380,6 +519,14 @@ function InterventionIcon({ type }: { type: string }) {
           </>
         )}
       </svg>
+    </span>
+  );
+}
+
+function BigEmoji({ children }: { children: string }) {
+  return (
+    <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-black/[0.04] text-[22px] leading-none">
+      {children}
     </span>
   );
 }
