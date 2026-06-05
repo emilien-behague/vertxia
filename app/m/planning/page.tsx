@@ -405,11 +405,11 @@ export default function PlanningPage() {
         </span>
       </div>
 
-      {/* Détail du jour sélectionné */}
+      {/* Detail du jour selectionne — refonte cards bordure couleur evenement */}
       {selectedDate && selectedEvents && (
-        <div className="mx-4 mt-4 rounded-2xl bg-white ring-1 ring-black/[0.04] overflow-hidden">
-          <div className="px-4 py-3 border-b border-black/[0.06]">
-            <div className="text-[13px] font-medium text-[#111]">
+        <section className="px-4 mt-4">
+          <div className="rounded-2xl bg-white ring-1 ring-black/[0.05] px-4 py-3 mb-3">
+            <div className="text-[14px] font-bold text-[#111] capitalize">
               {selectedDate.toLocaleDateString("fr-FR", {
                 weekday: "long",
                 day: "numeric",
@@ -417,61 +417,108 @@ export default function PlanningPage() {
                 year: "numeric",
               })}
             </div>
-            <div className="text-[11px] text-black/45 mt-0.5">
+            <div className="text-[11px] text-black/55 mt-0.5">
               {selectedEvents.interventions.length + selectedEvents.echeances.length === 0
-                ? "Aucun événement"
-                : `${selectedEvents.interventions.length} intervention${selectedEvents.interventions.length > 1 ? "s" : ""} · ${selectedEvents.echeances.length} contrôle${selectedEvents.echeances.length > 1 ? "s" : ""} prévu${selectedEvents.echeances.length > 1 ? "s" : ""}`}
+                ? "Aucun événement prévu"
+                : `${selectedEvents.interventions.length} intervention${selectedEvents.interventions.length > 1 ? "s" : ""} · ${selectedEvents.echeances.length} contrôle${selectedEvents.echeances.length > 1 ? "s" : ""}`}
             </div>
           </div>
+
           {selectedEvents.interventions.length === 0 && selectedEvents.echeances.length === 0 && (
-            <div className="px-4 py-5 text-center text-[13px] text-black/45">
-              Rien de prévu ce jour
+            <div className="rounded-2xl bg-black/[0.03] ring-1 ring-black/[0.04] px-4 py-5 text-center">
+              <div className="text-3xl mb-1">📭</div>
+              <div className="text-[12.5px] text-black/55">Rien de prévu ce jour</div>
             </div>
           )}
-          <div className="divide-y divide-black/[0.06]">
+
+          <div className="space-y-2.5">
             {selectedEvents.interventions.map((inter) => (
               <Link
                 key={inter.id}
                 href={`/m/historique/${inter.id}`}
-                className="flex items-center gap-3 px-4 py-3 active:bg-black/[0.03]"
-                style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                className="block rounded-2xl bg-white ring-1 ring-black/[0.05] px-4 py-3 active:bg-black/[0.02] transition-colors"
+                style={{
+                  WebkitTapHighlightColor: "transparent",
+                  touchAction: "manipulation",
+                  borderLeft: "5px solid #059669",
+                }}
               >
-                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[14px] text-[#111] truncate">
-                    {inter.clientName ?? "Sans client"}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <span
+                      className="inline-block text-[9.5px] font-bold tracking-wider px-1.5 py-0.5 rounded uppercase mb-1"
+                      style={{ background: "#ecfdf5", color: "#059669" }}
+                    >
+                      ✅ INTERVENTION FAITE
+                    </span>
+                    <div className="text-[14.5px] font-bold text-[#111] leading-tight">
+                      {inter.clientName ?? "Sans client"}
+                    </div>
+                    <div className="text-[11.5px] text-black/55 truncate mt-0.5">
+                      {inter.typeIntervention.replace(/_/g, " ")} · {inter.fluide.code} ·{" "}
+                      {inter.weight.toFixed(1).replace(".", ",")} kg
+                    </div>
                   </div>
-                  <div className="text-[12px] text-black/50 truncate">
-                    {inter.typeIntervention.replace(/_/g, " ")} · {inter.fluide.code} ·{" "}
-                    {inter.weight.toFixed(1).replace(".", ",")} kg
-                  </div>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="rgba(0,0,0,0.3)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="shrink-0 mt-1.5"
+                  >
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
                 </div>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-                  <path d="m9 18 6-6-6-6" />
-                </svg>
               </Link>
             ))}
             {selectedEvents.echeances.map((eq) => (
               <Link
                 key={eq.id}
                 href={`/eq/${eq.id}`}
-                className="flex items-center gap-3 px-4 py-3 active:bg-black/[0.03]"
-                style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+                className="block rounded-2xl bg-white ring-1 ring-black/[0.05] px-4 py-3 active:bg-black/[0.02] transition-colors"
+                style={{
+                  WebkitTapHighlightColor: "transparent",
+                  touchAction: "manipulation",
+                  borderLeft: "5px solid #d97706",
+                }}
               >
-                <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[14px] text-[#111] truncate">{eq.clientName}</div>
-                  <div className="text-[12px] text-black/50 truncate">
-                    Contrôle étanchéité · {eq.modele}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <span
+                      className="inline-block text-[9.5px] font-bold tracking-wider px-1.5 py-0.5 rounded uppercase mb-1"
+                      style={{ background: "#fffbeb", color: "#d97706" }}
+                    >
+                      📅 CONTRÔLE PRÉVU
+                    </span>
+                    <div className="text-[14.5px] font-bold text-[#111] leading-tight">
+                      {eq.clientName}
+                    </div>
+                    <div className="text-[11.5px] text-black/55 truncate mt-0.5">
+                      Contrôle étanchéité · {eq.modele}
+                    </div>
                   </div>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="rgba(0,0,0,0.3)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="shrink-0 mt-1.5"
+                  >
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
                 </div>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.25)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-                  <path d="m9 18 6-6-6-6" />
-                </svg>
               </Link>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
       {/* Carte des installations */}
