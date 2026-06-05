@@ -96,16 +96,20 @@ export function PannesConnuesCard({ modeleComplet }: Props) {
   }
 
   if (!pannes || pannes.length === 0) {
+    // Wording NEUTRE (gris) — pas vert, pour ne PAS donner l'illusion d'un
+    // "tout va bien" alors qu'un signal predictif rouge peut etre present
+    // juste au-dessus. L'absence de panne enregistree par d'autres frigoristes
+    // n'est PAS une garantie d'absence de probleme sur cet equipement.
     return (
-      <div className="rounded-2xl bg-emerald-50/40 ring-1 ring-emerald-200/40 mb-3 px-4 py-3">
-        <div className="text-[11px] font-mono tracking-widest uppercase text-emerald-700/80">
+      <div className="rounded-2xl bg-black/[0.025] ring-1 ring-black/[0.06] mb-3 px-4 py-3">
+        <div className="text-[11px] font-mono tracking-widest uppercase text-black/45">
           Mémoire collective Vertxia
         </div>
-        <div className="mt-1 text-[13px] text-emerald-900/85 leading-relaxed">
-          ✓ Aucune panne enregistrée sur ce modèle.
+        <div className="mt-1 text-[13px] text-black/70 leading-relaxed">
+          Modèle non encore documenté par d&apos;autres frigoristes.
         </div>
-        <div className="mt-1 text-[11px] text-emerald-800/70 leading-snug">
-          Vous serez le premier à documenter une panne sur ce modèle si elle survient.
+        <div className="mt-1 text-[11px] text-black/45 leading-snug">
+          Cela ne dit rien sur l&apos;état de l&apos;équipement — regarde les signaux de maintenance prédictive ci-dessus.
         </div>
       </div>
     );

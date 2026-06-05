@@ -304,13 +304,30 @@ function MobileAjoutEquipementContent() {
   }
 
   function handlePlaqueScanned(plaque: PlaqueData) {
-    if (plaque.modele) {
+    // Garde-fou : l'IA Vision confond parfois n serie et modele sur des
+    // plaques peu lisibles. Si le "modele" extrait est purement numerique
+    // (ex: "472882"), c'est tres probablement un n serie qui s'est glisse
+    // dans le mauvais champ. On le redirige vers numeroSerie si ce dernier
+    // est vide, sinon on ignore (l'utilisateur corrigera).
+    const modeleLooksLikeSerial =
+      plaque.modele && /^[\d\s\-_/]+$/.test(plaque.modele.trim());
+
+    if (plaque.modele && !modeleLooksLikeSerial) {
       const fullModele = [plaque.marque, plaque.modele].filter(Boolean).join(" ").trim();
       update("modele", fullModele);
+    } else if (plaque.marque && !plaque.modele) {
+      // Marque seule extraite -> on remplit au moins ca, l'utilisateur
+      // completera le modele a la main.
+      update("modele", plaque.marque.trim());
     }
+
     if (plaque.numeroSerie) {
       update("numeroSerie", plaque.numeroSerie);
+    } else if (modeleLooksLikeSerial && plaque.modele) {
+      // Le "modele" extrait etait un n serie -> on le met au bon endroit.
+      update("numeroSerie", plaque.modele.trim());
     }
+
     if (plaque.fluide && FLUIDES.some((f) => f.code === plaque.fluide)) {
       update("fluideCode", plaque.fluide);
     }
@@ -523,27 +540,43 @@ function MobileAjoutEquipementContent() {
         {/* Unité extérieure */}
         <InsetListSection
           title="Unité extérieure"
-          footer="C'est l'unité qui porte la charge fluide (compresseur). En split, VRV ou VRF, c'est elle qui est identifiée comme système principal."
+          footer="C'est l'unité qui porte la charge fluide (compresseur). En split, VRV ou VRF, c'est elle qui est identifiée comme système principal. Bien distinguer le MODÈLE (nom commercial, partagé entre toutes les machines de cette gamme) du N° DE SÉRIE (unique à cette unité)."
         >
-          <FormRow label="Modèle" required>
+          <FormRow label="Modèle (nom commercial)" required>
             <input
               type="text"
               required
               value={form.modele}
               onChange={(e) => update("modele", e.target.value)}
-              placeholder="Ex : Daikin VRV V RWEYQ16T7Y1B"
+              placeholder="Ex : Daikin RXYQ8U7Y1B, Mitsubishi PUHZ-ZRP60, Altherma 3 R"
               className="input-mobile"
             />
+            <div className="mt-1 text-[10.5px] text-black/40 leading-snug">
+              Marque + référence catalogue. <strong>Pas</strong> le n° de série unique. La mémoire collective Vertxia agrège les pannes par modèle.
+            </div>
+            {/* Warning soft : si "modele" ressemble a un n serie pur (que des
+                chiffres / tirets), on previent. C'est le bug typique vu sur
+                le screenshot Daikin 472882 — 472882 etait le n serie, pas
+                le modele commercial. Resultat : la memoire collective ne
+                matchera jamais rien (chaque machine = cle unique). */}
+            {form.modele.trim().length > 0 && /^[\d\s\-_/]+$/.test(form.modele.trim()) && (
+              <div className="mt-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 ring-1 ring-amber-200 text-[11px] text-amber-900 leading-snug">
+                <strong>On dirait un n° de série</strong>, pas un modèle. Mets la référence commerciale ici (ex : <em>RXYQ8U7Y1B</em>) et le n° de série dans le champ suivant.
+              </div>
+            )}
           </FormRow>
-          <FormRow label="N° de série" required>
+          <FormRow label="N° de série (unique)" required>
             <input
               type="text"
               required
               value={form.numeroSerie}
               onChange={(e) => update("numeroSerie", e.target.value)}
-              placeholder="Ex : DK24VRV16001"
+              placeholder="Ex : 472882, DK24VRV16001"
               className="input-mobile font-mono"
             />
+            <div className="mt-1 text-[10.5px] text-black/40 leading-snug">
+              Identifiant unique de cette machine précise. Sert au SAV et au lien avec ses interventions. Ne sort jamais de ton compte.
+            </div>
           </FormRow>
         </InsetListSection>
 

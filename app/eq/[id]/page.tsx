@@ -26,6 +26,7 @@ import {
   type ContextMemory,
 } from "@/lib/context-memory";
 import { PannesConnuesCard } from "@/components/mobile/pannes-connues-card";
+import { DocumenterPanneButton } from "@/components/mobile/documenter-panne-button";
 import { ModePresentationClient } from "@/components/mobile/mode-presentation-client";
 
 // Page mobile premium — affichée quand un technicien scanne le QR Code collé sur
@@ -700,6 +701,23 @@ export default function EquipementScannedPage({
                             {s.actionRecommandee}
                           </p>
                         </div>
+                        {/* CTA "Documenter cette panne dans la memoire collective" :
+                            transforme un signal LOCAL (sur cet eq) en contribution
+                            COLLECTIVE (shared_failure_catalog). Owner uniquement,
+                            anonyme. Le composant retourne null si le signal n'est
+                            pas documentable (ex: fluide phase-out). */}
+                        {isOwner && eq.modele && (() => {
+                          const parts = eq.modele.trim().split(/\s+/);
+                          const marque = parts[0] ?? "";
+                          const modele = parts.slice(1).join(" ");
+                          return (
+                            <DocumenterPanneButton
+                              signal={s}
+                              marque={marque}
+                              modele={modele}
+                            />
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
