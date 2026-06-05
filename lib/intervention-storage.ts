@@ -13,6 +13,17 @@ function storageKey(): string {
   return scopedKey(STORAGE_KEY_BASE);
 }
 
+// Tombstones : IDs des interventions supprimees localement. Necessaire car la
+// page historique merge des interventions remote (Supabase, confreres via lien
+// magique) avec les locales — sans tombstone, une intervention supprimee
+// "reapparait" au prochain refresh tant que le delete Supabase n'a pas reussi
+// (offline) ou tant qu'un confrere la garde dans son cache.
+const TOMBSTONE_KEY_BASE = "vertxia:interventions:deleted";
+const TOMBSTONE_MAX = 5000;
+function tombstoneKey(): string {
+  return scopedKey(TOMBSTONE_KEY_BASE);
+}
+
 export type StoredIntervention = {
   /** UUID local — pas relié à TrackDéchets, pour le tri/identification UI. */
   id: string;
@@ -121,13 +132,52 @@ export function updateIntervention(
 
 export function deleteIntervention(id: string): void {
   if (!isBrowser()) return;
+  // 1. Retire de la liste locale
   const filtered = listInterventions().filter(i => i.id !== id);
   localStorage.setItem(storageKey(), JSON.stringify(filtered));
+  // 2. Marque l'ID comme tombstone (filtre anti-resurrection au merge remote)
+  addInterventionTombstone(id);
+  // 3. Supprime cote Supabase en background (silent fail si offline / pas auth)
+  import("@/lib/public-sync")
+    .then((m) => m.deleteInterventionFromSupabase(id))
+    .catch(() => {});
 }
 
 export function clearAllInterventions(): void {
   if (!isBrowser()) return;
   localStorage.removeItem(storageKey());
+}
+
+/** Retourne l'ensemble des IDs d'interventions supprimees localement.
+ *  A appeler par le merge UI (historique) pour filtrer les remotes. */
+export function getDeletedInterventionIds(): Set<string> {
+  if (!isBrowser()) return new Set();
+  try {
+    const raw = localStorage.getItem(tombstoneKey());
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return new Set();
+    return new Set(arr.filter((x) => typeof x === "string"));
+  } catch {
+    return new Set();
+  }
+}
+
+function addInterventionTombstone(id: string): void {
+  if (!isBrowser()) return;
+  try {
+    const current = getDeletedInterventionIds();
+    if (current.has(id)) return;
+    current.add(id);
+    // Cap a TOMBSTONE_MAX pour eviter une croissance non bornee (FIFO).
+    let arr = Array.from(current);
+    if (arr.length > TOMBSTONE_MAX) {
+      arr = arr.slice(arr.length - TOMBSTONE_MAX);
+    }
+    localStorage.setItem(tombstoneKey(), JSON.stringify(arr));
+  } catch {
+    // Quota plein / mode prive : on ignore, le delete UI a deja eu lieu
+  }
 }
 
 /** Compteurs pour le header de la page historique. */

@@ -77,6 +77,25 @@ export async function syncInterventionToSupabase(int: StoredIntervention, equipe
   }
 }
 
+/** Supprime une intervention cote Supabase. Silent fail si offline ou pas auth :
+ *  le tombstone local (cf. intervention-storage) garantit l'effet UI immediat,
+ *  ce sync sert juste a nettoyer reellement la base pour les autres devices et
+ *  les confreres ayant un acces magique a l'equipement. */
+export async function deleteInterventionFromSupabase(id: string): Promise<void> {
+  if (typeof window === "undefined") return;
+  try {
+    const res = await fetch(`/api/public/intervention/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+    if (!res.ok && res.status !== 401) {
+      const j = await res.json().catch(() => ({}));
+      console.warn("[public-sync] intervention delete failed:", j);
+    }
+  } catch (e) {
+    console.warn("[public-sync] intervention delete failed:", e);
+  }
+}
+
 // ── LECTURES PUBLIQUES (Supabase → app) ─────────────────────────────────────
 
 export type PublicEquipement = StoredEquipement & {
