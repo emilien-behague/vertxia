@@ -62,19 +62,46 @@ export default function DiagnosticHistoriquePage() {
   return (
     <>
       <MobileHeader
-        title="Historique diagnostics"
+        title="🤖 Historique diagnostics"
         largeTitle
         backHref="/m/diagnostic"
       />
 
-      {/* Bouton nouveau diagnostic */}
+      {/* Tuile rose XL — Nouveau diagnostic (coherent avec home + page diag) */}
       <div className="px-4 mt-2 mb-3">
         <Link
           href="/m/diagnostic"
-          className="block w-full px-4 py-3 rounded-2xl bg-[#A16207] text-white text-[14px] font-medium text-center active:opacity-90 transition-opacity"
-          style={{ WebkitTapHighlightColor: "transparent" }}
+          className="relative block rounded-3xl shadow-lg shadow-black/10 active:scale-[0.98] transition-transform overflow-hidden px-5 py-5"
+          style={{
+            background: "linear-gradient(135deg, #f43f5e 0%, #db2777 100%)",
+            WebkitTapHighlightColor: "transparent",
+            touchAction: "manipulation",
+          }}
         >
-          + Nouveau diagnostic
+          <div className="flex items-center gap-4">
+            <div className="text-4xl leading-none drop-shadow">📷</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[16px] font-bold uppercase tracking-wide text-white leading-tight">
+                Nouveau diagnostic
+              </div>
+              <div className="text-[12px] text-white/85 mt-0.5">
+                Photo → l&apos;IA détecte les défauts
+              </div>
+            </div>
+            <svg
+              className="shrink-0 text-white/70"
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+          </div>
         </Link>
       </div>
 
