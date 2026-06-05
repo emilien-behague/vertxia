@@ -15,7 +15,7 @@ import { VoiceInput } from "@/components/mobile/voice-input";
 import { ScanPlaqueButton, type PlaqueData } from "@/components/mobile/scan-plaque-button";
 import { VoiceFullDictation, type ExtractionResult } from "@/components/mobile/voice-full-dictation";
 import { SignaturePad } from "@/components/mobile/signature-pad";
-import { listEquipements, saveEquipement, updateEquipement } from "@/lib/equipement";
+import { listEquipements, saveEquipement, updateEquipement, frequenceControleMois } from "@/lib/equipement";
 import {
   saveIntervention,
   listInterventions,
@@ -98,6 +98,19 @@ type Status =
       clientName?: string;
       typeIntervention: string;
       modeleEquipement?: string;
+      // Champs metier pour rendre le mail "rapport" lisible directement
+      numeroSerieEquipement?: string;
+      fluideCode?: string;
+      fluideGwp?: number;
+      chargeKg?: number;
+      lieuIntervention?: string;
+      prochainControleISO?: string;
+      frequenceMois?: number;
+      // Profil technicien (signature mail)
+      technicienRaisonSociale?: string;
+      technicienAttestation?: string;
+      technicienTelephone?: string;
+      technicienEmail?: string;
     }
   | { type: "error"; message: string };
 
@@ -956,6 +969,26 @@ function NouvelleInterventionContent() {
         });
       } catch {}
 
+      // Donnees enrichies pour le mail "rapport" lisible directement
+      const chargeKgParsed = parseFloat(weight);
+      const chargeKgValid =
+        Number.isFinite(chargeKgParsed) && chargeKgParsed > 0 ? chargeKgParsed : undefined;
+      // Si c'est un controle d'etancheite, on calcule la prochaine echeance
+      // pour la mentionner directement dans le mail au client.
+      let prochainControleISO: string | undefined;
+      let frequenceMois: number | undefined;
+      if (config.needsControle && chargeKgValid) {
+        const tCO2eq = (chargeKgValid * selectedFluide.gwp) / 1000;
+        const isHFO = selectedFluide.gwp > 0 && selectedFluide.gwp < 150;
+        const freq = frequenceControleMois(tCO2eq, detecteurPermanent === "oui", isHFO);
+        if (freq !== null) {
+          frequenceMois = freq;
+          const prochain = new Date();
+          prochain.setMonth(prochain.getMonth() + freq);
+          prochainControleISO = prochain.toISOString();
+        }
+      }
+
       setStatus({
         type: "success",
         bsffId,
@@ -965,6 +998,17 @@ function NouvelleInterventionContent() {
         clientName: clientName.trim() || undefined,
         typeIntervention,
         modeleEquipement: modeleEquipement.trim() || undefined,
+        numeroSerieEquipement: numeroSerieEquipement.trim() || undefined,
+        fluideCode: selectedFluide.code,
+        fluideGwp: selectedFluide.gwp,
+        chargeKg: chargeKgValid,
+        lieuIntervention: lieuIntervention.trim() || clientAdresse.trim() || undefined,
+        prochainControleISO,
+        frequenceMois,
+        technicienRaisonSociale: profil?.raisonSociale || undefined,
+        technicienAttestation: profil?.numeroAttestation || undefined,
+        technicienTelephone: profil?.telephone || undefined,
+        technicienEmail: profil?.email || undefined,
       });
     } catch (e) {
       setStatus({ type: "error", message: e instanceof Error ? e.message : "Erreur" });
@@ -2144,12 +2188,47 @@ const TYPE_INTERVENTION_LABELS_MAIL: Record<string, string> = {
   modification: "modification d'équipement",
 };
 
+function resultatPourType(type: string): string {
+  switch (type) {
+    case "recuperation":
+      return "Fluide frigorigène récupéré et confié à la filière de traitement agréée, conformément au règlement F-Gas.";
+    case "demantelement":
+      return "Équipement démantelé. Fluide récupéré et confié à la filière agréée. Bordereau de suivi de déchets émis.";
+    case "controle_periodique":
+      return "Contrôle d'étanchéité périodique réalisé conformément au règlement UE 2024/573. Le détail des points contrôlés figure sur l'attestation officielle CERFA 15497*04.";
+    case "controle_non_periodique":
+      return "Contrôle d'étanchéité suite à intervention réalisé. Le détail des points contrôlés figure sur l'attestation officielle CERFA 15497*04.";
+    case "mise_service":
+      return "Installation mise en service. Test d'étanchéité initial et vérifications de fonctionnement effectués.";
+    case "maintenance":
+      return "Opérations de maintenance préventive réalisées.";
+    case "assemblage":
+      return "Équipement assemblé et test d'étanchéité initial réalisé conformément aux règles de l'art.";
+    case "modification":
+      return "Modification de l'équipement réalisée. Test d'étanchéité après modification effectué.";
+    default:
+      return "Intervention réalisée.";
+  }
+}
+
 function buildClientMailto(status: {
   bsffId?: string;
+  cerfaUrl?: string;
   clientEmail?: string;
   clientName?: string;
   typeIntervention: string;
   modeleEquipement?: string;
+  numeroSerieEquipement?: string;
+  fluideCode?: string;
+  fluideGwp?: number;
+  chargeKg?: number;
+  lieuIntervention?: string;
+  prochainControleISO?: string;
+  frequenceMois?: number;
+  technicienRaisonSociale?: string;
+  technicienAttestation?: string;
+  technicienTelephone?: string;
+  technicienEmail?: string;
 }): string {
   const dateFR = new Date().toLocaleDateString("fr-FR", {
     day: "2-digit",
@@ -2159,28 +2238,90 @@ function buildClientMailto(status: {
   const labelType =
     TYPE_INTERVENTION_LABELS_MAIL[status.typeIntervention] ||
     status.typeIntervention;
-  const subject = `Attestation F-Gas — ${labelType} du ${dateFR}`;
+  const subject = `Compte-rendu d'intervention du ${dateFR}`;
 
   const lines: string[] = [];
   lines.push(`Bonjour${status.clientName ? " " + status.clientName : ""},`);
   lines.push("");
-  lines.push(
-    `Suite à mon intervention du ${dateFR}${status.modeleEquipement ? " sur votre " + status.modeleEquipement : ""}, vous trouverez ci-joint votre attestation officielle CERFA 15497*04.`
-  );
-  if (status.bsffId) {
+  lines.push("Voici le compte-rendu de mon intervention sur votre installation.");
+  lines.push("");
+
+  // — INTERVENTION —
+  lines.push("— INTERVENTION —");
+  lines.push(`Date : ${dateFR}`);
+  lines.push(`Nature : ${labelType}`);
+  if (status.lieuIntervention) lines.push(`Lieu : ${status.lieuIntervention}`);
+  lines.push("");
+
+  // — ÉQUIPEMENT —
+  if (status.modeleEquipement || status.numeroSerieEquipement || status.fluideCode) {
+    lines.push("— ÉQUIPEMENT —");
+    if (status.modeleEquipement) lines.push(`Modèle : ${status.modeleEquipement}`);
+    if (status.numeroSerieEquipement) lines.push(`N° série : ${status.numeroSerieEquipement}`);
+    if (status.fluideCode) {
+      const gwpInfo = status.fluideGwp
+        ? ` (GWP ${status.fluideGwp.toLocaleString("fr-FR")})`
+        : "";
+      lines.push(`Fluide : ${status.fluideCode}${gwpInfo}`);
+    }
+    if (status.chargeKg) {
+      const tCO2eq =
+        status.fluideGwp !== undefined
+          ? (status.chargeKg * status.fluideGwp) / 1000
+          : null;
+      const tCO2eqStr =
+        tCO2eq !== null
+          ? ` — soit ${tCO2eq.toFixed(2).replace(".", ",")} tonnes éq. CO₂`
+          : "";
+      lines.push(
+        `Charge : ${status.chargeKg.toFixed(2).replace(".", ",")} kg${tCO2eqStr}`
+      );
+    }
     lines.push("");
-    lines.push(
-      `Le bordereau de suivi de déchets (BSFF) associé est référencé sous le numéro ${status.bsffId} et a été enregistré auprès du Ministère de la Transition écologique via TrackDéchets.`
-    );
   }
+
+  // — RÉSULTAT —
+  lines.push("— RÉSULTAT —");
+  lines.push(resultatPourType(status.typeIntervention));
   lines.push("");
-  lines.push(
-    "Conservez ces documents au moins 5 ans, conformément à l'article R. 543-82 du Code de l'environnement."
-  );
-  lines.push("");
+
+  // — PROCHAINE ÉCHÉANCE RÉGLEMENTAIRE —
+  if (status.prochainControleISO && status.frequenceMois) {
+    const echeanceFR = new Date(status.prochainControleISO).toLocaleDateString(
+      "fr-FR",
+      { day: "2-digit", month: "long", year: "numeric" }
+    );
+    lines.push("— PROCHAINE ÉCHÉANCE RÉGLEMENTAIRE —");
+    lines.push(
+      `Prochain contrôle d'étanchéité requis avant le ${echeanceFR} (tous les ${status.frequenceMois} mois — règlement UE 2024/573).`
+    );
+    lines.push("Je vous recontacterai en amont pour planifier le rendez-vous.");
+    lines.push("");
+  }
+
+  // — DOCUMENTS OFFICIELS — (mention discrète, à conserver 5 ans)
+  const docs: string[] = [];
+  if (status.cerfaUrl) docs.push("attestation CERFA 15497*04");
+  if (status.bsffId) docs.push(`bordereau BSFF n° ${status.bsffId} (TrackDéchets)`);
+  if (docs.length > 0) {
+    lines.push("— DOCUMENTS OFFICIELS —");
+    lines.push(
+      `Vos documents administratifs (${docs.join(", ")}) sont à votre disposition sur simple demande. À conserver 5 ans (article R. 543-82 du Code de l'environnement).`
+    );
+    lines.push("");
+  }
+
   lines.push("À votre disposition pour toute question.");
   lines.push("");
   lines.push("Cordialement,");
+
+  if (status.technicienRaisonSociale) lines.push(status.technicienRaisonSociale);
+  if (status.technicienAttestation)
+    lines.push(`Attestation F-Gas n° ${status.technicienAttestation}`);
+  const contact = [status.technicienTelephone, status.technicienEmail]
+    .filter(Boolean)
+    .join(" · ");
+  if (contact) lines.push(contact);
 
   return `mailto:${encodeURIComponent(status.clientEmail || "")}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join("\n"))}`;
 }
@@ -2275,21 +2416,19 @@ function SuccessView({
         )}
       </div>
 
-      {/* Bouton 'Envoyer au client' — toujours visible, mailto pré-rempli */}
+      {/* Bouton 'Envoyer au client' — mail "compte-rendu" complet dans le corps */}
       <div className="px-4 mt-3">
         <a
           href={buildClientMailto(status)}
           className="block w-full px-6 py-4 rounded-2xl bg-[#A16207] text-white text-[15px] font-medium text-center active:bg-[#8a5206] transition-colors"
           style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
         >
-          ✉️ Envoyer au client{status.clientEmail ? ` (${status.clientEmail})` : ""}
+          ✉️ Envoyer le compte-rendu au client{status.clientEmail ? ` (${status.clientEmail})` : ""}
         </a>
         <div className="mt-2 text-[11px] text-black/50 leading-relaxed text-center">
           {status.clientEmail
-            ? "Ouvre Mail iOS avec destinataire + objet + corps pré-remplis."
-            : "Ouvre Mail iOS avec objet + corps pré-remplis — tape juste l'adresse du client."}
-          <br />
-          Pense à attacher le CERFA téléchargé juste avant.
+            ? "Le compte-rendu est rédigé directement dans le corps du mail (équipement, résultat, prochaine échéance) — rien à attacher."
+            : "Le compte-rendu est dans le corps du mail. Tape juste l'adresse du client puis envoie."}
         </div>
       </div>
 
