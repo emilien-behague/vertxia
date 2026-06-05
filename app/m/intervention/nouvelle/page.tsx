@@ -2353,10 +2353,6 @@ function buildClientMailto(status: {
   return `mailto:${encodeURIComponent(status.clientEmail || "")}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join("\n"))}`;
 }
 
-// ConfettiBurst importe dynamiquement — composant pur client, pas de SSR
-// (evite tout risque hydration sur Safari iOS).
-import { ConfettiBurst } from "@/components/mobile/confetti-burst";
-
 function SuccessView({
   status,
   onReset,
@@ -2375,9 +2371,6 @@ function SuccessView({
 }) {
   return (
     <>
-      {/* 🎉 Animation victoire — confetti qui tombe au mount de la page succes */}
-      <ConfettiBurst count={50} duration={2800} />
-
       <div className="px-5 mt-2">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 ring-1 ring-emerald-200">
           <span className="relative flex w-2 h-2">
