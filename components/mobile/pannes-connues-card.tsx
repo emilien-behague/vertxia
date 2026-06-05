@@ -26,6 +26,9 @@ type Props = {
   /** Modele complet "Daikin FTXM35M" — on split sur le premier espace pour
    *  obtenir marque + modele. Si pas d'espace, on assume marque inconnue. */
   modeleComplet: string;
+  /** Si false, on masque la ligne "regarde les signaux de maintenance
+   *  ci-dessus" (sinon elle reference du vide et le client ne pige pas). */
+  hasPredictiveSignals?: boolean;
 };
 
 const TYPE_PANNE_LABELS: Record<string, string> = {
@@ -38,7 +41,7 @@ const TYPE_PANNE_LABELS: Record<string, string> = {
   autre: "Autre",
 };
 
-export function PannesConnuesCard({ modeleComplet }: Props) {
+export function PannesConnuesCard({ modeleComplet, hasPredictiveSignals = false }: Props) {
   const [pannes, setPannes] = useState<Panne[] | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -106,11 +109,13 @@ export function PannesConnuesCard({ modeleComplet }: Props) {
           Mémoire collective Vertxia
         </div>
         <div className="mt-1 text-[13px] text-black/70 leading-relaxed">
-          Modèle non encore documenté par d&apos;autres frigoristes.
+          Modèle non encore documenté par d&apos;autres techniciens.
         </div>
-        <div className="mt-1 text-[11px] text-black/45 leading-snug">
-          Cela ne dit rien sur l&apos;état de l&apos;équipement — regarde les signaux de maintenance prédictive ci-dessus.
-        </div>
+        {hasPredictiveSignals && (
+          <div className="mt-1 text-[11px] text-black/45 leading-snug">
+            Cela ne dit rien sur l&apos;état de l&apos;équipement — regarde les signaux de maintenance prédictive ci-dessus.
+          </div>
+        )}
       </div>
     );
   }
@@ -127,7 +132,7 @@ export function PannesConnuesCard({ modeleComplet }: Props) {
           {total} occurrence{total > 1 ? "s" : ""} enregistrée{total > 1 ? "s" : ""}
         </div>
         <div className="text-[11px] text-amber-800/70 mt-0.5">
-          Agrégées sur tous les frigoristes Vertxia. À surveiller en priorité.
+          Agrégées sur tous les techniciens Vertxia. À surveiller en priorité.
         </div>
       </div>
       <div className="divide-y divide-amber-200/30">

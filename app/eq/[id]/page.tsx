@@ -647,12 +647,7 @@ export default function EquipementScannedPage({
           <div className="font-mono text-[10px] tracking-[0.25em] text-black/30">
             QR SCANNÉ
           </div>
-          <a
-            href="/"
-            className="font-mono text-[10px] tracking-[0.25em] text-black/45 hover:text-black/80 transition-colors"
-          >
-            VERTXIA
-          </a>
+          <span />
         </div>
 
         {/* HERO refonte 05/06/2026 — bandeau drapeau coloré + carte modèle
@@ -829,10 +824,13 @@ export default function EquipementScannedPage({
         )}
 
         {/* Memoire collective Vertxia — pannes connues sur le MEME modele
-            chez tous les frigoristes de la base. Different de la maintenance
+            chez tous les techniciens de la base. Different de la maintenance
             predictive qui ne regarde QUE cet equipement specifique. */}
         {mode === "full" && eq.modele && (
-          <PannesConnuesCard modeleComplet={eq.modele} />
+          <PannesConnuesCard
+            modeleComplet={eq.modele}
+            hasPredictiveSignals={predictiveSignals.length > 0}
+          />
         )}
 
         {/* Memoire contextuelle — "deja vu" sur cet equipement + parc.
