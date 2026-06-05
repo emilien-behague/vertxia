@@ -8,7 +8,6 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/mobile-header";
-import { InsetListSection, InsetRow } from "@/components/mobile/inset-list";
 import {
   listInterventions,
   getStats,
@@ -430,73 +429,124 @@ function HistoriqueContent() {
         </div>
       ) : (
         byMonth.map(([month, items]) => (
-          <InsetListSection key={month} title={monthLabel(month)}>
-            {items.map((item) => {
-              if (item.kind === "intervention") {
-                const i = item.data;
-                return (
-                  <InsetRow
-                    key={`int-${i.id}`}
-                    href={`/m/historique/${i.id}`}
-                    showChevron
-                    label={TYPE_LABELS[i.typeIntervention] || i.typeIntervention}
-                    sublabel={`${i.clientName ?? "Sans client"} · ${fmtDate(i.createdAt)} · ${fmtTime(i.createdAt)}`}
-                    leading={
-                      <span
-                        className={`inline-flex items-center justify-center w-8 h-8 rounded-full ${
-                          i.bsffId ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700"
-                        }`}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                          <polyline points="14 2 14 8 20 8" />
+          <section key={month} className="px-4 mt-5">
+            <div className="text-[10px] font-mono tracking-[0.25em] uppercase text-black/45 mb-2 px-1">
+              {monthLabel(month)}
+            </div>
+            <div className="space-y-2.5">
+              {items.map((item) => {
+                if (item.kind === "intervention") {
+                  const i = item.data;
+                  const isBsff = Boolean(i.bsffId);
+                  const accentColor = isBsff ? "#059669" : "#2563eb";
+                  const accentBg = isBsff ? "#ecfdf5" : "#eff6ff";
+                  return (
+                    <Link
+                      key={`int-${i.id}`}
+                      href={`/m/historique/${i.id}`}
+                      className="block rounded-2xl bg-white ring-1 ring-black/[0.05] px-4 py-3 active:bg-black/[0.02] transition-colors"
+                      style={{
+                        WebkitTapHighlightColor: "transparent",
+                        touchAction: "manipulation",
+                        borderLeft: `5px solid ${accentColor}`,
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                            <span
+                              className="text-[9.5px] font-bold tracking-wider px-1.5 py-0.5 rounded uppercase"
+                              style={{ background: accentBg, color: accentColor }}
+                            >
+                              {isBsff ? "BSFF" : "INTERVENTION"}
+                            </span>
+                          </div>
+                          <div className="text-[14.5px] font-bold text-[#111] leading-tight">
+                            {TYPE_LABELS[i.typeIntervention] || i.typeIntervention}
+                          </div>
+                          <div className="text-[11.5px] text-black/55 truncate mt-0.5">
+                            {i.clientName ?? "Sans client"} · {fmtDate(i.createdAt)} · {fmtTime(i.createdAt)}
+                          </div>
+                        </div>
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="rgba(0,0,0,0.3)"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="shrink-0 mt-1.5"
+                        >
+                          <path d="m9 18 6-6-6-6" />
                         </svg>
-                      </span>
-                    }
-                    trailing={
-                      i.bsffId ? (
-                        <span className="text-[10px] font-mono tracking-widest text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
-                          BSFF
-                        </span>
-                      ) : undefined
-                    }
-                  />
-                );
-              }
-              // Diagnostic IA — icône caméra, badge gravité, tap → /m/diagnostic/[id]
-              const d = item.data;
-              const grav = maxGraviteDiagnostic(d);
-              const composant = d.result.composantIdentifie || "Composant non identifié";
-              const nbDefauts = d.result.defautsDetectes.length;
-              const sublabelText = `${nbDefauts === 0 ? "Aucun défaut" : `${nbDefauts} défaut${nbDefauts > 1 ? "s" : ""}`} · ${fmtDate(d.createdAt)} · ${fmtTime(d.createdAt)}`;
-              return (
-                <InsetRow
-                  key={`diag-${d.id}`}
-                  href={`/m/diagnostic/${d.id}`}
-                  showChevron
-                  label={`Diagnostic IA · ${composant}`}
-                  sublabel={sublabelText}
-                  leading={
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#A16207]/12 text-[#A16207]">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                        <circle cx="12" cy="13" r="4" />
-                      </svg>
-                    </span>
-                  }
-                  trailing={
-                    grav ? (
-                      <span
-                        className={`text-[9px] font-mono tracking-widest px-1.5 py-0.5 rounded ${GRAVITE_STYLES[grav].bg} ${GRAVITE_STYLES[grav].text}`}
+                      </div>
+                    </Link>
+                  );
+                }
+                // Diagnostic IA — accent bronze Vertxia
+                const d = item.data;
+                const grav = maxGraviteDiagnostic(d);
+                const composant = d.result.composantIdentifie || "Composant non identifié";
+                const nbDefauts = d.result.defautsDetectes.length;
+                return (
+                  <Link
+                    key={`diag-${d.id}`}
+                    href={`/m/diagnostic/${d.id}`}
+                    className="block rounded-2xl bg-white ring-1 ring-black/[0.05] px-4 py-3 active:bg-black/[0.02] transition-colors"
+                    style={{
+                      WebkitTapHighlightColor: "transparent",
+                      touchAction: "manipulation",
+                      borderLeft: "5px solid #A16207",
+                    }}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                          <span
+                            className="text-[9.5px] font-bold tracking-wider px-1.5 py-0.5 rounded uppercase"
+                            style={{ background: "#fef3c7", color: "#A16207" }}
+                          >
+                            🤖 DIAGNOSTIC IA
+                          </span>
+                          {grav && (
+                            <span
+                              className={`text-[9.5px] font-bold tracking-wider px-1.5 py-0.5 rounded uppercase ${GRAVITE_STYLES[grav].bg} ${GRAVITE_STYLES[grav].text}`}
+                            >
+                              {GRAVITE_BADGE_LABELS[grav]}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[14.5px] font-bold text-[#111] leading-tight truncate">
+                          {composant}
+                        </div>
+                        <div className="text-[11.5px] text-black/55 truncate mt-0.5">
+                          {nbDefauts === 0
+                            ? "Aucun défaut"
+                            : `${nbDefauts} défaut${nbDefauts > 1 ? "s" : ""}`}{" "}
+                          · {fmtDate(d.createdAt)} · {fmtTime(d.createdAt)}
+                        </div>
+                      </div>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="rgba(0,0,0,0.3)"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="shrink-0 mt-1.5"
                       >
-                        {GRAVITE_BADGE_LABELS[grav]}
-                      </span>
-                    ) : undefined
-                  }
-                />
-              );
-            })}
-          </InsetListSection>
+                        <path d="m9 18 6-6-6-6" />
+                      </svg>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
         ))
       )}
     </>

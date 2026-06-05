@@ -3,26 +3,32 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MobileHeader } from "@/components/mobile/mobile-header";
-import { InsetListSection, InsetRow } from "@/components/mobile/inset-list";
+import { Tile, type TileVariant } from "@/components/mobile/tile";
 import { listEquipements, type StoredEquipement } from "@/lib/equipement";
 import {
   countDocumentsForIntervention,
   type TypeIntervention,
 } from "@/lib/documents-officiels";
 
-// Page intervention mobile — hub d'entrée vers le formulaire intervention.
-// 2 chemins : (a) intervention sur équipement existant → /bsff?equipement=ID
-//             (b) intervention libre → /bsff (form vierge)
+// Page intervention mobile — refonte 05/06/2026 style tuiles colorees.
+// Hub d'entree vers le formulaire intervention. 2 chemins :
+//  (a) intervention sur equipement existant (carte cliquable)
+//  (b) choix du type d'intervention (8 tuiles colorees)
 
-const INTERVENTION_TYPES: { v: TypeIntervention; label: string; desc: string; emoji: string }[] = [
-  { v: "recuperation", emoji: "🧊", label: "Récupération de gaz", desc: "Je vide la machine de son fluide" },
-  { v: "demantelement", emoji: "🔧", label: "Démantèlement", desc: "Je démonte une installation" },
-  { v: "controle_periodique", emoji: "🔍", label: "Contrôle anti-fuite", desc: "Le contrôle annuel obligatoire" },
-  { v: "controle_non_periodique", emoji: "🔎", label: "Contrôle après réparation", desc: "Vérification suite à une fuite" },
-  { v: "mise_service", emoji: "⚡", label: "Mise en route", desc: "Je démarre une installation neuve" },
-  { v: "maintenance", emoji: "🛠️", label: "Entretien", desc: "Maintenance préventive" },
-  { v: "assemblage", emoji: "🔩", label: "Assemblage", desc: "Je monte une installation" },
-  { v: "modification", emoji: "✏️", label: "Modification", desc: "Je modifie une installation existante" },
+const INTERVENTION_TYPES: {
+  v: TypeIntervention;
+  label: string;
+  emoji: string;
+  variant: TileVariant;
+}[] = [
+  { v: "recuperation", emoji: "🧊", label: "Récupération", variant: "sky" },
+  { v: "demantelement", emoji: "🔧", label: "Démantèlement", variant: "slate" },
+  { v: "controle_periodique", emoji: "🔍", label: "Contrôle annuel", variant: "emerald" },
+  { v: "controle_non_periodique", emoji: "🔎", label: "Contrôle réparation", variant: "teal" },
+  { v: "mise_service", emoji: "⚡", label: "Mise en route", variant: "amber" },
+  { v: "maintenance", emoji: "🛠️", label: "Entretien", variant: "indigo" },
+  { v: "assemblage", emoji: "🔩", label: "Assemblage", variant: "bronze" },
+  { v: "modification", emoji: "✏️", label: "Modification", variant: "rose" },
 ];
 
 export default function MobileInterventionPage() {
@@ -34,78 +40,101 @@ export default function MobileInterventionPage() {
 
   return (
     <>
-      <MobileHeader title="Nouvelle intervention" largeTitle />
+      <MobileHeader title="🛠️ Nouvelle intervention" largeTitle />
 
-      <div className="px-5 mt-1 mb-2">
-        <p className="text-[13px] text-black/55 leading-relaxed">
-          Choisis l&apos;équipement sur lequel tu interviens, ou démarre un chantier neuf.
+      <div className="px-5 mt-1 mb-3">
+        <p className="text-[13px] text-black/60 leading-relaxed">
+          Scanne, choisis un équipement ou démarre direct par le type de chantier.
         </p>
       </div>
 
-      {/* Scan QR shortcut */}
-      <InsetListSection title="🚀 Le plus rapide">
-        <InsetRow
+      {/* Le plus rapide — tuile XL violet (cohérent avec home tuile SCANNER QR) */}
+      <section className="px-4 mb-4">
+        <Tile
           href="/m/scan"
-          leading={
-            <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-[#A16207]/10 text-[22px] leading-none">
-              📷
-            </span>
-          }
-          label="Scanner le QR Code"
+          size="xl"
+          variant="violet"
+          emoji="📷"
+          label="Scanner le QR"
           sublabel="Ouvre la caméra → la fiche apparaît"
-          showChevron
         />
-      </InsetListSection>
+      </section>
 
-      {/* Équipements récents */}
+      {/* Equipements recents — cartes compactes blanches avec accent bleu */}
       {equipements.length > 0 && (
-        <InsetListSection title="🏭 Tes équipements récents">
-          {equipements.map((eq) => (
-            <InsetRow
-              key={eq.id}
-              href={`/m/intervention/nouvelle?equipement=${eq.id}`}
-              label={eq.modele}
-              sublabel={`${eq.clientName} · ${eq.fluide.code}`}
-              leading={
-                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-700">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
+        <section className="px-4 mb-5">
+          <div className="text-[10px] font-mono tracking-[0.25em] uppercase text-black/45 mb-2 px-1">
+            🏭 Équipements récents
+          </div>
+          <div className="space-y-2">
+            {equipements.map((eq) => (
+              <Link
+                key={eq.id}
+                href={`/m/intervention/nouvelle?equipement=${eq.id}`}
+                className="block rounded-2xl bg-white ring-1 ring-black/[0.05] px-4 py-3 active:bg-black/[0.02] transition-colors"
+                style={{
+                  WebkitTapHighlightColor: "transparent",
+                  touchAction: "manipulation",
+                  borderLeft: "4px solid #3b82f6",
+                }}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[14px] font-bold text-[#111] truncate">
+                      {eq.modele}
+                    </div>
+                    <div className="text-[11.5px] text-black/55 truncate mt-0.5">
+                      {eq.clientName} · {eq.fluide.code}
+                    </div>
+                  </div>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="rgba(0,0,0,0.3)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="shrink-0"
+                  >
+                    <path d="m9 18 6-6-6-6" />
                   </svg>
-                </span>
-              }
-              showChevron
-            />
-          ))}
-        </InsetListSection>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
       )}
 
-      {/* Types d'intervention */}
-      <InsetListSection
-        title="✨ Choisis le type de chantier"
-        footer="L'équipement n'est pas encore enregistré ? Pas grave — tu pourras le saisir dans le formulaire."
-      >
-        {INTERVENTION_TYPES.map((t) => {
-          const nbDocs = countDocumentsForIntervention(t.v);
-          const sublabel =
-            nbDocs > 0
-              ? `${t.desc} · 📄 ${nbDocs} doc${nbDocs > 1 ? "s" : ""} officiel${nbDocs > 1 ? "s" : ""}`
-              : t.desc;
-          return (
-            <InsetRow
-              key={t.v}
-              href={`/m/intervention/nouvelle?type=${t.v}`}
-              label={t.label}
-              sublabel={sublabel}
-              leading={
-                <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-black/[0.04] text-[22px] leading-none">
-                  {t.emoji}
-                </span>
-              }
-              showChevron
-            />
-          );
-        })}
-      </InsetListSection>
+      {/* Types intervention — grille 2x4 de tuiles colorees */}
+      <section className="px-4 mb-4">
+        <div className="text-[10px] font-mono tracking-[0.25em] uppercase text-black/45 mb-2 px-1">
+          ✨ Choisir le type de chantier
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {INTERVENTION_TYPES.map((t) => {
+            const nbDocs = countDocumentsForIntervention(t.v);
+            return (
+              <Tile
+                key={t.v}
+                href={`/m/intervention/nouvelle?type=${t.v}`}
+                variant={t.variant}
+                emoji={t.emoji}
+                label={t.label}
+                sublabel={
+                  nbDocs > 0
+                    ? `${nbDocs} doc${nbDocs > 1 ? "s" : ""} officiel${nbDocs > 1 ? "s" : ""}`
+                    : undefined
+                }
+              />
+            );
+          })}
+        </div>
+        <p className="mt-3 px-1 text-[11px] text-black/45 leading-snug">
+          Pas d&apos;équipement enregistré ? Tu pourras le saisir dans le formulaire.
+        </p>
+      </section>
     </>
   );
 }

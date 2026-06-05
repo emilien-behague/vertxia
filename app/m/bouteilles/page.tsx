@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { MobileHeader } from "@/components/mobile/mobile-header";
-import { InsetListSection } from "@/components/mobile/inset-list";
+import { Tile } from "@/components/mobile/tile";
 import {
   listBouteilles,
   indexMouvementsParBouteille,
@@ -58,123 +58,169 @@ export default function MobileBouteillesPage() {
     <>
       <MobileHeader title="🛢️ Mes bouteilles" largeTitle backHref="/m" />
 
-      {items.length === 0 && (
-        <div className="px-5 mt-8 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-black/[0.04] mb-4">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-black/35">
-              <path d="M8 2v6a4 4 0 0 0 8 0V2" />
-              <path d="M6 8h12v12a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4z" />
-            </svg>
+      {items.length === 0 ? (
+        <div className="px-5 mt-6">
+          <div className="text-center mb-5">
+            <div className="text-5xl mb-3">🛢️</div>
+            <h2 className="text-[18px] font-bold mb-2">Aucune bouteille enregistrée</h2>
+            <p className="text-[12.5px] text-black/55 leading-relaxed max-w-xs mx-auto">
+              Recharge et récupération — pour suivre tes mouvements de fluide et générer ton registre conforme.
+            </p>
           </div>
-          <h2 className="text-[18px] font-semibold mb-2">Aucune bouteille enregistrée</h2>
-          <p className="text-[13px] text-black/55 leading-relaxed max-w-xs mx-auto mb-6">
-            Enregistre tes bouteilles de recharge (R-32, R-410A…) et tes bouteilles de récupération pour suivre tes mouvements de fluide et générer ton registre conforme.
-          </p>
-          <Link
+          <Tile
             href="/m/bouteilles/nouvelle"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-[#111] text-white text-[14px] font-medium active:bg-black/90 transition-colors"
-            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-          >
-            + Ajouter ma première bouteille
-          </Link>
+            size="xl"
+            variant="emerald"
+            emoji="➕"
+            label="Ajouter ma première bouteille"
+            sublabel="Recharge ou récupération"
+          />
         </div>
-      )}
+      ) : (
+        <>
+          {recharge.length > 0 && (
+            <Section
+              title={`📥 RECHARGE · ${recharge.length}`}
+              footer="Fluide neuf, recyclé ou régénéré pour charger les équipements clients."
+            >
+              {recharge.map((item) => (
+                <BouteilleCard key={item.bouteille.id} item={item} />
+              ))}
+            </Section>
+          )}
 
-      {recharge.length > 0 && (
-        <InsetListSection
-          title="Recharge"
-          footer={`${recharge.length} bouteille${recharge.length > 1 ? "s" : ""} de fluide neuf, recyclé ou régénéré pour charger les équipements clients.`}
-        >
-          {recharge.map((item) => (
-            <BouteilleRow key={item.bouteille.id} item={item} />
-          ))}
-        </InsetListSection>
-      )}
+          {recuperation.length > 0 && (
+            <Section
+              title={`📤 RÉCUPÉRATION · ${recuperation.length}`}
+              footer="Bouteilles pour récupérer le fluide depuis les équipements clients. Seuil sécurité 80 % de la capacité."
+            >
+              {recuperation.map((item) => (
+                <BouteilleCard key={item.bouteille.id} item={item} />
+              ))}
+            </Section>
+          )}
 
-      {recuperation.length > 0 && (
-        <InsetListSection
-          title="Récupération"
-          footer={`${recuperation.length} bouteille${recuperation.length > 1 ? "s" : ""} pour récupérer le fluide depuis les équipements clients avant intervention. Seuil sécurité 80 % de la capacité.`}
-        >
-          {recuperation.map((item) => (
-            <BouteilleRow key={item.bouteille.id} item={item} />
-          ))}
-        </InsetListSection>
-      )}
+          {archived.length > 0 && (
+            <Section title="📦 EN TRANSIT / ARCHIVÉES">
+              {archived.map((item) => (
+                <BouteilleCard key={item.bouteille.id} item={item} />
+              ))}
+            </Section>
+          )}
 
-      {archived.length > 0 && (
-        <InsetListSection title="En transit / archivées">
-          {archived.map((item) => (
-            <BouteilleRow key={item.bouteille.id} item={item} />
-          ))}
-        </InsetListSection>
+          <div className="px-4 mt-5 mb-4 space-y-3">
+            <Tile
+              href="/m/bouteilles/nouvelle"
+              size="xl"
+              variant="emerald"
+              emoji="➕"
+              label="Ajouter une bouteille"
+              sublabel="Recharge ou récupération"
+            />
+            <Tile
+              href="/m/registre"
+              size="xl"
+              variant="bronze"
+              emoji="📋"
+              label="Générer le registre PDF"
+              sublabel="Mouvements chronologiques pour audit F-Gas"
+            />
+          </div>
+        </>
       )}
-
-      <div className="px-4 mt-6 mb-8">
-        <Link
-          href="/m/registre"
-          className="block w-full px-6 py-4 rounded-2xl bg-white border border-[#111] text-[#111] text-[15px] font-medium text-center active:bg-black/[0.03] transition-colors"
-          style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-        >
-          📋 Générer le registre des mouvements (PDF)
-        </Link>
-        <div className="mt-2 text-[11px] text-black/45 text-center leading-relaxed">
-          PDF chronologique conforme attestation de capacité F-Gas pour audit.
-        </div>
-      </div>
     </>
   );
 }
 
-function BouteilleRow({ item }: { item: BouteilleWithStock }) {
+function Section({
+  title,
+  footer,
+  children,
+}: {
+  title: string;
+  footer?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="px-4 mt-5">
+      <div className="text-[10px] font-mono tracking-[0.25em] uppercase text-black/45 mb-2 px-1">
+        {title}
+      </div>
+      <div className="space-y-2.5">{children}</div>
+      {footer && (
+        <p className="mt-2 px-1 text-[11px] text-black/45 leading-snug">
+          {footer}
+        </p>
+      )}
+    </section>
+  );
+}
+
+function BouteilleCard({ item }: { item: BouteilleWithStock }) {
   const { bouteille, chargeActuelle, pct, niveau } = item;
   const colors = colorAlerte(niveau);
   const pctDisplay = Math.min(100, Math.max(0, pct));
 
+  // Couleur bordure gauche = niveau alerte (rouge/orange/vert/vide).
+  const accentColor = ((): string => {
+    if (niveau === "rouge") return "#dc2626";
+    if (niveau === "orange") return "#ea580c";
+    if (niveau === "vide") return "#94a3b8";
+    return "#059669"; // vert
+  })();
+
   return (
     <Link
       href={`/m/bouteilles/${bouteille.id}`}
-      className="block px-4 py-3 active:bg-black/[0.03] transition-colors"
-      style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+      className="block rounded-2xl bg-white ring-1 ring-black/[0.05] px-4 py-3.5 active:bg-black/[0.02] transition-colors"
+      style={{
+        WebkitTapHighlightColor: "transparent",
+        touchAction: "manipulation",
+        borderLeft: `5px solid ${accentColor}`,
+      }}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3 mb-2.5">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[15px] font-medium text-[#111] truncate">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[16px] font-bold text-[#111]">
               {bouteille.fluide?.code ?? "Mélangé"}
             </span>
-            <span className="text-[11px] font-mono text-black/40">
-              #{bouteille.numeroSerie}
-            </span>
-          </div>
-          <div className="text-[12px] text-black/55 mb-2">
-            {chargeActuelle.toFixed(2)} kg / {bouteille.capaciteMaxKg.toFixed(2)} kg
             {bouteille.compatibleInflammable && (
-              <span className="ml-2 text-[10px] font-mono uppercase tracking-wider text-orange-700">
-                Inflammable
+              <span className="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 uppercase">
+                🔥 Inflammable
               </span>
             )}
           </div>
-          {/* Gauge */}
-          <div className="relative w-full h-1.5 rounded-full bg-black/[0.06] overflow-hidden">
-            <div
-              className={`absolute inset-y-0 left-0 ${colors.barFill} transition-all`}
-              style={{ width: `${pctDisplay}%` }}
-            />
-            {bouteille.type === "recuperation" && (
-              <div
-                className="absolute inset-y-0 w-0.5 bg-red-600"
-                style={{ left: "80%" }}
-                aria-label="Seuil sécurité 80 %"
-              />
-            )}
+          <div className="text-[11px] font-mono text-black/45 mt-0.5">
+            #{bouteille.numeroSerie}
           </div>
         </div>
         <span
-          className={`shrink-0 px-2 py-1 rounded-md text-[10px] font-mono uppercase tracking-widest ${colors.bg} ring-1 ${colors.ring} ${colors.text}`}
+          className="shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wider"
+          style={{ background: accentColor, color: "#ffffff" }}
         >
           {pct.toFixed(0)}% · {labelAlerte(niveau)}
         </span>
+      </div>
+
+      <div className="text-[12.5px] text-black/65 mb-2">
+        <strong className="text-[#111]">{chargeActuelle.toFixed(2)} kg</strong>{" "}
+        / {bouteille.capaciteMaxKg.toFixed(2)} kg
+      </div>
+
+      {/* Gauge bar */}
+      <div className="relative w-full h-2 rounded-full bg-black/[0.06] overflow-hidden">
+        <div
+          className={`absolute inset-y-0 left-0 ${colors.barFill} transition-all`}
+          style={{ width: `${pctDisplay}%` }}
+        />
+        {bouteille.type === "recuperation" && (
+          <div
+            className="absolute inset-y-0 w-0.5 bg-red-600"
+            style={{ left: "80%" }}
+            aria-label="Seuil sécurité 80 %"
+          />
+        )}
       </div>
     </Link>
   );

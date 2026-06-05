@@ -13,7 +13,6 @@
 
 import { useMemo, useState } from "react";
 import { MobileHeader } from "@/components/mobile/mobile-header";
-import { InsetListSection } from "@/components/mobile/inset-list";
 import {
   DOCUMENTS_OFFICIELS,
   CATEGORIE_LABELS,
@@ -72,11 +71,16 @@ export default function DocumentsOfficielsPage() {
         const docs = byCategorie[cat];
         if (!docs || docs.length === 0) return null;
         return (
-          <InsetListSection key={cat} title={CATEGORIE_LABELS[cat]}>
-            {docs.map((doc) => (
-              <DocumentRow key={doc.id} doc={doc} />
-            ))}
-          </InsetListSection>
+          <section key={cat} className="px-4 mt-5">
+            <div className="text-[10px] font-mono tracking-[0.25em] uppercase text-black/45 mb-2 px-1">
+              📂 {CATEGORIE_LABELS[cat]}
+            </div>
+            <div className="space-y-2">
+              {docs.map((doc) => (
+                <DocumentCard key={doc.id} doc={doc} />
+              ))}
+            </div>
+          </section>
         );
       })}
 
@@ -92,57 +96,45 @@ export default function DocumentsOfficielsPage() {
   );
 }
 
-function DocumentRow({ doc }: { doc: DocumentOfficiel }) {
+function DocumentCard({ doc }: { doc: DocumentOfficiel }) {
   return (
     <a
       href={doc.fichierLocal}
       target="_blank"
       rel="noopener noreferrer"
-      className="block active:bg-black/[0.04] transition-colors"
-      style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+      className="block rounded-2xl bg-white ring-1 ring-black/[0.05] px-4 py-3 active:bg-black/[0.02] transition-colors"
+      style={{
+        WebkitTapHighlightColor: "transparent",
+        touchAction: "manipulation",
+        borderLeft: "5px solid #A16207",
+      }}
     >
-      <div className="flex items-start gap-3 px-4 py-3.5 min-h-[44px]">
-        {/* Icone PDF */}
-        <div className="shrink-0 mt-0.5 w-10 h-10 rounded-xl bg-[#A16207]/10 flex items-center justify-center">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#A16207"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-          </svg>
+      <div className="flex items-start gap-3">
+        <div className="shrink-0 mt-0.5 w-10 h-10 rounded-xl bg-[#A16207]/10 flex items-center justify-center text-[20px]">
+          📄
         </div>
-
         <div className="flex-1 min-w-0">
-          <div className="text-[14.5px] text-[#111] font-medium leading-tight">
+          <div className="text-[14.5px] text-[#111] font-bold leading-tight">
             {doc.titre}
           </div>
-          <div className="text-[12.5px] text-black/60 leading-snug mt-1">
+          <div className="text-[12px] text-black/60 leading-snug mt-1">
             {doc.description}
           </div>
-          <div className="mt-2 flex items-center gap-1.5 text-[10.5px] font-mono tracking-wider text-black/40 uppercase">
+          <div className="mt-2 flex items-center gap-1.5 text-[10px] font-mono tracking-wider text-black/40 uppercase">
             <span>{doc.source}</span>
             <span>·</span>
             <span>{formatTailleFichier(doc.tailleKb)}</span>
             <span>·</span>
-            <span>Vérifié {doc.dateVerification}</span>
+            <span>{doc.dateVerification}</span>
           </div>
         </div>
-
-        {/* Icone telechargement */}
         <svg
           width="18"
           height="18"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="rgba(0,0,0,0.4)"
-          strokeWidth="2"
+          stroke="#A16207"
+          strokeWidth="2.2"
           strokeLinecap="round"
           strokeLinejoin="round"
           className="shrink-0 mt-1.5"

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { InsetListSection } from "@/components/mobile/inset-list";
+import { Tile } from "@/components/mobile/tile";
 import { listBouteilles, listMouvements } from "@/lib/bouteille-storage";
 import { loadProfil } from "@/lib/profil";
 import {
@@ -221,27 +222,24 @@ export default function RegistrePage() {
         )}
       </InsetListSection>
 
-      {/* Action */}
+      {/* Action — tuile bronze XL CTA principal */}
       <div className="px-4 mt-6 mb-3">
-        <button
-          type="button"
-          onClick={handleDownload}
-          disabled={downloading || stats.count === 0}
-          className="w-full px-6 py-4 rounded-2xl bg-[#111] text-white text-[15px] font-medium active:bg-black/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-        >
-          {downloading ? (
-            <>
-              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              <span>Génération…</span>
-            </>
-          ) : (
-            <>⬇ Télécharger le registre PDF</>
-          )}
-        </button>
-        {stats.count === 0 && (
-          <div className="mt-2 text-[12px] text-black/45 text-center">
-            Aucun mouvement sur la période. Sélectionne une période plus large ou enregistre une intervention liée à une bouteille.
+        {stats.count > 0 ? (
+          <Tile
+            onClick={handleDownload}
+            size="xl"
+            variant="bronze"
+            emoji={downloading ? "⏳" : "📥"}
+            label={downloading ? "Génération en cours…" : "Télécharger le registre PDF"}
+            sublabel={downloading ? "Préparation du document" : `${stats.count} mouvement${stats.count > 1 ? "s" : ""} · prêt pour audit`}
+          />
+        ) : (
+          <div className="rounded-2xl bg-black/[0.04] ring-1 ring-black/[0.06] px-4 py-5 text-center">
+            <div className="text-3xl mb-2">📭</div>
+            <div className="text-[13px] text-black/55 leading-relaxed">
+              Aucun mouvement sur la période.<br />
+              Sélectionne une période plus large ou enregistre une intervention liée à une bouteille.
+            </div>
           </div>
         )}
       </div>

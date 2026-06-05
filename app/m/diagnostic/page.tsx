@@ -341,18 +341,40 @@ export default function DiagnosticPage() {
             className="hidden"
             id="diagnostic-input"
           />
+          {/* CTA principal — tuile rose XL coherent avec home tuile DIAGNOSTIC IA */}
           <label
             htmlFor="diagnostic-input"
-            className="block w-full px-6 py-4 rounded-2xl bg-[#A16207] text-white text-[15px] font-medium text-center active:opacity-90 transition-opacity cursor-pointer"
-            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            className="relative block rounded-3xl shadow-lg shadow-black/15 active:scale-[0.98] transition-transform overflow-hidden cursor-pointer px-5 py-6"
+            style={{
+              background: "linear-gradient(135deg, #f43f5e 0%, #db2777 100%)",
+              WebkitTapHighlightColor: "transparent",
+              touchAction: "manipulation",
+            }}
           >
-            <span className="inline-flex items-center gap-2">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                <circle cx="12" cy="13" r="4" />
+            <div className="flex items-center gap-4">
+              <div className="text-5xl leading-none drop-shadow shrink-0">📷</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[18px] font-bold uppercase tracking-wide text-white leading-tight">
+                  Prendre une photo
+                </div>
+                <div className="text-[12.5px] text-white/85 mt-1 leading-snug">
+                  L&apos;IA détecte les défauts en 3-5 sec
+                </div>
+              </div>
+              <svg
+                className="shrink-0 text-white/70"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m9 18 6-6-6-6" />
               </svg>
-              Prendre une photo du composant
-            </span>
+            </div>
           </label>
 
           <div className="text-[11px] text-black/45 text-center px-3 leading-snug">
