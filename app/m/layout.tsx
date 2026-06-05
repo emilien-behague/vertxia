@@ -11,7 +11,10 @@ import { ComplianceScoreBadge } from "@/components/mobile/compliance-score-badge
 // + le badge réseau (NetworkIndicator) en haut + l'enregistrement Service Worker
 // pour le caching offline-first (public/sw.js).
 //
-// padding-bottom : ~80px pour laisser la place à la tab bar (qui est fixed).
+// padding-bottom : ~120px pour laisser la place à la tab bar (fixed, ~70px),
+// au home indicator iPhone (~34px via safe-area-inset-bottom), et ~16px de
+// marge visuelle pour eviter que le dernier element de la page touche la nav
+// bar (bug observe sur les tuiles HISTORIQUE/DOCUMENTS de la home 06/06/2026).
 //
 // IMPORTANT : pas de min-h-screen / min-h-dvh sur le wrapper — créait une zone
 // vide énorme sous le contenu quand la page est courte (le wrapper s'étirait
@@ -26,7 +29,7 @@ export default function MobileAppLayout({ children }: { children: ReactNode }) {
       <ScrollToTopOnNav />
       <ServiceWorkerRegister />
       <NetworkIndicator />
-      <main className="max-w-md mx-auto" style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom))" }}>
+      <main className="max-w-md mx-auto" style={{ paddingBottom: "calc(120px + env(safe-area-inset-bottom))" }}>
         {children}
       </main>
       <BottomTabBar />

@@ -198,8 +198,14 @@ export function ChatAssistant({ equipementContext }: Props) {
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Ouvrir l'assistant F-Gas"
-          className="fixed bottom-24 right-4 z-40 w-14 h-14 rounded-full bg-[#A16207] text-white shadow-lg shadow-[#A16207]/30 flex items-center justify-center active:scale-95 transition-transform"
-          style={{ WebkitTapHighlightColor: "transparent" }}
+          className="fixed right-4 z-40 w-14 h-14 rounded-full bg-[#A16207] text-white shadow-lg shadow-[#A16207]/30 flex items-center justify-center active:scale-95 transition-transform"
+          style={{
+            WebkitTapHighlightColor: "transparent",
+            // Au-dessus de la BottomTabBar (~70px) + safe-area-inset-bottom
+            // (~34px iPhone X+) + 14px de marge visuelle. Sinon la bulle
+            // chevauche le bouton "Profil" de la nav bar (bug 06/06/2026).
+            bottom: "calc(118px + env(safe-area-inset-bottom))",
+          }}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
