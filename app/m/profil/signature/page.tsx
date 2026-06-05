@@ -338,23 +338,39 @@ export default function MobileSignaturePage() {
         </div>
       )}
 
-      {/* Actions */}
-      <div className="px-4 mt-5 space-y-2">
+      {/* CTA tuile XL emerald + boutons secondaires discrets */}
+      <div className="px-4 mt-5 space-y-3">
         <button
           type="button"
           onClick={handleSave}
           disabled={(!hasContent && !existingSignature) || saving}
-          className="w-full px-6 py-4 rounded-2xl bg-[#111] text-white text-[15px] font-medium active:bg-black/90 transition-colors disabled:opacity-40"
-          style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+          className="relative block w-full text-left rounded-3xl shadow-lg shadow-black/10 active:scale-[0.98] transition-transform overflow-hidden px-5 py-5 disabled:opacity-40"
+          style={{
+            background: "linear-gradient(135deg, #10b981 0%, #0f766e 100%)",
+            WebkitTapHighlightColor: "transparent",
+            touchAction: "manipulation",
+          }}
         >
-          {saving ? "Enregistrement…" : "✓ Valider et enregistrer"}
+          <div className="flex items-center gap-4">
+            <div className="text-4xl leading-none drop-shadow shrink-0">
+              {saving ? "⏳" : "✅"}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[17px] font-bold uppercase tracking-wide text-white leading-tight">
+                {saving ? "Enregistrement…" : "Valider et enregistrer"}
+              </div>
+              <div className="text-[12px] text-white/85 mt-0.5">
+                {saving ? "Sauvegarde en cours" : "Sauvegarder la signature"}
+              </div>
+            </div>
+          </div>
         </button>
 
         <button
           type="button"
           onClick={handleClear}
           disabled={!hasContent || saving}
-          className="w-full px-6 py-3 rounded-2xl bg-white border border-black/10 text-black/70 text-[14px] font-medium active:bg-black/[0.03] transition-colors disabled:opacity-40"
+          className="w-full px-6 py-3 rounded-2xl bg-black/[0.04] text-black/65 text-[14px] font-medium active:bg-black/[0.08] transition-colors disabled:opacity-40"
           style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
         >
           Effacer et recommencer

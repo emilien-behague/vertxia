@@ -785,20 +785,37 @@ function MobileAjoutEquipementContent() {
           </div>
         )}
 
-        <div className="px-4 mt-8 space-y-2">
+        {/* CTA submit tuile XL emerald + bouton Annuler discret */}
+        <div className="px-4 mt-8 space-y-3">
           <button
             type="submit"
             disabled={busy}
-            className="w-full px-6 py-4 rounded-2xl bg-[#111] text-white text-[15px] font-medium active:bg-black/90 transition-colors disabled:opacity-60"
-            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            className="relative block w-full text-left rounded-3xl shadow-lg shadow-black/10 active:scale-[0.98] transition-transform overflow-hidden px-5 py-5 disabled:opacity-60"
+            style={{
+              background: "linear-gradient(135deg, #10b981 0%, #0f766e 100%)",
+              WebkitTapHighlightColor: "transparent",
+              touchAction: "manipulation",
+            }}
           >
-            {busy ? "Enregistrement…" : "Ajouter l'équipement"}
+            <div className="flex items-center gap-4">
+              <div className="text-4xl leading-none drop-shadow shrink-0">
+                {busy ? "⏳" : "✅"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[17px] font-bold uppercase tracking-wide text-white leading-tight">
+                  {busy ? "Enregistrement…" : "Ajouter l'équipement"}
+                </div>
+                <div className="text-[12px] text-white/85 mt-0.5">
+                  {busy ? "Saisie en cours" : "Sauvegarder cette installation"}
+                </div>
+              </div>
+            </div>
           </button>
           <button
             type="button"
             onClick={() => router.back()}
             disabled={busy}
-            className="w-full px-6 py-3 rounded-2xl bg-white border border-black/10 text-black/70 text-[14px] font-medium active:bg-black/[0.03] transition-colors"
+            className="w-full px-6 py-3 rounded-2xl bg-black/[0.04] text-black/65 text-[14px] font-medium active:bg-black/[0.08] transition-colors"
             style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
           >
             Annuler

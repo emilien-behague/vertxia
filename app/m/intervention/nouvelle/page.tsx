@@ -1938,27 +1938,39 @@ function NouvelleInterventionContent() {
         </div>
       </InsetListSection>
 
-      {/* Submit — passe par le garde-fou qualite (checkInterventionIntegrity)
-          AVANT la generation. Bloque les erreurs reglementaires graves et
-          alerte sur les incoherences metier. Si rien a signaler, lance le
-          submit direct. Sinon ouvre la modal qui demande correction ou
-          confirmation explicite. */}
+      {/* CTA tuile XL emerald — generation BSFF/CERFA passe par le garde-fou
+          qualite (checkInterventionIntegrity) AVANT la generation. */}
       <div className="px-4 mt-8 mb-4">
         <button
           type="button"
           onClick={handleValidateThenSubmit}
           disabled={isLoading}
-          className="w-full px-6 py-4 rounded-2xl bg-[#111] text-white text-[15px] font-medium active:bg-black/90 transition-colors disabled:opacity-60 inline-flex items-center justify-center gap-3"
-          style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+          className="relative block w-full text-left rounded-3xl shadow-lg shadow-black/10 active:scale-[0.98] transition-transform overflow-hidden px-5 py-5 disabled:opacity-60"
+          style={{
+            background: "linear-gradient(135deg, #10b981 0%, #0f766e 100%)",
+            WebkitTapHighlightColor: "transparent",
+            touchAction: "manipulation",
+          }}
         >
-          {isLoading ? (
-            <>
-              <span className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-              <span>{status.type === "loading" ? status.step : "…"}</span>
-            </>
-          ) : (
-            <>{config.needsBsff ? "Générer BSFF + CERFA" : "Générer CERFA 15497*04"}</>
-          )}
+          <div className="flex items-center gap-4">
+            <div className="text-4xl leading-none drop-shadow shrink-0">
+              {isLoading ? "⏳" : config.needsBsff ? "📦" : "📋"}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[17px] font-bold uppercase tracking-wide text-white leading-tight">
+                {isLoading
+                  ? (status.type === "loading" ? status.step : "Génération…")
+                  : config.needsBsff
+                    ? "Générer BSFF + CERFA"
+                    : "Générer CERFA 15497*04"}
+              </div>
+              <div className="text-[12px] text-white/85 mt-0.5">
+                {isLoading
+                  ? "Vertxia prépare les documents officiels"
+                  : "Valider l'intervention et créer les papiers"}
+              </div>
+            </div>
+          </div>
         </button>
       </div>
 

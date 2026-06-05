@@ -299,15 +299,32 @@ export default function NouvelleBouteillePage() {
         </div>
       )}
 
+      {/* CTA tuile XL emerald — enregistrer la bouteille */}
       <div className="px-4 mt-6 mb-8">
         <button
           type="button"
           onClick={handleSubmit}
           disabled={saving}
-          className="w-full px-6 py-4 rounded-2xl bg-[#111] text-white text-[15px] font-medium active:bg-black/90 transition-colors disabled:opacity-60"
-          style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+          className="relative block w-full text-left rounded-3xl shadow-lg shadow-black/10 active:scale-[0.98] transition-transform overflow-hidden px-5 py-5 disabled:opacity-60"
+          style={{
+            background: "linear-gradient(135deg, #10b981 0%, #0f766e 100%)",
+            WebkitTapHighlightColor: "transparent",
+            touchAction: "manipulation",
+          }}
         >
-          {saving ? "Enregistrement…" : "Enregistrer la bouteille"}
+          <div className="flex items-center gap-4">
+            <div className="text-4xl leading-none drop-shadow shrink-0">
+              {saving ? "⏳" : "🛢️"}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[17px] font-bold uppercase tracking-wide text-white leading-tight">
+                {saving ? "Enregistrement…" : "Enregistrer la bouteille"}
+              </div>
+              <div className="text-[12px] text-white/85 mt-0.5">
+                {saving ? "Sauvegarde en cours" : "Ajouter au stock"}
+              </div>
+            </div>
+          </div>
         </button>
       </div>
 

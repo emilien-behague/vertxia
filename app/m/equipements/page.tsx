@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { ScanPlaqueButton, type PlaqueData } from "@/components/mobile/scan-plaque-button";
+import { ActionTile } from "@/components/mobile/tile";
 import { listInterventions } from "@/lib/intervention-storage";
 import { listDiagnostics } from "@/lib/diagnostic-storage";
 import {
@@ -432,66 +433,8 @@ function SpecPill({ text }: { text: string }) {
   );
 }
 
-// Tuile d'action — meme langage visuel que les tuiles home, mais en regular
-// uniquement (pas xl). Reprend les VARIANTS gradients CSS de la home.
-const ACTION_TILE_VARIANTS: Record<"emerald" | "violet" | "amber" | "sky", string> = {
-  emerald: "linear-gradient(135deg, #10b981 0%, #0f766e 100%)",
-  violet: "linear-gradient(135deg, #7c3aed 0%, #6b21a8 100%)",
-  amber: "linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)",
-  sky: "linear-gradient(135deg, #0ea5e9 0%, #1d4ed8 100%)",
-};
-
-function ActionTile({
-  href,
-  onClick,
-  variant,
-  emoji,
-  label,
-  sublabel,
-}: {
-  href?: string;
-  onClick?: () => void;
-  variant: keyof typeof ACTION_TILE_VARIANTS;
-  emoji: string;
-  label: string;
-  sublabel?: string;
-}) {
-  const inner = (
-    <div className="flex items-center gap-3">
-      <div className="text-[28px] leading-none drop-shadow">{emoji}</div>
-      <div className="flex-1 min-w-0">
-        <div className="text-[13.5px] font-bold uppercase tracking-wide text-white leading-tight">
-          {label}
-        </div>
-        {sublabel && (
-          <div className="text-[10.5px] text-white/80 mt-0.5 leading-snug">
-            {sublabel}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-  const style = {
-    background: ACTION_TILE_VARIANTS[variant],
-    WebkitTapHighlightColor: "transparent" as const,
-    touchAction: "manipulation" as const,
-  };
-  const className =
-    "block rounded-2xl shadow-md shadow-black/10 px-4 py-3.5 active:scale-[0.98] transition-transform";
-
-  if (href) {
-    return (
-      <Link href={href} className={className} style={style}>
-        {inner}
-      </Link>
-    );
-  }
-  return (
-    <button type="button" onClick={onClick} className={`${className} w-full text-left`} style={style}>
-      {inner}
-    </button>
-  );
-}
+// ActionTile : composant partage components/mobile/tile.tsx (cf. import en
+// haut). Pas de definition locale -> evite hydration mismatch + duplication.
 
 function MiniStat({
   label,
