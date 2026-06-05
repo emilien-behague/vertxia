@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/mobile-header";
-import { InsetListSection, InsetRow } from "@/components/mobile/inset-list";
 import { ScanPlaqueButton, type PlaqueData } from "@/components/mobile/scan-plaque-button";
 import { listInterventions } from "@/lib/intervention-storage";
 import { listDiagnostics } from "@/lib/diagnostic-storage";
@@ -13,7 +12,6 @@ import {
   computeAllStatus,
   getEquipementStats,
   type EquipementWithStatus,
-  type ControleStatut,
 } from "@/lib/equipement";
 import { detectPredictiveSignals, type SignalGravite } from "@/lib/predictive-maintenance";
 import { downloadStickerSheet } from "@/lib/qrcode-client";
@@ -43,24 +41,6 @@ function fmtJours(j: number | null): string {
   if (j < 365) return `dans ${Math.round(j / 30)} mois`;
   return `dans ${Math.round(j / 365)} an`;
 }
-
-const STATUS_DOT: Record<ControleStatut, string> = {
-  en_retard: "bg-red-500",
-  a_relancer: "bg-orange-500",
-  a_programmer: "bg-amber-500",
-  jamais: "bg-blue-500",
-  ok: "bg-emerald-500",
-  exempt: "bg-black/25",
-};
-
-const STATUS_TEXT: Record<ControleStatut, string> = {
-  en_retard: "text-red-600",
-  a_relancer: "text-orange-600",
-  a_programmer: "text-amber-600",
-  jamais: "text-blue-600",
-  ok: "text-emerald-600",
-  exempt: "text-black/45",
-};
 
 export default function MobileEquipementsPage() {
   const router = useRouter();
@@ -221,7 +201,11 @@ export default function MobileEquipementsPage() {
         </div>
       </section>
 
-      {/* Liste équipements */}
+      {/* Liste équipements — refonte 05/06/2026 post-feedback SIDV :
+          cartes pleines avec bordure gauche coloree statut (lisible chantier
+          a bout de bras), badge statut en haut a droite, gros modele, fond
+          legerement teinte selon urgence. Plus de minuscule dot 9px qu'on
+          ne voit pas — la couleur DOMINE la carte. */}
       {filtered.length === 0 ? (
         <div className="px-5 mt-12 text-center">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-black/[0.04] mb-3">
@@ -233,140 +217,279 @@ export default function MobileEquipementsPage() {
           <div className="text-[15px] text-black/55">
             {items.length === 0 ? "Aucun équipement enregistré" : "Aucun équipement dans cette catégorie"}
           </div>
-          {items.length === 0 && (
-            <Link
-              href="/m/equipements/nouveau"
-              className="inline-block mt-5 px-5 py-3 bg-[#111] text-white text-[14px] font-medium rounded-xl active:bg-black/90 transition-colors"
-              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-            >
-              + Ajouter un équipement
-            </Link>
-          )}
         </div>
       ) : (
-        <InsetListSection>
+        <section className="px-4 mt-4 space-y-3">
           {filtered.map((eq) => (
-            <InsetRow
+            <EquipementCard
               key={eq.id}
-              href={`/eq/${eq.id}`}
-              leading={
-                (() => {
-                  // Le dot reflete en priorite un signal predictif (rouge si
-                  // critique, orange si alerte), sinon le statut reglementaire.
-                  // Un eq en risque DOIT sauter aux yeux dans la liste, meme
-                  // s'il est techniquement "exempte" cote controle d'etancheite.
-                  const risque = equipementsARisque.get(eq.id);
-                  const dotClass = risque === "critique"
-                    ? "bg-red-500"
-                    : risque === "alerte"
-                      ? "bg-orange-500"
-                      : STATUS_DOT[eq.statut];
-                  const bgClass = risque
-                    ? risque === "critique" ? "bg-red-50" : "bg-orange-50"
-                    : "bg-black/[0.04]";
-                  return (
-                    <span className={`relative inline-flex items-center justify-center w-9 h-9 rounded-full ${bgClass}`}>
-                      {risque === "critique" && (
-                        <span className="absolute inset-0 rounded-full bg-red-500/30 animate-ping" />
-                      )}
-                      <span className={`relative w-2.5 h-2.5 rounded-full ${dotClass}`} />
-                    </span>
-                  );
-                })()
-              }
-              label={eq.modele}
-              sublabel={
-                `${eq.clientName} · ${eq.fluide.code} · ${eq.chargeKg.toFixed(1).replace(".", ",")} kg` +
-                (eq.unitesInterieures && eq.unitesInterieures.length > 0
-                  ? ` · ${eq.unitesInterieures.length} unité${eq.unitesInterieures.length > 1 ? "s" : ""} int.`
-                  : "")
-              }
-              trailing={
-                eq.joursAvantControle !== null ? (
-                  <span className={`text-[12px] font-medium ${STATUS_TEXT[eq.statut]}`}>
-                    {fmtJours(eq.joursAvantControle)}
-                  </span>
-                ) : eq.statut === "exempt" ? (
-                  <span className="text-[12px] text-black/35">Exempté</span>
-                ) : (
-                  <span className="text-[12px] text-blue-600 font-medium">À programmer</span>
-                )
-              }
-              showChevron
+              eq={eq}
+              risque={equipementsARisque.get(eq.id) ?? null}
             />
           ))}
-        </InsetListSection>
+        </section>
       )}
 
-      {/* Actions globales */}
-      {items.length > 0 && (
-        <InsetListSection title="Actions">
-          <InsetRow
-            onClick={handleStickers}
-            label={stickersBusy ? "Génération du PDF…" : "Imprimer stickers QR (PDF A4)"}
-            sublabel="8 stickers par feuille · à coller sur les équipements"
-            leading={
-              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-50 text-amber-700">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="7" height="7" />
-                  <rect x="14" y="3" width="7" height="7" />
-                  <rect x="3" y="14" width="7" height="7" />
-                  <rect x="14" y="14" width="3" height="3" />
-                  <path d="M21 14h-3v3M18 21h3v-3" />
-                </svg>
-              </span>
-            }
-          />
-          <InsetRow
-            href="/m/equipements/nouveau"
-            label="+ Ajouter un équipement"
-            sublabel="Saisie rapide depuis le téléphone"
-            leading={
-              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#111] text-white">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-              </span>
-            }
-            showChevron
-          />
-          <InsetRow
+      {/* Actions globales — refonte tuiles 2x1 (style cohérent home) */}
+      <section className="px-4 mt-5 mb-4 space-y-3">
+        <ActionTile
+          href="/m/equipements/nouveau"
+          variant="emerald"
+          emoji="➕"
+          label="Ajouter un équipement"
+          sublabel="Saisie rapide depuis le téléphone"
+        />
+        <div className="grid grid-cols-2 gap-3">
+          <ActionTile
             href="/m/import-registre"
-            label="Importer un registre papier"
-            sublabel="Photos → IA détecte le parc → import bulk"
-            leading={
-              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-700">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
-              </span>
-            }
-            showChevron
+            variant="violet"
+            emoji="📸"
+            label="Importer registre"
+            sublabel="Photos → IA bulk"
           />
-        </InsetListSection>
-      )}
-      {/* Si parc vide : on propose quand meme l'import registre (gros usecase
-          pour les nouveaux users qui veulent migrer leur ancien systeme) */}
-      {items.length === 0 && (
-        <InsetListSection title="Migration depuis l'ancien système">
-          <InsetRow
-            href="/m/import-registre"
-            label="Importer un registre papier"
-            sublabel="Photos → IA détecte le parc → import bulk en 10 min"
-            leading={
-              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-700">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
-              </span>
-            }
-            showChevron
-          />
-        </InsetListSection>
-      )}
+          {items.length > 0 ? (
+            <ActionTile
+              onClick={handleStickers}
+              variant="amber"
+              emoji="🏷️"
+              label={stickersBusy ? "Génération…" : "Stickers QR PDF"}
+              sublabel="8 par feuille A4"
+            />
+          ) : (
+            <ActionTile
+              href="/m/scan"
+              variant="amber"
+              emoji="📷"
+              label="Scanner un QR"
+              sublabel="Reprendre une machine"
+            />
+          )}
+        </div>
+      </section>
     </>
+  );
+}
+
+// Carte equipement — la nouvelle unite visuelle de la liste parc.
+// Couleur statut DOMINANTE (bordure gauche 6px + fond pastel + badge), pas
+// un dot 9px qu'on ne voit pas a bout de bras sur un chantier. Cliquable
+// pleine surface vers /eq/[id].
+function EquipementCard({
+  eq,
+  risque,
+}: {
+  eq: EquipementWithStatus;
+  risque: SignalGravite | null;
+}) {
+  // Determine couleur dominante : risque predictif > statut reglementaire.
+  // Hierarchie : risque critique > en_retard > a_relancer > a_programmer/jamais > ok > exempt.
+  const styles = ((): {
+    barColor: string;
+    bgColor: string;
+    badgeBg: string;
+    badgeText: string;
+    badgeLabel: string;
+    emoji: string;
+  } => {
+    if (risque === "critique") {
+      return {
+        barColor: "#dc2626",
+        bgColor: "#fef2f2",
+        badgeBg: "#dc2626",
+        badgeText: "#ffffff",
+        badgeLabel: "RISQUE CRITIQUE",
+        emoji: "🚨",
+      };
+    }
+    if (risque === "alerte") {
+      return {
+        barColor: "#ea580c",
+        bgColor: "#fff7ed",
+        badgeBg: "#ea580c",
+        badgeText: "#ffffff",
+        badgeLabel: "RISQUE",
+        emoji: "⚠️",
+      };
+    }
+    if (eq.statut === "en_retard") {
+      return {
+        barColor: "#dc2626",
+        bgColor: "#fef2f2",
+        badgeBg: "#dc2626",
+        badgeText: "#ffffff",
+        badgeLabel: "EN RETARD",
+        emoji: "🚨",
+      };
+    }
+    if (eq.statut === "a_relancer") {
+      return {
+        barColor: "#ea580c",
+        bgColor: "#fff7ed",
+        badgeBg: "#ea580c",
+        badgeText: "#ffffff",
+        badgeLabel: "À RELANCER",
+        emoji: "📧",
+      };
+    }
+    if (eq.statut === "a_programmer") {
+      return {
+        barColor: "#d97706",
+        bgColor: "#fffbeb",
+        badgeBg: "#d97706",
+        badgeText: "#ffffff",
+        badgeLabel: "À PROGRAMMER",
+        emoji: "📅",
+      };
+    }
+    if (eq.statut === "jamais") {
+      return {
+        barColor: "#2563eb",
+        bgColor: "#eff6ff",
+        badgeBg: "#2563eb",
+        badgeText: "#ffffff",
+        badgeLabel: "JAMAIS CONTRÔLÉ",
+        emoji: "🆕",
+      };
+    }
+    if (eq.statut === "ok") {
+      return {
+        barColor: "#059669",
+        bgColor: "#ecfdf5",
+        badgeBg: "#059669",
+        badgeText: "#ffffff",
+        badgeLabel: "À JOUR",
+        emoji: "✅",
+      };
+    }
+    // exempt
+    return {
+      barColor: "#94a3b8",
+      bgColor: "#f8fafc",
+      badgeBg: "#cbd5e1",
+      badgeText: "#475569",
+      badgeLabel: "EXEMPTÉ",
+      emoji: "🌿",
+    };
+  })();
+
+  return (
+    <Link
+      href={`/eq/${eq.id}`}
+      className="block rounded-2xl shadow-sm shadow-black/[0.04] active:scale-[0.99] transition-transform overflow-hidden"
+      style={{
+        background: styles.bgColor,
+        borderLeft: `6px solid ${styles.barColor}`,
+        WebkitTapHighlightColor: "transparent",
+        touchAction: "manipulation",
+      }}
+    >
+      <div className="px-4 py-3.5">
+        {/* Ligne 1 : badge statut + jours restants */}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <span
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider"
+            style={{ background: styles.badgeBg, color: styles.badgeText }}
+          >
+            <span className="text-[11px] leading-none">{styles.emoji}</span>
+            {styles.badgeLabel}
+          </span>
+          {eq.joursAvantControle !== null && (
+            <span className="text-[12px] font-bold" style={{ color: styles.barColor }}>
+              {fmtJours(eq.joursAvantControle)}
+            </span>
+          )}
+        </div>
+
+        {/* Ligne 2 : modele gros + client */}
+        <div className="text-[17px] font-bold text-[#111] leading-tight">
+          {eq.modele}
+        </div>
+        <div className="text-[13px] text-black/65 mt-0.5 truncate">
+          {eq.clientName}
+        </div>
+
+        {/* Ligne 3 : specs techniques compactes */}
+        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+          <SpecPill text={eq.fluide.code} />
+          <SpecPill text={`${eq.chargeKg.toFixed(1).replace(".", ",")} kg`} />
+          {eq.unitesInterieures && eq.unitesInterieures.length > 0 && (
+            <SpecPill
+              text={`${eq.unitesInterieures.length} unité${eq.unitesInterieures.length > 1 ? "s" : ""} int.`}
+            />
+          )}
+          {eq.detecteurFixe && <SpecPill text="détecteur" />}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function SpecPill({ text }: { text: string }) {
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-white/70 text-[10.5px] font-medium text-black/70 ring-1 ring-black/[0.05]">
+      {text}
+    </span>
+  );
+}
+
+// Tuile d'action — meme langage visuel que les tuiles home, mais en regular
+// uniquement (pas xl). Reprend les VARIANTS gradients CSS de la home.
+const ACTION_TILE_VARIANTS: Record<"emerald" | "violet" | "amber" | "sky", string> = {
+  emerald: "linear-gradient(135deg, #10b981 0%, #0f766e 100%)",
+  violet: "linear-gradient(135deg, #7c3aed 0%, #6b21a8 100%)",
+  amber: "linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)",
+  sky: "linear-gradient(135deg, #0ea5e9 0%, #1d4ed8 100%)",
+};
+
+function ActionTile({
+  href,
+  onClick,
+  variant,
+  emoji,
+  label,
+  sublabel,
+}: {
+  href?: string;
+  onClick?: () => void;
+  variant: keyof typeof ACTION_TILE_VARIANTS;
+  emoji: string;
+  label: string;
+  sublabel?: string;
+}) {
+  const inner = (
+    <div className="flex items-center gap-3">
+      <div className="text-[28px] leading-none drop-shadow">{emoji}</div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[13.5px] font-bold uppercase tracking-wide text-white leading-tight">
+          {label}
+        </div>
+        {sublabel && (
+          <div className="text-[10.5px] text-white/80 mt-0.5 leading-snug">
+            {sublabel}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+  const style = {
+    background: ACTION_TILE_VARIANTS[variant],
+    WebkitTapHighlightColor: "transparent" as const,
+    touchAction: "manipulation" as const,
+  };
+  const className =
+    "block rounded-2xl shadow-md shadow-black/10 px-4 py-3.5 active:scale-[0.98] transition-transform";
+
+  if (href) {
+    return (
+      <Link href={href} className={className} style={style}>
+        {inner}
+      </Link>
+    );
+  }
+  return (
+    <button type="button" onClick={onClick} className={`${className} w-full text-left`} style={style}>
+      {inner}
+    </button>
   );
 }
 
