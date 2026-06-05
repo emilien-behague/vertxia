@@ -292,7 +292,7 @@ export default function MobileSignaturePage() {
 
   return (
     <>
-      <MobileHeader title="Signature" largeTitle backHref="/m/profil" />
+      <MobileHeader title="✍️ Signature" largeTitle backHref="/m/profil" />
 
       <div className="px-5 mt-1 text-[14px] text-black/55 leading-relaxed">
         Signez avec le doigt. Cette signature sera utilisée pour les CERFA 15497*04 et

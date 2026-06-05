@@ -87,7 +87,7 @@ export default function BouteilleDetailPage() {
   if (!bouteille) {
     return (
       <>
-        <MobileHeader title="Bouteille" backHref="/m/bouteilles" />
+        <MobileHeader title="🛢️ Bouteille" backHref="/m/bouteilles" />
         <div className="px-5 py-12 text-center text-[14px] text-black/50">
           Bouteille introuvable.
         </div>

@@ -125,7 +125,7 @@ export default function NouvelleBouteillePage() {
 
   return (
     <>
-      <MobileHeader title="Nouvelle bouteille" largeTitle backHref="/m/bouteilles" />
+      <MobileHeader title="🛢️ Nouvelle bouteille" largeTitle backHref="/m/bouteilles" />
 
       <InsetListSection title="Type de bouteille">
         <div className="px-2 py-2 grid grid-cols-2 gap-2">

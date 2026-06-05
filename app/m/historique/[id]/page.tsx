@@ -693,7 +693,7 @@ export default function MobileInterventionDetailPage() {
   if (!loaded) {
     return (
       <>
-        <MobileHeader title="Intervention" largeTitle backHref="/m/historique" />
+        <MobileHeader title="📋 Intervention" largeTitle backHref="/m/historique" />
         <div className="px-5 py-20 text-center">
           <div className="inline-block w-8 h-8 border-2 border-black/15 border-t-[#111] rounded-full animate-spin" />
         </div>
@@ -704,7 +704,7 @@ export default function MobileInterventionDetailPage() {
   if (!intervention) {
     return (
       <>
-        <MobileHeader title="Intervention" largeTitle backHref="/m/historique" />
+        <MobileHeader title="📋 Intervention" largeTitle backHref="/m/historique" />
         <div className="px-5 py-20 text-center text-[14px] text-black/55">
           Intervention introuvable — elle a peut-être été supprimée.
         </div>

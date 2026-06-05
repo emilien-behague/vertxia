@@ -300,7 +300,7 @@ function MobileScanContent() {
 
   return (
     <>
-      <MobileHeader title="Scanner QR" backHref="/m" />
+      <MobileHeader title="📷 Scanner QR" backHref="/m" />
 
       {/* Version banner — permet de vérifier instantanément quelle version
           du code est rendue (combat les caches SW agressifs sur Safari iOS) */}

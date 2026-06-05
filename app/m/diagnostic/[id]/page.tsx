@@ -204,7 +204,7 @@ export default function DiagnosticDetailPage() {
   if (loaded && !diag) {
     return (
       <>
-        <MobileHeader title="Diagnostic" largeTitle backHref="/m/diagnostic/historique" />
+        <MobileHeader title="🤖 Diagnostic" largeTitle backHref="/m/diagnostic/historique" />
         <div className="px-5 mt-10 text-center">
           <div className="text-[16px] text-[#111] font-medium mb-2">Diagnostic introuvable</div>
           <div className="text-[13px] text-black/55 mb-6">Ce diagnostic n&apos;existe plus dans ton historique.</div>
@@ -223,7 +223,7 @@ export default function DiagnosticDetailPage() {
   if (!diag) {
     return (
       <>
-        <MobileHeader title="Diagnostic" largeTitle backHref="/m/diagnostic/historique" />
+        <MobileHeader title="🤖 Diagnostic" largeTitle backHref="/m/diagnostic/historique" />
       </>
     );
   }
@@ -232,7 +232,7 @@ export default function DiagnosticDetailPage() {
 
   return (
     <>
-      <MobileHeader title="Diagnostic" largeTitle backHref="/m/diagnostic/historique" />
+      <MobileHeader title="🤖 Diagnostic" largeTitle backHref="/m/diagnostic/historique" />
 
       <div className="px-4 pt-2 pb-4 space-y-4">
         <div className="text-[12px] text-black/55 px-1">

@@ -408,7 +408,7 @@ function MobileAjoutEquipementContent() {
 
   return (
     <>
-      <MobileHeader title="Nouvel équipement" largeTitle backHref="/m/equipements" />
+      <MobileHeader title="➕ Nouvel équipement" largeTitle backHref="/m/equipements" />
 
       <form onSubmit={handleSubmit}>
         {/* Dictée vocale — IA extrait tout l'équipement (client + machine + unités) d'un coup */}

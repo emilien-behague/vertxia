@@ -10,7 +10,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { MobileHeader } from "@/components/mobile/mobile-header";
-import { InsetListSection } from "@/components/mobile/inset-list";
+import { Tile } from "@/components/mobile/tile";
 import {
   listEquipements,
   computeAllStatus,
@@ -62,7 +62,7 @@ export default function InfractionsPage() {
 
   return (
     <>
-      <MobileHeader title="Infractions" largeTitle backHref="/m" />
+      <MobileHeader title="⚠️ Infractions" largeTitle backHref="/m" />
 
       {/* Bandeau d'alerte dramatique */}
       {infractions.length > 0 && (
@@ -116,81 +116,104 @@ export default function InfractionsPage() {
         </section>
       )}
 
-      {/* Liste des équipements en infraction */}
+      {/* Cards equipements en infraction — bordure gauche couleur severite */}
       {infractions.length > 0 && (
-        <InsetListSection
-          title="Équipements concernés"
-          footer="Tap sur un équipement pour ouvrir sa fiche et programmer le contrôle."
-        >
-          {infractions.map((inf) => {
-            const style = SEVERITE_STYLES[inf.severite];
-            return (
-              <Link
-                key={inf.equipement.id}
-                href={`/eq/${inf.equipement.id}`}
-                className="block px-4 py-3 active:bg-black/[0.03] transition-colors"
-                style={{ WebkitTapHighlightColor: "transparent" }}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`shrink-0 w-2.5 h-2.5 rounded-full mt-1.5 ${style.dot}`}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-[15px] font-medium text-[#111] truncate">
-                        {inf.equipement.modele}
-                      </span>
-                      <span
-                        className={`shrink-0 text-[9px] uppercase tracking-wider font-medium px-1.5 py-0.5 rounded ring-1 ${style.chip}`}
-                      >
-                        {style.label}
-                      </span>
-                    </div>
-                    <div className="text-[12px] text-black/60 mb-1.5 leading-snug">
-                      {inf.equipement.clientName}
-                      {inf.equipement.siteAdresse && ` · ${inf.equipement.siteAdresse}`}
-                    </div>
-                    <div className="text-[12.5px] text-[#111] font-medium leading-snug">
-                      {inf.raison}
-                    </div>
-                    <div className="text-[11.5px] text-black/65 mt-1 leading-snug">
-                      → {inf.actionRecommandee}
-                    </div>
-                    <div className="text-[10px] text-black/40 mt-1 font-mono uppercase tracking-wider">
-                      {inf.articleRef}
-                    </div>
+        <section className="px-4 mt-3">
+          <div className="text-[10px] font-mono tracking-[0.25em] uppercase text-black/45 mb-2 px-1">
+            🚨 Équipements concernés
+          </div>
+          <div className="space-y-2.5">
+            {infractions.map((inf) => {
+              const accentColor =
+                inf.severite === "critique"
+                  ? "#dc2626"
+                  : inf.severite === "haute"
+                    ? "#ea580c"
+                    : "#d97706";
+              const accentBg =
+                inf.severite === "critique"
+                  ? "#fef2f2"
+                  : inf.severite === "haute"
+                    ? "#fff7ed"
+                    : "#fffbeb";
+              return (
+                <Link
+                  key={inf.equipement.id}
+                  href={`/eq/${inf.equipement.id}`}
+                  className="block rounded-2xl bg-white ring-1 ring-black/[0.05] px-4 py-3 active:bg-black/[0.02] transition-colors"
+                  style={{
+                    WebkitTapHighlightColor: "transparent",
+                    touchAction: "manipulation",
+                    borderLeft: `5px solid ${accentColor}`,
+                  }}
+                >
+                  <div className="flex items-start justify-between gap-3 mb-1.5">
+                    <span
+                      className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded uppercase"
+                      style={{ background: accentBg, color: accentColor }}
+                    >
+                      {SEVERITE_STYLES[inf.severite].label}
+                    </span>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="rgba(0,0,0,0.3)"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="shrink-0"
+                    >
+                      <path d="m9 18 6-6-6-6" />
+                    </svg>
                   </div>
-                  <svg className="shrink-0 mt-1 text-black/25" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="m9 18 6-6-6-6" />
-                  </svg>
-                </div>
-              </Link>
-            );
-          })}
-        </InsetListSection>
+                  <div className="text-[15.5px] font-bold text-[#111] leading-tight truncate">
+                    {inf.equipement.modele}
+                  </div>
+                  <div className="text-[12px] text-black/60 mt-0.5 truncate">
+                    {inf.equipement.clientName}
+                    {inf.equipement.siteAdresse && ` · ${inf.equipement.siteAdresse}`}
+                  </div>
+                  <div className="text-[12.5px] text-[#111] font-medium leading-snug mt-2">
+                    {inf.raison}
+                  </div>
+                  <div className="text-[11.5px] text-black/65 mt-1 leading-snug">
+                    → {inf.actionRecommandee}
+                  </div>
+                  <div className="text-[9.5px] text-black/40 mt-2 font-mono uppercase tracking-wider">
+                    {inf.articleRef}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+          <p className="mt-2 px-1 text-[11px] text-black/45 leading-snug">
+            Tap sur un équipement pour ouvrir sa fiche et programmer le contrôle.
+          </p>
+        </section>
       )}
 
-      {/* État zéro infraction */}
+      {/* Zero infraction — tuile emerald felicitations */}
       {loaded && infractions.length === 0 && (
-        <section className="px-5 mt-10 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 mb-4 text-emerald-600">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 6L9 17l-5-5" />
-            </svg>
+        <section className="px-4 mt-6 mb-4">
+          <div className="text-center mb-5">
+            <div className="text-5xl mb-3">✅</div>
+            <h2 className="text-[20px] font-bold mb-2 text-[#111]">
+              Tout est en règle !
+            </h2>
+            <p className="text-[13px] text-black/60 leading-relaxed max-w-xs mx-auto">
+              Tous tes équipements sont à jour réglementairement. Tu protèges tes clients de toute sanction DREAL.
+            </p>
           </div>
-          <h2 className="text-[18px] font-semibold mb-2 text-[#111]">
-            Aucune infraction détectée
-          </h2>
-          <p className="text-[14px] text-black/55 leading-relaxed max-w-xs mx-auto">
-            Tous tes équipements sont à jour réglementairement. Tu protèges tes clients de toute sanction DREAL.
-          </p>
-          <Link
+          <Tile
             href="/m/equipements"
-            className="inline-block mt-6 px-5 py-2.5 rounded-2xl bg-[#111] text-white text-[13px] font-medium active:bg-black/80 transition-colors"
-            style={{ WebkitTapHighlightColor: "transparent" }}
-          >
-            Voir tous mes équipements
-          </Link>
+            size="xl"
+            variant="emerald"
+            emoji="🏭"
+            label="Voir mon parc"
+            sublabel="Tous mes équipements à jour"
+          />
         </section>
       )}
 

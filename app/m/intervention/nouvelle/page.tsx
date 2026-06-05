@@ -1048,7 +1048,7 @@ function NouvelleInterventionContent() {
   if (isSuccess) {
     return (
       <>
-        <MobileHeader title="Intervention" largeTitle backHref="/m" />
+        <MobileHeader title="✅ Intervention" largeTitle backHref="/m" />
         <SuccessView
           status={status}
           onReset={() => {
@@ -1062,7 +1062,7 @@ function NouvelleInterventionContent() {
 
   return (
     <>
-      <MobileHeader title="Nouvelle intervention" largeTitle backHref="/m/intervention" />
+      <MobileHeader title="🛠️ Nouvelle intervention" largeTitle backHref="/m/intervention" />
 
       {/* Documents officiels lies au type d'intervention en cours -
           le frigoriste a le CERFA + le modele de registre + la note DGEC

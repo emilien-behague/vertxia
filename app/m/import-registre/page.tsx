@@ -252,7 +252,7 @@ export default function ImportRegistrePage() {
 
   return (
     <>
-      <MobileHeader title="Importer un registre" largeTitle backHref="/m/equipements" />
+      <MobileHeader title="📸 Importer un registre" largeTitle backHref="/m/equipements" />
 
       {/* PHASE IDLE — instructions + upload */}
       {phase === "idle" && (
