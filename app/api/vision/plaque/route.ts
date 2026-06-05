@@ -171,6 +171,40 @@ export async function POST(req: Request) {
       );
     }
 
+    // Enrichissement du catalogue partagé en background (silent fail).
+    // Conditions : on a au moins marque + modèle (sinon la clé naturelle
+    // est impossible à construire), et la confiance n'est pas "basse"
+    // (évite la pollution du catalogue avec des extractions douteuses).
+    if (plaque.marque && plaque.modele && plaque.confiance !== "basse") {
+      // Fire-and-forget : pas de await pour ne pas ralentir la réponse au
+      // client. Si l'upsert échoue (RLS, réseau), on log juste côté serveur.
+      const proto = req.headers.get("x-forwarded-proto") || "https";
+      const host = req.headers.get("host");
+      const cookie = req.headers.get("cookie") || "";
+      if (host) {
+        fetch(`${proto}://${host}/api/catalog/upsert`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            // Propage les cookies pour que l'auth Supabase fonctionne
+            // côté upsert (qui exige un user authentifié).
+            cookie,
+          },
+          body: JSON.stringify({
+            marque: plaque.marque,
+            modele: plaque.modele,
+            fluideCode: plaque.fluide,
+            fluideLabel: plaque.fluide,
+            fluideGwp: null,
+            chargeNominaleKg: plaque.chargeNominaleKg,
+            typeEquipement: plaque.typeEquipement,
+          }),
+        }).catch((e) => {
+          console.warn("[vision/plaque] catalog upsert failed:", e);
+        });
+      }
+    }
+
     return NextResponse.json(plaque, { status: 200 });
   } catch (err) {
     console.error("[vision/plaque] exception:", err);

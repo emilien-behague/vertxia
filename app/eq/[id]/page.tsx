@@ -25,6 +25,7 @@ import {
   buildContextMemoryFromCurrentState,
   type ContextMemory,
 } from "@/lib/context-memory";
+import { PannesConnuesCard } from "@/components/mobile/pannes-connues-card";
 
 // Page mobile premium — affichée quand un technicien scanne le QR Code collé sur
 // un équipement. Doit s'afficher SANS bug sur Safari iOS (zéro animation initial:opacity:0
@@ -695,6 +696,13 @@ export default function EquipementScannedPage({
               Calcul automatique à partir de l&apos;historique de cet équipement
             </div>
           </div>
+        )}
+
+        {/* Memoire collective Vertxia — pannes connues sur le MEME modele
+            chez tous les frigoristes de la base. Different de la maintenance
+            predictive qui ne regarde QUE cet equipement specifique. */}
+        {mode === "full" && eq.modele && (
+          <PannesConnuesCard modeleComplet={eq.modele} />
         )}
 
         {/* Memoire contextuelle — "deja vu" sur cet equipement + parc.

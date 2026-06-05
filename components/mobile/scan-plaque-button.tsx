@@ -84,7 +84,43 @@ export function ScanPlaqueButton({
         return;
       }
 
-      const plaque = (await res.json()) as PlaqueData;
+      const plaqueRaw = (await res.json()) as PlaqueData;
+
+      // ── Catalogue partagé : lookup pour enrichir/corriger l'extraction ─
+      // Si le modèle est déjà connu (autres frigoristes l'ont scanné),
+      // on prend les données du catalogue comme "vérité de référence" pour
+      // les champs où Claude a flanché (fluide manquant, charge incohérente).
+      let plaque = plaqueRaw;
+      let nombreScans = 0;
+      if (plaqueRaw.marque && plaqueRaw.modele) {
+        try {
+          const lookupRes = await fetch(
+            `/api/catalog/lookup?marque=${encodeURIComponent(plaqueRaw.marque)}&modele=${encodeURIComponent(plaqueRaw.modele)}`,
+            { method: "GET" }
+          );
+          if (lookupRes.ok) {
+            const lookup = await lookupRes.json();
+            if (lookup.found && lookup.fiche) {
+              nombreScans = lookup.fiche.nombreScans || 0;
+              // Merge : on garde les valeurs de Claude (extraction live),
+              // mais on COMPLÈTE les champs manquants depuis le catalogue.
+              plaque = {
+                ...plaqueRaw,
+                fluide: plaqueRaw.fluide ?? lookup.fiche.fluideCode ?? null,
+                chargeNominaleKg:
+                  typeof plaqueRaw.chargeNominaleKg === "number" &&
+                  plaqueRaw.chargeNominaleKg > 0
+                    ? plaqueRaw.chargeNominaleKg
+                    : lookup.fiche.chargeNominaleKg,
+                typeEquipement:
+                  plaqueRaw.typeEquipement ?? lookup.fiche.typeEquipement ?? null,
+              };
+            }
+          }
+        } catch {
+          // Lookup échoué → on continue avec l'extraction Claude seule
+        }
+      }
 
       // Callback au parent — c'est lui qui decide quoi faire des donnees
       onScanned(plaque);
@@ -101,11 +137,18 @@ export function ScanPlaqueButton({
         if (typeof plaque.chargeNominaleKg === "number" && plaque.chargeNominaleKg > 0) {
           found.push("charge");
         }
-        setFeedback(
+        const baseMsg =
           found.length > 0
             ? `✅ Détecté : ${found.join(", ")}`
-            : "❌ Rien détecté — réessaie en visant mieux la plaque"
-        );
+            : "❌ Rien détecté — réessaie en visant mieux la plaque";
+        // Bonus mémoire collective : badge si le modèle est connu par d'autres pros
+        const collectiveSuffix =
+          nombreScans >= 2
+            ? `\n📚 Modèle vérifié par ${nombreScans} frigoristes Vertxia`
+            : nombreScans === 1
+              ? "\n📚 Première fois que ce modèle est ajouté au catalogue"
+              : "";
+        setFeedback(baseMsg + collectiveSuffix);
       }
     } catch (err) {
       setFeedback(
@@ -175,7 +218,7 @@ export function ScanPlaqueButton({
       </button>
       {feedback && (
         <div
-          className={`mt-2 px-3 py-2 rounded-xl text-[12px] leading-relaxed ${
+          className={`mt-2 px-3 py-2 rounded-xl text-[12px] leading-relaxed whitespace-pre-line ${
             feedback.startsWith("✅")
               ? "bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800"
               : feedback.startsWith("📷")

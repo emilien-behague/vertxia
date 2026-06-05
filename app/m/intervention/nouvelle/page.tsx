@@ -969,6 +969,33 @@ function NouvelleInterventionContent() {
         });
       } catch {}
 
+      // Catalogue partagé des pannes : à chaque fuite détectée sur un modèle
+      // identifié (marque+modèle dans le form), on enrichit le catalogue
+      // commun pour que les autres frigoristes voient "ce modèle a fui N fois
+      // sur le détendeur dans Vertxia". Fire-and-forget : silent fail sans
+      // bloquer le flow de l'utilisateur.
+      const modeleSplit = modeleEquipement.trim().split(/\s+/);
+      const marqueGuess = modeleSplit[0]; // ex: "Daikin FTXM35M" → "Daikin"
+      const modelePart = modeleSplit.slice(1).join(" "); // → "FTXM35M"
+      if (fuitesPayload && fuitesPayload.length > 0 && marqueGuess && modelePart) {
+        for (const fuite of fuitesPayload) {
+          if (!fuite.localisation) continue;
+          fetch("/api/catalog/failure/upsert", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              marque: marqueGuess,
+              modele: modelePart,
+              typePanne: "fuite",
+              localisation: fuite.localisation,
+            }),
+          }).catch(() => {
+            // silent fail (offline, RLS, etc.) — le catalogue se remplira
+            // la prochaine fois qu'il y aura du réseau
+          });
+        }
+      }
+
       // Donnees enrichies pour le mail "rapport" lisible directement
       const chargeKgParsed = parseFloat(weight);
       const chargeKgValid =

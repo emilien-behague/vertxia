@@ -311,3 +311,115 @@ create policy "grants_owner_all" on public.equipement_grants
   for all to authenticated
   using (auth.uid() = owner_user_id)
   with check (auth.uid() = owner_user_id);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- ── 9. CATALOGUE PARTAGÉ DES MODÈLES D'ÉQUIPEMENTS ─────────────────────────
+-- Mémoire collective Vertxia : à chaque scan de plaque signalétique, on
+-- enrichit une fiche modèle anonymisée (marque + modèle uniquement, AUCUN
+-- n° série, AUCUN client). Le prochain technicien qui scanne le même
+-- modèle bénéficie des données moyennées de tous les scans précédents.
+--
+-- Effet réseau : à 1000 users, ~3000 modèles couverts → expérience
+-- quasi parfaite dès le 1er scan pour 90% des cas du marché FR.
+--
+-- RGPD : aucune donnée personnelle. Juste des données techniques publiques
+-- (la plaque signalétique est visible sur l'équipement). À mentionner dans
+-- les CGU comme "mutualisation de données techniques pour amélioration
+-- du service".
+--
+-- Sécurité : SELECT public (tout user connecté peut lire). Les UPSERT
+-- passent par les routes API server-side avec service_role (bypass RLS),
+-- donc pas besoin de policy INSERT/UPDATE publique.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+create table if not exists public.shared_equipment_catalog (
+  id uuid primary key default gen_random_uuid(),
+  -- Clé naturelle : (marque, modèle) normalisés (lowercase, trim).
+  -- Index unique pour permettre les UPSERT avec onConflict.
+  marque_key text not null,
+  modele_key text not null,
+  -- Versions affichables (casse d'origine du plus récent scan, ex "Daikin")
+  marque text not null,
+  modele text not null,
+  -- Données techniques agrégées (dernières valeurs vues, pas moyenne)
+  fluide_code text,
+  fluide_label text,
+  fluide_gwp integer,
+  charge_nominale_kg numeric(10, 3),
+  type_equipement text,
+  -- Compteurs d'usage et de confiance
+  nombre_scans integer not null default 1,
+  -- Pourcentage de scans qui ont confirmé les données actuelles (0-100)
+  confiance_score integer not null default 100,
+  -- Notes Claude (typiquement vide en V1)
+  notes text,
+  first_seen_at timestamptz not null default now(),
+  last_updated_at timestamptz not null default now(),
+  -- Contrainte unique pour permettre l'UPSERT sur clé naturelle normalisée
+  constraint shared_equipment_catalog_unique unique (marque_key, modele_key)
+);
+
+create index if not exists idx_catalog_marque_modele
+  on public.shared_equipment_catalog(marque_key, modele_key);
+create index if not exists idx_catalog_marque
+  on public.shared_equipment_catalog(marque_key);
+
+alter table public.shared_equipment_catalog enable row level security;
+
+-- Lecture publique : tout user connecté peut consulter le catalogue
+-- pour bénéficier de l'effet réseau. Aucune donnée personnelle exposée.
+create policy "catalog_select_authenticated" on public.shared_equipment_catalog
+  for select to authenticated using (true);
+
+-- Pas de policy d'écriture : les UPSERT passent par /api/catalog/upsert
+-- qui utilise le service_role server-side (bypass RLS).
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- ── 10. CATALOGUE PARTAGÉ DES PANNES PAR MODÈLE ────────────────────────────
+-- Mémoire collective des pannes/fuites/défauts observés sur les équipements
+-- F-Gas. À chaque intervention "contrôle d'étanchéité" où une fuite est
+-- détectée, on incrémente la ligne (marque, modèle, type_panne, localisation).
+--
+-- Même principe que le catalogue équipements : aucune donnée client, aucun
+-- n°série. Juste la statistique "ce modèle Daikin a 12 fuites sur le
+-- détendeur dans Vertxia".
+--
+-- Usage :
+--   - Affichage sur la fiche /eq/[id] : "Pannes connues sur ce modèle"
+--   - Enrichissement du prompt diagnostic IA : "Ce modèle a tendance à
+--     fuir sur le détendeur — vérifie ce point en priorité"
+--   - Statistiques marché : "73% des fuites Daikin VRV sont sur le
+--     raccord aspiration"
+-- ─────────────────────────────────────────────────────────────────────────────
+
+create table if not exists public.shared_failure_catalog (
+  id uuid primary key default gen_random_uuid(),
+  -- Clé naturelle composite (clés normalisées en lowercase)
+  marque_key text not null,
+  modele_key text not null,
+  type_panne text not null,        -- ex: "fuite", "panne_compresseur", "encrassement"
+  localisation_key text not null,  -- ex: "detendeur", "compresseur", "raccord_aspiration"
+  -- Affichables (casse d'origine du plus récent scan)
+  marque text not null,
+  modele text not null,
+  localisation text,
+  -- Compteurs
+  nombre_occurrences integer not null default 1,
+  first_seen_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now(),
+  constraint shared_failure_catalog_unique
+    unique (marque_key, modele_key, type_panne, localisation_key)
+);
+
+create index if not exists idx_failure_marque_modele
+  on public.shared_failure_catalog(marque_key, modele_key);
+create index if not exists idx_failure_modele_panne
+  on public.shared_failure_catalog(marque_key, modele_key, type_panne);
+
+alter table public.shared_failure_catalog enable row level security;
+
+-- Lecture publique pour les users connectés (effet réseau).
+create policy "failure_select_authenticated" on public.shared_failure_catalog
+  for select to authenticated using (true);
+
+-- Écritures uniquement via /api/catalog/failure/upsert (service_role).
