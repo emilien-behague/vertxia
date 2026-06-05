@@ -26,6 +26,7 @@ import {
   type ContextMemory,
 } from "@/lib/context-memory";
 import { PannesConnuesCard } from "@/components/mobile/pannes-connues-card";
+import { CrossSignalCard } from "@/components/mobile/cross-signal-card";
 import { DocumenterPanneButton } from "@/components/mobile/documenter-panne-button";
 import { ModePresentationClient } from "@/components/mobile/mode-presentation-client";
 
@@ -821,6 +822,17 @@ export default function EquipementScannedPage({
               Calcul automatique à partir de l&apos;historique de cet équipement
             </div>
           </div>
+        )}
+
+        {/* Signal croise — recommandations hybrides qui melent maintenance
+            predictive (locale) et memoire collective (cross-techniciens).
+            Concretise la promesse "Vertxia a un cerveau" : information
+            collective rendue actionable pendant l'intervention. */}
+        {mode === "full" && eq.modele && (
+          <CrossSignalCard
+            predictiveSignals={predictiveSignals}
+            modeleComplet={eq.modele}
+          />
         )}
 
         {/* Memoire collective Vertxia — pannes connues sur le MEME modele
