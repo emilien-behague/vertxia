@@ -1777,8 +1777,11 @@ function NouvelleInterventionContent() {
             value={fuiteDetectee}
             onChange={setFuiteDetectee}
             options={[
-              { v: "non", label: "Non" },
+              // Ordre Oui|Non aligne sur la question "Detecteur permanent"
+              // juste au-dessus — sinon le frigoriste tape la meme position
+              // pour les 2 et donne des reponses opposees a ce qu'il voulait.
               { v: "oui", label: "Oui" },
+              { v: "non", label: "Non" },
             ]}
           />
           {fuiteDetectee === "oui" && (
