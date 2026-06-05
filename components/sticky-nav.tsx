@@ -5,11 +5,10 @@ import { useState } from "react";
 const NAV_LINKS = [
   { label: "Pipeline", href: "#pipeline" },
   { label: "Intelligence", href: "#intelligence" },
+  { label: "Cerveau", href: "#cerveau" },
+  { label: "Terrain", href: "#terrain" },
   { label: "Documents", href: "#categories" },
   { label: "Démo", href: "#demo" },
-  { label: "Beta", href: "#beta" },
-  { label: "Stack", href: "#stack" },
-  { label: "Pricing", href: "#pricing" },
 ];
 
 const NAV_STYLE = {

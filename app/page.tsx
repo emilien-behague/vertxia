@@ -482,6 +482,237 @@ export default function VertxiaPage() {
         </div>
       </section>
 
+      {/* ── VERTXIA A UN CERVEAU (mémoire prédictive + contextuelle + collective + cross) ─ */}
+      <section id="cerveau" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-16">
+            <div>
+              <Tag>MÉMOIRE & PRÉDICTIF</Tag>
+              <RevealText className="mt-5 text-4xl md:text-5xl font-light tracking-tight leading-[1.05]">
+                {"Vertxia a un cerveau.\nIl apprend de toi.\nIl apprend des autres."}
+              </RevealText>
+            </div>
+            <p className="text-sm text-black/45 leading-relaxed max-w-xs">
+              Pendant que tu travailles, Vertxia construit une mémoire vivante de tes équipements, de ton parc, et croise ce que les autres techniciens ont vu. Avec le temps, ça devient un copilote SAV.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-12 gap-3">
+            {/* Big card — Maintenance prédictive */}
+            <BentoCard className="col-span-12 md:col-span-8 p-8 min-h-[300px] flex flex-col justify-between" delay={0}>
+              <div>
+                <div className="w-10 h-10 rounded-xl border border-orange-200 bg-orange-50 flex items-center justify-center mb-6 text-orange-600">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                    <circle cx="12" cy="12" r="9" />
+                    <polyline points="12 7 12 12 15 14" />
+                    <path d="M3.5 9.5h2M18.5 9.5h2M3.5 14.5h2M18.5 14.5h2" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-light mb-3">Maintenance prédictive — 6 signaux qui voient venir les pannes</h3>
+                <p className="text-sm text-black/45 leading-relaxed max-w-md">
+                  Pour chaque équipement, Vertxia analyse en continu l&apos;historique des interventions et des diagnostics. Quand un pattern suspect émerge — fuites qui reviennent, charge cumulée qui dépasse, défaut chronique non résolu, fluide en phase-out — un signal apparaît sur la fiche avec l&apos;action recommandée concrète.
+                </p>
+              </div>
+              <div className="mt-6 flex items-center gap-2 flex-wrap">
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-mono bg-red-600 text-white">Fuite récurrente</span>
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-mono bg-orange-500 text-white">Charge cumulée &gt; 30 %</span>
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-mono bg-orange-500 text-white">Tendance croissante</span>
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-mono bg-amber-500 text-white">Défaut chronique</span>
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-mono bg-black/[0.04] text-black/55">Phase-out fluide</span>
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-mono bg-black/[0.04] text-black/55">Jamais contrôlé</span>
+              </div>
+            </BentoCard>
+
+            {/* Mémoire contextuelle */}
+            <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[300px]" delay={120}>
+              <div className="w-10 h-10 rounded-xl border border-amber-200 bg-amber-50 flex items-center justify-center mb-5 text-amber-700">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                  <path d="M12 2a10 10 0 1 0 10 10" />
+                  <path d="M22 2 12 12" />
+                  <circle cx="12" cy="12" r="2.5" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-light mb-2">Mémoire contextuelle — Vertxia connaît ton parc</h3>
+              <p className="text-sm text-black/45 leading-relaxed">
+                Sur chaque équipement scanné, Vertxia rappelle : interventions précédentes sur le même N° de série, équipements similaires dans ton parc, défauts récurrents observés. Tu n&apos;as plus à redécouvrir une machine que tu as déjà vue.
+              </p>
+            </BentoCard>
+
+            {/* Mémoire collective */}
+            <BentoCard className="col-span-12 md:col-span-6 p-8 min-h-[240px]" delay={160}>
+              <div className="w-10 h-10 rounded-xl border border-emerald-200 bg-emerald-50 flex items-center justify-center mb-5 text-emerald-700">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                  <circle cx="9" cy="7" r="3.5" />
+                  <circle cx="17" cy="7" r="2.5" />
+                  <path d="M3 21v-1a6 6 0 0 1 12 0v1" />
+                  <path d="M16 21v-1a4.5 4.5 0 0 1 5-4.5" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-light mb-2">Mémoire collective — chaque technicien rend les autres meilleurs</h3>
+              <p className="text-sm text-black/45 leading-relaxed">
+                Quand un confrère documente une panne récurrente sur un modèle, tu en bénéficies sur ta propre fiche. Plus la communauté Vertxia s&apos;étend, plus chacun gagne en précision SAV. Effet réseau pur — invisible pour Excel, impossible pour la concurrence.
+              </p>
+            </BentoCard>
+
+            {/* Signal croisé */}
+            <BentoCard className="col-span-12 md:col-span-6 p-8 min-h-[240px]" delay={200}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-5 text-white shadow shadow-violet-900/15" style={{ background: "linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)" }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M12 2L4 6v6c0 5 3.4 9.4 8 10 4.6-.6 8-5 8-10V6l-8-4z" />
+                  <polyline points="9 12 11 14 15 10" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-light mb-2">Signal croisé — Vertxia recommande</h3>
+              <p className="text-sm text-black/45 leading-relaxed">
+                Pendant l&apos;intervention, Vertxia confronte ton diagnostic local au pattern collectif et te suggère : « tu interviens sur le compresseur — pendant que tu y es, jette un œil au détendeur, 12 cas confrères sur ce modèle. » L&apos;intelligence devient actionnable, pas juste affichée.
+              </p>
+            </BentoCard>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SUR LE TERRAIN (carte, QR, mode présentation, partage, statuts, offline) ─ */}
+      <section id="terrain" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-16">
+            <div>
+              <Tag>TERRAIN</Tag>
+              <RevealText className="mt-5 text-4xl md:text-5xl font-light tracking-tight leading-[1.05]">
+                {"Pensé pour le quotidien\ndu technicien."}
+              </RevealText>
+            </div>
+            <p className="text-sm text-black/45 leading-relaxed max-w-xs">
+              On a refondu l&apos;interface mobile avec un pro frigoriste sur le terrain. Règle d&apos;or : un idiot pressé doit comprendre en 2 secondes. Zéro jargon, gros boutons, 1 tap par action.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-12 gap-3">
+            {/* Big card — Carte interactive + planning */}
+            <BentoCard className="col-span-12 md:col-span-8 p-8 min-h-[300px] flex flex-col justify-between" delay={0}>
+              <div>
+                <div className="w-10 h-10 rounded-xl border border-blue-200 bg-blue-50 flex items-center justify-center mb-6 text-blue-700">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-light mb-3">Carte interactive + planning du jour</h3>
+                <p className="text-sm text-black/45 leading-relaxed max-w-md">
+                  Toute ta tournée sur une seule carte. Les pins sont colorés selon le statut F-Gas de chaque équipement (en retard rouge, à relancer orange, à jour vert). Tu vois ton chemin, tu ouvres la fiche en un tap, tu lances la navigation Apple Maps / Google Maps en deux.
+                </p>
+              </div>
+              <div className="mt-6 flex items-center gap-2 flex-wrap">
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-mono bg-black text-white">Leaflet open source</span>
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-mono bg-black/[0.04] text-black/55">Géocodage adresse</span>
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-mono bg-black/[0.04] text-black/55">Itinéraire 1-tap</span>
+              </div>
+            </BentoCard>
+
+            {/* QR unique */}
+            <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[300px]" delay={120}>
+              <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                  <path d="M14 14h3v3M21 17v4M17 21h-3v-3" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-light mb-2">QR unique par équipement</h3>
+              <p className="text-sm text-black/45 leading-relaxed">
+                Une étiquette QR adhésive à coller sur la machine. N&apos;importe quel smartphone scanne et ouvre la fiche : statut F-Gas, dernière intervention, historique complet, photos. Pas d&apos;app à installer.
+              </p>
+            </BentoCard>
+
+            {/* Mode présentation */}
+            <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[220px]" delay={160}>
+              <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                  <line x1="8" y1="21" x2="16" y2="21" />
+                  <line x1="12" y1="17" x2="12" y2="21" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-light mb-2">Mode présentation client</h3>
+              <p className="text-sm text-black/45 leading-relaxed">
+                Bascule la fiche en plein écran pour montrer au client : son équipement, son statut réglementaire, l&apos;historique de tes interventions. Argument commercial visuel, sans PowerPoint.
+              </p>
+            </BentoCard>
+
+            {/* Partage confrère */}
+            <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[220px]" delay={200}>
+              <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <circle cx="18" cy="5" r="3" />
+                  <circle cx="6" cy="12" r="3" />
+                  <circle cx="18" cy="19" r="3" />
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-light mb-2">Partage confrère — lien magique 7 jours</h3>
+              <p className="text-sm text-black/45 leading-relaxed">
+                Tu sous-traites une intervention à un confrère ? Génère un lien d&apos;accès temporaire à la fiche. Il intervient à ta place, l&apos;historique reste propre, l&apos;accès expire automatiquement.
+              </p>
+            </BentoCard>
+
+            {/* Statut drapeau XL */}
+            <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[220px]" delay={240}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-5 text-white text-base font-bold" style={{ background: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)" }}>
+                <span aria-hidden>🚨</span>
+              </div>
+              <h3 className="text-lg font-light mb-2">Statut drapeau XL — un coup d&apos;œil suffit</h3>
+              <p className="text-sm text-black/45 leading-relaxed">
+                Bandeau coloré en haut de fiche selon le statut réglementaire : EN RETARD (rouge), À RELANCER (orange), À PROGRAMMER (ambre), JAMAIS CONTRÔLÉ (bleu), À JOUR (vert), EXEMPTÉ (gris). Tu sais où tu vas en 2 secondes.
+              </p>
+            </BentoCard>
+
+            {/* Offline-first */}
+            <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[220px]" delay={280}>
+              <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+                  <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+                  <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+                  <line x1="12" y1="20" x2="12.01" y2="20" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-light mb-2">Offline-first — fonctionne sans 4G</h3>
+              <p className="text-sm text-black/45 leading-relaxed">
+                Sous-sol parking, chambre froide encastrée, plein champ — Vertxia continue. PWA service worker, tout est cached. Dès que le réseau revient, la synchro vers la base centrale est silencieuse.
+              </p>
+            </BentoCard>
+
+            {/* Contribuer à la mémoire collective */}
+            <BentoCard className="col-span-12 md:col-span-6 p-8 min-h-[200px]" delay={320}>
+              <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-light mb-2">Documenter une panne en 1 tap</h3>
+              <p className="text-sm text-black/45 leading-relaxed">
+                Un bouton sur chaque signal prédictif : « documenter cette panne dans la mémoire collective ». Tu contribues anonymement. Les confrères qui croisent ce modèle demain en bénéficient. C&apos;est ainsi que le réseau grandit.
+              </p>
+            </BentoCard>
+
+            {/* Score de conformité */}
+            <BentoCard className="col-span-12 md:col-span-6 p-8 min-h-[200px]" delay={360}>
+              <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-light mb-2">Score de conformité global</h3>
+              <p className="text-sm text-black/45 leading-relaxed">
+                Badge flottant qui agrège l&apos;état réglementaire de tout ton parc : % d&apos;équipements à jour, nombre d&apos;en retard, nombre à relancer. Tu connais ton risque DREAL en temps réel.
+              </p>
+            </BentoCard>
+          </div>
+        </div>
+      </section>
+
       {/* ── DOCUMENTS GÉNÉRÉS ─────────────────────────────────────────────── */}
       <section id="categories" className="py-32 px-6 md:px-12 lg:px-20 border-t border-black/[0.06]">
         <div className="max-w-6xl mx-auto">
@@ -881,11 +1112,12 @@ export default function VertxiaPage() {
           <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
             {[
               { label: "Pipeline", href: "#pipeline" },
+              { label: "Intelligence", href: "#intelligence" },
+              { label: "Cerveau", href: "#cerveau" },
+              { label: "Terrain", href: "#terrain" },
               { label: "Documents", href: "#categories" },
               { label: "Démo", href: "#demo" },
               { label: "Beta", href: "#beta" },
-              { label: "Stack", href: "#stack" },
-              { label: "Pricing", href: "#pricing" },
               { label: "Builder", href: "#builder" },
             ].map((l) => (
               <a
