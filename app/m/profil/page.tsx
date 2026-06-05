@@ -608,28 +608,11 @@ export default function MobileProfilPage() {
           )}
         </InsetListSection>
 
-        {/* Submit + lien désktop pour signature */}
-        <div className="px-4 mt-8 mb-4 space-y-2">
-          <button
-            type="submit"
-            className="w-full px-6 py-4 rounded-2xl bg-[#111] text-white text-[15px] font-medium active:bg-black/90 transition-colors"
-            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-          >
-            {savedFlash ? "✓ Profil enregistré" : "Enregistrer le profil"}
-          </button>
-          {!profil.signatureDataUrl && (
-            <a
-              href="/m/profil/signature"
-              className="block w-full px-6 py-3 rounded-2xl bg-white border border-black/10 text-black/70 text-[13px] font-medium text-center active:bg-black/[0.03] transition-colors"
-              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-            >
-              ✍️ Ajouter ma signature
-            </a>
-          )}
-        </div>
-
+        {/* Signature enregistrée — placée AVANT le bouton "Enregistrer le profil"
+            pour cohérence du parcours : tu remplis ton entreprise, tu vois ta
+            signature, puis tu valides tout. */}
         {profil.signatureDataUrl && (
-          <div className="px-4 mb-4">
+          <div className="px-4 mt-8 mb-4">
             <div className="rounded-2xl bg-white ring-1 ring-black/[0.04] px-4 py-3">
               <div className="text-[11px] font-medium text-black/45 uppercase tracking-wide mb-2">
                 Signature enregistrée
@@ -649,6 +632,26 @@ export default function MobileProfilPage() {
             </div>
           </div>
         )}
+
+        {/* Submit + lien d'ajout signature si pas encore créée */}
+        <div className={`px-4 ${profil.signatureDataUrl ? "" : "mt-8"} mb-4 space-y-2`}>
+          <button
+            type="submit"
+            className="w-full px-6 py-4 rounded-2xl bg-[#111] text-white text-[15px] font-medium active:bg-black/90 transition-colors"
+            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+          >
+            {savedFlash ? "✓ Profil enregistré" : "Enregistrer le profil"}
+          </button>
+          {!profil.signatureDataUrl && (
+            <a
+              href="/m/profil/signature"
+              className="block w-full px-6 py-3 rounded-2xl bg-white border border-black/10 text-black/70 text-[13px] font-medium text-center active:bg-black/[0.03] transition-colors"
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            >
+              ✍️ Ajouter ma signature
+            </a>
+          )}
+        </div>
 
         {/* Outils admin */}
         {/* Compte connecté Vertxia (Supabase Auth). Permet de se déconnecter
