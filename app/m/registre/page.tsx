@@ -129,7 +129,7 @@ export default function RegistrePage() {
 
   return (
     <>
-      <MobileHeader title="Registre fluides" largeTitle backHref="/m/bouteilles" />
+      <MobileHeader title="📋 Mon registre" largeTitle backHref="/m/bouteilles" />
 
       {/* Préréglages période */}
       <InsetListSection title="Période">

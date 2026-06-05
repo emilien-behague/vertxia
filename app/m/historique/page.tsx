@@ -289,7 +289,7 @@ function HistoriqueContent() {
   // Sur l'historique global (accès via bottom tab), pas de bouton retour
   // (redondant avec la tab bar).
   const backHref = equipement ? `/eq/${equipement.id}` : undefined;
-  const title = equipement ? "Historique équipement" : "Historique";
+  const title = equipement ? "📋 Historique de l'installation" : "📋 Mon historique";
 
   return (
     <>

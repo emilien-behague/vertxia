@@ -40,7 +40,7 @@ export default function DocumentsOfficielsPage() {
 
   return (
     <>
-      <MobileHeader title="Documents officiels" backHref="/m/profil" largeTitle />
+      <MobileHeader title="📄 Papiers officiels" backHref="/m/profil" largeTitle />
 
       <div className="px-4 mt-2">
         <input

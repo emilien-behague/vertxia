@@ -55,7 +55,7 @@ export default function MarketplacePage() {
 
   return (
     <>
-      <MobileHeader title="Marketplace pièces" backHref="/m/profil" largeTitle />
+      <MobileHeader title="🛒 Pièces détachées" backHref="/m/profil" largeTitle />
 
       {/* Bandeau stat marketplace - argument de vente fort */}
       <div className="mx-4 mt-2 mb-3 px-5 py-4 rounded-2xl bg-gradient-to-br from-[#A16207]/10 to-[#A16207]/5 ring-1 ring-[#A16207]/15">

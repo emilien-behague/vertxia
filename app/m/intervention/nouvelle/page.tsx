@@ -2381,13 +2381,13 @@ function SuccessView({
             {status.bsffId ? "BSFF signé · officiel" : "CERFA généré"}
           </span>
         </div>
-        <h1 className="mt-4 text-[28px] font-bold tracking-tight text-[#111]">
-          Intervention validée
+        <h1 className="mt-4 text-[32px] font-bold tracking-tight text-[#111]">
+          🎉 Bravo, c&apos;est validé !
         </h1>
         <p className="mt-2 text-[14px] text-black/55 leading-relaxed">
           {status.bsffId
-            ? "Le bordereau BSFF officiel a été signé par TrackDéchets. Téléchargez les 2 documents."
-            : "Le CERFA 15497*04 a été généré. Téléchargez-le pour le faire signer par le client."}
+            ? "Ton bordereau BSFF officiel est signé par TrackDéchets. Tu peux télécharger les 2 documents."
+            : "L'attestation CERFA est prête. Télécharge-la pour la faire signer au client."}
         </p>
       </div>
 

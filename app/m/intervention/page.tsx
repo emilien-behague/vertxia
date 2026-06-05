@@ -14,15 +14,15 @@ import {
 // 2 chemins : (a) intervention sur équipement existant → /bsff?equipement=ID
 //             (b) intervention libre → /bsff (form vierge)
 
-const INTERVENTION_TYPES: { v: TypeIntervention; label: string; desc: string }[] = [
-  { v: "recuperation", label: "Récupération de fluide", desc: "+ BSFF officiel" },
-  { v: "demantelement", label: "Démantèlement", desc: "+ BSFF officiel" },
-  { v: "controle_periodique", label: "Contrôle d'étanchéité", desc: "Annuel · CERFA 15497*04" },
-  { v: "controle_non_periodique", label: "Contrôle suite fuite", desc: "CERFA 15497*04" },
-  { v: "mise_service", label: "Mise en service", desc: "Première mise en route" },
-  { v: "maintenance", label: "Maintenance", desc: "Entretien préventif" },
-  { v: "assemblage", label: "Assemblage", desc: "Montage initial de l'équipement" },
-  { v: "modification", label: "Modification", desc: "Modification d'un équipement existant" },
+const INTERVENTION_TYPES: { v: TypeIntervention; label: string; desc: string; emoji: string }[] = [
+  { v: "recuperation", emoji: "🧊", label: "Récupération de gaz", desc: "Je vide la machine de son fluide" },
+  { v: "demantelement", emoji: "🔧", label: "Démantèlement", desc: "Je démonte une installation" },
+  { v: "controle_periodique", emoji: "🔍", label: "Contrôle anti-fuite", desc: "Le contrôle annuel obligatoire" },
+  { v: "controle_non_periodique", emoji: "🔎", label: "Contrôle après réparation", desc: "Vérification suite à une fuite" },
+  { v: "mise_service", emoji: "⚡", label: "Mise en route", desc: "Je démarre une installation neuve" },
+  { v: "maintenance", emoji: "🛠️", label: "Entretien", desc: "Maintenance préventive" },
+  { v: "assemblage", emoji: "🔩", label: "Assemblage", desc: "Je monte une installation" },
+  { v: "modification", emoji: "✏️", label: "Modification", desc: "Je modifie une installation existante" },
 ];
 
 export default function MobileInterventionPage() {
@@ -38,35 +38,28 @@ export default function MobileInterventionPage() {
 
       <div className="px-5 mt-1 mb-2">
         <p className="text-[13px] text-black/55 leading-relaxed">
-          Sélectionnez un équipement de votre parc ou choisissez le type d&apos;intervention pour
-          démarrer un formulaire vierge.
+          Choisis l&apos;équipement sur lequel tu interviens, ou démarre un chantier neuf.
         </p>
       </div>
 
       {/* Scan QR shortcut */}
-      <InsetListSection title="Méthode la plus rapide">
+      <InsetListSection title="🚀 Le plus rapide">
         <InsetRow
           href="/m/scan"
           leading={
-            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#A16207]/10 text-[#A16207]">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="7" height="7" />
-                <rect x="14" y="3" width="7" height="7" />
-                <rect x="3" y="14" width="7" height="7" />
-                <rect x="14" y="14" width="3" height="3" />
-                <path d="M21 14h-3v3M18 21h3v-3" />
-              </svg>
+            <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-[#A16207]/10 text-[22px] leading-none">
+              📷
             </span>
           }
-          label="Scanner le QR Code de l'équipement"
-          sublabel="Ouvre la caméra · détection auto · fiche directe"
+          label="Scanner le QR Code"
+          sublabel="Ouvre la caméra → la fiche apparaît"
           showChevron
         />
       </InsetListSection>
 
       {/* Équipements récents */}
       {equipements.length > 0 && (
-        <InsetListSection title="Équipements récents">
+        <InsetListSection title="🏭 Tes équipements récents">
           {equipements.map((eq) => (
             <InsetRow
               key={eq.id}
@@ -88,8 +81,8 @@ export default function MobileInterventionPage() {
 
       {/* Types d'intervention */}
       <InsetListSection
-        title="Démarrer un formulaire vierge"
-        footer="Si vous n'avez pas encore enregistré l'équipement, vous pourrez le saisir directement dans le formulaire."
+        title="✨ Choisis le type de chantier"
+        footer="L'équipement n'est pas encore enregistré ? Pas grave — tu pourras le saisir dans le formulaire."
       >
         {INTERVENTION_TYPES.map((t) => {
           const nbDocs = countDocumentsForIntervention(t.v);
@@ -104,17 +97,8 @@ export default function MobileInterventionPage() {
               label={t.label}
               sublabel={sublabel}
               leading={
-                <span
-                  className={`inline-flex items-center justify-center w-8 h-8 rounded-full ${
-                    t.v === "recuperation" || t.v === "demantelement"
-                      ? "bg-emerald-50 text-emerald-700"
-                      : "bg-blue-50 text-blue-700"
-                  }`}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                  </svg>
+                <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-black/[0.04] text-[22px] leading-none">
+                  {t.emoji}
                 </span>
               }
               showChevron
