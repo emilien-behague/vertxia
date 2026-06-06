@@ -307,16 +307,25 @@ export async function generateCerfa15498PDF(input: Cerfa15498Input): Promise<Uin
   y -= 12;
 
   // ── SECTION 5 : SIGNATURES ─────────────────────────────────────────────
+  // CERFA 15498*02 prevoit 3 cadres signature (verifie via service-public.gouv.fr
+  // 06/06/2026) :
+  //   1. L'ACQUEREUR (acheteur) - OBLIGATOIRE
+  //   2. L'INSTALLATEUR ATTESTE - OBLIGATOIRE
+  //   3. LE DISTRIBUTEUR - OPTIONNEL (a remplir uniquement si le distributeur
+  //      n'est pas lui-meme l'installateur attesté et qu'il sous-traite a un
+  //      pro agree separe).
   text("5. SIGNATURES", M, y, { size: 10, bold: true, color: accent });
   y -= 14;
-  text("Fait en deux exemplaires, un pour chaque partie.", M, y, { size: 9, color: grey });
-  y -= 18;
+  text("Fait en trois exemplaires, un pour chaque partie.", M, y, { size: 9, color: grey });
+  y -= 16;
 
+  // Layout : 2 cadres en haut (acheteur + installateur), 1 cadre en bas
+  // (distributeur, plus etroit centre) pour rester lisible en A4 portrait.
   const colW = (width - 2 * M - 20) / 2;
   const sigBoxHeight = 70;
 
-  // Cadre signature acheteur
-  text("L'ACHETEUR", M, y, { size: 9, bold: true });
+  // Cadre signature acquereur
+  text("L'ACQUEREUR (acheteur)", M, y, { size: 9, bold: true });
   text(input.acheteur.nomOuRaisonSociale, M, y - 12, { size: 8 });
   text("Date : ___________________", M, y - 26, { size: 8, color: grey });
   text("Signature :", M, y - 40, { size: 8, color: grey });
@@ -330,7 +339,23 @@ export async function generateCerfa15498PDF(input: Cerfa15498Input): Promise<Uin
   text("Signature :", x2, y - 40, { size: 8, color: grey });
   rect(x2, y - 46, colW, sigBoxHeight);
 
-  y -= 46 + sigBoxHeight + 10;
+  y -= 46 + sigBoxHeight + 14;
+
+  // Cadre signature distributeur (optionnel, pleine largeur compact)
+  text("LE DISTRIBUTEUR (optionnel)", M, y, { size: 9, bold: true });
+  text(
+    "A remplir uniquement si le distributeur n'est pas l'installateur ci-dessus (sous-traitance).",
+    M,
+    y - 11,
+    { size: 7.5, color: grey }
+  );
+  text("Raison sociale : ____________________________________", M, y - 24, { size: 8, color: grey });
+  text("SIRET : ____________________________________", M, y - 36, { size: 8, color: grey });
+  text("Date : ___________________", M, y - 48, { size: 8, color: grey });
+  text("Signature :", M + 200, y - 48, { size: 8, color: grey });
+  rect(M + 200, y - 54, width - 2 * M - 200, 52);
+
+  y -= 54 + 14;
 
   // ── PIED DE PAGE ───────────────────────────────────────────────────────
   line(M, y, width - M, y, grey);
