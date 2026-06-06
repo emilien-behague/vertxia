@@ -28,7 +28,6 @@ import {
 import { PannesConnuesCard } from "@/components/mobile/pannes-connues-card";
 import { CrossSignalCard } from "@/components/mobile/cross-signal-card";
 import { DocumenterPanneButton } from "@/components/mobile/documenter-panne-button";
-import { ModePresentationClient } from "@/components/mobile/mode-presentation-client";
 
 // Page mobile premium — affichée quand un technicien scanne le QR Code collé sur
 // un équipement. Doit s'afficher SANS bug sur Safari iOS (zéro animation initial:opacity:0
@@ -188,9 +187,6 @@ export default function EquipementScannedPage({
   const [redeemError, setRedeemError] = useState<string | null>(null);
   const [grantExpiresAt, setGrantExpiresAt] = useState<string | null>(null);
   const [serverDebug, setServerDebug] = useState<PublicEquipement["debug"]>(null);
-  // Mode présentation client — overlay plein écran pour montrer la fiche
-  // au client de manière épurée et lisible (argument commercial).
-  const [presentationOpen, setPresentationOpen] = useState(false);
   // Modal "Supprimer l'équipement" (owner uniquement)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -503,15 +499,6 @@ export default function EquipementScannedPage({
 
   return (
     <>
-      {/* Mode présentation client en overlay plein écran. Rendered au top
-          du tree pour passer au-dessus de tout (header, nav, badges flottants). */}
-      {presentationOpen && (
-        <ModePresentationClient
-          eq={eq}
-          profil={profil}
-          onClose={() => setPresentationOpen(false)}
-        />
-      )}
     <div
       className="min-h-screen bg-[#F5F4F0] text-[#111] font-sans antialiased"
       style={{
@@ -1222,22 +1209,6 @@ export default function EquipementScannedPage({
               </div>
             </div>
           </div>
-        )}
-
-        {/* Mode présentation client — gros bouton commercial premium :
-            tend ton téléphone au client, il voit en plein écran épuré
-            "sa machine, son état, son prochain contrôle". Argument de
-            vente fort + confiance immédiate. Owner uniquement. */}
-        {isOwner && (
-          <button
-            type="button"
-            onClick={() => setPresentationOpen(true)}
-            className="w-full mt-4 px-6 py-4 rounded-2xl bg-[#111] text-white text-[15px] font-semibold active:bg-black/85 transition-colors inline-flex items-center justify-center gap-3 shadow-md"
-            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-          >
-            <span className="text-[22px] leading-none">👁️</span>
-            <span>Mode présentation client</span>
-          </button>
         )}
 
         {/* Actions secondaires — owner uniquement (QR PDF + raccourcis perso) */}

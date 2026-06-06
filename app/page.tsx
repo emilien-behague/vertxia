@@ -624,21 +624,6 @@ export default function VertxiaPage() {
               </p>
             </BentoCard>
 
-            {/* Mode présentation */}
-            <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[220px]" delay={160}>
-              <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
-                  <line x1="8" y1="21" x2="16" y2="21" />
-                  <line x1="12" y1="17" x2="12" y2="21" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-light mb-2">Mode présentation client</h3>
-              <p className="text-sm text-black/45 leading-relaxed">
-                Bascule la fiche en plein écran pour montrer au client : son équipement, son statut réglementaire, l&apos;historique de tes interventions. Argument commercial visuel, sans PowerPoint.
-              </p>
-            </BentoCard>
-
             {/* Partage confrère */}
             <BentoCard className="col-span-12 md:col-span-4 p-8 min-h-[220px]" delay={200}>
               <div className="w-10 h-10 rounded-xl border border-black/10 flex items-center justify-center mb-5">
