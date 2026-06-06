@@ -4,7 +4,7 @@
 // son entête entreprise, son logo et sa signature manuscrite.
 
 import { NextResponse } from "next/server";
-import { generateRapportPdf, type RapportInput } from "@/lib/rapport";
+import { generateRapportPdf, type RapportInput } from "@/lib/pdf/rapport";
 
 export const runtime = "nodejs";
 

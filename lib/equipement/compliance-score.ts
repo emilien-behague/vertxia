@@ -16,11 +16,11 @@
 // V1 sans LLM — pur calcul deterministe sur la data deja en RAM. V2
 // pourra utiliser Claude pour generer un commentaire personnalise du score.
 
-import type { StoredEquipement, EquipementWithStatus } from "@/lib/equipement";
-import type { StoredIntervention } from "@/lib/intervention-storage";
-import type { StoredDiagnostic } from "@/lib/diagnostic-storage";
+import type { StoredEquipement, EquipementWithStatus } from "@/lib/equipement/equipement";
+import type { StoredIntervention } from "@/lib/intervention/intervention-storage";
+import type { StoredDiagnostic } from "@/lib/intervention/diagnostic-storage";
 import type { Profil } from "@/lib/profil";
-import { detectPredictiveSignals } from "@/lib/predictive-maintenance";
+import { detectPredictiveSignals } from "@/lib/intervention/predictive-maintenance";
 
 export type ScoreColor = "green" | "orange" | "red" | "neutral";
 

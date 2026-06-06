@@ -9,7 +9,7 @@
 
 import QRCode from "qrcode";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import type { StoredEquipement } from "@/lib/equipement";
+import type { StoredEquipement } from "@/lib/equipement/equipement";
 
 // Format A6 portrait en points PDF (1 pt = 1/72 inch, 25.4 mm = 72 pt)
 const A6_WIDTH = 297.64; // 105 mm

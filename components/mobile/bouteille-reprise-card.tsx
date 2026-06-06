@@ -13,14 +13,14 @@
 
 import { useMemo, useState } from "react";
 import { loadProfil } from "@/lib/profil";
-import type { Bouteille } from "@/lib/bouteille";
+import type { Bouteille } from "@/lib/equipement/bouteille";
 import {
   getDistributeursReprise,
   estimerFraisReprise,
   calculerFraisReprise,
   genererMailtoReprise,
   labelVoieRepriseCourt,
-} from "@/lib/reprise-bouteille";
+} from "@/lib/equipement/reprise-bouteille";
 
 type Props = {
   bouteille: Bouteille;

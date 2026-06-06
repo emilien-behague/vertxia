@@ -10,21 +10,21 @@ import {
   buildRelanceMailto,
   type EquipementWithStatus,
   type ControleStatut,
-} from "@/lib/equipement";
-import { listInterventions } from "@/lib/intervention-storage";
-import { listDiagnostics } from "@/lib/diagnostic-storage";
+} from "@/lib/equipement/equipement";
+import { listInterventions } from "@/lib/intervention/intervention-storage";
+import { listDiagnostics } from "@/lib/intervention/diagnostic-storage";
 import { loadProfil, type Profil } from "@/lib/profil";
-import { generateQrLabel } from "@/lib/qr-label";
-import { fetchPublicEquipement, fetchPublicInterventions, syncEquipementToSupabase, lastFetchDebug, type PublicEquipement } from "@/lib/public-sync";
+import { generateQrLabel } from "@/lib/pdf/qr-label";
+import { fetchPublicEquipement, fetchPublicInterventions, syncEquipementToSupabase, lastFetchDebug, type PublicEquipement } from "@/lib/sync/public-sync";
 import {
   detectPredictiveSignals,
   SIGNAL_STYLES,
   type SignalPredictif,
-} from "@/lib/predictive-maintenance";
+} from "@/lib/intervention/predictive-maintenance";
 import {
   buildContextMemoryFromCurrentState,
   type ContextMemory,
-} from "@/lib/context-memory";
+} from "@/lib/intervention/context-memory";
 import { PannesConnuesCard } from "@/components/mobile/pannes-connues-card";
 import { CrossSignalCard } from "@/components/mobile/cross-signal-card";
 import { DocumenterPanneButton } from "@/components/mobile/documenter-panne-button";
@@ -1584,7 +1584,7 @@ type FullDiag = {
   visitorError?: string;
 };
 
-function NotFoundState({ id, debug }: { id: string; debug: import("@/lib/public-sync").FetchDebug | null }) {
+function NotFoundState({ id, debug }: { id: string; debug: import("@/lib/sync/public-sync").FetchDebug | null }) {
   const [diag, setDiag] = useState<FullDiag | "loading" | "error">("loading");
 
   useEffect(() => {

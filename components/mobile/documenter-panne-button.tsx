@@ -14,7 +14,7 @@
 // modele viennent de l'equipement. Aucune PII (n serie, client) ne sort.
 
 import { useState } from "react";
-import type { SignalPredictif } from "@/lib/predictive-maintenance";
+import type { SignalPredictif } from "@/lib/intervention/predictive-maintenance";
 
 type TypePanne =
   | "fuite"
@@ -152,7 +152,7 @@ export function DocumenterPanneButton({ signal, marque, modele }: Props) {
     // Offline detecte cote client : on enqueue direct, message "sera publie"
     if (typeof navigator !== "undefined" && !navigator.onLine) {
       try {
-        const { enqueueOperation } = await import("@/lib/offline-queue");
+        const { enqueueOperation } = await import("@/lib/sync/offline-queue");
         await enqueueOperation("/api/catalog/failure/upsert", "POST", payload);
         setStatus({ kind: "queued" });
       } catch {
@@ -184,7 +184,7 @@ export function DocumenterPanneButton({ signal, marque, modele }: Props) {
     } catch (e) {
       // Network error : enqueue pour rejouer plus tard plutot que perdre la contribution
       try {
-        const { enqueueOperation } = await import("@/lib/offline-queue");
+        const { enqueueOperation } = await import("@/lib/sync/offline-queue");
         await enqueueOperation("/api/catalog/failure/upsert", "POST", payload);
         setStatus({ kind: "queued" });
       } catch {

@@ -8,8 +8,8 @@
 // Si overflow > 1 page, on tronque le tableau lignes — V2 fera multi-page.
 
 import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
-import { embedUnicodeFonts } from "@/lib/pdf-fonts";
-import { embedDataUrl } from "@/lib/pdf-image";
+import { embedUnicodeFonts } from "@/lib/pdf/pdf-fonts";
+import { embedDataUrl } from "@/lib/pdf/pdf-image";
 import { fmtEUR, type Devis } from "@/lib/devis";
 
 // ── Palette + constantes design alignees avec rapport.ts ────────────────

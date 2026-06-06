@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { destroySession } from "@/lib/session";
+import { destroySession } from "@/lib/auth/session";
 import { checkOrigin } from "@/lib/origin-check";
 import { appUrl } from "@/lib/env";
 

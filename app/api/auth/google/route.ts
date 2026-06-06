@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { generateCodeVerifier, generateState } from "arctic";
-import { getGoogleProvider } from "@/lib/oauth";
+import { getGoogleProvider } from "@/lib/auth/oauth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

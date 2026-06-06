@@ -15,7 +15,7 @@ import {
   normalizeEmail,
   createMagicLink,
   sendMagicLinkEmail,
-} from "@/lib/auth";
+} from "@/lib/auth/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { checkOrigin } from "@/lib/origin-check";
 import { appUrl } from "@/lib/env";

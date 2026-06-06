@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { listInterventions } from "@/lib/intervention-storage";
+import { listInterventions } from "@/lib/intervention/intervention-storage";
 import {
   aggregateForYear,
   loadManualInputs,

@@ -2,7 +2,7 @@ import { PDFDocument } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { embedDataUrl } from "@/lib/pdf-image";
+import { embedDataUrl } from "@/lib/pdf/pdf-image";
 
 // Fonte Unicode embarquee dans le PDF (NotoSans-Regular ~556KB).
 // Avec { subset: true }, seuls les glyphes effectivement utilises sont embed

@@ -6,15 +6,15 @@ import { useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { ScanPlaqueButton, type PlaqueData } from "@/components/mobile/scan-plaque-button";
 import { ActionTile } from "@/components/mobile/tile";
-import { listInterventions } from "@/lib/intervention-storage";
-import { listDiagnostics } from "@/lib/diagnostic-storage";
+import { listInterventions } from "@/lib/intervention/intervention-storage";
+import { listDiagnostics } from "@/lib/intervention/diagnostic-storage";
 import {
   listEquipements,
   computeAllStatus,
   getEquipementStats,
   type EquipementWithStatus,
-} from "@/lib/equipement";
-import { detectPredictiveSignals, type SignalGravite } from "@/lib/predictive-maintenance";
+} from "@/lib/equipement/equipement";
+import { detectPredictiveSignals, type SignalGravite } from "@/lib/intervention/predictive-maintenance";
 import { downloadStickerSheet } from "@/lib/qrcode-client";
 
 // Cle sessionStorage utilisee pour passer les donnees de plaque scannees

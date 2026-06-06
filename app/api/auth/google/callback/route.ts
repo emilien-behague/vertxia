@@ -7,9 +7,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { getGoogleProvider, verifyGoogleIdToken } from "@/lib/oauth";
-import { getSession } from "@/lib/session";
-import { upsertUserByEmail, normalizeEmail, isValidEmail } from "@/lib/auth";
+import { getGoogleProvider, verifyGoogleIdToken } from "@/lib/auth/oauth";
+import { getSession } from "@/lib/auth/session";
+import { upsertUserByEmail, normalizeEmail, isValidEmail } from "@/lib/auth/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";

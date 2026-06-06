@@ -6,13 +6,13 @@ import {
   listInterventions,
   getStats,
   type StoredIntervention,
-} from "@/lib/intervention-storage";
+} from "@/lib/intervention/intervention-storage";
 import {
   listEquipements,
   computeAllStatus,
   getEquipementStats,
   type EquipementWithStatus,
-} from "@/lib/equipement";
+} from "@/lib/equipement/equipement";
 import { aggregateForYear, loadManualInputs } from "@/lib/syderep";
 import { loadProfil, isProfilComplete, type Profil } from "@/lib/profil";
 import type { TypeIntervention } from "@/lib/cerfa/cerfa";

@@ -11,15 +11,15 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Drawer } from "vaul";
-import { listEquipements, computeAllStatus } from "@/lib/equipement";
-import { listInterventions } from "@/lib/intervention-storage";
-import { listDiagnostics } from "@/lib/diagnostic-storage";
+import { listEquipements, computeAllStatus } from "@/lib/equipement/equipement";
+import { listInterventions } from "@/lib/intervention/intervention-storage";
+import { listDiagnostics } from "@/lib/intervention/diagnostic-storage";
 import { loadProfil } from "@/lib/profil";
 import {
   computeComplianceScore,
   SCORE_COLOR_STYLES,
   type ComplianceScore,
-} from "@/lib/compliance-score";
+} from "@/lib/equipement/compliance-score";
 
 export function ComplianceScoreBadge() {
   const [score, setScore] = useState<ComplianceScore | null>(null);

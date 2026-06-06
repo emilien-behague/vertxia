@@ -6,7 +6,7 @@
 
 import type { TypeIntervention, Destination, ControleDetails } from "@/lib/cerfa/cerfa";
 import { uuid } from "@/lib/uuid";
-import { scopedKey } from "@/lib/user-scope";
+import { scopedKey } from "@/lib/auth/user-scope";
 
 const STORAGE_KEY_BASE = "vertxia:interventions";
 function storageKey(): string {
@@ -103,7 +103,7 @@ export function saveIntervention(
   // Sync background vers Supabase pour partage public (scan QR de l'équipement
   // → l'historique s'affiche). equipementId lie l'intervention à un équipement
   // du parc partagé.
-  import("@/lib/public-sync")
+  import("@/lib/sync/public-sync")
     .then((m) => m.syncInterventionToSupabase(entry, equipementId))
     .catch(() => {});
   return entry;
@@ -124,7 +124,7 @@ export function updateIntervention(
   all[idx] = updated;
   localStorage.setItem(storageKey(), JSON.stringify(all));
   // Resync Supabase en background (silent fail si offline ou pas connecte)
-  import("@/lib/public-sync")
+  import("@/lib/sync/public-sync")
     .then((m) => m.syncInterventionToSupabase(updated, updated.equipementId))
     .catch(() => {});
   return updated;
@@ -138,7 +138,7 @@ export function deleteIntervention(id: string): void {
   // 2. Marque l'ID comme tombstone (filtre anti-resurrection au merge remote)
   addInterventionTombstone(id);
   // 3. Supprime cote Supabase en background (silent fail si offline / pas auth)
-  import("@/lib/public-sync")
+  import("@/lib/sync/public-sync")
     .then((m) => m.deleteInterventionFromSupabase(id))
     .catch(() => {});
 }

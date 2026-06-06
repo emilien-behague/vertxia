@@ -15,10 +15,10 @@ import {
   listEquipements,
   computeAllStatus,
   type EquipementWithStatus,
-} from "@/lib/equipement";
-import { listInterventions, type StoredIntervention } from "@/lib/intervention-storage";
-import { listDiagnostics } from "@/lib/diagnostic-storage";
-import { detectPredictiveSignals, type SignalGravite } from "@/lib/predictive-maintenance";
+} from "@/lib/equipement/equipement";
+import { listInterventions, type StoredIntervention } from "@/lib/intervention/intervention-storage";
+import { listDiagnostics } from "@/lib/intervention/diagnostic-storage";
+import { detectPredictiveSignals, type SignalGravite } from "@/lib/intervention/predictive-maintenance";
 import { geocodeAddress, type GeoPoint } from "@/lib/geocoding";
 
 // ─── Calendrier helpers ──────────────────────────────────────────────────────

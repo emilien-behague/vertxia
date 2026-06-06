@@ -13,7 +13,7 @@
 // son profil. Pour V1 on garde simple : ventilation lineaire du devisEstime
 // IA en 3 lignes typiques.
 
-import type { DiagnosticResult } from "@/lib/vision-diagnostic";
+import type { DiagnosticResult } from "@/lib/intervention/vision-diagnostic";
 
 export type DevisLigne = {
   /** Libelle visible sur le PDF (ex : "Main d'oeuvre - reparation brasure") */

@@ -4,8 +4,8 @@
 // (image compressée 2000px ~200 KB × 20 ≈ 4 MB, sous la limite iOS ~5 MB).
 
 import { uuid } from "@/lib/uuid";
-import { scopedKey } from "@/lib/user-scope";
-import { recompressDataUrlForStorage, type DiagnosticResult } from "@/lib/vision-diagnostic";
+import { scopedKey } from "@/lib/auth/user-scope";
+import { recompressDataUrlForStorage, type DiagnosticResult } from "@/lib/intervention/vision-diagnostic";
 
 const STORAGE_KEY_BASE = "vertxia:diagnostics";
 const MAX_STORED = 20;

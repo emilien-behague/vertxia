@@ -15,7 +15,7 @@ import {
   UNITE_INTERIEURE_LABELS,
   type UniteInterieure,
   type UniteInterieureType,
-} from "@/lib/equipement";
+} from "@/lib/equipement/equipement";
 
 const VALID_UNITE_TYPES = new Set<UniteInterieureType>([
   "cassette_plafond",

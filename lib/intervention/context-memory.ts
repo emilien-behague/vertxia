@@ -13,10 +13,10 @@
 // blocs "Tu as deja vu" en UI + texte de contexte injecte dans les prompts
 // Claude pour enrichir les analyses.
 
-import type { StoredIntervention } from "@/lib/intervention-storage";
-import type { StoredDiagnostic } from "@/lib/diagnostic-storage";
-import type { StoredEquipement } from "@/lib/equipement";
-import type { DefautGravite } from "@/lib/vision-diagnostic";
+import type { StoredIntervention } from "@/lib/intervention/intervention-storage";
+import type { StoredDiagnostic } from "@/lib/intervention/diagnostic-storage";
+import type { StoredEquipement } from "@/lib/equipement/equipement";
+import type { DefautGravite } from "@/lib/intervention/vision-diagnostic";
 
 export type SimilarPastDiagnostic = {
   id: string;

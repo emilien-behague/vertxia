@@ -16,7 +16,7 @@
 
 import QRCode from "qrcode";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import type { StoredIntervention } from "@/lib/intervention-storage";
+import type { StoredIntervention } from "@/lib/intervention/intervention-storage";
 import type { Profil } from "@/lib/profil";
 
 const A6_WIDTH = 297.64;

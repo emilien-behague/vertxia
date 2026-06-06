@@ -17,7 +17,7 @@ import {
   GRAVITE_LABELS,
   DELAI_LABELS,
   type DiagnosticResult,
-} from "@/lib/vision-diagnostic";
+} from "@/lib/intervention/vision-diagnostic";
 
 /** Convertit un data URL base64 en File partageable. */
 function dataUrlToFile(dataUrl: string, filename: string): File | null {

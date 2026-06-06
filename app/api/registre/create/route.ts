@@ -4,7 +4,7 @@
 // + période + profil. Retourne le PDF binary direct.
 
 import { NextResponse } from "next/server";
-import { generateRegistrePdf, type RegistreInput } from "@/lib/registre-pdf";
+import { generateRegistrePdf, type RegistreInput } from "@/lib/pdf/registre-pdf";
 
 export const runtime = "nodejs";
 

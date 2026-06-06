@@ -13,7 +13,7 @@
 //   - Cessions à un centre de traitement — auto (interventions avec BSFF signé)
 //   - Stock final (31 décembre) — calculé : init + achats + récupéré − chargé − cédé
 
-import type { StoredIntervention } from "@/lib/intervention-storage";
+import type { StoredIntervention } from "@/lib/intervention/intervention-storage";
 
 export type SyderepManualInput = {
   stockInitialKg: number;

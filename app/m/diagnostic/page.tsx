@@ -19,14 +19,14 @@ import {
   GRAVITE_STYLES,
   DELAI_LABELS,
   type DiagnosticResult,
-} from "@/lib/vision-diagnostic";
-import { saveDiagnostic, listDiagnostics } from "@/lib/diagnostic-storage";
-import { listInterventions } from "@/lib/intervention-storage";
-import { listEquipements } from "@/lib/equipement";
+} from "@/lib/intervention/vision-diagnostic";
+import { saveDiagnostic, listDiagnostics } from "@/lib/intervention/diagnostic-storage";
+import { listInterventions } from "@/lib/intervention/intervention-storage";
+import { listEquipements } from "@/lib/equipement/equipement";
 import {
   buildContextMemoryFromCurrentState,
   type ContextMemory,
-} from "@/lib/context-memory";
+} from "@/lib/intervention/context-memory";
 import {
   buildDevisFromDiagnostic,
   generateDevisNumero,
@@ -38,7 +38,7 @@ import {
   buildDiagnosticWhatsAppUrl,
   buildDiagnosticMailtoUrl,
   downloadDiagnosticImage,
-} from "@/lib/diagnostic-share";
+} from "@/lib/intervention/diagnostic-share";
 import { loadProfil } from "@/lib/profil";
 
 type Phase = "idle" | "analyzing" | "result" | "error";

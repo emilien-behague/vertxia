@@ -18,7 +18,7 @@
 
 import { useEffect } from "react";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { setCurrentUserId } from "@/lib/user-scope";
+import { setCurrentUserId } from "@/lib/auth/user-scope";
 
 export function AuthSync() {
   useEffect(() => {

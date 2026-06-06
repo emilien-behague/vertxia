@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
-import { listInterventions } from "@/lib/intervention-storage";
+import { listInterventions } from "@/lib/intervention/intervention-storage";
 import {
   listEquipements,
   saveEquipement,
@@ -15,7 +15,7 @@ import {
   type StoredEquipement,
   type EquipementWithStatus,
   type ControleStatut,
-} from "@/lib/equipement";
+} from "@/lib/equipement/equipement";
 import {
   qrSvgFor,
   equipementUrl,

@@ -11,8 +11,8 @@ import {
   consumeMagicLink,
   upsertUserByEmail,
   AuthError,
-} from "@/lib/auth";
-import { getSession } from "@/lib/session";
+} from "@/lib/auth/auth";
+import { getSession } from "@/lib/auth/session";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";

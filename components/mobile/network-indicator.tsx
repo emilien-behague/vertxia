@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { countPendingOperations, flushQueue } from "@/lib/offline-queue";
+import { countPendingOperations, flushQueue } from "@/lib/sync/offline-queue";
 
 // Badge réseau affiché en haut de l'app mobile :
 //  - 🟢 "En ligne" si online + 0 opération en attente (caché par défaut)

@@ -11,8 +11,8 @@
 // une recommandation actionnable pendant qu'il est sur place.
 
 import { useEffect, useState } from "react";
-import { computeCrossSignals, type CrossSignal, type PanneConnue } from "@/lib/cross-signals";
-import type { SignalPredictif } from "@/lib/predictive-maintenance";
+import { computeCrossSignals, type CrossSignal, type PanneConnue } from "@/lib/intervention/cross-signals";
+import type { SignalPredictif } from "@/lib/intervention/predictive-maintenance";
 
 type Props = {
   /** Signaux predictifs locaux deja calcules par la page parente. */

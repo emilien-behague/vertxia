@@ -5,9 +5,9 @@
 //  - Lecture/écriture défensives (SSR-safe + parse JSON sécurisé)
 //  - uuid via helper avec fallback Math.random (Safari iOS HTTP)
 
-import type { Bouteille, Mouvement } from "@/lib/bouteille";
+import type { Bouteille, Mouvement } from "@/lib/equipement/bouteille";
 import { uuid } from "@/lib/uuid";
-import { scopedKey } from "@/lib/user-scope";
+import { scopedKey } from "@/lib/auth/user-scope";
 
 const BOUTEILLES_BASE = "vertxia.bouteilles.v1";
 const MOUVEMENTS_BASE = "vertxia.mouvements.v1";

@@ -12,9 +12,9 @@
 // requise, l'IA "comprend" l'equipement tout seul a partir de l'historique
 // que le pro genere naturellement en travaillant.
 
-import type { StoredIntervention } from "@/lib/intervention-storage";
-import type { StoredEquipement } from "@/lib/equipement";
-import type { StoredDiagnostic } from "@/lib/diagnostic-storage";
+import type { StoredIntervention } from "@/lib/intervention/intervention-storage";
+import type { StoredEquipement } from "@/lib/equipement/equipement";
+import type { StoredDiagnostic } from "@/lib/intervention/diagnostic-storage";
 
 export type SignalGravite = "critique" | "alerte" | "surveillance";
 

@@ -16,13 +16,13 @@
 // V1 : equipements + interventions uniquement.
 // V2 (plus tard) : diagnostics, profil, bouteilles.
 
-import { listEquipements } from "@/lib/equipement";
-import { listInterventions } from "@/lib/intervention-storage";
-import { fetchMyEquipements, fetchMyInterventions } from "@/lib/public-sync";
-import { scopedKey } from "@/lib/user-scope";
+import { listEquipements } from "@/lib/equipement/equipement";
+import { listInterventions } from "@/lib/intervention/intervention-storage";
+import { fetchMyEquipements, fetchMyInterventions } from "@/lib/sync/public-sync";
+import { scopedKey } from "@/lib/auth/user-scope";
 import { loadProfil, saveProfil } from "@/lib/profil";
-import type { StoredEquipement } from "@/lib/equipement";
-import type { StoredIntervention } from "@/lib/intervention-storage";
+import type { StoredEquipement } from "@/lib/equipement/equipement";
+import type { StoredIntervention } from "@/lib/intervention/intervention-storage";
 
 const SESSION_FLAG = "vertxia:hydrated";
 const EQUIP_KEY_BASE = "vertxia:equipements";

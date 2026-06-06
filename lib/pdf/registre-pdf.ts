@@ -12,14 +12,14 @@
 //  - Pied de page avec signature opérateur
 
 import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
-import { embedUnicodeFonts } from "@/lib/pdf-fonts";
-import type { Bouteille, Mouvement, MouvementType } from "@/lib/bouteille";
+import { embedUnicodeFonts } from "@/lib/pdf/pdf-fonts";
+import type { Bouteille, Mouvement, MouvementType } from "@/lib/equipement/bouteille";
 import {
   computeChargeActuelle,
   estEntree,
   estSortie,
   labelMouvementCourt,
-} from "@/lib/bouteille";
+} from "@/lib/equipement/bouteille";
 import type { Profil } from "@/lib/profil";
 
 export type RegistreInput = {

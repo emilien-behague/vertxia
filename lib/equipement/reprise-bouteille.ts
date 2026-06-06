@@ -24,7 +24,7 @@
 //    dans le catalogue + specialite incluant fluides.
 
 import { FOURNISSEURS, type Fournisseur } from "@/lib/marketplace-pieces";
-import type { Bouteille } from "@/lib/bouteille";
+import type { Bouteille } from "@/lib/equipement/bouteille";
 
 // ----------------------------------------------------------------------------
 // CATALOGUE DISTRIBUTEURS FLUIDES — sous-ensemble du catalogue marketplace

@@ -17,8 +17,8 @@ import {
   getInfractions,
   type Infraction,
   type InfractionSeverite,
-} from "@/lib/equipement";
-import { listInterventions } from "@/lib/intervention-storage";
+} from "@/lib/equipement/equipement";
+import { listInterventions } from "@/lib/intervention/intervention-storage";
 
 const SEVERITE_STYLES: Record<
   InfractionSeverite,

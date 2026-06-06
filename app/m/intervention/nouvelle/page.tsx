@@ -16,25 +16,25 @@ import { VoiceInput } from "@/components/mobile/voice-input";
 import { ScanPlaqueButton, type PlaqueData } from "@/components/mobile/scan-plaque-button";
 import { VoiceFullDictation, type ExtractionResult } from "@/components/mobile/voice-full-dictation";
 import { SignaturePad } from "@/components/mobile/signature-pad";
-import { listEquipements, saveEquipement, updateEquipement, frequenceControleMois } from "@/lib/equipement";
+import { listEquipements, saveEquipement, updateEquipement, frequenceControleMois } from "@/lib/equipement/equipement";
 import {
   saveIntervention,
   listInterventions,
   type StoredIntervention,
-} from "@/lib/intervention-storage";
+} from "@/lib/intervention/intervention-storage";
 import { loadProfil } from "@/lib/profil";
-import { getDiagnostic, type StoredDiagnostic } from "@/lib/diagnostic-storage";
-import { summarizeDiagnosticForCerfa, DELAI_LABELS } from "@/lib/vision-diagnostic";
+import { getDiagnostic, type StoredDiagnostic } from "@/lib/intervention/diagnostic-storage";
+import { summarizeDiagnosticForCerfa, DELAI_LABELS } from "@/lib/intervention/vision-diagnostic";
 import {
   listBouteilles,
   indexMouvementsParBouteille,
   createMouvement,
-} from "@/lib/bouteille-storage";
+} from "@/lib/equipement/bouteille-storage";
 import {
   bouteillesCompatibles,
   quantiteDepuisPesee,
   type Bouteille,
-} from "@/lib/bouteille";
+} from "@/lib/equipement/bouteille";
 import {
   checkInterventionIntegrity,
   SEVERITE_STYLES,

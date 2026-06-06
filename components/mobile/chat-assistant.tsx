@@ -12,7 +12,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Drawer } from "vaul";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { scopedKey } from "@/lib/user-scope";
+import { scopedKey } from "@/lib/auth/user-scope";
 
 type ChatMessage = {
   role: "user" | "assistant";

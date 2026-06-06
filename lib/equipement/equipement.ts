@@ -15,7 +15,7 @@
 // gérés dans cette V1 — un équipement HFO retourne null pour la fréquence
 // avec une note explicite à l'utilisateur.
 
-import type { StoredIntervention } from "@/lib/intervention-storage";
+import type { StoredIntervention } from "@/lib/intervention/intervention-storage";
 import { uuid } from "@/lib/uuid";
 
 export type UniteInterieureType =
@@ -102,7 +102,7 @@ export type EquipementWithStatus = StoredEquipement & {
   isHFO: boolean;
 };
 
-import { scopedKey } from "@/lib/user-scope";
+import { scopedKey } from "@/lib/auth/user-scope";
 
 const STORAGE_KEY_BASE = "vertxia:equipements";
 function storageKey(): string {
@@ -151,7 +151,7 @@ export function saveEquipement(
   localStorage.setItem(storageKey(), JSON.stringify(all));
   // Sync background vers Supabase pour partage public (scan QR)
   // Import dynamique pour éviter cycles d'import + lazy load Supabase client
-  import("@/lib/public-sync")
+  import("@/lib/sync/public-sync")
     .then((m) => m.syncEquipementToSupabase(entry))
     .catch(() => {});
   return entry;
@@ -163,7 +163,7 @@ export function updateEquipement(id: string, patch: Partial<StoredEquipement>): 
   localStorage.setItem(storageKey(), JSON.stringify(all));
   const updated = all.find((e) => e.id === id);
   if (updated) {
-    import("@/lib/public-sync")
+    import("@/lib/sync/public-sync")
       .then((m) => m.syncEquipementToSupabase(updated))
       .catch(() => {});
   }

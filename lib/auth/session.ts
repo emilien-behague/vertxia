@@ -14,8 +14,8 @@
 
 import { cookies } from "next/headers";
 import { getIronSession, type SessionOptions } from "iron-session";
-import { db } from "@/lib/db";
-import type { User } from "@/lib/db";
+import { db } from "@/lib/auth/db";
+import type { User } from "@/lib/auth/db";
 
 export type SessionData = {
   userId?: string;

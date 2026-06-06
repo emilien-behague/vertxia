@@ -13,18 +13,18 @@ import {
   getDiagnostic,
   deleteDiagnostic,
   type StoredDiagnostic,
-} from "@/lib/diagnostic-storage";
+} from "@/lib/intervention/diagnostic-storage";
 import {
   GRAVITE_LABELS,
   GRAVITE_STYLES,
   DELAI_LABELS,
-} from "@/lib/vision-diagnostic";
+} from "@/lib/intervention/vision-diagnostic";
 import {
   shareDiagnostic,
   buildDiagnosticWhatsAppUrl,
   buildDiagnosticMailtoUrl,
   downloadDiagnosticImage,
-} from "@/lib/diagnostic-share";
+} from "@/lib/intervention/diagnostic-share";
 import { loadProfil } from "@/lib/profil";
 import {
   buildDevisFromDiagnostic,

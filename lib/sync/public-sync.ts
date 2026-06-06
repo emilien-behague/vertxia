@@ -14,8 +14,8 @@
 //    (RLS policy "equipements_select_public" autorise anon + authenticated)
 //  - fetchPublicInterventions(equipementId) : historique lié à un équipement
 
-import type { StoredEquipement, UniteInterieure } from "@/lib/equipement";
-import type { StoredIntervention } from "@/lib/intervention-storage";
+import type { StoredEquipement, UniteInterieure } from "@/lib/equipement/equipement";
+import type { StoredIntervention } from "@/lib/intervention/intervention-storage";
 
 // ── ECRITURES (sync local → Supabase) ───────────────────────────────────────
 
@@ -33,7 +33,7 @@ export async function syncEquipementToSupabase(eq: StoredEquipement): Promise<Sy
   // et on enqueue directement pour rejouer au retour de connexion.
   if (typeof navigator !== "undefined" && !navigator.onLine) {
     try {
-      const { enqueueOperation } = await import("@/lib/offline-queue");
+      const { enqueueOperation } = await import("@/lib/sync/offline-queue");
       await enqueueOperation("/api/public/equipement/upsert", "POST", eq);
     } catch {}
     return { ok: false, reason: "network", message: "Hors connexion — sera synchronise au retour de reseau." };
@@ -65,7 +65,7 @@ export async function syncEquipementToSupabase(eq: StoredEquipement): Promise<Sy
     console.warn("[public-sync] equipement sync failed:", msg);
     // Network error (offline transitoire, DNS, timeout) → enqueue pour rejouer
     try {
-      const { enqueueOperation } = await import("@/lib/offline-queue");
+      const { enqueueOperation } = await import("@/lib/sync/offline-queue");
       await enqueueOperation("/api/public/equipement/upsert", "POST", eq);
     } catch {}
     return { ok: false, reason: "network", message: msg };
@@ -78,7 +78,7 @@ export async function syncInterventionToSupabase(int: StoredIntervention, equipe
   // Offline detecte cote client → on saute le fetch et on enqueue direct
   if (typeof navigator !== "undefined" && !navigator.onLine) {
     try {
-      const { enqueueOperation } = await import("@/lib/offline-queue");
+      const { enqueueOperation } = await import("@/lib/sync/offline-queue");
       await enqueueOperation("/api/public/intervention/upsert", "POST", payload);
     } catch {}
     return;
@@ -99,7 +99,7 @@ export async function syncInterventionToSupabase(int: StoredIntervention, equipe
     console.warn("[public-sync] intervention sync failed:", e);
     // Network error → enqueue pour rejouer au retour de connexion
     try {
-      const { enqueueOperation } = await import("@/lib/offline-queue");
+      const { enqueueOperation } = await import("@/lib/sync/offline-queue");
       await enqueueOperation("/api/public/intervention/upsert", "POST", payload);
     } catch {}
   }
@@ -114,7 +114,7 @@ export async function deleteInterventionFromSupabase(id: string): Promise<void> 
   const endpoint = `/api/public/intervention/${encodeURIComponent(id)}`;
   if (typeof navigator !== "undefined" && !navigator.onLine) {
     try {
-      const { enqueueOperation } = await import("@/lib/offline-queue");
+      const { enqueueOperation } = await import("@/lib/sync/offline-queue");
       await enqueueOperation(endpoint, "DELETE", { id });
     } catch {}
     return;
@@ -128,7 +128,7 @@ export async function deleteInterventionFromSupabase(id: string): Promise<void> 
   } catch (e) {
     console.warn("[public-sync] intervention delete failed:", e);
     try {
-      const { enqueueOperation } = await import("@/lib/offline-queue");
+      const { enqueueOperation } = await import("@/lib/sync/offline-queue");
       await enqueueOperation(endpoint, "DELETE", { id });
     } catch {}
   }

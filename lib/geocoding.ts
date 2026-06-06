@@ -5,7 +5,7 @@
 // Usage : geocodeAddress("14 avenue de la République, Toulon")
 //   → { lat: 43.124, lng: 5.928 } ou null si introuvable.
 
-import { scopedKey } from "@/lib/user-scope";
+import { scopedKey } from "@/lib/auth/user-scope";
 
 export type GeoPoint = { lat: number; lng: number };
 

@@ -12,7 +12,7 @@ import {
   createMouvement,
   updateBouteille,
   deleteBouteille,
-} from "@/lib/bouteille-storage";
+} from "@/lib/equipement/bouteille-storage";
 import {
   computeChargeActuelle,
   computePctRemplissage,
@@ -26,7 +26,7 @@ import {
   type Bouteille,
   type Mouvement,
   type MouvementType,
-} from "@/lib/bouteille";
+} from "@/lib/equipement/bouteille";
 
 const MOUVEMENT_TYPES_RECHARGE: MouvementType[] = ["remplissage_initial", "sortie", "retour_fournisseur", "calibrage"];
 const MOUVEMENT_TYPES_RECUPERATION: MouvementType[] = ["entree", "cession_traitement", "calibrage"];

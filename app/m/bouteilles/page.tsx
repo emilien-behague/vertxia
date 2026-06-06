@@ -7,7 +7,7 @@ import { Tile } from "@/components/mobile/tile";
 import {
   listBouteilles,
   indexMouvementsParBouteille,
-} from "@/lib/bouteille-storage";
+} from "@/lib/equipement/bouteille-storage";
 import {
   computeChargeActuelle,
   computePctRemplissage,
@@ -15,7 +15,7 @@ import {
   colorAlerte,
   labelAlerte,
   type Bouteille,
-} from "@/lib/bouteille";
+} from "@/lib/equipement/bouteille";
 
 type BouteilleWithStock = {
   bouteille: Bouteille;

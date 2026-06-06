@@ -10,10 +10,10 @@ import {
   getEquipementStats,
   getInfractions,
   type EquipementWithStatus,
-} from "@/lib/equipement";
-import { listInterventions, type StoredIntervention } from "@/lib/intervention-storage";
+} from "@/lib/equipement/equipement";
+import { listInterventions, type StoredIntervention } from "@/lib/intervention/intervention-storage";
 import { loadProfil, type Profil } from "@/lib/profil";
-import { hydrateFromSupabaseIfNeeded } from "@/lib/hydrate-on-login";
+import { hydrateFromSupabaseIfNeeded } from "@/lib/sync/hydrate-on-login";
 
 // Dashboard mobile — accueil Vertxia.
 //

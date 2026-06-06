@@ -12,7 +12,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/mobile-header";
-import { saveEquipement, listEquipements } from "@/lib/equipement";
+import { saveEquipement, listEquipements } from "@/lib/equipement/equipement";
 
 type Phase = "idle" | "analyzing" | "review" | "importing" | "done";
 
