@@ -582,7 +582,7 @@ export default function VertxiaPage() {
               </RevealText>
             </div>
             <p className="text-sm text-black/45 leading-relaxed max-w-xs">
-              On a refondu l&apos;interface mobile avec un pro frigoriste sur le terrain. Règle d&apos;or : un idiot pressé doit comprendre en 2 secondes. Zéro jargon, gros boutons, 1 tap par action.
+              On a refondu l&apos;interface mobile avec un pro frigoriste sur le terrain. Règle d&apos;or : utilisable d&apos;une main, sur une échelle, avec des gants gras. Zéro jargon, gros boutons, 1 tap par action.
             </p>
           </div>
 
