@@ -12,12 +12,12 @@
 // dans Downloads pour que l'utilisateur l'attache facilement apres avoir
 // clique WhatsApp ou Email.
 
-import type { Profil } from "./profil";
+import type { Profil } from "@/lib/profil";
 import {
   GRAVITE_LABELS,
   DELAI_LABELS,
   type DiagnosticResult,
-} from "./vision-diagnostic";
+} from "@/lib/vision-diagnostic";
 
 /** Convertit un data URL base64 en File partageable. */
 function dataUrlToFile(dataUrl: string, filename: string): File | null {

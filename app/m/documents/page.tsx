@@ -21,7 +21,7 @@ import {
   groupByCategorie,
   type CategorieDocument,
   type DocumentOfficiel,
-} from "@/lib/documents-officiels";
+} from "@/lib/cerfa/documents-officiels";
 
 export default function DocumentsOfficielsPage() {
   const [search, setSearch] = useState("");

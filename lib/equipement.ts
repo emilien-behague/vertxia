@@ -15,8 +15,8 @@
 // gérés dans cette V1 — un équipement HFO retourne null pour la fréquence
 // avec une note explicite à l'utilisateur.
 
-import type { StoredIntervention } from "./intervention-storage";
-import { uuid } from "./uuid";
+import type { StoredIntervention } from "@/lib/intervention-storage";
+import { uuid } from "@/lib/uuid";
 
 export type UniteInterieureType =
   | "cassette_plafond"

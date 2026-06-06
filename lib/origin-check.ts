@@ -13,7 +13,7 @@
  */
 
 import type { NextRequest } from "next/server";
-import { allowedOrigins } from "./env";
+import { allowedOrigins } from "@/lib/env";
 
 export type OriginCheckResult =
   | { ok: true }

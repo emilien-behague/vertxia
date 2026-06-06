@@ -17,7 +17,7 @@ import {
   getDocumentsForIntervention,
   formatTailleFichier,
   type TypeIntervention,
-} from "@/lib/documents-officiels";
+} from "@/lib/cerfa/documents-officiels";
 
 type Props = {
   type: TypeIntervention;

@@ -16,8 +16,8 @@ import { PDFDocument, rgb, type PDFFont, type PDFPage, type PDFImage } from "pdf
 import fontkit from "@pdf-lib/fontkit";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import type { CerfaInput, TypeIntervention } from "./cerfa";
-import type { Profil } from "./profil";
+import type { CerfaInput, TypeIntervention } from "@/lib/cerfa/cerfa";
+import type { Profil } from "@/lib/profil";
 
 // ── Types entrée ──────────────────────────────────────────────────────────
 

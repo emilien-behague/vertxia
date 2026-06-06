@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { fillCerfaPdf, type CerfaInput } from "@/lib/cerfa";
+import { fillCerfaPdf, type CerfaInput } from "@/lib/cerfa/cerfa";
 
 // pdf-lib lit le PDF officiel depuis le disque (fs) → runtime Node.
 export const runtime = "nodejs";

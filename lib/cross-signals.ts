@@ -14,7 +14,7 @@
 // statique de pannes, on a une memoire collective vivante + une IA qui
 // te dit ce que tes confreres ont deja vu.
 
-import type { SignalPredictif, SignalGravite } from "./predictive-maintenance";
+import type { SignalPredictif, SignalGravite } from "@/lib/predictive-maintenance";
 
 /** Une panne agregee venant du catalogue partage (shared_failure_catalog).
  *  Meme shape que dans PannesConnuesCard / lookup endpoint. */

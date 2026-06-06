@@ -15,7 +15,7 @@ import {
 } from "@/lib/equipement";
 import { aggregateForYear, loadManualInputs } from "@/lib/syderep";
 import { loadProfil, isProfilComplete, type Profil } from "@/lib/profil";
-import type { TypeIntervention } from "@/lib/cerfa";
+import type { TypeIntervention } from "@/lib/cerfa/cerfa";
 
 const TYPE_LABELS: Record<TypeIntervention, string> = {
   recuperation: "Récupération",

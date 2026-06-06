@@ -8,7 +8,7 @@ import { listEquipements, type StoredEquipement } from "@/lib/equipement";
 import {
   countDocumentsForIntervention,
   type TypeIntervention,
-} from "@/lib/documents-officiels";
+} from "@/lib/cerfa/documents-officiels";
 
 // Page intervention mobile — refonte 05/06/2026 style tuiles colorees.
 // Hub d'entree vers le formulaire intervention. 2 chemins :

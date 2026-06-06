@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generateCerfa15498PDF, type Cerfa15498Input } from "@/lib/cerfa-15498";
+import { generateCerfa15498PDF, type Cerfa15498Input } from "@/lib/cerfa/cerfa-15498";
 
 // pdf-lib lit la fonte Noto depuis le disque (fs) → runtime Node.
 export const runtime = "nodejs";

@@ -4,7 +4,7 @@
 // On ne stocke PAS le PDF lui-même (il est régénéré à la demande à partir
 // du payload enregistré), juste les données + l'URL du BSFF TrackDéchets.
 
-import type { TypeIntervention, Destination, ControleDetails } from "@/lib/cerfa";
+import type { TypeIntervention, Destination, ControleDetails } from "@/lib/cerfa/cerfa";
 import { uuid } from "@/lib/uuid";
 import { scopedKey } from "@/lib/user-scope";
 

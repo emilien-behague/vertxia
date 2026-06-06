@@ -3,9 +3,9 @@
 // Cap à 20 derniers diagnostics pour éviter de dépasser ~4MB
 // (image compressée 2000px ~200 KB × 20 ≈ 4 MB, sous la limite iOS ~5 MB).
 
-import { uuid } from "./uuid";
-import { scopedKey } from "./user-scope";
-import { recompressDataUrlForStorage, type DiagnosticResult } from "./vision-diagnostic";
+import { uuid } from "@/lib/uuid";
+import { scopedKey } from "@/lib/user-scope";
+import { recompressDataUrlForStorage, type DiagnosticResult } from "@/lib/vision-diagnostic";
 
 const STORAGE_KEY_BASE = "vertxia:diagnostics";
 const MAX_STORED = 20;
