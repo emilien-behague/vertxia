@@ -154,14 +154,7 @@ function LoginInner() {
 
               <p className="mt-8 text-[11.5px] text-white/35 text-center leading-relaxed">
                 Pas encore de compte ? Saisis ton email — il sera cree
-                automatiquement. <br />
-                Tu veux voir les offres ?{" "}
-                <Link
-                  href="/pricing"
-                  className="text-white/55 underline underline-offset-2 decoration-white/20 hover:decoration-white"
-                >
-                  /pricing
-                </Link>
+                automatiquement.
               </p>
             </>
           )}
