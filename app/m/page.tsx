@@ -17,9 +17,9 @@ import { hydrateFromSupabaseIfNeeded } from "@/lib/hydrate-on-login";
 
 // Dashboard mobile — accueil Vertxia.
 //
-// Refonte 05/06/2026 post-feedback SIDV ("simplifier pour les idiots") :
+// Refonte 05/06/2026 post-feedback SIDV (simplicite extreme demandee) :
 // inspiration du style "tuiles colorees pleines" type Fluid 360 (l'app que
-// les frigoristes du metier connaissent) MAIS avec une identite Vertxia
+// les techniciens du metier connaissent) MAIS avec une identite Vertxia
 // distincte : gradients subtils, palette plus profonde, typo Inter, pas
 // de Tutoriels (qu'on n'a pas), badges chiffres en coin de tuile pour
 // signaler les actions a faire dans chaque section sans verbosite.
