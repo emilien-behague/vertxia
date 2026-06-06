@@ -25,9 +25,9 @@ import {
   buildContextMemoryFromCurrentState,
   type ContextMemory,
 } from "@/lib/intervention/context-memory";
-import { PannesConnuesCard } from "@/components/mobile/pannes-connues-card";
-import { CrossSignalCard } from "@/components/mobile/cross-signal-card";
-import { DocumenterPanneButton } from "@/components/mobile/documenter-panne-button";
+import { PannesConnuesCard } from "@/components/mobile/intervention/pannes-connues-card";
+import { CrossSignalCard } from "@/components/mobile/intervention/cross-signal-card";
+import { DocumenterPanneButton } from "@/components/mobile/intervention/documenter-panne-button";
 
 // Page mobile premium — affichée quand un technicien scanne le QR Code collé sur
 // un équipement. Doit s'afficher SANS bug sur Safari iOS (zéro animation initial:opacity:0

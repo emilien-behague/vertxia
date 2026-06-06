@@ -16,7 +16,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MobileHeader } from "@/components/mobile/mobile-header";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
 import { listEquipements } from "@/lib/equipement/equipement";
 import { listInterventions } from "@/lib/intervention/intervention-storage";
 import { listDiagnostics } from "@/lib/intervention/diagnostic-storage";

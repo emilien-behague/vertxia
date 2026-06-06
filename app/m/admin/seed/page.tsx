@@ -7,7 +7,7 @@
 // intérieures ajoutées suite retour terrain père d'Emilien (frigo pro).
 
 import { useState } from "react";
-import { MobileHeader } from "@/components/mobile/mobile-header";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
 import { seedDemoCapeb, clearAllVertxiaData } from "@/lib/demo-seed";
 
 type Status =

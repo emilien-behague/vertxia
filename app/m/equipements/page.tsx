@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MobileHeader } from "@/components/mobile/mobile-header";
-import { ScanPlaqueButton, type PlaqueData } from "@/components/mobile/scan-plaque-button";
-import { ActionTile } from "@/components/mobile/tile";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
+import { ScanPlaqueButton, type PlaqueData } from "@/components/mobile/equipement/scan-plaque-button";
+import { ActionTile } from "@/components/mobile/ui/tile";
 import { listInterventions } from "@/lib/intervention/intervention-storage";
 import { listDiagnostics } from "@/lib/intervention/diagnostic-storage";
 import {

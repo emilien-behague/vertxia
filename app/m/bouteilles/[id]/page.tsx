@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { MobileHeader } from "@/components/mobile/mobile-header";
-import { BouteilleRepriseCard } from "@/components/mobile/bouteille-reprise-card";
-import { InsetListSection } from "@/components/mobile/inset-list";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
+import { BouteilleRepriseCard } from "@/components/mobile/intervention/bouteille-reprise-card";
+import { InsetListSection } from "@/components/mobile/ui/inset-list";
 import {
   getBouteille,
   listMouvementsForBouteille,

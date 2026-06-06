@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MobileHeader } from "@/components/mobile/mobile-header";
-import { Tile, type TileVariant } from "@/components/mobile/tile";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
+import { Tile, type TileVariant } from "@/components/mobile/ui/tile";
 import { listEquipements, type StoredEquipement } from "@/lib/equipement/equipement";
 import {
   countDocumentsForIntervention,

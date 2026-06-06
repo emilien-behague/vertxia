@@ -12,7 +12,7 @@
 // PDF eux-memes sont dans public/docs/officiels/).
 
 import { useMemo, useState } from "react";
-import { MobileHeader } from "@/components/mobile/mobile-header";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
 import {
   DOCUMENTS_OFFICIELS,
   CATEGORIE_LABELS,

@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MobileHeader } from "@/components/mobile/mobile-header";
-import { InsetListSection } from "@/components/mobile/inset-list";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
+import { InsetListSection } from "@/components/mobile/ui/inset-list";
 import { useUser } from "@/lib/supabase/use-user";
 import {
   loadProfil,
@@ -14,7 +14,7 @@ import {
   EMPTY_PROFIL,
 } from "@/lib/profil";
 import { lookupSiret, isValidSiretFormat, type SiretLookupResult } from "@/lib/siret";
-import { EntrepriseSearch } from "@/components/mobile/entreprise-search";
+import { EntrepriseSearch } from "@/components/mobile/equipement/entreprise-search";
 
 const CATEGORIES: { value: CategorieAttestation; label: string }[] = [
   { value: "I", label: "Cat. I — Tous équipements" },
