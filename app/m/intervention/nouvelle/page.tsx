@@ -1070,28 +1070,6 @@ function NouvelleInterventionContent() {
           pertinents en 1 tap, meme offline. Plie par defaut (compteur visible). */}
       <DocumentsForInterventionCard type={typeIntervention} />
 
-      {/* CERFA 15498*02 - contrat assemblage / mise en service pour les
-          equipements precharges. Visible uniquement sur typeIntervention
-          mise_service ou assemblage (le composant lui-meme filtre). */}
-      <Cerfa15498Banner
-        typeIntervention={typeIntervention}
-        acheteur={{
-          nomOuRaisonSociale: clientName,
-          siret: clientSiret || undefined,
-          adresse: clientAdresse || undefined,
-          email: clientEmail || undefined,
-        }}
-        equipement={{
-          modele: modeleEquipement,
-          numeroSerie: numeroSerieEquipement,
-          fluideCode: selectedFluide.code,
-          fluideLabel: selectedFluide.label,
-          chargeKg: parseFloat(weight) || 0,
-          gwp: selectedFluide.gwp,
-        }}
-        lieuInstallation={lieuIntervention}
-      />
-
       {/* Contexte équipement si pré-rempli */}
       {eqContext && (
         <div className="mx-4 mt-2 mb-1 px-4 py-3 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200">
@@ -1987,9 +1965,33 @@ function NouvelleInterventionContent() {
         </div>
       </InsetListSection>
 
+      {/* CERFA 15498*02 - contrat assemblage / mise en service pour les
+          equipements precharges. Visible uniquement sur typeIntervention
+          mise_service ou assemblage (le composant lui-meme filtre).
+          Place juste avant le CTA principal (CERFA 15497) pour que le pro
+          ait les 2 documents reglementaires cote a cote en fin de saisie. */}
+      <Cerfa15498Banner
+        typeIntervention={typeIntervention}
+        acheteur={{
+          nomOuRaisonSociale: clientName,
+          siret: clientSiret || undefined,
+          adresse: clientAdresse || undefined,
+          email: clientEmail || undefined,
+        }}
+        equipement={{
+          modele: modeleEquipement,
+          numeroSerie: numeroSerieEquipement,
+          fluideCode: selectedFluide.code,
+          fluideLabel: selectedFluide.label,
+          chargeKg: parseFloat(weight) || 0,
+          gwp: selectedFluide.gwp,
+        }}
+        lieuInstallation={lieuIntervention}
+      />
+
       {/* CTA tuile XL emerald — generation BSFF/CERFA passe par le garde-fou
           qualite (checkInterventionIntegrity) AVANT la generation. */}
-      <div className="px-4 mt-8 mb-4">
+      <div className="px-4 mt-4 mb-4">
         <button
           type="button"
           onClick={handleValidateThenSubmit}
