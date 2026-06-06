@@ -101,25 +101,22 @@ export const DOCUMENTS_OFFICIELS: DocumentOfficiel[] = [
     id: "cerfa-15497-04",
     titre: "CERFA 15497*04 — Fiche d'intervention F-Gas",
     description:
-      "Formulaire officiel de fiche d'intervention pour manipulation de fluides frigorigènes. Version *04 seule conforme depuis le 01/01/2025. Signature opérateur + détenteur obligatoire.",
+      "Formulaire officiel de fiche d'intervention pour manipulation de fluides frigorigènes. Version *04 seule conforme depuis le 01/01/2025. Signature opérateur + détenteur obligatoire. S'applique à TOUTE intervention (incl. mise en service + assemblage d'équipement préchargé).",
     source: "service-public.gouv.fr",
     sourceUrl: "https://www.formulaires.service-public.gouv.fr/gf/cerfa_15497.do",
     fichierLocal: "/docs/officiels/cerfa_15497_04_formulaire.pdf",
     tailleKb: 118,
     categorie: "cerfa",
     motsClefs: ["cerfa", "15497", "fiche intervention", "f-gas", "fluide", "manipulation"],
-    dateVerification: "2026-06-04",
+    dateVerification: "2026-06-06",
     disponibleOffline: true,
     prioriteVertxia: 1,
     fiabilite: "source_primaire_officielle",
-    interventionsApplicables: [
-      "recuperation",
-      "demantelement",
-      "controle_periodique",
-      "controle_non_periodique",
-      "maintenance",
-      "modification",
-    ],
+    // Verifie sur source primaire (Notice CERFA 15497*04 + arrete 29/02/2016
+    // art. 11) le 06/06/2026 : le 15497 s'applique a TOUTE intervention sur
+    // equipement F-Gas, y compris mise_service et assemblage. Bug fix vs V0
+    // qui les avait oublies.
+    interventionsApplicables: [...TOUS_TYPES_INTERVENTION],
   },
   {
     id: "afce-registre-equipement",
@@ -270,7 +267,7 @@ export const DOCUMENTS_OFFICIELS: DocumentOfficiel[] = [
     id: "cerfa-15497-04-notice",
     titre: "Notice explicative CERFA 15497*04",
     description:
-      "Notice officielle 5 pages accompagnant le CERFA 15497*04. Explique le remplissage de chaque champ (catégories I-IV, BSDD, quantités). Référence pour éviter les non-conformités en contrôle DGPR.",
+      "Notice officielle 5 pages accompagnant le CERFA 15497*04. Explique le remplissage de chaque champ (catégories I-IV, BSDD, quantités). Confirme que le 15497 s'applique aussi à la mise en service et l'assemblage d'équipements préchargés.",
     source: "formulaires.service-public.gouv.fr",
     sourceUrl: "https://www.formulaires.service-public.gouv.fr/gf/getNotice.do?cerfaNotice=1&cerfaFormulaire=15497",
     fichierLocal: "/docs/officiels/cerfa_15497_04_notice.pdf",
@@ -281,14 +278,8 @@ export const DOCUMENTS_OFFICIELS: DocumentOfficiel[] = [
     disponibleOffline: true,
     prioriteVertxia: 1,
     fiabilite: "source_primaire_officielle",
-    interventionsApplicables: [
-      "recuperation",
-      "demantelement",
-      "controle_periodique",
-      "controle_non_periodique",
-      "maintenance",
-      "modification",
-    ],
+    // Notice = applicable a tous les memes types que le formulaire principal.
+    interventionsApplicables: [...TOUS_TYPES_INTERVENTION],
   },
 
   // === RÈGLEMENTS EU =======================================================
