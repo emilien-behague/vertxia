@@ -1297,6 +1297,13 @@ function NouvelleInterventionContent() {
           />
         </FormRow>
         <FormRow label="Lieu d'intervention">
+          {/* Safari iOS autofill : seul ce champ recoit l'attribut adresse
+              standardise, sinon iOS decompose l'adresse en composants (street,
+              cp, ville) et les balance dans les champs voisins. Bug observe
+              06/06/2026 : "83000" est apparu dans clientName et la ville dans
+              clientSiret. Autres champs : autoComplete="off" + name unique
+              pour empecher Safari de les detecter comme partie d'un formulaire
+              d'adresse. */}
           <input
             type="text"
             value={lieuIntervention}
@@ -1304,6 +1311,8 @@ function NouvelleInterventionContent() {
             placeholder="Adresse du chantier"
             disabled={isLoading}
             className="input-mobile"
+            autoComplete="street-address"
+            name="lieu-intervention"
           />
         </FormRow>
         <FormRow label="Client / Détenteur">
@@ -1314,6 +1323,10 @@ function NouvelleInterventionContent() {
             placeholder="Nom ou raison sociale"
             disabled={isLoading}
             className="input-mobile"
+            autoComplete="off"
+            autoCorrect="off"
+            name="client-detenteur-nofill"
+            data-form-type="other"
           />
         </FormRow>
         <FormRow label="Email du client (optionnel)">
@@ -1326,6 +1339,8 @@ function NouvelleInterventionContent() {
             className="input-mobile"
             autoComplete="off"
             autoCapitalize="off"
+            name="client-email-nofill"
+            data-form-type="other"
           />
         </FormRow>
         <FormRow label="SIRET détenteur (optionnel)">
@@ -1337,6 +1352,10 @@ function NouvelleInterventionContent() {
             placeholder="14 chiffres si entreprise"
             disabled={isLoading}
             className="input-mobile font-mono"
+            autoComplete="off"
+            autoCorrect="off"
+            name="client-siret-nofill"
+            data-form-type="other"
           />
         </FormRow>
         <FormRow label="Adresse détenteur (optionnel)">
@@ -1347,6 +1366,10 @@ function NouvelleInterventionContent() {
             placeholder="Si différente du lieu d'intervention"
             disabled={isLoading}
             className="input-mobile"
+            autoComplete="off"
+            autoCorrect="off"
+            name="client-adresse-nofill"
+            data-form-type="other"
           />
         </FormRow>
       </InsetListSection>
