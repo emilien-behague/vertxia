@@ -12,21 +12,21 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Drawer } from "vaul";
-import { MobileHeader } from "@/components/mobile/mobile-header";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
 import {
   compressImage,
   GRAVITE_LABELS,
   GRAVITE_STYLES,
   DELAI_LABELS,
   type DiagnosticResult,
-} from "@/lib/vision-diagnostic";
-import { saveDiagnostic, listDiagnostics } from "@/lib/diagnostic-storage";
-import { listInterventions } from "@/lib/intervention-storage";
-import { listEquipements } from "@/lib/equipement";
+} from "@/lib/intervention/vision-diagnostic";
+import { saveDiagnostic, listDiagnostics } from "@/lib/intervention/diagnostic-storage";
+import { listInterventions } from "@/lib/intervention/intervention-storage";
+import { listEquipements } from "@/lib/equipement/equipement";
 import {
   buildContextMemoryFromCurrentState,
   type ContextMemory,
-} from "@/lib/context-memory";
+} from "@/lib/intervention/context-memory";
 import {
   buildDevisFromDiagnostic,
   generateDevisNumero,
@@ -38,7 +38,7 @@ import {
   buildDiagnosticWhatsAppUrl,
   buildDiagnosticMailtoUrl,
   downloadDiagnosticImage,
-} from "@/lib/diagnostic-share";
+} from "@/lib/intervention/diagnostic-share";
 import { loadProfil } from "@/lib/profil";
 
 type Phase = "idle" | "analyzing" | "result" | "error";

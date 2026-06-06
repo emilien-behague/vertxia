@@ -8,33 +8,33 @@ export const dynamic = "force-dynamic";
 import { Suspense, useEffect, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Drawer } from "vaul";
-import { MobileHeader } from "@/components/mobile/mobile-header";
-import { DocumentsForInterventionCard } from "@/components/mobile/documents-for-intervention-card";
-import { Cerfa15498Banner } from "@/components/mobile/cerfa-15498-banner";
-import { InsetListSection } from "@/components/mobile/inset-list";
-import { VoiceInput } from "@/components/mobile/voice-input";
-import { ScanPlaqueButton, type PlaqueData } from "@/components/mobile/scan-plaque-button";
-import { VoiceFullDictation, type ExtractionResult } from "@/components/mobile/voice-full-dictation";
-import { SignaturePad } from "@/components/mobile/signature-pad";
-import { listEquipements, saveEquipement, updateEquipement, frequenceControleMois } from "@/lib/equipement";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
+import { DocumentsForInterventionCard } from "@/components/mobile/intervention/documents-for-intervention-card";
+import { Cerfa15498Banner } from "@/components/mobile/intervention/cerfa-15498-banner";
+import { InsetListSection } from "@/components/mobile/ui/inset-list";
+import { VoiceInput } from "@/components/mobile/voice/voice-input";
+import { ScanPlaqueButton, type PlaqueData } from "@/components/mobile/equipement/scan-plaque-button";
+import { VoiceFullDictation, type ExtractionResult } from "@/components/mobile/voice/voice-full-dictation";
+import { SignaturePad } from "@/components/mobile/ui/signature-pad";
+import { listEquipements, saveEquipement, updateEquipement, frequenceControleMois } from "@/lib/equipement/equipement";
 import {
   saveIntervention,
   listInterventions,
   type StoredIntervention,
-} from "@/lib/intervention-storage";
+} from "@/lib/intervention/intervention-storage";
 import { loadProfil } from "@/lib/profil";
-import { getDiagnostic, type StoredDiagnostic } from "@/lib/diagnostic-storage";
-import { summarizeDiagnosticForCerfa, DELAI_LABELS } from "@/lib/vision-diagnostic";
+import { getDiagnostic, type StoredDiagnostic } from "@/lib/intervention/diagnostic-storage";
+import { summarizeDiagnosticForCerfa, DELAI_LABELS } from "@/lib/intervention/vision-diagnostic";
 import {
   listBouteilles,
   indexMouvementsParBouteille,
   createMouvement,
-} from "@/lib/bouteille-storage";
+} from "@/lib/equipement/bouteille-storage";
 import {
   bouteillesCompatibles,
   quantiteDepuisPesee,
   type Bouteille,
-} from "@/lib/bouteille";
+} from "@/lib/equipement/bouteille";
 import {
   checkInterventionIntegrity,
   SEVERITE_STYLES,

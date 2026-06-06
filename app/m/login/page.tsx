@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { MobileHeader } from "@/components/mobile/mobile-header";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 function MobileLoginInner() {

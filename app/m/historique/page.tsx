@@ -7,22 +7,22 @@ export const dynamic = "force-dynamic";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { MobileHeader } from "@/components/mobile/mobile-header";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
 import {
   listInterventions,
   getStats,
   getDeletedInterventionIds,
   type StoredIntervention,
-} from "@/lib/intervention-storage";
-import { listEquipements, type StoredEquipement } from "@/lib/equipement";
+} from "@/lib/intervention/intervention-storage";
+import { listEquipements, type StoredEquipement } from "@/lib/equipement/equipement";
 import {
   listDiagnostics,
   type StoredDiagnostic,
-} from "@/lib/diagnostic-storage";
+} from "@/lib/intervention/diagnostic-storage";
 import {
   GRAVITE_STYLES,
   type DefautGravite,
-} from "@/lib/vision-diagnostic";
+} from "@/lib/intervention/vision-diagnostic";
 
 // Discriminated union pour le timeline mergé : une ligne = soit une
 // intervention, soit un diagnostic IA. createdAt remonté en haut pour le

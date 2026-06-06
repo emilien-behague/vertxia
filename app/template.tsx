@@ -16,11 +16,9 @@
 
 import { useEffect, useRef, ReactNode } from "react";
 import gsap from "gsap";
-import { SoundEngine } from "@/components/audio/sound-engine";
 
 export default function Template({ children }: { children: ReactNode }) {
   const rootRef = useRef<HTMLDivElement>(null);
-  const isFirstMountRef = useRef(true);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -39,11 +37,6 @@ export default function Template({ children }: { children: ReactNode }) {
         clearProps: "opacity",
       }
     );
-
-    if (!isFirstMountRef.current) {
-      SoundEngine.whoosh();
-    }
-    isFirstMountRef.current = false;
   }, []);
 
   return <div ref={rootRef}>{children}</div>;

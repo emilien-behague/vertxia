@@ -14,9 +14,9 @@
 //
 // Argument de vente direct : "Avec Vertxia, jamais d'erreur DREAL."
 
-import type { StoredIntervention } from "./intervention-storage";
-import type { StoredEquipement } from "./equipement";
-import type { Profil } from "./profil";
+import type { StoredIntervention } from "@/lib/intervention/intervention-storage";
+import type { StoredEquipement } from "@/lib/equipement/equipement";
+import type { Profil } from "@/lib/profil";
 
 export type IntegritySeverite = "blocant" | "alerte" | "info";
 

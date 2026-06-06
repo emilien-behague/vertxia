@@ -2,19 +2,19 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { MobileHeader } from "@/components/mobile/mobile-header";
-import { InsetListSection } from "@/components/mobile/inset-list";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
+import { InsetListSection } from "@/components/mobile/ui/inset-list";
 import {
   getIntervention,
   deleteIntervention,
   updateIntervention,
   type StoredIntervention,
-} from "@/lib/intervention-storage";
+} from "@/lib/intervention/intervention-storage";
 import { Drawer } from "vaul";
 import { loadProfil } from "@/lib/profil";
-import { getDiagnostic, type StoredDiagnostic } from "@/lib/diagnostic-storage";
-import { generateEtiquetteTfe } from "@/lib/etiquette-tfe";
-import { GRAVITE_LABELS, GRAVITE_STYLES, DELAI_LABELS } from "@/lib/vision-diagnostic";
+import { getDiagnostic, type StoredDiagnostic } from "@/lib/intervention/diagnostic-storage";
+import { generateEtiquetteTfe } from "@/lib/pdf/etiquette-tfe";
+import { GRAVITE_LABELS, GRAVITE_STYLES, DELAI_LABELS } from "@/lib/intervention/vision-diagnostic";
 import Link from "next/link";
 
 type BsffStatus = {
@@ -316,7 +316,7 @@ export default function MobileInterventionDetailPage() {
       }
 
       // Charge le diagnostic IA si l'intervention en vient
-      let diagPayload: import("@/lib/rapport").RapportDiagnostic | undefined;
+      let diagPayload: import("@/lib/pdf/rapport").RapportDiagnostic | undefined;
       if (diagnostic) {
         diagPayload = {
           imageDataUrl: diagnostic.imageDataUrl,
@@ -335,7 +335,7 @@ export default function MobileInterventionDetailPage() {
       let prochainControleISO: string | undefined;
       let frequenceControleMois: number | undefined;
       try {
-        const { listEquipements, computeStatus } = await import("@/lib/equipement");
+        const { listEquipements, computeStatus } = await import("@/lib/equipement/equipement");
         const eqs = listEquipements();
         const eq = eqs.find(
           (e) =>
@@ -547,12 +547,12 @@ export default function MobileInterventionDetailPage() {
       //   3. Sinon creation auto d'un equipement minimum a partir des infos
       //      de l'intervention (sync Supabase auto via saveEquipement)
       //   4. Sinon (intervention sans modele/serie) -> erreur claire
-      const { listEquipements, saveEquipement } = await import("@/lib/equipement");
-      const { syncEquipementToSupabase } = await import("@/lib/public-sync");
+      const { listEquipements, saveEquipement } = await import("@/lib/equipement/equipement");
+      const { syncEquipementToSupabase } = await import("@/lib/sync/public-sync");
 
       let equipementIdOverride: string | undefined = intervention.equipementId;
       // Garde l'objet eq complet pour pouvoir forcer le re-sync apres
-      let resolvedEq: import("@/lib/equipement").StoredEquipement | undefined;
+      let resolvedEq: import("@/lib/equipement/equipement").StoredEquipement | undefined;
 
       if (equipementIdOverride) {
         resolvedEq = listEquipements().find((e) => e.id === equipementIdOverride);

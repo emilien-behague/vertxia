@@ -2,20 +2,20 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { MobileHeader } from "@/components/mobile/mobile-header";
-import { InsetListSection } from "@/components/mobile/inset-list";
-import { VoiceInput } from "@/components/mobile/voice-input";
-import { ScanPlaqueButton, type PlaqueData } from "@/components/mobile/scan-plaque-button";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
+import { InsetListSection } from "@/components/mobile/ui/inset-list";
+import { VoiceInput } from "@/components/mobile/voice/voice-input";
+import { ScanPlaqueButton, type PlaqueData } from "@/components/mobile/equipement/scan-plaque-button";
 import {
   VoiceFullDictationEquipement,
   type EquipementExtractionResult,
-} from "@/components/mobile/voice-full-dictation-equipement";
+} from "@/components/mobile/voice/voice-full-dictation-equipement";
 import {
   saveEquipement,
   UNITE_INTERIEURE_LABELS,
   type UniteInterieure,
   type UniteInterieureType,
-} from "@/lib/equipement";
+} from "@/lib/equipement/equipement";
 
 const VALID_UNITE_TYPES = new Set<UniteInterieureType>([
   "cassette_plafond",

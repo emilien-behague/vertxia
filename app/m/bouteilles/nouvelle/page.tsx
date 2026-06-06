@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MobileHeader } from "@/components/mobile/mobile-header";
-import { InsetListSection } from "@/components/mobile/inset-list";
-import { createBouteille, createMouvement } from "@/lib/bouteille-storage";
-import { fluideEstInflammable, type BouteilleType } from "@/lib/bouteille";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
+import { InsetListSection } from "@/components/mobile/ui/inset-list";
+import { createBouteille, createMouvement } from "@/lib/equipement/bouteille-storage";
+import { fluideEstInflammable, type BouteilleType } from "@/lib/equipement/bouteille";
 
 const FLUIDES = [
   { code: "R-32", label: "R-32 (HFC)", gwp: 675 },

@@ -7,13 +7,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MobileHeader } from "@/components/mobile/mobile-header";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
 import {
   listDiagnostics,
   clearAllDiagnostics,
   type StoredDiagnostic,
-} from "@/lib/diagnostic-storage";
-import { GRAVITE_STYLES, type DefautGravite } from "@/lib/vision-diagnostic";
+} from "@/lib/intervention/diagnostic-storage";
+import { GRAVITE_STYLES, type DefautGravite } from "@/lib/intervention/vision-diagnostic";
 
 function fmtDate(iso: string): string {
   const d = new Date(iso);

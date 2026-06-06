@@ -9,7 +9,7 @@
 // Brief Vertxia #7 : transforme un diagnostic en CA pour le pro.
 
 import { NextResponse } from "next/server";
-import { generateDevisPdf } from "@/lib/devis-pdf";
+import { generateDevisPdf } from "@/lib/pdf/devis-pdf";
 import type { Devis } from "@/lib/devis";
 
 export const runtime = "nodejs";

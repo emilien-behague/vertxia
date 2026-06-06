@@ -16,17 +16,17 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MobileHeader } from "@/components/mobile/mobile-header";
-import { listEquipements } from "@/lib/equipement";
-import { listInterventions } from "@/lib/intervention-storage";
-import { listDiagnostics } from "@/lib/diagnostic-storage";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
+import { listEquipements } from "@/lib/equipement/equipement";
+import { listInterventions } from "@/lib/intervention/intervention-storage";
+import { listDiagnostics } from "@/lib/intervention/diagnostic-storage";
 import { loadProfil } from "@/lib/profil";
-import { getCurrentUserId } from "@/lib/user-scope";
+import { getCurrentUserId } from "@/lib/auth/user-scope";
 import {
   hydrateFromSupabaseIfNeeded,
   clearHydrationFlag,
   pullProfilIfLocalEmpty,
-} from "@/lib/hydrate-on-login";
+} from "@/lib/sync/hydrate-on-login";
 
 type ServerDebug = {
   auth: {

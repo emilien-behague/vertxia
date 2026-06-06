@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import { BottomTabBar } from "@/components/mobile/bottom-tab-bar";
-import { NetworkIndicator } from "@/components/mobile/network-indicator";
-import { ServiceWorkerRegister } from "@/components/mobile/service-worker-register";
-import { AuthSync } from "@/components/mobile/auth-sync";
-import { ScrollToTopOnNav } from "@/components/mobile/scroll-to-top-on-nav";
+import { BottomTabBar } from "@/components/mobile/ui/bottom-tab-bar";
+import { NetworkIndicator } from "@/components/mobile/ui/network-indicator";
+import { ServiceWorkerRegister } from "@/components/mobile/infra/service-worker-register";
+import { AuthSync } from "@/components/mobile/infra/auth-sync";
+import { ScrollToTopOnNav } from "@/components/mobile/ui/scroll-to-top-on-nav";
 import { ChatAssistant } from "@/components/mobile/chat-assistant";
-import { ComplianceScoreBadge } from "@/components/mobile/compliance-score-badge";
+import { ComplianceScoreBadge } from "@/components/mobile/equipement/compliance-score-badge";
 
 // Layout app mobile — wrapper minimal qui ajoute la BottomTabBar fixée en bas
 // + le badge réseau (NetworkIndicator) en haut + l'enregistrement Service Worker

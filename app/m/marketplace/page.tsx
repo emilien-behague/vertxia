@@ -16,8 +16,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { MobileHeader } from "@/components/mobile/mobile-header";
-import { InsetListSection } from "@/components/mobile/inset-list";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
+import { InsetListSection } from "@/components/mobile/ui/inset-list";
 import {
   PIECES_CATALOGUE,
   FOURNISSEURS,

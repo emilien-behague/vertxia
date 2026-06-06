@@ -4,7 +4,7 @@
 // automatiquement depuis l'API TrackDéchets — le user n'aura plus qu'à compléter
 // la partie F-Gas (attestation, catégorie, organisme) et la partie visuelle (logo, signature).
 
-import { scopedKey } from "./user-scope";
+import { scopedKey } from "@/lib/auth/user-scope";
 
 const STORAGE_KEY_BASE = "vertxia:profil";
 function storageKey(): string {

@@ -7,9 +7,9 @@ import {
   deleteIntervention,
   getStats,
   type StoredIntervention,
-} from "@/lib/intervention-storage";
+} from "@/lib/intervention/intervention-storage";
 import { loadProfil } from "@/lib/profil";
-import type { TypeIntervention } from "@/lib/cerfa";
+import type { TypeIntervention } from "@/lib/cerfa/cerfa";
 
 const TYPE_LABELS: Record<TypeIntervention, string> = {
   recuperation: "Récupération de fluide",

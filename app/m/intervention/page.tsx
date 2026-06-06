@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MobileHeader } from "@/components/mobile/mobile-header";
-import { Tile, type TileVariant } from "@/components/mobile/tile";
-import { listEquipements, type StoredEquipement } from "@/lib/equipement";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
+import { Tile, type TileVariant } from "@/components/mobile/ui/tile";
+import { listEquipements, type StoredEquipement } from "@/lib/equipement/equipement";
 import {
   countDocumentsForIntervention,
   type TypeIntervention,
-} from "@/lib/documents-officiels";
+} from "@/lib/cerfa/documents-officiels";
 
 // Page intervention mobile — refonte 05/06/2026 style tuiles colorees.
 // Hub d'entree vers le formulaire intervention. 2 chemins :

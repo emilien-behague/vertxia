@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { MobileHeader } from "@/components/mobile/mobile-header";
-import { InsetListSection } from "@/components/mobile/inset-list";
-import { Tile } from "@/components/mobile/tile";
-import { listInterventions } from "@/lib/intervention-storage";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
+import { InsetListSection } from "@/components/mobile/ui/inset-list";
+import { Tile } from "@/components/mobile/ui/tile";
+import { listInterventions } from "@/lib/intervention/intervention-storage";
 import {
   aggregateForYear,
   loadManualInputs,

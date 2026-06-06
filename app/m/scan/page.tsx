@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { MobileHeader } from "@/components/mobile/mobile-header";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
 
 // Scanner QR Code Vertxia — ZXing/browser (mature Safari iOS, pas de worker).
 // Path priorité : BarcodeDetector natif iOS 17+/Chrome Android.

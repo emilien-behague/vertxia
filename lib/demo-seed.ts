@@ -7,8 +7,8 @@
 // 5 fluides différents et 5 typologies de clients HVAC français pour montrer
 // l'étendue du produit en une seule vue.
 
-import { saveEquipement, type StoredEquipement } from "@/lib/equipement";
-import { saveIntervention } from "@/lib/intervention-storage";
+import { saveEquipement, type StoredEquipement } from "@/lib/equipement/equipement";
+import { saveIntervention } from "@/lib/intervention/intervention-storage";
 import { saveProfil, EMPTY_PROFIL } from "@/lib/profil";
 
 const STORAGE_KEYS = [

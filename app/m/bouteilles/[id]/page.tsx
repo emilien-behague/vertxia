@@ -3,16 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { MobileHeader } from "@/components/mobile/mobile-header";
-import { BouteilleRepriseCard } from "@/components/mobile/bouteille-reprise-card";
-import { InsetListSection } from "@/components/mobile/inset-list";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
+import { BouteilleRepriseCard } from "@/components/mobile/intervention/bouteille-reprise-card";
+import { InsetListSection } from "@/components/mobile/ui/inset-list";
 import {
   getBouteille,
   listMouvementsForBouteille,
   createMouvement,
   updateBouteille,
   deleteBouteille,
-} from "@/lib/bouteille-storage";
+} from "@/lib/equipement/bouteille-storage";
 import {
   computeChargeActuelle,
   computePctRemplissage,
@@ -26,7 +26,7 @@ import {
   type Bouteille,
   type Mouvement,
   type MouvementType,
-} from "@/lib/bouteille";
+} from "@/lib/equipement/bouteille";
 
 const MOUVEMENT_TYPES_RECHARGE: MouvementType[] = ["remplissage_initial", "sortie", "retour_fournisseur", "calibrage"];
 const MOUVEMENT_TYPES_RECUPERATION: MouvementType[] = ["entree", "cession_traitement", "calibrage"];

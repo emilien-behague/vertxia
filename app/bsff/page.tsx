@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import SignatureCanvas from "react-signature-canvas";
-import { saveIntervention } from "@/lib/intervention-storage";
+import { saveIntervention } from "@/lib/intervention/intervention-storage";
 import { loadProfil } from "@/lib/profil";
-import { listEquipements } from "@/lib/equipement";
+import { listEquipements } from "@/lib/equipement/equipement";
 
 type Fluide = {
   code: string;

@@ -9,16 +9,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { MobileHeader } from "@/components/mobile/mobile-header";
-import { Tile } from "@/components/mobile/tile";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
+import { Tile } from "@/components/mobile/ui/tile";
 import {
   listEquipements,
   computeAllStatus,
   getInfractions,
   type Infraction,
   type InfractionSeverite,
-} from "@/lib/equipement";
-import { listInterventions } from "@/lib/intervention-storage";
+} from "@/lib/equipement/equipement";
+import { listInterventions } from "@/lib/intervention/intervention-storage";
 
 const SEVERITE_STYLES: Record<
   InfractionSeverite,

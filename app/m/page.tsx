@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { MobileHeader } from "@/components/mobile/mobile-header";
-import { Tile } from "@/components/mobile/tile";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
+import { Tile } from "@/components/mobile/ui/tile";
 import Link from "next/link";
 import {
   listEquipements,
@@ -10,10 +10,10 @@ import {
   getEquipementStats,
   getInfractions,
   type EquipementWithStatus,
-} from "@/lib/equipement";
-import { listInterventions, type StoredIntervention } from "@/lib/intervention-storage";
+} from "@/lib/equipement/equipement";
+import { listInterventions, type StoredIntervention } from "@/lib/intervention/intervention-storage";
 import { loadProfil, type Profil } from "@/lib/profil";
-import { hydrateFromSupabaseIfNeeded } from "@/lib/hydrate-on-login";
+import { hydrateFromSupabaseIfNeeded } from "@/lib/sync/hydrate-on-login";
 
 // Dashboard mobile — accueil Vertxia.
 //

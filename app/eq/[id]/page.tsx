@@ -10,24 +10,24 @@ import {
   buildRelanceMailto,
   type EquipementWithStatus,
   type ControleStatut,
-} from "@/lib/equipement";
-import { listInterventions } from "@/lib/intervention-storage";
-import { listDiagnostics } from "@/lib/diagnostic-storage";
+} from "@/lib/equipement/equipement";
+import { listInterventions } from "@/lib/intervention/intervention-storage";
+import { listDiagnostics } from "@/lib/intervention/diagnostic-storage";
 import { loadProfil, type Profil } from "@/lib/profil";
-import { generateQrLabel } from "@/lib/qr-label";
-import { fetchPublicEquipement, fetchPublicInterventions, syncEquipementToSupabase, lastFetchDebug, type PublicEquipement } from "@/lib/public-sync";
+import { generateQrLabel } from "@/lib/pdf/qr-label";
+import { fetchPublicEquipement, fetchPublicInterventions, syncEquipementToSupabase, lastFetchDebug, type PublicEquipement } from "@/lib/sync/public-sync";
 import {
   detectPredictiveSignals,
   SIGNAL_STYLES,
   type SignalPredictif,
-} from "@/lib/predictive-maintenance";
+} from "@/lib/intervention/predictive-maintenance";
 import {
   buildContextMemoryFromCurrentState,
   type ContextMemory,
-} from "@/lib/context-memory";
-import { PannesConnuesCard } from "@/components/mobile/pannes-connues-card";
-import { CrossSignalCard } from "@/components/mobile/cross-signal-card";
-import { DocumenterPanneButton } from "@/components/mobile/documenter-panne-button";
+} from "@/lib/intervention/context-memory";
+import { PannesConnuesCard } from "@/components/mobile/intervention/pannes-connues-card";
+import { CrossSignalCard } from "@/components/mobile/intervention/cross-signal-card";
+import { DocumenterPanneButton } from "@/components/mobile/intervention/documenter-panne-button";
 
 // Page mobile premium — affichée quand un technicien scanne le QR Code collé sur
 // un équipement. Doit s'afficher SANS bug sur Safari iOS (zéro animation initial:opacity:0
@@ -1584,7 +1584,7 @@ type FullDiag = {
   visitorError?: string;
 };
 
-function NotFoundState({ id, debug }: { id: string; debug: import("@/lib/public-sync").FetchDebug | null }) {
+function NotFoundState({ id, debug }: { id: string; debug: import("@/lib/sync/public-sync").FetchDebug | null }) {
   const [diag, setDiag] = useState<FullDiag | "loading" | "error">("loading");
 
   useEffect(() => {

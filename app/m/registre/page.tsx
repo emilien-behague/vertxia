@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { MobileHeader } from "@/components/mobile/mobile-header";
-import { InsetListSection } from "@/components/mobile/inset-list";
-import { Tile } from "@/components/mobile/tile";
-import { listBouteilles, listMouvements } from "@/lib/bouteille-storage";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
+import { InsetListSection } from "@/components/mobile/ui/inset-list";
+import { Tile } from "@/components/mobile/ui/tile";
+import { listBouteilles, listMouvements } from "@/lib/equipement/bouteille-storage";
 import { loadProfil } from "@/lib/profil";
 import {
   estEntree,
   estSortie,
   type Bouteille,
   type Mouvement,
-} from "@/lib/bouteille";
+} from "@/lib/equipement/bouteille";
 
 type Preset = "30j" | "annee" | "mois" | "custom";
 

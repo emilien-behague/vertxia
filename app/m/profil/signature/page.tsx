@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MobileHeader } from "@/components/mobile/mobile-header";
+import { MobileHeader } from "@/components/mobile/ui/mobile-header";
 import { loadProfil, saveProfil } from "@/lib/profil";
 
 // Canvas signature mobile-native — capture touch events + dessin lissé (mid-point).
