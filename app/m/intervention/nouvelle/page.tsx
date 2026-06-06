@@ -10,6 +10,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Drawer } from "vaul";
 import { MobileHeader } from "@/components/mobile/mobile-header";
 import { DocumentsForInterventionCard } from "@/components/mobile/documents-for-intervention-card";
+import { Cerfa15498Banner } from "@/components/mobile/cerfa-15498-banner";
 import { InsetListSection } from "@/components/mobile/inset-list";
 import { VoiceInput } from "@/components/mobile/voice-input";
 import { ScanPlaqueButton, type PlaqueData } from "@/components/mobile/scan-plaque-button";
@@ -1068,6 +1069,28 @@ function NouvelleInterventionContent() {
           le frigoriste a le CERFA + le modele de registre + la note DGEC
           pertinents en 1 tap, meme offline. Plie par defaut (compteur visible). */}
       <DocumentsForInterventionCard type={typeIntervention} />
+
+      {/* CERFA 15498*02 - contrat assemblage / mise en service pour les
+          equipements precharges. Visible uniquement sur typeIntervention
+          mise_service ou assemblage (le composant lui-meme filtre). */}
+      <Cerfa15498Banner
+        typeIntervention={typeIntervention}
+        acheteur={{
+          nomOuRaisonSociale: clientName,
+          siret: clientSiret || undefined,
+          adresse: clientAdresse || undefined,
+          email: clientEmail || undefined,
+        }}
+        equipement={{
+          modele: modeleEquipement,
+          numeroSerie: numeroSerieEquipement,
+          fluideCode: selectedFluide.code,
+          fluideLabel: selectedFluide.label,
+          chargeKg: parseFloat(weight) || 0,
+          gwp: selectedFluide.gwp,
+        }}
+        lieuInstallation={lieuIntervention}
+      />
 
       {/* Contexte équipement si pré-rempli */}
       {eqContext && (
