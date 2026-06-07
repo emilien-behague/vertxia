@@ -46,6 +46,14 @@ const VALID_MARQUES: CodeErreurMarque[] = [
   "bosch",
   "chaffoteaux",
   "stiebel-eltron",
+  "aldes",
+  "unelvent",
+  "zehnder",
+  "lennox",
+  "york",
+  "aermec",
+  "haier",
+  "sanyo",
 ];
 
 const VALID_GRAVITES: CodeErreurGravite[] = ["info", "alerte", "critique"];

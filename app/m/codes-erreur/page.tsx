@@ -56,6 +56,16 @@ const MARQUES: CodeErreurMarque[] = [
   "hitachi",
   "carrier",
   "trane",
+  // Clim/PAC tertiaire + mass market (ajouts v3 07/06/2026)
+  "lennox",
+  "york",
+  "aermec",
+  "haier",
+  "sanyo",
+  // VMC residentielle + tertiaire FR/EU (ajouts v3)
+  "aldes",
+  "unelvent",
+  "zehnder",
 ];
 
 const MARQUE_COLORS: Record<CodeErreurMarque, string> = {
@@ -79,6 +89,16 @@ const MARQUE_COLORS: Record<CodeErreurMarque, string> = {
   bosch: "bg-green-100 text-green-800 ring-green-300",
   chaffoteaux: "bg-purple-100 text-purple-800 ring-purple-300",
   "stiebel-eltron": "bg-lime-100 text-lime-800 ring-lime-300",
+  // v3 — clim/PAC tertiaire + mass market
+  lennox: "bg-red-200 text-red-900 ring-red-400",
+  york: "bg-amber-200 text-amber-900 ring-amber-400",
+  aermec: "bg-orange-200 text-orange-900 ring-orange-400",
+  haier: "bg-violet-200 text-violet-900 ring-violet-400",
+  sanyo: "bg-slate-200 text-slate-900 ring-slate-400",
+  // v3 — VMC FR/EU
+  aldes: "bg-blue-200 text-blue-900 ring-blue-400",
+  unelvent: "bg-sky-200 text-sky-900 ring-sky-400",
+  zehnder: "bg-cyan-200 text-cyan-900 ring-cyan-400",
 };
 
 // Label courts pour les pills (la barre de filtres en haut). On evite que
@@ -104,6 +124,15 @@ const MARQUE_PILL_LABELS: Record<CodeErreurMarque, string> = {
   bosch: "Bosch",
   chaffoteaux: "Chaffoteaux",
   "stiebel-eltron": "Stiebel",
+  // v3
+  lennox: "Lennox",
+  york: "York",
+  aermec: "Aermec",
+  haier: "Haier",
+  sanyo: "Sanyo",
+  aldes: "Aldes",
+  unelvent: "Unelvent",
+  zehnder: "Zehnder",
 };
 
 // Wrapper Suspense obligatoire pour Next.js 16 — useSearchParams() ne peut
@@ -376,11 +405,11 @@ function CodesErreurPageInner() {
             <div className="rounded-2xl bg-amber-50 ring-1 ring-amber-200 px-4 py-4 text-[13px] text-amber-900 mt-4">
               <div className="font-semibold mb-1">À savoir</div>
               <p className="leading-snug">
-                La base couvre <strong>~840 codes</strong> sur les 20 marques les
+                La base couvre <strong>~1100 codes</strong> sur les 28 marques les
                 plus courantes en France (clim, PAC air-eau, chaudières gaz / fioul,
-                CET). Causes et étapes sont indicatives — le diagnostic terrain reste
-                prioritaire. Le détecteur de fuite électronique et le respect des
-                protocoles QualiPAC / QualiFroid sont obligatoires.
+                CET, VMC, chillers tertiaires). Causes et étapes sont indicatives — le
+                diagnostic terrain reste prioritaire. Le détecteur de fuite électronique
+                et le respect des protocoles QualiPAC / QualiFroid sont obligatoires.
               </p>
             </div>
           )}

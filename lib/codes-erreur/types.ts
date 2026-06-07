@@ -37,7 +37,15 @@ export type CodeErreurMarque =
   | "fujitsu"
   | "bosch"
   | "chaffoteaux"
-  | "stiebel-eltron";
+  | "stiebel-eltron"
+  | "aldes"
+  | "unelvent"
+  | "zehnder"
+  | "lennox"
+  | "york"
+  | "aermec"
+  | "haier"
+  | "sanyo";
 
 export const CODE_ERREUR_MARQUE_LABELS: Record<CodeErreurMarque, string> = {
   daikin: "Daikin",
@@ -60,6 +68,14 @@ export const CODE_ERREUR_MARQUE_LABELS: Record<CodeErreurMarque, string> = {
   bosch: "Bosch / Buderus",
   chaffoteaux: "Chaffoteaux",
   "stiebel-eltron": "Stiebel Eltron",
+  aldes: "Aldes",
+  unelvent: "Unelvent",
+  zehnder: "Zehnder",
+  lennox: "Lennox",
+  york: "York (Johnson Controls)",
+  aermec: "Aermec",
+  haier: "Haier",
+  sanyo: "Sanyo",
 };
 
 export type CodeErreurGravite = "info" | "alerte" | "critique";

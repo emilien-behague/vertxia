@@ -43,6 +43,19 @@ const MARQUE_ALIASES: Record<string, CodeErreurMarque> = {
   ariston: "chaffoteaux",
   stiebel: "stiebel-eltron",
   stiebeleltron: "stiebel-eltron",
+  // v3 — nouvelles marques (07/06/2026)
+  aldes: "aldes",
+  tflow: "aldes",
+  unelvent: "unelvent",
+  zehnder: "zehnder",
+  comfoair: "zehnder",
+  lennox: "lennox",
+  york: "york",
+  johnsoncontrols: "york",
+  jci: "york",
+  aermec: "aermec",
+  haier: "haier",
+  sanyo: "sanyo",
 };
 
 function normalize(s: string): string {
