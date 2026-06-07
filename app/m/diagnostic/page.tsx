@@ -254,6 +254,9 @@ export default function DiagnosticPage() {
         numero: generateDevisNumero(),
         heuresMainOeuvre,
         tauxHoraireHT: tauxHoraire,
+        // Tarification complete du profil (taux horaire + TVA) pour
+        // generer un devis coherent avec les autres devis du pro.
+        profil,
       });
 
       const res = await fetch("/api/devis/create", {

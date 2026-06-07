@@ -11,8 +11,15 @@ import {
   type StoredIntervention,
 } from "@/lib/intervention/intervention-storage";
 import { Drawer } from "vaul";
-import { loadProfil } from "@/lib/profil";
+import { loadProfil, resolveTarification } from "@/lib/profil";
+import type { MaterielAccesFacturable } from "@/lib/devis";
 import { getDiagnostic, type StoredDiagnostic } from "@/lib/intervention/diagnostic-storage";
+
+const LABEL_MATERIEL_ACCES_UI: Record<MaterielAccesFacturable, string> = {
+  nacelle3a7m: "Nacelle 3-7m",
+  nacelle7mPlus: "Nacelle > 7m",
+  sousTraitanceNacelle: "Sous-traitance nacelle",
+};
 import { generateEtiquetteTfe } from "@/lib/pdf/etiquette-tfe";
 import { GRAVITE_LABELS, GRAVITE_STYLES, DELAI_LABELS } from "@/lib/intervention/vision-diagnostic";
 import Link from "next/link";
@@ -68,6 +75,13 @@ export default function MobileInterventionDetailPage() {
   const [devisHeures, setDevisHeures] = useState<number>(1);
   const [devisTauxHoraire, setDevisTauxHoraire] = useState<number>(65);
   const [devisForfaitDeplacement, setDevisForfaitDeplacement] = useState<number>(60);
+  // Materiel d'acces (selection sur l'intervention) + jours utilises + departement client.
+  // Determine la majoration hors perimetre + ligne nacelle/sous-traitance.
+  const [devisMaterielType, setDevisMaterielType] = useState<MaterielAccesFacturable | "none">("none");
+  const [devisMaterielJours, setDevisMaterielJours] = useState<number>(1);
+  const [devisClientDepartement, setDevisClientDepartement] = useState<string>("");
+  // Materiels actifs declares dans la tarification du profil (pour affichage UI).
+  const [materielsDisponibles, setMaterielsDisponibles] = useState<MaterielAccesFacturable[]>([]);
   // Edition rapide (modal Vaul)
   const [editOpen, setEditOpen] = useState(false);
   const [editClientName, setEditClientName] = useState("");
@@ -124,6 +138,31 @@ export default function MobileInterventionDetailPage() {
   }
 
   // Auto-refresh : polling 30s + visibility change + tick "il y a Xs"
+  // Quand on ouvre la modale devis : pre-remplir taux horaire + forfait deplacement
+  // depuis la tarification du profil, et identifier les materiels d'acces actifs
+  // pour les afficher dans le selecteur.
+  useEffect(() => {
+    if (!devisOpen) return;
+    const p = loadProfil();
+    const t = resolveTarification(p);
+    if (t.tauxHoraireHT > 0) setDevisTauxHoraire(t.tauxHoraireHT);
+    if (t.deplacement.mode === "forfait") {
+      setDevisForfaitDeplacement(t.deplacement.forfaitHT);
+    }
+    const dispo: MaterielAccesFacturable[] = [];
+    if (t.acces.nacelle3a7m.active && t.acces.nacelle3a7m.prixJourHT > 0) dispo.push("nacelle3a7m");
+    if (t.acces.nacelle7mPlus.active && t.acces.nacelle7mPlus.prixJourHT > 0) dispo.push("nacelle7mPlus");
+    if (t.acces.sousTraitanceNacelle.active && t.acces.sousTraitanceNacelle.prixJourHT > 0) dispo.push("sousTraitanceNacelle");
+    setMaterielsDisponibles(dispo);
+    // Auto-extraction du code departement depuis l'adresse client si dispo
+    // (lieuIntervention ou clientName de l'intervention pour le moment).
+    if (!devisClientDepartement && intervention?.lieuIntervention) {
+      // Cherche un CP 5 chiffres dans le lieu, prend les 2 premiers comme dept.
+      const m = intervention.lieuIntervention.match(/\b(\d{5})\b/);
+      if (m) setDevisClientDepartement(m[1].slice(0, 2));
+    }
+  }, [devisOpen, intervention?.lieuIntervention, devisClientDepartement]);
+
   useEffect(() => {
     if (!intervention?.bsffId) return;
     bsffIdRef.current = intervention.bsffId;
@@ -505,6 +544,17 @@ export default function MobileInterventionDetailPage() {
         heuresMainOeuvre: devisHeures,
         tauxHoraireHT: devisTauxHoraire,
         forfaitDeplacementHt: devisForfaitDeplacement,
+        // Brancher la tarification complete du profil : taux horaire, deplacement
+        // (forfait ou km), TVA, materiel d'acces, majoration hors perimetre.
+        // Les valeurs explicites (devisHeures, devisTauxHoraire, devisForfaitDeplacement)
+        // restent prioritaires sur la tarification profil — l'utilisateur peut
+        // toujours surcharger ponctuellement depuis l'UI de l'historique.
+        profil,
+        materielAcces:
+          devisMaterielType !== "none" && devisMaterielJours > 0
+            ? { type: devisMaterielType, joursUtilises: devisMaterielJours }
+            : undefined,
+        clientDepartement: devisClientDepartement.trim() || undefined,
       });
 
       const res = await fetch("/api/devis/create", {
@@ -1422,6 +1472,99 @@ export default function MobileInterventionDetailPage() {
                 />
                 <div className="mt-1 text-[11px] text-black/45 leading-snug px-1">
                   Mettre 0 pour ne pas inclure le déplacement.
+                </div>
+              </div>
+
+              {/* Materiel d'acces — selection si au moins un materiel actif dans
+                  la tarification du profil. Sinon message pour aller configurer. */}
+              <div>
+                <label className="block text-[11px] tracking-widest uppercase font-mono text-black/40 mb-1">
+                  Matériel d&apos;accès utilisé
+                </label>
+                {materielsDisponibles.length === 0 ? (
+                  <div className="px-4 py-3 rounded-2xl bg-black/[0.03] text-[12.5px] text-black/55 leading-snug">
+                    Aucune nacelle activée dans votre tarification.
+                    <a
+                      href="/m/profil/tarification"
+                      className="block mt-1 text-[#A16207] active:opacity-60 font-medium"
+                      style={{ WebkitTapHighlightColor: "transparent" }}
+                    >
+                      Configurer →
+                    </a>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setDevisMaterielType("none")}
+                        className={`px-3 py-2 rounded-xl text-[12.5px] font-medium transition-colors ${
+                          devisMaterielType === "none"
+                            ? "bg-emerald-600 text-white"
+                            : "bg-black/[0.04] text-black/65 active:bg-black/[0.08]"
+                        }`}
+                        style={{ WebkitTapHighlightColor: "transparent" }}
+                      >
+                        Échelle (incluse)
+                      </button>
+                      {materielsDisponibles.map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setDevisMaterielType(m)}
+                          className={`px-3 py-2 rounded-xl text-[12.5px] font-medium transition-colors ${
+                            devisMaterielType === m
+                              ? "bg-emerald-600 text-white"
+                              : "bg-black/[0.04] text-black/65 active:bg-black/[0.08]"
+                          }`}
+                          style={{ WebkitTapHighlightColor: "transparent" }}
+                        >
+                          {LABEL_MATERIEL_ACCES_UI[m]}
+                        </button>
+                      ))}
+                    </div>
+                    {devisMaterielType !== "none" && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <label className="text-[12px] text-black/55 shrink-0">
+                          Jours :
+                        </label>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          min="0.5"
+                          step="0.5"
+                          value={devisMaterielJours}
+                          onChange={(e) =>
+                            setDevisMaterielJours(
+                              Math.max(0.5, parseFloat(e.target.value) || 0)
+                            )
+                          }
+                          className="w-24 px-3 py-2 rounded-xl bg-white ring-1 ring-black/[0.06] text-[14px] font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-[#A16207]/30"
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Departement client — sert a declencher la majoration hors perimetre
+                  (mode km uniquement). Auto-pre-rempli si dispo dans lieuIntervention. */}
+              <div>
+                <label className="block text-[11px] tracking-widest uppercase font-mono text-black/40 mb-1">
+                  Département du client
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={3}
+                  pattern="\d{2,3}"
+                  value={devisClientDepartement}
+                  onChange={(e) => setDevisClientDepartement(e.target.value.replace(/\D/g, ""))}
+                  placeholder="ex : 31"
+                  className="w-24 px-4 py-3 rounded-2xl bg-white ring-1 ring-black/[0.06] text-[15px] font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-[#A16207]/30"
+                />
+                <div className="mt-1 text-[11px] text-black/45 leading-snug px-1">
+                  Utilisé pour la majoration hors périmètre (si configurée).
                 </div>
               </div>
 

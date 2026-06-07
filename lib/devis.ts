@@ -14,6 +14,18 @@
 // IA en 3 lignes typiques.
 
 import type { DiagnosticResult } from "@/lib/intervention/vision-diagnostic";
+import type { Profil, MaterielAcces } from "@/lib/profil";
+import { resolveTarification } from "@/lib/profil";
+
+/** Clef d'un materiel d'acces facturable (echelle est inclus dans la MO, donc
+ *  pas facturable separement). */
+export type MaterielAccesFacturable = "nacelle3a7m" | "nacelle7mPlus" | "sousTraitanceNacelle";
+
+const LABEL_MATERIEL_ACCES: Record<MaterielAccesFacturable, string> = {
+  nacelle3a7m: "Nacelle articulée 3-7m",
+  nacelle7mPlus: "Nacelle télescopique > 7m",
+  sousTraitanceNacelle: "Sous-traitance nacelle externe",
+};
 
 export type DevisLigne = {
   /** Libelle visible sur le PDF (ex : "Main d'oeuvre - reparation brasure") */
@@ -172,14 +184,19 @@ export function buildDevisFromDiagnostic(input: {
    *  IA — le total final est donc ajuste si les heures fournies different
    *  du calcul auto. */
   heuresMainOeuvre?: number;
-  /** Override du taux horaire HT en €/h. Par defaut 65 €/h. */
+  /** Override du taux horaire HT en €/h. Defaut : valeur tarification profil > 65 €/h. */
   tauxHoraireHT?: number;
+  /** Profil du pro emetteur. Si fourni, on lit sa tarification (taux horaire
+   *  + TVA) au lieu des constantes hardcodees. Le calcul de ventilation 50/35/15
+   *  reste inchange (c'est une estimation pre-intervention, pas une facture). */
+  profil?: Profil;
 }): Devis {
   const { diagnostic, diagnosticId, diagnosticDateISO, emetteur, destinataire, numero } = input;
 
+  const tarif = input.profil ? resolveTarification(input.profil) : undefined;
   const tauxHoraire = input.tauxHoraireHT && input.tauxHoraireHT > 0
     ? input.tauxHoraireHT
-    : TAUX_HORAIRE_DEFAUT;
+    : tarif?.tauxHoraireHT ?? TAUX_HORAIRE_DEFAUT;
 
   const totalCible = estimerMontantCible(diagnostic);
   const composantLabel = diagnostic.composantIdentifie || "composant frigorifique";
@@ -257,7 +274,8 @@ export function buildDevisFromDiagnostic(input: {
     montantHT: round2(totalDeplacement),
   });
 
-  const tauxTVA = TAUX_TVA_DEFAUT;
+  // TVA : valeur tarification profil si dispo, sinon defaut hardcode.
+  const tauxTVA = tarif?.tvaParDefautPct ?? TAUX_TVA_DEFAUT;
   const totaux = computeTotaux(lignes, tauxTVA);
 
   // Validite par defaut : +30 jours a partir d'aujourd'hui
@@ -401,21 +419,56 @@ export function buildDevisFromIntervention(input: {
   /** Override des heures de main d'oeuvre. Si non fourni, utilise la
    *  valeur par defaut selon le type d'intervention. */
   heuresMainOeuvre?: number;
-  /** Override du taux horaire HT. Defaut 65 EUR/h. */
+  /** Override du taux horaire HT. Defaut : valeur tarification profil > 65 EUR/h. */
   tauxHoraireHT?: number;
-  /** Override du forfait deplacement. Defaut 60 EUR HT. */
+  /** Override du forfait deplacement. Defaut : tarification profil > 60 EUR HT. */
   forfaitDeplacementHt?: number;
+  /** Profil du pro emetteur. Si fourni, on lit sa tarification (taux horaire,
+   *  deplacement forfait OU km, materiel d'acces, marge pieces, TVA) au lieu
+   *  des constantes hardcodees. Recommande pour V1+. */
+  profil?: Profil;
+  /** Materiel d'acces utilise pour cette intervention. Ajoute une ligne dediee
+   *  au devis si la tarification du pro l'a actif. */
+  materielAcces?: { type: MaterielAccesFacturable; joursUtilises: number };
+  /** Distance aller-retour en km. Utilise UNIQUEMENT en mode deplacement="km"
+   *  pour calculer le delta hors perimetre offert. */
+  distanceKmAR?: number;
+  /** Code departement du client (2 chiffres). Utilise pour declencher la
+   *  majoration hors perimetre departemental du profil. */
+  clientDepartement?: string;
 }): Devis {
   const { intervention, emetteur, destinataire, numero } = input;
+
+  // Tarification du pro (si profil fourni). Sinon constantes legacy.
+  const tarif = input.profil ? resolveTarification(input.profil) : undefined;
+
   const tauxHoraire = input.tauxHoraireHT && input.tauxHoraireHT > 0
     ? input.tauxHoraireHT
-    : TAUX_HORAIRE_DEFAUT;
+    : tarif?.tauxHoraireHT ?? TAUX_HORAIRE_DEFAUT;
   const heures = input.heuresMainOeuvre && input.heuresMainOeuvre > 0
     ? input.heuresMainOeuvre
     : estimerHeuresMOFromTypeIntervention(intervention.typeIntervention);
-  const forfaitDeplacement = typeof input.forfaitDeplacementHt === "number"
-    ? input.forfaitDeplacementHt
-    : FORFAIT_DEPLACEMENT_HT;
+
+  // Calcul deplacement (mode forfait ou km selon tarif, sinon legacy forfait).
+  let deplacementMontant: number;
+  let deplacementDetail: string;
+  if (tarif?.deplacement.mode === "km") {
+    const distAR = input.distanceKmAR ?? 0;
+    const perimetreOffert = tarif.deplacement.perimetreOffertKm ?? 0;
+    const distFacturable = Math.max(0, distAR - perimetreOffert);
+    deplacementMontant = distFacturable * tarif.deplacement.prixKmHT;
+    deplacementDetail = distAR > 0
+      ? `${distAR} km AR${perimetreOffert > 0 ? ` (${perimetreOffert} km inclus)` : ""}`
+      : "Au kilomètre — distance à renseigner";
+  } else if (tarif?.deplacement.mode === "forfait") {
+    deplacementMontant = tarif.deplacement.forfaitHT;
+    deplacementDetail = "Aller-retour sur site";
+  } else {
+    deplacementMontant = typeof input.forfaitDeplacementHt === "number"
+      ? input.forfaitDeplacementHt
+      : FORFAIT_DEPLACEMENT_HT;
+    deplacementDetail = "Aller-retour sur site";
+  }
 
   const labelType = LABEL_TYPE_INTERVENTION[intervention.typeIntervention]
     ?? intervention.typeIntervention;
@@ -494,19 +547,63 @@ export function buildDevisFromIntervention(input: {
     });
   }
 
-  // Ligne 5 : Deplacement (forfait)
-  if (forfaitDeplacement > 0) {
+  // Ligne 5 : Deplacement (forfait ou km, selon tarification profil)
+  if (deplacementMontant > 0) {
     lignes.push({
       designation: "Frais de déplacement",
-      detail: "Aller-retour sur site",
+      detail: deplacementDetail,
       quantite: 1,
       unite: "forfait",
-      prixUnitaireHT: round2(forfaitDeplacement),
-      montantHT: round2(forfaitDeplacement),
+      prixUnitaireHT: round2(deplacementMontant),
+      montantHT: round2(deplacementMontant),
     });
   }
 
-  const tauxTVA = TAUX_TVA_DEFAUT;
+  // Ligne 6 : Materiel d'acces (nacelle / sous-traitance) si selectionne
+  // ET active dans la tarification du pro ET prix journalier > 0.
+  if (tarif && input.materielAcces && input.materielAcces.joursUtilises > 0) {
+    const config = tarif.acces[input.materielAcces.type];
+    if (config?.active && config.prixJourHT > 0) {
+      const jours = input.materielAcces.joursUtilises;
+      const totalMat = round2(jours * config.prixJourHT);
+      lignes.push({
+        designation: LABEL_MATERIEL_ACCES[input.materielAcces.type],
+        detail: `${jours} jour${jours > 1 ? "s" : ""} d'utilisation`,
+        quantite: jours,
+        unite: "jour",
+        prixUnitaireHT: round2(config.prixJourHT),
+        montantHT: totalMat,
+      });
+    }
+  }
+
+  // Ligne 7 : Majoration hors perimetre departemental (mode km uniquement).
+  // S'applique sur le total HT calcule avant majoration.
+  if (
+    tarif?.deplacement.mode === "km" &&
+    tarif.deplacement.majorationHorsPerimetrePct &&
+    input.clientDepartement &&
+    tarif.departementsPerimetre &&
+    tarif.departementsPerimetre.length > 0 &&
+    !tarif.departementsPerimetre.includes(input.clientDepartement)
+  ) {
+    const pct = tarif.deplacement.majorationHorsPerimetrePct;
+    const baseHT = lignes.reduce((s, l) => s + l.montantHT, 0);
+    const majoration = round2(baseHT * (pct / 100));
+    if (majoration > 0) {
+      lignes.push({
+        designation: `Majoration hors périmètre (+${pct}%)`,
+        detail: `Client dpt ${input.clientDepartement} — hors de votre périmètre habituel`,
+        quantite: 1,
+        unite: "forfait",
+        prixUnitaireHT: majoration,
+        montantHT: majoration,
+      });
+    }
+  }
+
+  // TVA : valeur tarification profil si dispo, sinon defaut hardcode.
+  const tauxTVA = tarif?.tvaParDefautPct ?? TAUX_TVA_DEFAUT;
   const totaux = computeTotaux(lignes, tauxTVA);
 
   const today = new Date();
