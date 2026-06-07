@@ -316,28 +316,6 @@ export function ChatAssistant({ equipementContext }: Props) {
                   <div className="text-[11px] text-black/55 leading-tight">Réglementation, fluides, diag terrain</div>
                 </div>
               </div>
-              {/* Bandeau Mode terrain — affiche si contexte equipement actif */}
-              {effectiveContext && (
-                <button
-                  type="button"
-                  onClick={() => setContextEnabled(false)}
-                  title="Cliquer pour désactiver le mode terrain"
-                  className="hidden sm:inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10.5px] font-semibold ring-1 ring-emerald-300 active:bg-emerald-200"
-                  style={{ WebkitTapHighlightColor: "transparent" }}
-                >
-                  📍 {effectiveContext.modele || "Mode terrain"}
-                </button>
-              )}
-              {!effectiveContext && autoContext && (
-                <button
-                  type="button"
-                  onClick={() => setContextEnabled(true)}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-600 text-[10.5px] font-medium ring-1 ring-slate-200 active:bg-slate-200"
-                  style={{ WebkitTapHighlightColor: "transparent" }}
-                >
-                  Activer mode terrain
-                </button>
-              )}
               <div className="flex items-center gap-2">
                 {messages.length > 0 && (
                   <button
@@ -362,6 +340,54 @@ export function ChatAssistant({ equipementContext }: Props) {
                 </button>
               </div>
             </div>
+
+            {/* Bandeau Mode terrain — plein largeur, visible mobile-first.
+                S affiche si on a un contexte equipement actif (auto detecte URL
+                /eq/[id] OU /m/equipements/[id]) ou si on peut l activer. */}
+            {effectiveContext && (
+              <div className="bg-emerald-50 border-b border-emerald-200 px-4 py-2 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span className="text-[14px] shrink-0">📍</span>
+                  <div className="min-w-0">
+                    <div className="text-[12px] font-bold text-emerald-900 leading-tight truncate">
+                      Mode terrain
+                      {effectiveContext.modele ? ` · ${effectiveContext.modele}` : ""}
+                    </div>
+                    <div className="text-[10.5px] text-emerald-800/80 leading-tight truncate">
+                      {effectiveContext.clientName
+                        ? `Client : ${effectiveContext.clientName}`
+                        : "Réponses ciblées sur cet équipement"}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setContextEnabled(false)}
+                  className="shrink-0 text-[10.5px] font-semibold text-emerald-800 active:text-emerald-600 px-2 py-1 rounded ring-1 ring-emerald-300 bg-white"
+                  style={{ WebkitTapHighlightColor: "transparent" }}
+                >
+                  Désactiver
+                </button>
+              </div>
+            )}
+            {!effectiveContext && autoContext && (
+              <div className="bg-slate-50 border-b border-slate-200 px-4 py-2 flex items-center justify-between gap-2">
+                <div className="text-[11.5px] text-slate-600 leading-tight">
+                  Mode terrain désactivé{" "}
+                  {autoContext.modele && (
+                    <span className="text-slate-500">({autoContext.modele})</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setContextEnabled(true)}
+                  className="shrink-0 text-[10.5px] font-semibold text-emerald-700 active:text-emerald-600 px-2 py-1 rounded ring-1 ring-emerald-300 bg-white"
+                  style={{ WebkitTapHighlightColor: "transparent" }}
+                >
+                  📍 Activer
+                </button>
+              </div>
+            )}
 
             {/* Messages list */}
             <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-3">
