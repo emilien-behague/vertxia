@@ -171,3 +171,120 @@ export async function geocodeMany(addresses: string[]): Promise<(GeoPoint | null
   }
   return results;
 }
+
+// ─── Routing (distance routière entre 2 points) ─────────────────────────
+// OSRM public demo (https://router.project-osrm.org) : pas de clé API, gratuit,
+// open-source. Suffisant pour V1.5. Si rate-limit en prod : self-host OSRM
+// ou bascule vers Geoapify/OpenRouteService (key + paramètre identique).
+//
+// On cache 90 jours en localStorage — une route entre 2 points fixes ne change
+// quasi jamais (sauf travaux majeurs).
+
+const ROUTE_CACHE_KEY_BASE = "vertxia:routecache:v1";
+function routeCacheKey(): string {
+  return scopedKey(ROUTE_CACHE_KEY_BASE);
+}
+
+type RouteEntry = {
+  km: number;
+  durationMin: number;
+  ts: number;
+};
+
+const ROUTE_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 jours
+
+function loadRouteCache(): Record<string, RouteEntry> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(routeCacheKey());
+    if (!raw) return {};
+    return JSON.parse(raw) as Record<string, RouteEntry>;
+  } catch {
+    return {};
+  }
+}
+
+function saveRouteCache(cache: Record<string, RouteEntry>): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(routeCacheKey(), JSON.stringify(cache));
+  } catch {
+    /* quota dépassé, on ignore */
+  }
+}
+
+function routeKey(from: GeoPoint, to: GeoPoint): string {
+  // Arrondi 5 décimales (≈1m précision) pour réutiliser le cache même si les
+  // geocodes différent à la 6ème décimale.
+  return `${from.lat.toFixed(5)},${from.lng.toFixed(5)}|${to.lat.toFixed(5)},${to.lng.toFixed(5)}`;
+}
+
+/**
+ * Calcule la distance routière entre 2 points (un sens, pas aller-retour).
+ * Retourne null si erreur réseau ou route impossible (île, etc.).
+ * Cache 90 jours en localStorage.
+ */
+export async function routeDistanceKm(
+  from: GeoPoint,
+  to: GeoPoint
+): Promise<{ km: number; durationMin: number } | null> {
+  const key = routeKey(from, to);
+  const cache = loadRouteCache();
+  const entry = cache[key];
+  if (entry && Date.now() - entry.ts < ROUTE_TTL_MS) {
+    return { km: entry.km, durationMin: entry.durationMin };
+  }
+  try {
+    // OSRM format : /route/v1/{profile}/{coordinates}?overview=false
+    // Coordonnees = lon,lat (ATTENTION : pas lat,lng comme partout ailleurs)
+    const url = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=false`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      routes?: Array<{ distance?: number; duration?: number }>;
+      code?: string;
+    };
+    if (data.code && data.code !== "Ok") return null;
+    const route = data.routes?.[0];
+    if (!route || typeof route.distance !== "number") return null;
+    const km = Math.round(route.distance / 1000);
+    const durationMin = Math.round((route.duration ?? 0) / 60);
+    cache[key] = { km, durationMin, ts: Date.now() };
+    saveRouteCache(cache);
+    return { km, durationMin };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Calcule la distance routière ALLER-RETOUR entre 2 adresses texte.
+ * Geocode les 2 adresses (cache 30j) puis calcule la route (cache 90j).
+ *
+ * @returns kmAR = distance × 2 (AR), durationMinAR = duration × 2, plus les
+ *   points geocodés pour debug / réutilisation. Null si une étape échoue.
+ */
+export async function computeRoadDistanceAR(
+  fromAddr: string,
+  toAddr: string
+): Promise<{
+  kmAR: number;
+  durationMinAR: number;
+  from: GeoPoint;
+  to: GeoPoint;
+} | null> {
+  if (!fromAddr.trim() || !toAddr.trim()) return null;
+  const [from, to] = await Promise.all([
+    geocodeAddress(fromAddr),
+    geocodeAddress(toAddr),
+  ]);
+  if (!from || !to) return null;
+  const route = await routeDistanceKm(from, to);
+  if (!route) return null;
+  return {
+    kmAR: route.km * 2,
+    durationMinAR: route.durationMin * 2,
+    from,
+    to,
+  };
+}

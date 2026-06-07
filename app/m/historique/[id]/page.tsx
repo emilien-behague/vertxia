@@ -82,6 +82,14 @@ export default function MobileInterventionDetailPage() {
   const [devisClientDepartement, setDevisClientDepartement] = useState<string>("");
   // Materiels actifs declares dans la tarification du profil (pour affichage UI).
   const [materielsDisponibles, setMaterielsDisponibles] = useState<MaterielAccesFacturable[]>([]);
+  // Mode deplacement detecte depuis la tarification (forfait ou km).
+  // En mode km : on calcule la distance routiere automatiquement (Nominatim
+  // pour geocoder + OSRM pour le routing). Override manuel possible.
+  const [devisDeplacementMode, setDevisDeplacementMode] = useState<"forfait" | "km">("forfait");
+  const [devisDistanceKmAR, setDevisDistanceKmAR] = useState<number>(0);
+  const [devisDistanceLoading, setDevisDistanceLoading] = useState(false);
+  const [devisDistanceError, setDevisDistanceError] = useState<string | null>(null);
+  const [devisDistanceDetail, setDevisDistanceDetail] = useState<string>("");
   // Edition rapide (modal Vaul)
   const [editOpen, setEditOpen] = useState(false);
   const [editClientName, setEditClientName] = useState("");
@@ -138,6 +146,44 @@ export default function MobileInterventionDetailPage() {
   }
 
   // Auto-refresh : polling 30s + visibility change + tick "il y a Xs"
+  // Calcule la distance routiere AR depuis l'adresse pro vers l'adresse client.
+  // Utilise lib/geocoding (Nominatim geocoding + OSRM routing, cache local).
+  // Bouton de recalcul manuel + auto-trigger au mount modale en mode km.
+  async function recomputeDistance(opts?: { force?: boolean }) {
+    setDevisDistanceError(null);
+    const p = loadProfil();
+    const fromAddr = [p.adresseRue, p.adresseCp, p.adresseVille].filter(Boolean).join(", ");
+    const toAddr = devisClientAdresse.trim() || intervention?.lieuIntervention || "";
+    if (!fromAddr.trim()) {
+      setDevisDistanceError("Adresse pro manquante dans /m/profil");
+      return;
+    }
+    if (!toAddr.trim()) {
+      setDevisDistanceError("Adresse client manquante");
+      return;
+    }
+    if (!opts?.force && devisDistanceLoading) return;
+    setDevisDistanceLoading(true);
+    setDevisDistanceDetail("");
+    try {
+      const { computeRoadDistanceAR } = await import("@/lib/geocoding");
+      const result = await computeRoadDistanceAR(fromAddr, toAddr);
+      if (!result) {
+        setDevisDistanceError("Impossible de calculer la route — saisir manuellement");
+        return;
+      }
+      setDevisDistanceKmAR(result.kmAR);
+      const villePro = p.adresseVille || "votre adresse";
+      const cpClient = toAddr.match(/\b(\d{5})\b/)?.[1] ?? "";
+      const sens = cpClient ? `${villePro} → ${cpClient}` : `aller-retour depuis ${villePro}`;
+      setDevisDistanceDetail(`${result.kmAR} km AR (${sens}, ~${result.durationMinAR}min)`);
+    } catch {
+      setDevisDistanceError("Erreur reseau pendant le calcul");
+    } finally {
+      setDevisDistanceLoading(false);
+    }
+  }
+
   // Quand on ouvre la modale devis : pre-remplir taux horaire + forfait deplacement
   // depuis la tarification du profil, et identifier les materiels d'acces actifs
   // pour les afficher dans le selecteur.
@@ -146,6 +192,7 @@ export default function MobileInterventionDetailPage() {
     const p = loadProfil();
     const t = resolveTarification(p);
     if (t.tauxHoraireHT > 0) setDevisTauxHoraire(t.tauxHoraireHT);
+    setDevisDeplacementMode(t.deplacement.mode);
     if (t.deplacement.mode === "forfait") {
       setDevisForfaitDeplacement(t.deplacement.forfaitHT);
     }
@@ -157,11 +204,15 @@ export default function MobileInterventionDetailPage() {
     // Auto-extraction du code departement depuis l'adresse client si dispo
     // (lieuIntervention ou clientName de l'intervention pour le moment).
     if (!devisClientDepartement && intervention?.lieuIntervention) {
-      // Cherche un CP 5 chiffres dans le lieu, prend les 2 premiers comme dept.
       const m = intervention.lieuIntervention.match(/\b(\d{5})\b/);
       if (m) setDevisClientDepartement(m[1].slice(0, 2));
     }
-  }, [devisOpen, intervention?.lieuIntervention, devisClientDepartement]);
+    // Auto-calcul distance si mode km + adresses dispo (1ere ouverture seulement).
+    if (t.deplacement.mode === "km" && devisDistanceKmAR === 0) {
+      void recomputeDistance({ force: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [devisOpen]);
 
   useEffect(() => {
     if (!intervention?.bsffId) return;
@@ -555,6 +606,9 @@ export default function MobileInterventionDetailPage() {
             ? { type: devisMaterielType, joursUtilises: devisMaterielJours }
             : undefined,
         clientDepartement: devisClientDepartement.trim() || undefined,
+        distanceKmAR: devisDeplacementMode === "km" && devisDistanceKmAR > 0
+          ? devisDistanceKmAR
+          : undefined,
       });
 
       const res = await fetch("/api/devis/create", {
@@ -1457,23 +1511,71 @@ export default function MobileInterventionDetailPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] tracking-widest uppercase font-mono text-black/40 mb-1">
-                  Forfait déplacement HT
-                </label>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="5"
-                  value={devisForfaitDeplacement}
-                  onChange={(e) => setDevisForfaitDeplacement(Math.max(0, parseFloat(e.target.value) || 0))}
-                  className="w-full px-4 py-3 rounded-2xl bg-white ring-1 ring-black/[0.06] text-[15px] font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-[#A16207]/30"
-                />
-                <div className="mt-1 text-[11px] text-black/45 leading-snug px-1">
-                  Mettre 0 pour ne pas inclure le déplacement.
+              {/* Deplacement : mode forfait OU km selon la tarification du profil.
+                  Mode km : auto-calcul via Nominatim + OSRM + override manuel. */}
+              {devisDeplacementMode === "forfait" ? (
+                <div>
+                  <label className="block text-[11px] tracking-widest uppercase font-mono text-black/40 mb-1">
+                    Forfait déplacement HT
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="5"
+                    value={devisForfaitDeplacement}
+                    onChange={(e) => setDevisForfaitDeplacement(Math.max(0, parseFloat(e.target.value) || 0))}
+                    className="w-full px-4 py-3 rounded-2xl bg-white ring-1 ring-black/[0.06] text-[15px] font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-[#A16207]/30"
+                  />
+                  <div className="mt-1 text-[11px] text-black/45 leading-snug px-1">
+                    Mettre 0 pour ne pas inclure le déplacement.
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] tracking-widest uppercase font-mono text-black/40">
+                      Distance aller-retour (km)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => recomputeDistance({ force: true })}
+                      disabled={devisDistanceLoading}
+                      className="text-[11px] font-medium text-[#A16207] active:opacity-60 disabled:opacity-40"
+                      style={{ WebkitTapHighlightColor: "transparent" }}
+                    >
+                      {devisDistanceLoading ? "Calcul…" : "↻ Recalculer"}
+                    </button>
+                  </div>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="1"
+                    value={devisDistanceKmAR}
+                    onChange={(e) =>
+                      setDevisDistanceKmAR(Math.max(0, parseFloat(e.target.value) || 0))
+                    }
+                    placeholder="0"
+                    className="w-full px-4 py-3 rounded-2xl bg-white ring-1 ring-black/[0.06] text-[15px] font-mono tabular-nums focus:outline-none focus:ring-2 focus:ring-[#A16207]/30"
+                  />
+                  {devisDistanceDetail && !devisDistanceError && (
+                    <div className="mt-1 text-[11px] text-emerald-700 leading-snug px-1">
+                      ✓ {devisDistanceDetail}
+                    </div>
+                  )}
+                  {devisDistanceError && (
+                    <div className="mt-1 text-[11px] text-red-600 leading-snug px-1">
+                      {devisDistanceError}
+                    </div>
+                  )}
+                  {!devisDistanceDetail && !devisDistanceError && !devisDistanceLoading && (
+                    <div className="mt-1 text-[11px] text-black/45 leading-snug px-1">
+                      Calcul auto depuis votre adresse pro vers l&apos;adresse du client.
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Materiel d'acces — selection si au moins un materiel actif dans
                   la tarification du profil. Sinon message pour aller configurer. */}
