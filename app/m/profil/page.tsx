@@ -427,28 +427,58 @@ export default function MobileProfilPage() {
           </FormRow>
         </InsetListSection>
 
-        {/* Tarification — sert au calcul de la ligne "Main d'œuvre" dans les
-            devis générés depuis un diagnostic IA. Si vide, le devis utilise
-            la valeur par défaut 65 €/h HT. */}
+        {/* Tarification — config complete (main d'oeuvre + deplacement + perimetre
+            departemental + materiel d'acces + marge pieces + TVA) dans une page
+            dediee /m/profil/tarification. Validation terrain climaticien 06/06/2026 :
+            chaque pro a SES prix, son perimetre, son materiel. */}
         <InsetListSection
-          title="Tarification"
-          footer="Utilisé pour générer les devis depuis un diagnostic IA. Valeur typique frigoriste FR 2026 : 55 à 95 €/h HT selon zone."
+          title="Tarification (devis)"
+          footer="Configurez vos tarifs : main d'œuvre, déplacement, périmètre, matériel d'accès, marge pièces, TVA. Utilisé pour générer vos devis automatiquement."
         >
-          <FormRow label="Taux horaire HT (€/h)">
-            <input
-              type="number"
-              inputMode="decimal"
-              min="0"
-              step="0.5"
-              value={profil.tauxHoraireDevisHT ?? ""}
-              onChange={(e) => {
-                const v = parseFloat(e.target.value);
-                update("tauxHoraireDevisHT", !isNaN(v) && v > 0 ? v : undefined);
-              }}
-              placeholder="65"
-              className="input-mobile"
-            />
-          </FormRow>
+          <a
+            href="/m/profil/tarification"
+            className="block px-4 py-4 active:bg-black/[0.02]"
+            style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="shrink-0 w-10 h-10 rounded-xl bg-emerald-50 ring-1 ring-emerald-200 flex items-center justify-center text-emerald-700 text-lg">
+                💶
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[14.5px] font-semibold text-[#111]">
+                  {profil.tarification
+                    ? "Tarification configurée"
+                    : profil.tauxHoraireDevisHT
+                      ? "Configuration partielle"
+                      : "Configurer ma tarification"}
+                </div>
+                <div className="text-[12px] text-black/55 mt-0.5">
+                  {profil.tarification
+                    ? `${profil.tarification.tauxHoraireHT} €/h HT · ${
+                        profil.tarification.deplacement.mode === "forfait"
+                          ? `forfait ${profil.tarification.deplacement.forfaitHT} € HT`
+                          : `${profil.tarification.deplacement.prixKmHT} €/km HT`
+                      } · TVA ${profil.tarification.tvaParDefautPct}%`
+                    : profil.tauxHoraireDevisHT
+                      ? `${profil.tauxHoraireDevisHT} €/h HT défini — complétez le reste`
+                      : "Vos prix terrain (péremètre, matériel d'accès, marges)"}
+                </div>
+              </div>
+              <svg
+                className="shrink-0 text-black/30"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </div>
+          </a>
         </InsetListSection>
 
         {/* Transport déchets */}

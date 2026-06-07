@@ -25,6 +25,78 @@ export const ORGANISMES_AGREES = [
 
 export type OrganismeAgree = (typeof ORGANISMES_AGREES)[number];
 
+// ─── Tarification ────────────────────────────────────────────────────────
+// Configuration complete des tarifs du pro pour generer ses devis.
+// Validation terrain (climaticien, 06/06/2026) : chaque pro a SES prix,
+// son perimetre, son materiel. Vertxia ne FIXE pas de prix, il MULTIPLIE
+// ce que le pro a configure ici.
+
+export type TarificationDeplacement =
+  | { mode: "forfait"; forfaitHT: number }
+  | {
+      mode: "km";
+      prixKmHT: number;
+      /** Rayon (km) inclus dans le tarif intervention. Au-dela, on
+       *  facture le delta en €/km. */
+      perimetreOffertKm?: number;
+      /** Si client hors departement perimetre : majoration % sur total HT.
+       *  Ex : 30 = +30%. Laisser undefined pour ne pas majorer. */
+      majorationHorsPerimetrePct?: number;
+    };
+
+export type MaterielAcces = {
+  /** Echelle classique inclus dans la main d'oeuvre (pas de ligne separee
+   *  devis). Default true — la plupart des pros n'ont pas de facturation
+   *  separee pour ca. */
+  echelleInclusMO: boolean;
+  /** Nacelle articulee 3-7m (typique exterieur niveau 1, comble bas) */
+  nacelle3a7m: { active: boolean; prixJourHT: number };
+  /** Nacelle telescopique > 7m (toiture, gros equipement haut) */
+  nacelle7mPlus: { active: boolean; prixJourHT: number };
+  /** Sous-traitance externe nacelle (location + chauffeur) */
+  sousTraitanceNacelle: { active: boolean; prixJourHT: number };
+};
+
+export type TarificationProfil = {
+  /** Taux horaire HT en €/h. Default 65. */
+  tauxHoraireHT: number;
+  /** Taux journalier HT en €/jour si le pro facture en journees au lieu
+   *  d'heures. Default undefined (facturation heures). */
+  tauxJournalierHT?: number;
+
+  /** Mode deplacement : forfait fixe ou au kilometre. */
+  deplacement: TarificationDeplacement;
+
+  /** Codes departements (ex: ["31", "82", "65"]) ou le pro intervient
+   *  sans majoration. Si vide ou undefined : pas de notion de perimetre. */
+  departementsPerimetre?: string[];
+
+  /** Materiel d'acces (echelle / nacelle / sous-traitance). */
+  acces: MaterielAcces;
+
+  /** Multiplicateur applique au prix d'achat des pieces pour la marge.
+   *  Default 1.3 = +30% marge brute. */
+  margePiecesMultiplicateur: number;
+
+  /** TVA par defaut (10% renovation, 20% neuf / hors residentiel). */
+  tvaParDefautPct: 10 | 20;
+};
+
+export const EMPTY_TARIFICATION: TarificationProfil = {
+  tauxHoraireHT: 65,
+  tauxJournalierHT: undefined,
+  deplacement: { mode: "forfait", forfaitHT: 60 },
+  departementsPerimetre: [],
+  acces: {
+    echelleInclusMO: true,
+    nacelle3a7m: { active: false, prixJourHT: 150 },
+    nacelle7mPlus: { active: false, prixJourHT: 280 },
+    sousTraitanceNacelle: { active: false, prixJourHT: 500 },
+  },
+  margePiecesMultiplicateur: 1.3,
+  tvaParDefautPct: 20,
+};
+
 export type Profil = {
   // Identité légale (sera pré-rempli par OAuth2 TrackDéchets plus tard)
   raisonSociale: string;
@@ -74,10 +146,14 @@ export type Profil = {
   signatureDataUrl?: string;
 
   // Tarification (configurable pour la generation de devis client)
-  /** Taux horaire main d'oeuvre HT en €/h. Par defaut 65 €/h (moyenne FR
-   *  frigoriste artisan). Sert au calcul de la ligne "Main d'oeuvre" dans
-   *  les devis generes depuis un diagnostic IA. */
+  /** @deprecated Migre vers tarification.tauxHoraireHT. Lecture conservee
+   *  pour compat (anciens profils stockes en localStorage). A retirer dans
+   *  une version future quand tous les profils auront ete migres. */
   tauxHoraireDevisHT?: number;
+  /** Configuration complete tarification : main d'oeuvre, deplacement,
+   *  perimetre, materiel d'acces, marge pieces, TVA. Voir TarificationProfil.
+   *  Configurable dans /m/profil/tarification. */
+  tarification?: TarificationProfil;
 
   // Métadonnées
   updatedAt: string;
@@ -106,8 +182,26 @@ export const EMPTY_PROFIL: Profil = {
   logoDataUrl: undefined,
   signatureDataUrl: undefined,
   tauxHoraireDevisHT: 65,
+  tarification: undefined,
   updatedAt: new Date(0).toISOString(),
 };
+
+/** Resout la tarification effective : prefere profil.tarification si presente,
+ *  sinon construit un fallback minimal a partir du legacy tauxHoraireDevisHT
+ *  + les defauts EMPTY_TARIFICATION. Ainsi devis.ts peut TOUJOURS appeler
+ *  resolveTarification(profil) sans gerer le cas "pas encore configure". */
+export function resolveTarification(profil: Profil): TarificationProfil {
+  if (profil.tarification) return profil.tarification;
+  // Migration souple : si l'ancien tauxHoraireDevisHT est present, on l'injecte
+  // dans la base EMPTY_TARIFICATION. Le pro pourra completer le reste en
+  // ouvrant /m/profil/tarification.
+  return {
+    ...EMPTY_TARIFICATION,
+    tauxHoraireHT: profil.tauxHoraireDevisHT && profil.tauxHoraireDevisHT > 0
+      ? profil.tauxHoraireDevisHT
+      : EMPTY_TARIFICATION.tauxHoraireHT,
+  };
+}
 
 function isBrowser(): boolean {
   return typeof window !== "undefined" && typeof localStorage !== "undefined";
