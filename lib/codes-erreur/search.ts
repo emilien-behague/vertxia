@@ -15,12 +15,25 @@ import {
   CODES_ERREUR_DATABASE,
   CODES_ERREUR_COUNT_BY_MARQUE,
 } from "./database";
+import { MODELES_ENRICHMENT } from "./modeles-enrichment";
 import type {
   CodeErreur,
   CodeErreurGravite,
   CodeErreurMarque,
   CodeErreurSearchHit,
 } from "./types";
+
+/** Merge un code de la base avec l'enrichissement modeles[] cote runtime.
+ *  Si le code a deja un modeles[] hard-code dans database.ts, on garde celui-la.
+ *  Sinon, on regarde dans MODELES_ENRICHMENT. */
+function getEnrichedCode(c: CodeErreur): CodeErreur {
+  if (c.modeles && c.modeles.length > 0) return c;
+  const enriched = MODELES_ENRICHMENT[c.marque]?.[c.code];
+  if (enriched && enriched.length > 0) {
+    return { ...c, modeles: enriched };
+  }
+  return c;
+}
 
 function normalizeCode(s: string): string {
   return s.toUpperCase().replace(/\s+/g, "").trim();
@@ -107,7 +120,10 @@ export function searchCodesErreur(
 ): CodeErreurSearchHit[] {
   const { marque, gravite, modele, limit = 30 } = opts;
 
-  let pool = CODES_ERREUR_DATABASE;
+  // Enrichissement runtime : on merge MODELES_ENRICHMENT pour que chaque code
+  // ait son modeles[] (depuis hard-code database OU enrichment auto). Doit
+  // etre fait AVANT le filtre modele sinon les enrichments sont ignores.
+  let pool = CODES_ERREUR_DATABASE.map(getEnrichedCode);
   if (marque) pool = pool.filter((c) => c.marque === marque);
   if (gravite) pool = pool.filter((c) => c.gravite === gravite);
   if (modele && modele.trim().length > 0) {
@@ -172,17 +188,17 @@ export function searchCodesErreur(
   return hits.slice(0, limit);
 }
 
-/** Trouve un code precis par marque + code exact. Utile pour deep-link. */
+/** Trouve un code precis par marque + code exact. Utile pour deep-link.
+ *  Renvoie le code enrichi avec modeles[] si l'enrichissement existe. */
 export function findCodeErreur(
   marque: CodeErreurMarque,
   code: string
 ): CodeErreur | null {
   const norm = normalizeCode(code);
-  return (
-    CODES_ERREUR_DATABASE.find(
-      (c) => c.marque === marque && normalizeCode(c.code) === norm
-    ) ?? null
+  const found = CODES_ERREUR_DATABASE.find(
+    (c) => c.marque === marque && normalizeCode(c.code) === norm
   );
+  return found ? getEnrichedCode(found) : null;
 }
 
 /** Stats globales — utile pour l'affichage UI / debug. */
