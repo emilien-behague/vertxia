@@ -36,11 +36,24 @@ Règles :
 - Si la charge est en grammes, convertis en kg (ex: "850 g" → 0.85).
 - Si tu lis "R32" sans tiret, retourne "R-32".
 - Si l'image n'est pas une plaque signalétique ou est totalement illisible, retourne tous les champs à null avec confiance: "basse" et explique dans "notes".
-- "confiance" = "haute" si tous les champs critiques (modèle, fluide, charge) sont clairement lisibles ; "moyenne" si certains sont incertains ; "basse" si tu fais beaucoup de devinettes.`;
+- "confiance" = "haute" si tous les champs critiques (modèle, fluide, charge) sont clairement lisibles ; "moyenne" si certains sont incertains ; "basse" si tu fais beaucoup de devinettes.
+
+STRATEGIES POUR PLAQUES DIFFICILES (rayees, sales, gravees, reflets, faible contraste) :
+- Lis caractère par caractère plutôt que mot par mot. Les plaques alu gravées au laser ont souvent un seul trait fin par caractère.
+- Si tu hésites entre 0 et O, B et 8, S et 5, I et 1, Z et 2 : choisis selon le CONTEXTE (les modèles Daikin commencent par R/F/P/U + chiffres ; les Mitsubishi par PUHZ/PUMY/MSZ ; les fluides commencent toujours par R suivi de chiffres).
+- Pour le numéro de série partiellement masqué : indique ce que tu lis avec "?" pour les caractères incertains (ex: "300?12345?").
+- Si la marque est invisible mais le format du modèle est typique d'un fabricant connu, infère la marque avec une confiance "moyenne" et explique dans "notes".
+- Sur les plaques avec gravure embossée sans encre : la lecture vient des ombres + reflets, regarde attentivement les variations de luminosité, pas les couleurs.
+- Si la plaque est PARTIELLEMENT illisible mais la marque + fluide sont sûrs (champs critiques pour la conformité F-Gas), retourne ces champs avec confiance "moyenne" plutôt que tout à null.
+- Si une zone est totalement illisible, ne devine pas — retourne null pour ce champ ET explique précisément dans "notes" ce qui était masqué (rayure, salissure, reflet, gravure trop fine).`;
 
 type RequestBody = {
   /** Image en data URL : "data:image/jpeg;base64,..." ou "data:image/png;base64,..." */
   imageDataUrl: string;
+  /** Image pre-traitee (grayscale + stretch contraste) en data URL.
+   *  Optionnelle. Si fournie, sera utilisee pour un 2e pass de fallback
+   *  si le 1er pass renvoie confiance "basse". */
+  imagePreprocessedDataUrl?: string;
 };
 
 type PlaqueData = {
@@ -54,12 +67,114 @@ type PlaqueData = {
   notes: string | null;
 };
 
+/** Compte les champs critiques renseignes (marque, modele, fluide, charge). */
+function countCriticalFields(p: PlaqueData): number {
+  let n = 0;
+  if (p.marque) n++;
+  if (p.modele) n++;
+  if (p.fluide) n++;
+  if (p.chargeNominaleKg !== null && p.chargeNominaleKg !== undefined) n++;
+  return n;
+}
+
+/** Renvoie le meilleur des 2 resultats : plus de champs critiques ET meilleure
+ *  confiance. Si egalite : on prefere le 1er pass (plus fidele aux couleurs). */
+function pickBestResult(a: PlaqueData, b: PlaqueData): PlaqueData {
+  const aScore = countCriticalFields(a);
+  const bScore = countCriticalFields(b);
+  if (bScore > aScore) return b;
+  if (bScore < aScore) return a;
+  // Egalite sur champs critiques : on compare la confiance
+  const order = { haute: 3, moyenne: 2, basse: 1 } as const;
+  if (order[b.confiance] > order[a.confiance]) return b;
+  return a;
+}
+
 function parseDataUrl(dataUrl: string): { mediaType: string; base64: string } | null {
   const match = dataUrl.match(/^data:(image\/(?:jpeg|jpg|png|webp|gif));base64,(.+)$/);
   if (!match) return null;
   // Normalise jpg → jpeg
   const mediaType = match[1].replace("image/jpg", "image/jpeg");
   return { mediaType, base64: match[2] };
+}
+
+type ClaudeCallResult =
+  | { data: PlaqueData }
+  | { error: { error: string; detail?: string; raw?: unknown; text?: string }; status: number };
+
+async function callClaudeVision(
+  apiKey: string,
+  mediaType: string,
+  base64: string,
+  promptText: string
+): Promise<ClaudeCallResult> {
+  const apiRes = await fetch(ANTHROPIC_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 1024,
+      system: SYSTEM_PROMPT,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: mediaType,
+                data: base64,
+              },
+            },
+            { type: "text", text: promptText },
+          ],
+        },
+      ],
+    }),
+  });
+
+  if (!apiRes.ok) {
+    const errText = await apiRes.text();
+    console.error("[vision/plaque] Claude API error:", apiRes.status, errText);
+    return {
+      error: { error: `Claude API ${apiRes.status}`, detail: errText.slice(0, 500) },
+      status: 502,
+    };
+  }
+
+  const data = await apiRes.json();
+  const textContent = data?.content?.[0]?.text;
+  if (typeof textContent !== "string") {
+    return {
+      error: { error: "Réponse Claude invalide", raw: data },
+      status: 502,
+    };
+  }
+
+  const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    return {
+      error: { error: "Pas de JSON dans la réponse Claude", text: textContent },
+      status: 502,
+    };
+  }
+
+  let plaque: PlaqueData;
+  try {
+    plaque = JSON.parse(jsonMatch[0]) as PlaqueData;
+  } catch {
+    return {
+      error: { error: "JSON Claude invalide", text: textContent },
+      status: 502,
+    };
+  }
+
+  return { data: plaque };
 }
 
 export async function POST(req: Request) {
@@ -100,75 +215,36 @@ export async function POST(req: Request) {
   }
 
   try {
-    const apiRes = await fetch(ANTHROPIC_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 1024,
-        system: SYSTEM_PROMPT,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "image",
-                source: {
-                  type: "base64",
-                  media_type: parsed.mediaType,
-                  data: parsed.base64,
-                },
-              },
-              {
-                type: "text",
-                text: "Analyse cette plaque signalétique et retourne le JSON structuré.",
-              },
-            ],
-          },
-        ],
-      }),
-    });
+    // 1er pass sur l'image originale
+    const firstPass = await callClaudeVision(apiKey, parsed.mediaType, parsed.base64,
+      "Analyse cette plaque signalétique et retourne le JSON structuré.");
 
-    if (!apiRes.ok) {
-      const errText = await apiRes.text();
-      console.error("[vision/plaque] Claude API error:", apiRes.status, errText);
-      return NextResponse.json(
-        { error: `Claude API ${apiRes.status}`, detail: errText.slice(0, 500) },
-        { status: 502 }
-      );
+    if ("error" in firstPass) {
+      return NextResponse.json(firstPass.error, { status: firstPass.status });
     }
 
-    const data = await apiRes.json();
-    const textContent = data?.content?.[0]?.text;
-    if (typeof textContent !== "string") {
-      return NextResponse.json(
-        { error: "Réponse Claude invalide", raw: data },
-        { status: 502 }
-      );
-    }
+    let plaque = firstPass.data;
 
-    // Extract JSON from response (Claude ne devrait pas ajouter de markdown
-    // mais on robustifie au cas où il enveloppe avec ```json ... ```).
-    const jsonMatch = textContent.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return NextResponse.json(
-        { error: "Pas de JSON dans la réponse Claude", text: textContent },
-        { status: 502 }
-      );
-    }
-
-    let plaque: PlaqueData;
-    try {
-      plaque = JSON.parse(jsonMatch[0]) as PlaqueData;
-    } catch {
-      return NextResponse.json(
-        { error: "JSON Claude invalide", text: textContent },
-        { status: 502 }
-      );
+    // Retry conditionnel : si confiance basse OU moins de 2 champs critiques
+    // ET qu'on a une image pre-traitee, on fait un 2e pass.
+    const isWeak =
+      plaque.confiance === "basse" || countCriticalFields(plaque) < 2;
+    if (isWeak && body.imagePreprocessedDataUrl) {
+      const preParsed = parseDataUrl(body.imagePreprocessedDataUrl);
+      if (preParsed) {
+        const preSizeBytes = (preParsed.base64.length * 3) / 4;
+        if (preSizeBytes <= 5 * 1024 * 1024) {
+          const secondPass = await callClaudeVision(
+            apiKey,
+            preParsed.mediaType,
+            preParsed.base64,
+            "Cette plaque est difficile à lire (rayée, sale ou faible contraste). L'image a été pré-traitée en niveaux de gris avec contraste augmenté. Lis caractère par caractère, utilise le contexte pour résoudre les ambiguïtés, et retourne le JSON structuré."
+          );
+          if (!("error" in secondPass)) {
+            plaque = pickBestResult(plaque, secondPass.data);
+          }
+        }
+      }
     }
 
     // Enrichissement du catalogue partagé en background (silent fail).

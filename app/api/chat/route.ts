@@ -30,6 +30,10 @@ type ChatRequest = {
     detecteurFixe?: boolean;
     dernierControleISO?: string;
     clientName?: string;
+    /** Resume textuel des 3 dernieres interventions liees a cet eq */
+    recentInterventions?: string[];
+    /** Resume des pannes connues sur ce modele dans le catalogue partage */
+    pannesConnuesResume?: string;
   };
 };
 
@@ -58,8 +62,17 @@ function formatContext(ctx: ChatRequest["equipementContext"]): string {
   if (ctx.dernierControleISO)
     lines.push(`Dernier contrôle : ${ctx.dernierControleISO}`);
   if (ctx.clientName) lines.push(`Client : ${ctx.clientName}`);
-  if (lines.length === 0) return "";
-  return `\n\n[Contexte équipement en cours de consultation :\n${lines.join("\n")}]\n`;
+
+  let extra = "";
+  if (ctx.recentInterventions && ctx.recentInterventions.length > 0) {
+    extra += `\n\n3 dernières interventions sur cet équipement :\n${ctx.recentInterventions.map((s) => `- ${s}`).join("\n")}`;
+  }
+  if (ctx.pannesConnuesResume) {
+    extra += `\n\nPannes connues sur ce modèle (mémoire collective Vertxia) :\n${ctx.pannesConnuesResume}`;
+  }
+
+  if (lines.length === 0 && extra.length === 0) return "";
+  return `\n\n[CONTEXTE TERRAIN — le technicien est physiquement devant cet équipement et te pose une question le concernant. Tes réponses doivent être PRÉCISES pour CET équipement, pas génériques.\n${lines.join("\n")}${extra}]\n`;
 }
 
 export async function POST(req: Request) {

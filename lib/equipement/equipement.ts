@@ -137,6 +137,12 @@ export function listEquipements(): StoredEquipement[] {
   }
 }
 
+/** Recupere un equipement par id (ou null si introuvable / hors browser). */
+export function getEquipementById(id: string): StoredEquipement | null {
+  if (!isBrowser()) return null;
+  return listEquipements().find((e) => e.id === id) ?? null;
+}
+
 export function saveEquipement(
   data: Omit<StoredEquipement, "id" | "createdAt">
 ): StoredEquipement {

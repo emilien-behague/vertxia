@@ -423,3 +423,54 @@ create policy "failure_select_authenticated" on public.shared_failure_catalog
   for select to authenticated using (true);
 
 -- Écritures uniquement via /api/catalog/failure/upsert (service_role).
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- ── 11. CATALOGUE PARTAGÉ DES CODES ERREUR PAR MODÈLE ──────────────────────
+-- Mémoire collective des codes erreur rencontrés sur le terrain par les pros.
+-- À chaque consultation d'un code dans /m/codes-erreur (ou via le chat ou
+-- vision-diagnostic), on incrémente la ligne (marque, code, modele?).
+--
+-- Différence avec shared_failure_catalog : on track les CODES (U4, P1, CH05)
+-- pas les pannes physiques (fuite, encrassement). C'est plus immédiat pour
+-- le tech ("ce code Daikin U4 a été vu 47 fois cette année par mes confrères
+-- sur des VRV") que la stat panne sortie d'une intervention complète.
+--
+-- modele_key optionnel : si non fourni, ligne globale pour le code (utile
+-- quand le code apparaît sans contexte modèle, ex: recherche directe).
+-- Si fourni, ligne précise par modèle (utile sur fiche /eq/[id]).
+--
+-- Données ANONYMES : aucun n°série, aucun client, aucune adresse, aucun
+-- horodatage précis (juste compteurs + first/last seen).
+-- ─────────────────────────────────────────────────────────────────────────────
+
+create table if not exists public.shared_error_code_occurrences (
+  id uuid primary key default gen_random_uuid(),
+  -- Clés normalisées (lowercase)
+  marque_key text not null,         -- "daikin", "mitsubishi", "lg", etc.
+  code_key text not null,           -- "u4", "p1", "ch05", etc.
+  modele_key text not null default '', -- "" = global, sinon modele normalisé
+  -- Affichables (casse d'origine du plus récent scan)
+  marque text not null,
+  code text not null,
+  modele text,
+  -- Compteurs
+  nombre_occurrences integer not null default 1,
+  first_seen_at timestamptz not null default now(),
+  last_seen_at timestamptz not null default now(),
+  constraint shared_error_code_occurrences_unique
+    unique (marque_key, code_key, modele_key)
+);
+
+create index if not exists idx_error_code_marque_code
+  on public.shared_error_code_occurrences(marque_key, code_key);
+create index if not exists idx_error_code_modele
+  on public.shared_error_code_occurrences(marque_key, code_key, modele_key);
+
+alter table public.shared_error_code_occurrences enable row level security;
+
+-- Lecture publique pour les users connectés (effet réseau).
+create policy "error_code_select_authenticated"
+  on public.shared_error_code_occurrences
+  for select to authenticated using (true);
+
+-- Écritures uniquement via /api/catalog/error-code/upsert (service_role).

@@ -7,12 +7,22 @@
 // Stack : Vaul drawer (iOS-style), framer-motion micro-anims, scopedKey
 // localStorage pour persister l'historique des 50 derniers messages
 // par utilisateur (clé "vertxia:chat:<user-id>").
+//
+// Mode "devant l'unité" (Phase 4 07/06/2026) : quand le user est sur une
+// fiche /eq/[id], le chat detecte automatiquement l'equipement actif et
+// injecte son contexte dans chaque question (modele, fluide, charge,
+// historique recent, pannes connues du modele dans le catalogue partage).
+// Un badge "📍 Mode terrain" s'affiche en haut du drawer pour rendre ca
+// explicite. Le user peut desactiver ce mode via un toggle.
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, useMemo, type FormEvent } from "react";
+import { usePathname } from "next/navigation";
 import { Drawer } from "vaul";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { scopedKey } from "@/lib/auth/user-scope";
+import { getEquipementById } from "@/lib/equipement/equipement";
+import { listInterventions } from "@/lib/intervention/intervention-storage";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -52,17 +62,34 @@ function saveMessages(messages: ChatMessage[]): void {
   }
 }
 
-type Props = {
-  /** Contexte équipement optionnel passé depuis /eq/[id] pour réponses ciblées */
-  equipementContext?: {
-    modele?: string;
-    fluide?: string;
-    chargeKg?: number;
-    detecteurFixe?: boolean;
-    dernierControleISO?: string;
-    clientName?: string;
-  };
+type EquipementContext = {
+  modele?: string;
+  fluide?: string;
+  chargeKg?: number;
+  detecteurFixe?: boolean;
+  dernierControleISO?: string;
+  clientName?: string;
+  /** Resume des 3 dernieres interventions ("2026-04-12: controle etancheite, RAS") */
+  recentInterventions?: string[];
+  /** Pannes connues sur ce modele dans le catalogue partage Vertxia */
+  pannesConnuesResume?: string;
 };
+
+type Props = {
+  /** Contexte équipement explicite — prioritaire sur l'auto-detection URL */
+  equipementContext?: EquipementContext;
+};
+
+/** Extrait un id d'equipement depuis l'URL si on est sur une fiche.
+ *  Patterns supportes : /eq/[id], /m/equipements/[id] */
+function extractEquipementIdFromPath(pathname: string | null): string | null {
+  if (!pathname) return null;
+  const eq = pathname.match(/^\/eq\/([^\/?#]+)/);
+  if (eq) return eq[1];
+  const mEq = pathname.match(/^\/m\/equipements\/([^\/?#]+)/);
+  if (mEq && mEq[1] !== "nouveau") return mEq[1];
+  return null;
+}
 
 export function ChatAssistant({ equipementContext }: Props) {
   const [open, setOpen] = useState(false);
@@ -71,8 +98,62 @@ export function ChatAssistant({ equipementContext }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [drawerHeight, setDrawerHeight] = useState<string>("92dvh");
+  const [autoContext, setAutoContext] = useState<EquipementContext | null>(null);
+  const [contextEnabled, setContextEnabled] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const pathname = usePathname();
+
+  // Auto-detection equipement actif depuis l'URL
+  useEffect(() => {
+    const id = extractEquipementIdFromPath(pathname);
+    if (!id) {
+      setAutoContext(null);
+      return;
+    }
+    const eq = getEquipementById(id);
+    if (!eq) {
+      setAutoContext(null);
+      return;
+    }
+    // Construction du resume historique : 3 dernieres interventions liees a
+    // cet equipement (priorite : equipementId, fallback : numeroSerie).
+    const ints = listInterventions();
+    const linkedToEq = ints
+      .filter((it) => {
+        if (it.equipementId && it.equipementId === eq.id) return true;
+        if (eq.numeroSerie && it.numeroSerieEquipement === eq.numeroSerie) return true;
+        return false;
+      })
+      .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))
+      .slice(0, 3);
+    const recentInterventions = linkedToEq.map((it) => {
+      const date = it.createdAt ? it.createdAt.slice(0, 10) : "?";
+      const type = it.typeIntervention || "intervention";
+      const notes = it.notes ? ` — ${it.notes.slice(0, 80)}` : "";
+      return `${date}: ${type}${notes}`;
+    });
+
+    setAutoContext({
+      modele: eq.modele,
+      fluide: eq.fluide?.label || eq.fluide?.code,
+      chargeKg: eq.chargeKg,
+      detecteurFixe: eq.detecteurFixe,
+      dernierControleISO: eq.dernierControleISO,
+      clientName: eq.clientName,
+      recentInterventions: recentInterventions.length > 0 ? recentInterventions : undefined,
+    });
+  }, [pathname]);
+
+  // Le contexte effectif = explicit prop OR auto-detected. Le toggle
+  // contextEnabled permet au user de l'eteindre s'il veut poser une question
+  // generale sans biais sur l'eq en cours.
+  const effectiveContext = useMemo<EquipementContext | undefined>(() => {
+    if (!contextEnabled) return undefined;
+    if (equipementContext) return equipementContext;
+    if (autoContext) return autoContext;
+    return undefined;
+  }, [equipementContext, autoContext, contextEnabled]);
 
   // Charge l'historique au montage
   useEffect(() => {
@@ -138,7 +219,7 @@ export function ChatAssistant({ equipementContext }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: nextMessages,
-          equipementContext,
+          equipementContext: effectiveContext,
         }),
       });
 
@@ -235,6 +316,28 @@ export function ChatAssistant({ equipementContext }: Props) {
                   <div className="text-[11px] text-black/55 leading-tight">Réglementation, fluides, diag terrain</div>
                 </div>
               </div>
+              {/* Bandeau Mode terrain — affiche si contexte equipement actif */}
+              {effectiveContext && (
+                <button
+                  type="button"
+                  onClick={() => setContextEnabled(false)}
+                  title="Cliquer pour désactiver le mode terrain"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10.5px] font-semibold ring-1 ring-emerald-300 active:bg-emerald-200"
+                  style={{ WebkitTapHighlightColor: "transparent" }}
+                >
+                  📍 {effectiveContext.modele || "Mode terrain"}
+                </button>
+              )}
+              {!effectiveContext && autoContext && (
+                <button
+                  type="button"
+                  onClick={() => setContextEnabled(true)}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-600 text-[10.5px] font-medium ring-1 ring-slate-200 active:bg-slate-200"
+                  style={{ WebkitTapHighlightColor: "transparent" }}
+                >
+                  Activer mode terrain
+                </button>
+              )}
               <div className="flex items-center gap-2">
                 {messages.length > 0 && (
                   <button

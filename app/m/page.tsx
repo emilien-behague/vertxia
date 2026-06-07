@@ -271,6 +271,16 @@ function MobileHomePage() {
           />
         </div>
 
+        {/* Tuile XL — Codes erreur (reference terrain quotidienne) */}
+        <Tile
+          href="/m/codes-erreur"
+          size="xl"
+          variant="cyan"
+          emoji="🚨"
+          label="Codes erreur"
+          sublabel="Daikin · Mitsubishi · LG · Carrier…"
+        />
+
         {/* Tuile XL — Paperasse officielle */}
         <Tile
           href="/m/registre"

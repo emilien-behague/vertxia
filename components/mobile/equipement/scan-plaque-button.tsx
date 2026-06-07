@@ -12,6 +12,7 @@
 // directement dans le bouton — le parent n'a rien a coder pour ca.
 
 import { useRef, useState } from "react";
+import { enhancePlateImageFromDataUrl } from "@/lib/equipement/plate-enhance";
 
 export type PlaqueData = {
   marque: string | null;
@@ -73,10 +74,23 @@ export function ScanPlaqueButton({
         reader.readAsDataURL(file);
       });
 
+      // Pre-traitement en parallele pour le fallback "plaque difficile".
+      // Si la version originale donne confiance basse, le serveur tentera
+      // une 2e passe sur cette version pre-traitee (grayscale + contraste
+      // augmente + upscale x1.5 si petite image). Aucun cout supplementaire
+      // si la 1ere passe reussit — la 2e n'est declenchee qu'en cas de besoin.
+      let imagePreprocessedDataUrl: string | undefined = undefined;
+      try {
+        imagePreprocessedDataUrl = await enhancePlateImageFromDataUrl(dataUrl);
+      } catch {
+        // Best-effort : si le canvas client galere (browser tres ancien),
+        // on continue avec l'image originale uniquement.
+      }
+
       const res = await fetch("/api/vision/plaque", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageDataUrl: dataUrl }),
+        body: JSON.stringify({ imageDataUrl: dataUrl, imagePreprocessedDataUrl }),
       });
 
       if (!res.ok) {
