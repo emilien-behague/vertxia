@@ -34,6 +34,9 @@ const VALID_MARQUES: CodeErreurMarque[] = [
   "samsung",
   "toshiba",
   "hitachi",
+  "panasonic",
+  "atlantic",
+  "saunier-duval",
 ];
 
 const VALID_GRAVITES: CodeErreurGravite[] = ["info", "alerte", "critique"];

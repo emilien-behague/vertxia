@@ -278,7 +278,7 @@ function MobileHomePage() {
           variant="cyan"
           emoji="🚨"
           label="Codes erreur"
-          sublabel="Daikin · Mitsubishi · LG · Carrier…"
+          sublabel="Daikin · Panasonic · Atlantic · S. Duval…"
         />
 
         {/* Tuile XL — Paperasse officielle */}

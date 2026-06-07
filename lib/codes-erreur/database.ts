@@ -1123,6 +1123,715 @@ const HITACHI: CodeErreur[] = [
 ];
 
 // =============================================================================
+// PANASONIC — Aquarea PAC air-eau (WH-ADC/MDC H-series), Etherea split, VRF
+// Sources : Logicool-AC PDF officiel + manuels Panasonic Aquarea
+// =============================================================================
+
+const PANASONIC: CodeErreur[] = [
+  {
+    marque: "panasonic",
+    code: "H62",
+    libelle: "Defaut debit d'eau (water flow error)",
+    description:
+      "Detecteur de debit signale une circulation d'eau insuffisante dans le circuit primaire de la PAC air-eau.",
+    causesProbables: [
+      "Filtre du circuit primaire colmate",
+      "Air dans le circuit (purge a faire)",
+      "Pompe circulation interne HS",
+      "Vanne 3 voies bloquee",
+    ],
+    etapesReparation: [
+      "Nettoyer le filtre en ligne du circuit",
+      "Purger soigneusement le circuit primaire",
+      "Verifier rotation pompe circulation",
+      "Reset apres correction (si fault >4 fois en 24h : appeler Panasonic)",
+    ],
+    gravite: "alerte",
+    systemes: ["Aquarea PAC air-eau"],
+    sources: [
+      "https://www.logicool-ac.com/wp-content/uploads/2014/05/Aquarea-Fault-Codes.pdf",
+      "https://www.manualslib.com/manual/3196704/Panasonic-Aquarea-Wh-Adc-H-Series.html",
+    ],
+  },
+  {
+    marque: "panasonic",
+    code: "H75",
+    libelle: "Protection temperature d'eau trop basse",
+    description:
+      "Protection antigel : temperature retour d'eau trop basse en mode chauffage.",
+    causesProbables: [
+      "T° exterieure tres basse + chauffage faible",
+      "Circulation trop lente",
+      "Sonde Tret deviante",
+    ],
+    etapesReparation: [
+      "Verifier la circulation et la pompe",
+      "Controler reglage consigne chauffage",
+      "Tester la sonde Tret (NTC)",
+    ],
+    gravite: "alerte",
+    systemes: ["Aquarea PAC air-eau"],
+    sources: ["https://www.manualslib.com/manual/3196704/Panasonic-Aquarea-Wh-Adc-H-Series.html"],
+  },
+  {
+    marque: "panasonic",
+    code: "H76",
+    libelle: "Defaut communication telecommande - unite interieure",
+    description: "Liaison perdue entre la telecommande RC et l'unite interieure.",
+    causesProbables: ["Cable RC defaillant", "Telecommande HS", "Carte RC HS"],
+    etapesReparation: [
+      "Verifier le cable telecommande",
+      "Tester avec une telecommande de pret",
+      "Mesurer la tension d'alim au connecteur RC",
+    ],
+    gravite: "alerte",
+    sources: ["https://www.manualslib.com/manual/3196704/Panasonic-Aquarea-Wh-Adc-H-Series.html"],
+  },
+  {
+    marque: "panasonic",
+    code: "H90",
+    libelle: "Defaut communication interieur - exterieur",
+    description:
+      "Liaison perdue entre l'hydromodule interieur et l'unite exterieure.",
+    causesProbables: [
+      "Cable de liaison int/ext defaillant",
+      "Cablage incorrect aux borniers",
+      "Carte mere interieure ou exterieure HS",
+    ],
+    etapesReparation: [
+      "Verifier la continuite et la polarite du cable de liaison",
+      "Controler le serrage des borniers cote int + cote ext",
+      "Mesurer la tension DC du bus de communication",
+    ],
+    gravite: "critique",
+    systemes: ["Aquarea PAC air-eau", "Etherea split"],
+    sources: ["https://www.manualslib.com/manual/3196704/Panasonic-Aquarea-Wh-Adc-H-Series.html"],
+  },
+  {
+    marque: "panasonic",
+    code: "H98",
+    libelle: "Protection haute pression refrigerant",
+    description:
+      "Pressostat HP declenche. Pression refoulement compresseur trop elevee.",
+    causesProbables: [
+      "Condenseur exterieur encrasse",
+      "Ventilateur exterieur HS",
+      "Surcharge fluide",
+      "Detendeur bloque ferme",
+    ],
+    etapesReparation: [
+      "Nettoyer le condenseur ext au jet basse pression",
+      "Verifier rotation ventilateur ext",
+      "Mesurer pression HP en regime stabilise",
+      "Decompresser si surcharge fluide",
+    ],
+    gravite: "critique",
+    sources: ["https://www.manualslib.com/manual/3196704/Panasonic-Aquarea-Wh-Adc-H-Series.html"],
+  },
+  {
+    marque: "panasonic",
+    code: "H99",
+    libelle: "Antigel echangeur interieur",
+    description:
+      "Echangeur interieur en mode froid en cours de givrage. Coupure de securite.",
+    causesProbables: [
+      "Filtre encrasse (manque debit air)",
+      "Sous-charge fluide",
+      "Ventilateur interne lent",
+    ],
+    etapesReparation: [
+      "Nettoyer le filtre interieur",
+      "Verifier la rotation ventilateur interne",
+      "Controler la charge fluide",
+    ],
+    gravite: "alerte",
+    sources: ["https://www.manualslib.com/manual/3196704/Panasonic-Aquarea-Wh-Adc-H-Series.html"],
+  },
+  {
+    marque: "panasonic",
+    code: "H42",
+    libelle: "Protection basse pression refrigerant",
+    description: "Pressostat BP declenche. Pression aspiration trop basse.",
+    causesProbables: [
+      "Sous-charge fluide / fuite",
+      "Vannes de service mal ouvertes",
+      "Filtre deshydrateur colmate",
+    ],
+    etapesReparation: [
+      "Verifier ouverture complete des vannes HP+BP",
+      "Detecteur de fuite electronique sur le circuit",
+      "Mesurer la charge actuelle vs plaque",
+    ],
+    gravite: "critique",
+    sources: ["https://www.manualslib.com/manual/3196704/Panasonic-Aquarea-Wh-Adc-H-Series.html"],
+  },
+  {
+    marque: "panasonic",
+    code: "H91",
+    libelle: "Defaut resistance ballon ECS (tank heater OLP)",
+    description:
+      "Protection thermique de la resistance electrique du ballon ECS Aquarea.",
+    causesProbables: [
+      "Resistance ECS HS",
+      "Klixon resistance declenche",
+      "Cablage resistance defaillant",
+    ],
+    etapesReparation: [
+      "Mesurer continuite resistance ECS",
+      "Tester le klixon (continuite a froid)",
+      "Remplacer la resistance si KO",
+    ],
+    gravite: "alerte",
+    systemes: ["Aquarea All-In-One avec ballon"],
+    sources: ["https://www.manualslib.com/manual/3196704/Panasonic-Aquarea-Wh-Adc-H-Series.html"],
+  },
+  {
+    marque: "panasonic",
+    code: "H95",
+    libelle: "Erreur tension d'alimentation (voltage connection)",
+    description:
+      "Tension secteur hors plage admise ou erreur de cablage (mono vs tri).",
+    causesProbables: [
+      "Mauvais cablage L1/L2/L3/N",
+      "Tension reseau anormale",
+      "Cable d'alim sous-dimensionne",
+    ],
+    etapesReparation: [
+      "Mesurer tension entre L et N (typique 230V mono ou 400V tri)",
+      "Verifier l'ordre des phases (rotomatre)",
+      "Controler section cable vs charge nominale",
+    ],
+    gravite: "alerte",
+    sources: ["https://www.manualslib.com/manual/3196704/Panasonic-Aquarea-Wh-Adc-H-Series.html"],
+  },
+  {
+    marque: "panasonic",
+    code: "F12",
+    libelle: "Pressostat declenche (pressure switch activate)",
+    description: "Un des pressostats s'est declenche en exploitation.",
+    causesProbables: [
+      "Pression HP ou BP hors plage",
+      "Pressostat HS",
+      "Encrassement condenseur",
+    ],
+    etapesReparation: [
+      "Identifier quel pressostat (HP ou BP) via doc",
+      "Mesurer la pression reelle",
+      "Tester le pressostat (continuite)",
+    ],
+    gravite: "critique",
+    sources: ["https://www.manualslib.com/manual/3196704/Panasonic-Aquarea-Wh-Adc-H-Series.html"],
+  },
+  {
+    marque: "panasonic",
+    code: "F15",
+    libelle: "Verrouillage moteur ventilateur (fan motor lock)",
+    description: "Le moteur du ventilateur exterieur est bloque ou ne tourne pas.",
+    causesProbables: [
+      "Helice bloquee (corps etranger)",
+      "Roulements grippes",
+      "Carte commande ventilateur HS",
+      "Condensateur permanent HS",
+    ],
+    etapesReparation: [
+      "Verifier rotation libre helice",
+      "Tester le condensateur permanent (uF)",
+      "Mesurer bobinages moteur",
+      "Remplacer le bloc moto-ventilateur si HS",
+    ],
+    gravite: "alerte",
+    sources: ["https://www.manualslib.com/manual/3196704/Panasonic-Aquarea-Wh-Adc-H-Series.html"],
+  },
+  {
+    marque: "panasonic",
+    code: "F16",
+    libelle: "Protection surintensite (current protection)",
+    description: "Courant absorbe depasse seuil de securite carte inverter.",
+    causesProbables: [
+      "Compresseur grippe (couple resistant)",
+      "Pression HP excessive",
+      "Carte inverter HS",
+    ],
+    etapesReparation: [
+      "Mesurer le courant moteur compresseur",
+      "Verifier pression HP",
+      "Mesurer bobinages compresseur (egales)",
+    ],
+    gravite: "critique",
+    sources: ["https://www.manualslib.com/manual/3196704/Panasonic-Aquarea-Wh-Adc-H-Series.html"],
+  },
+  {
+    marque: "panasonic",
+    code: "F25",
+    libelle: "Erreur cycle froid / chaud (cool/heat cycle error)",
+    description:
+      "Inversion mode froid/chaud impossible. Vanne 4 voies bloquee ou cablee incorrectement.",
+    causesProbables: [
+      "Vanne 4 voies bloquee mecaniquement",
+      "Bobine vanne 4 voies HS",
+      "Cablage vanne 4 voies inverse",
+    ],
+    etapesReparation: [
+      "Tester la bobine vanne 4 voies (resistance)",
+      "Verifier cablage vanne",
+      "Remplacer vanne 4 voies si bloquee",
+    ],
+    gravite: "alerte",
+    sources: ["https://www.manualslib.com/manual/3196704/Panasonic-Aquarea-Wh-Adc-H-Series.html"],
+  },
+  {
+    marque: "panasonic",
+    code: "F95",
+    libelle: "Surpression en mode froid (cooling high pressure)",
+    description:
+      "Pression HP excessive specifiquement en mode froid (typique haute T° ext + condenseur encrasse).",
+    causesProbables: [
+      "Condenseur tres encrasse",
+      "Ventilateur ext faible debit",
+      "T° ext extreme (>40°C)",
+      "Surcharge fluide",
+    ],
+    etapesReparation: [
+      "Nettoyer le condenseur",
+      "Tester debit ventilateur ext",
+      "Verifier charge",
+      "En cas T° ext extreme : limitation normale, attendre creneau plus frais",
+    ],
+    gravite: "critique",
+    sources: ["https://www.manualslib.com/manual/3196704/Panasonic-Aquarea-Wh-Adc-H-Series.html"],
+  },
+];
+
+// =============================================================================
+// ATLANTIC — Alfea Excellia / Extensa / Hybride Duo / Alfea AI (PAC air-eau)
+// Sources : Téréva PDF officiel + EDR SAV + Habitat Presto
+// =============================================================================
+
+const ATLANTIC: CodeErreur[] = [
+  {
+    marque: "atlantic",
+    code: "10",
+    libelle: "Defaut sonde exterieure",
+    description:
+      "Sonde de temperature exterieure HS ou cable rompu. Mode chauffage en degraded.",
+    causesProbables: [
+      "Cable sonde ext rompu (rongeurs, intemperies)",
+      "Sonde NTC deviante",
+      "Connecteur oxyde au bornier",
+    ],
+    etapesReparation: [
+      "Mesurer continuite cable sonde ext (NTC)",
+      "Mesurer resistance NTC a temperature ambiante (~10 kOhm a 25°C)",
+      "Remplacer sonde si KO",
+    ],
+    gravite: "alerte",
+    systemes: ["Alfea Excellia", "Alfea Extensa", "Alfea Hybride"],
+    sources: [
+      "https://edrsav.fr/codes-erreurs-pompes-a-chaleur-atlantic/",
+      "https://www.habitatpresto.com/mag/pompe-a-chaleur/code-erreur-pac-atlantic",
+    ],
+  },
+  {
+    marque: "atlantic",
+    code: "15",
+    libelle: "Cycles de degivrage anormaux (trop longs)",
+    description:
+      "Le degivrage prend plus longtemps que prevu. Indicateur d'encrassement evaporateur ou ventilateur faible.",
+    causesProbables: [
+      "Evaporateur exterieur encrasse / givre persistant",
+      "Ventilateur exterieur ralenti",
+      "Sonde degivrage deviante",
+    ],
+    etapesReparation: [
+      "Nettoyer l'evaporateur exterieur",
+      "Verifier rotation ventilateur ext",
+      "Tester sonde degivrage",
+    ],
+    gravite: "alerte",
+    systemes: ["Alfea"],
+    sources: ["https://edrsav.fr/codes-erreurs-pompes-a-chaleur-atlantic/"],
+  },
+  {
+    marque: "atlantic",
+    code: "30",
+    libelle: "Manque d'eau dans le circuit (pression <1 bar)",
+    description:
+      "Pressostat eau detecte un manque d'eau dans le circuit hydraulique primaire. LE CODE LE PLUS FREQUENT sur Alfea.",
+    causesProbables: [
+      "Fuite dans le circuit chauffage / radiateur / plancher",
+      "Vase d'expansion HS (pression preliminaire perdue)",
+      "Purge a faire (air = baisse pression apparente)",
+    ],
+    etapesReparation: [
+      "Verifier la pression au manometre (cible 1.5-2 bars a froid)",
+      "Si <1 bar : faire l'appoint d'eau via robinet de remplissage",
+      "Chercher la fuite (radiateurs, raccords, soupape de securite)",
+      "Tester pression d'air du vase d'expansion (gonfler a 1 bar si necessaire)",
+    ],
+    gravite: "alerte",
+    systemes: ["Alfea Excellia", "Alfea Extensa", "Alfea Hybride"],
+    sources: [
+      "https://edrsav.fr/codes-erreurs-pompes-a-chaleur-atlantic/",
+      "https://www.habitatpresto.com/mag/pompe-a-chaleur/code-erreur-pac-atlantic",
+    ],
+  },
+  {
+    marque: "atlantic",
+    code: "50",
+    libelle: "Defaut sonde temperature ECS (eau chaude sanitaire)",
+    description: "Sonde de temperature du ballon ECS en defaut.",
+    causesProbables: ["Sonde ECS debranchee", "NTC ECS deviante", "Cable coupe"],
+    etapesReparation: [
+      "Verifier la connexion de la sonde ECS au bornier",
+      "Mesurer la resistance NTC",
+      "Remplacer la sonde si KO",
+    ],
+    gravite: "alerte",
+    systemes: ["Alfea avec ballon ECS"],
+    sources: ["https://edrsav.fr/codes-erreurs-pompes-a-chaleur-atlantic/"],
+  },
+  {
+    marque: "atlantic",
+    code: "60",
+    libelle: "Defaut sonde ambiante 1",
+    description:
+      "Sonde ambiante du thermostat ou de la zone 1 en defaut (communication ou rupture).",
+    causesProbables: [
+      "Rupture de communication thermostat",
+      "Pile thermostat sans-fil epuisee",
+      "Sonde ambiante HS",
+    ],
+    etapesReparation: [
+      "Changer la pile du thermostat sans-fil",
+      "Verifier la portee radio entre thermostat et module",
+      "Remettre la communication par appairage si necessaire",
+    ],
+    gravite: "alerte",
+    sources: ["https://edrsav.fr/codes-erreurs-pompes-a-chaleur-atlantic/"],
+  },
+  {
+    marque: "atlantic",
+    code: "121",
+    libelle: "Temperature de depart non atteinte",
+    description:
+      "La PAC n'arrive pas a atteindre la consigne de depart. Souvent : sous-dimensionnement ou probleme hydraulique.",
+    causesProbables: [
+      "Sous-charge fluide",
+      "Probleme circulation (pompe, debit)",
+      "Sondes deviantes (depart / retour)",
+      "PAC sous-dimensionnee vs deperditions",
+    ],
+    etapesReparation: [
+      "Verifier la circulation hydraulique et le debit",
+      "Controler la charge fluide",
+      "Comparer T° depart mesuree pince vs sonde",
+    ],
+    gravite: "alerte",
+    sources: ["https://www.habitatpresto.com/mag/pompe-a-chaleur/code-erreur-pac-atlantic"],
+  },
+  {
+    marque: "atlantic",
+    code: "356",
+    libelle: "Debit primaire insuffisant",
+    description: "Debit de circulation primaire insuffisant detecte.",
+    causesProbables: [
+      "Pression eau basse",
+      "Air dans le circuit",
+      "Filtre primaire colmate",
+      "Pompe circulation HS",
+    ],
+    etapesReparation: [
+      "Faire l'appoint eau si pression basse",
+      "Purger soigneusement le circuit",
+      "Nettoyer le filtre primaire (Y-strainer)",
+      "Tester la pompe circulation",
+    ],
+    gravite: "alerte",
+    sources: ["https://www.habitatpresto.com/mag/pompe-a-chaleur/code-erreur-pac-atlantic"],
+  },
+  {
+    marque: "atlantic",
+    code: "369",
+    libelle: "Defaut securite externe (organe plancher chauffant)",
+    description:
+      "Securite externe declenchee, souvent securite haute temperature du plancher chauffant.",
+    causesProbables: [
+      "Securite haute T° plancher chauffant declenchee",
+      "Cable de securite coupe",
+      "Capteur defaut externe HS",
+    ],
+    etapesReparation: [
+      "Verifier la securite plancher chauffant (T° depart trop haute ?)",
+      "Reset la securite externe apres analyse",
+      "Verifier le contact NF sur la borne d'entree securite",
+    ],
+    gravite: "alerte",
+    sources: ["https://www.habitatpresto.com/mag/pompe-a-chaleur/code-erreur-pac-atlantic"],
+  },
+  {
+    marque: "atlantic",
+    code: "370",
+    libelle: "Unite exterieure en defaut",
+    description:
+      "L'unite exterieure remonte une erreur generique. CRITIQUE — la PAC est arretee.",
+    causesProbables: [
+      "Defaut compresseur (grippe, klixon)",
+      "Defaut alimentation triphasee (phase manquante)",
+      "Carte inverter HS",
+      "Communication interrompue avec interieur",
+    ],
+    etapesReparation: [
+      "Lire le code interne sur la carte exterieure (LEDs ou afficheur)",
+      "Mesurer toutes les phases d'alimentation",
+      "Mesurer bobinages compresseur (egales attendues)",
+      "Verifier le bus communication int/ext",
+    ],
+    gravite: "critique",
+    systemes: ["Alfea Excellia", "Alfea Extensa"],
+    sources: [
+      "https://edrsav.fr/codes-erreurs-pompes-a-chaleur-atlantic/",
+      "https://www.habitatpresto.com/mag/pompe-a-chaleur/code-erreur-pac-atlantic",
+    ],
+  },
+  {
+    marque: "atlantic",
+    code: "516",
+    libelle: "PAC absent / perte communication",
+    description:
+      "Le module interieur ne detecte plus la presence de la carte exterieure.",
+    causesProbables: [
+      "Cable communication interne defaillant",
+      "Carte interne HS",
+      "Carte exterieure HS",
+    ],
+    etapesReparation: [
+      "Verifier le cable communication int/ext",
+      "Mesurer la tension du bus",
+      "Tester avec une carte de pret",
+    ],
+    gravite: "critique",
+    sources: ["https://www.habitatpresto.com/mag/pompe-a-chaleur/code-erreur-pac-atlantic"],
+  },
+];
+
+// =============================================================================
+// SAUNIER DUVAL — Genia Air / Genia Hybrid / chaudieres ThemaPlus / Isofast
+// Sources : Saunier Duval France PDF officiel + EasySAV + Geoplanete
+// =============================================================================
+
+const SAUNIER_DUVAL: CodeErreur[] = [
+  {
+    marque: "saunier-duval",
+    code: "F.0",
+    libelle: "Defaut sonde depart chauffage",
+    description:
+      "Sonde de temperature de depart (NTC) coupee ou en court-circuit.",
+    causesProbables: [
+      "Sonde NTC depart deviante / HS",
+      "Cable sonde coupe",
+      "Connecteur sonde mal serti",
+    ],
+    etapesReparation: [
+      "Mesurer la resistance de la sonde NTC depart (~10 kOhm a 25°C)",
+      "Verifier la continuite du cable",
+      "Remplacer la sonde si KO",
+    ],
+    gravite: "alerte",
+    systemes: ["ThemaPlus", "Isofast", "Genia Air"],
+    sources: [
+      "https://www.saunierduval.fr/france/download/code-default/codes-defauts-pac-404962.pdf",
+      "https://www.habitatpresto.com/mag/chauffage/code-erreur-chaudiere-saunier-duval",
+    ],
+  },
+  {
+    marque: "saunier-duval",
+    code: "F.1",
+    libelle: "Defaut sonde retour chauffage",
+    description: "Sonde NTC retour coupee ou en court-circuit.",
+    causesProbables: ["Sonde NTC retour HS", "Cable coupe"],
+    etapesReparation: [
+      "Mesurer NTC retour",
+      "Verifier continuite",
+      "Remplacer la sonde",
+    ],
+    gravite: "alerte",
+    systemes: ["ThemaPlus", "Isofast", "Genia Air"],
+    sources: ["https://www.saunierduval.fr/france/download/code-default/codes-defauts-pac-404962.pdf"],
+  },
+  {
+    marque: "saunier-duval",
+    code: "F.22",
+    libelle: "Manque d'eau dans l'installation (<0.3 bar)",
+    description:
+      "Pression d'eau primaire en-dessous du seuil de securite. La chaudiere/PAC se met en defaut.",
+    causesProbables: [
+      "Fuite dans le circuit chauffage (radiateurs, raccords, plancher)",
+      "Vase d'expansion HS (pression pre-charge perdue)",
+      "Soupape de securite qui fuit",
+      "Vidange recente sans remise en pression",
+    ],
+    etapesReparation: [
+      "Verifier la pression au manometre (cible 1-1.5 bar a froid)",
+      "Faire l'appoint via robinet de remplissage si <1 bar",
+      "Chercher la fuite (radiateurs, raccords)",
+      "Verifier la soupape de securite (joint, fuite)",
+      "Tester pression d'air du vase d'expansion (cible 0.8-1 bar a vide)",
+    ],
+    gravite: "alerte",
+    systemes: ["ThemaPlus", "Isofast", "Genia Air"],
+    sources: [
+      "https://www.saunierduval.fr/france/download/code-default/codes-defauts-pac-404962.pdf",
+      "https://easysav.com/marques/saunier-duval/themaplus-condens-f25-a-1/codes-defauts/f22",
+    ],
+  },
+  {
+    marque: "saunier-duval",
+    code: "F.23",
+    libelle: "Probleme circulation eau (delta T trop grand)",
+    description:
+      "Difference de temperature trop grande entre depart et retour, signal d'une circulation insuffisante.",
+    causesProbables: [
+      "Pompe circulation HS / bloquee",
+      "Air dans le circuit (purge a faire)",
+      "Vanne thermostatique fermee / circuit isole",
+      "Filtre encrasse",
+    ],
+    etapesReparation: [
+      "Purger le circuit chauffage soigneusement",
+      "Verifier que les vannes thermostatiques radiateur sont ouvertes",
+      "Tester la pompe circulation (alim + rotation)",
+      "Nettoyer le filtre",
+    ],
+    gravite: "alerte",
+    sources: ["https://www.saunierduval.fr/france/download/code-default/codes-defauts-pac-404962.pdf"],
+  },
+  {
+    marque: "saunier-duval",
+    code: "F.27",
+    libelle: "Detection flamme inattendue (vanne gaz fermee)",
+    description:
+      "La carte detecte une flamme alors que la vanne gaz est censee etre fermee. Securite gaz.",
+    causesProbables: [
+      "Vanne gaz qui fuit (gaz residuel)",
+      "Sonde de flamme defaillante",
+      "Carte electronique defectueuse",
+    ],
+    etapesReparation: [
+      "Tester l'etancheite de la vanne gaz",
+      "Mesurer la sonde d'ionisation (resistance + signal)",
+      "Couper le gaz et reset",
+      "Si persistant : remplacer la vanne gaz",
+    ],
+    gravite: "critique",
+    systemes: ["ThemaPlus", "Isofast"],
+    sources: ["https://www.saunierduval.fr/france/download/code-default/codes-defauts-pac-404962.pdf"],
+  },
+  {
+    marque: "saunier-duval",
+    code: "F.28",
+    libelle: "Defaut d'allumage (pas de flamme)",
+    description:
+      "La chaudiere n'arrive pas a allumer apres plusieurs tentatives. Pas d'arrivee gaz ou debit insuffisant.",
+    causesProbables: [
+      "Coupure d'alimentation gaz (vanne fermee, compteur)",
+      "Electrode d'allumage encrassee / cassee",
+      "Vanne gaz HS",
+      "Pression gaz insuffisante",
+      "Arrivee d'air / evacuation fumee bouchee",
+    ],
+    etapesReparation: [
+      "Verifier l'ouverture de la vanne gaz amont",
+      "Nettoyer l'electrode d'allumage et controler l'etincelle",
+      "Mesurer la pression gaz au compteur",
+      "Verifier que ventouse / conduit fumee n'est pas bouche",
+    ],
+    gravite: "critique",
+    systemes: ["ThemaPlus", "Isofast"],
+    sources: [
+      "https://www.saunierduval.fr/france/download/code-default/codes-defauts-pac-404962.pdf",
+      "https://www.habitatpresto.com/mag/chauffage/code-erreur-chaudiere-saunier-duval",
+    ],
+  },
+  {
+    marque: "saunier-duval",
+    code: "F.29",
+    libelle: "Perte de flamme en cours de fonctionnement",
+    description:
+      "La flamme s'est eteinte pendant le fonctionnement. Tentative de re-allumage automatique.",
+    causesProbables: [
+      "Pression gaz fluctuante",
+      "Electrode d'ionisation encrassee",
+      "Vanne gaz vieillissante",
+      "Recyclage des fumees (defaut ventouse)",
+    ],
+    etapesReparation: [
+      "Nettoyer l'electrode d'ionisation",
+      "Verifier la pression gaz en service (pas que statique)",
+      "Controler la ventouse pour recyclage fumees",
+    ],
+    gravite: "alerte",
+    systemes: ["ThemaPlus", "Isofast"],
+    sources: ["https://www.saunierduval.fr/france/download/code-default/codes-defauts-pac-404962.pdf"],
+  },
+  {
+    marque: "saunier-duval",
+    code: "F.62",
+    libelle: "Vanne gaz : signal de coupure non confirme",
+    description: "La carte ne recoit pas la confirmation que la vanne gaz est fermee.",
+    causesProbables: [
+      "Vanne gaz mecaniquement defaillante",
+      "Probleme electrique cable vanne",
+      "Carte electronique HS",
+    ],
+    etapesReparation: [
+      "Tester la commande electrique vanne",
+      "Verifier le cablage vanne gaz",
+      "Remplacer la vanne si confirmation impossible",
+    ],
+    gravite: "critique",
+    sources: ["https://www.saunierduval.fr/france/download/code-default/codes-defauts-pac-404962.pdf"],
+  },
+  {
+    marque: "saunier-duval",
+    code: "F.65",
+    libelle: "Temperature electronique trop haute",
+    description:
+      "Surchauffe du compartiment electronique de la chaudiere/PAC.",
+    causesProbables: [
+      "Ventilation compartiment electrique obstruee",
+      "Carte electronique HS (composant qui chauffe)",
+      "Temperature locale anormalement haute",
+    ],
+    etapesReparation: [
+      "Verifier ventilation du coffret electrique",
+      "Mesurer T° locale carte",
+      "Si persistant : remplacer la carte",
+    ],
+    gravite: "alerte",
+    sources: ["https://www.saunierduval.fr/france/download/code-default/codes-defauts-pac-404962.pdf"],
+  },
+  {
+    marque: "saunier-duval",
+    code: "F.75",
+    libelle: "Defaut pression d'eau / pompe (cycle pompage non detecte)",
+    description:
+      "La pompe demarre mais la carte ne detecte pas de variation de pression coherente.",
+    causesProbables: [
+      "Pompe circulation HS",
+      "Capteur de pression d'eau defaillant",
+      "Air dans le circuit",
+    ],
+    etapesReparation: [
+      "Purger le circuit",
+      "Tester la pompe circulation",
+      "Verifier le capteur de pression d'eau",
+    ],
+    gravite: "alerte",
+    sources: ["https://www.saunierduval.fr/france/download/code-default/codes-defauts-pac-404962.pdf"],
+  },
+];
+
+// =============================================================================
 // EXPORT consolide
 // =============================================================================
 
@@ -1135,6 +1844,9 @@ export const CODES_ERREUR_DATABASE: CodeErreur[] = [
   ...SAMSUNG,
   ...TOSHIBA,
   ...HITACHI,
+  ...PANASONIC,
+  ...ATLANTIC,
+  ...SAUNIER_DUVAL,
 ];
 
 export const CODES_ERREUR_COUNT_BY_MARQUE: Record<string, number> = {
@@ -1146,4 +1858,7 @@ export const CODES_ERREUR_COUNT_BY_MARQUE: Record<string, number> = {
   samsung: SAMSUNG.length,
   toshiba: TOSHIBA.length,
   hitachi: HITACHI.length,
+  panasonic: PANASONIC.length,
+  atlantic: ATLANTIC.length,
+  "saunier-duval": SAUNIER_DUVAL.length,
 };

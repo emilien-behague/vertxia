@@ -35,6 +35,9 @@ type ErrorCodeStats = {
 const MARQUES: CodeErreurMarque[] = [
   "daikin",
   "mitsubishi",
+  "panasonic",
+  "atlantic",
+  "saunier-duval",
   "carrier",
   "trane",
   "lg",
@@ -52,6 +55,25 @@ const MARQUE_COLORS: Record<CodeErreurMarque, string> = {
   samsung: "bg-indigo-100 text-indigo-800 ring-indigo-300",
   toshiba: "bg-slate-100 text-slate-800 ring-slate-300",
   hitachi: "bg-emerald-100 text-emerald-800 ring-emerald-300",
+  panasonic: "bg-violet-100 text-violet-800 ring-violet-300",
+  atlantic: "bg-sky-100 text-sky-800 ring-sky-300",
+  "saunier-duval": "bg-orange-100 text-orange-800 ring-orange-300",
+};
+
+// Label courts pour les pills (la barre de filtres en haut). On evite que
+// .split(" ")[0] donne des resultats ambigus ("Saunier" tout seul, etc.)
+const MARQUE_PILL_LABELS: Record<CodeErreurMarque, string> = {
+  daikin: "Daikin",
+  mitsubishi: "Mitsubishi",
+  carrier: "Carrier",
+  trane: "Trane",
+  lg: "LG",
+  samsung: "Samsung",
+  toshiba: "Toshiba",
+  hitachi: "Hitachi",
+  panasonic: "Panasonic",
+  atlantic: "Atlantic",
+  "saunier-duval": "S. Duval",
 };
 
 export default function CodesErreurPage() {
@@ -180,7 +202,7 @@ export default function CodesErreurPage() {
           {MARQUES.map((m) => (
             <FilterPill
               key={m}
-              label={CODE_ERREUR_MARQUE_LABELS[m].split(" ")[0]}
+              label={MARQUE_PILL_LABELS[m]}
               active={marqueSel === m}
               onClick={() => setMarqueSel(marqueSel === m ? null : m)}
               colorClass={MARQUE_COLORS[m]}
@@ -197,7 +219,7 @@ export default function CodesErreurPage() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder={
               marqueSel
-                ? `Code ${CODE_ERREUR_MARQUE_LABELS[marqueSel].split(" ")[0]} (ex: U4)`
+                ? `Code ${MARQUE_PILL_LABELS[marqueSel]} (ex: U4)`
                 : "Code (U4, P1, CH05) ou mot-clé"
             }
             autoFocus
@@ -278,10 +300,11 @@ export default function CodesErreurPage() {
             <div className="rounded-2xl bg-amber-50 ring-1 ring-amber-200 px-4 py-4 text-[13px] text-amber-900 mt-4">
               <div className="font-semibold mb-1">À savoir</div>
               <p className="leading-snug">
-                La base couvre <strong>~120 codes</strong> sur les 8 marques les
-                plus courantes en France. Causes et étapes sont indicatives — le
-                diagnostic terrain reste prioritaire. Le détecteur de fuite
-                électronique et le respect des protocoles QualiPAC sont obligatoires.
+                La base couvre <strong>~155 codes</strong> sur les 11 marques les
+                plus courantes en France (clim, PAC air-eau, chaudières). Causes et
+                étapes sont indicatives — le diagnostic terrain reste prioritaire.
+                Le détecteur de fuite électronique et le respect des protocoles
+                QualiPAC / QualiFroid sont obligatoires.
               </p>
             </div>
           )}
@@ -358,7 +381,7 @@ function CodeErreurCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 mb-1 flex-wrap">
               <span className={`text-[10px] px-1.5 py-0.5 rounded ring-1 font-medium ${MARQUE_COLORS[hit.marque]}`}>
-                {CODE_ERREUR_MARQUE_LABELS[hit.marque].split(" ")[0]}
+                {MARQUE_PILL_LABELS[hit.marque]}
               </span>
               <GraviteBadge gravite={hit.gravite} />
             </div>

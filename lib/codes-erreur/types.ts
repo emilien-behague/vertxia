@@ -25,7 +25,10 @@ export type CodeErreurMarque =
   | "lg"
   | "samsung"
   | "toshiba"
-  | "hitachi";
+  | "hitachi"
+  | "panasonic"
+  | "atlantic"
+  | "saunier-duval";
 
 export const CODE_ERREUR_MARQUE_LABELS: Record<CodeErreurMarque, string> = {
   daikin: "Daikin",
@@ -36,6 +39,9 @@ export const CODE_ERREUR_MARQUE_LABELS: Record<CodeErreurMarque, string> = {
   samsung: "Samsung",
   toshiba: "Toshiba",
   hitachi: "Hitachi",
+  panasonic: "Panasonic",
+  atlantic: "Atlantic",
+  "saunier-duval": "Saunier Duval",
 };
 
 export type CodeErreurGravite = "info" | "alerte" | "critique";
