@@ -278,7 +278,7 @@ function MobileHomePage() {
           variant="cyan"
           emoji="🚨"
           label="Codes erreur"
-          sublabel="20 marques · ~480 codes vérifiés"
+          sublabel="20 marques · ~840 codes vérifiés"
         />
 
         {/* Tuile XL — Paperasse officielle */}

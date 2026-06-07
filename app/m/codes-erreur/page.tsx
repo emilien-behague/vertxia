@@ -329,7 +329,7 @@ export default function CodesErreurPage() {
             <div className="rounded-2xl bg-amber-50 ring-1 ring-amber-200 px-4 py-4 text-[13px] text-amber-900 mt-4">
               <div className="font-semibold mb-1">À savoir</div>
               <p className="leading-snug">
-                La base couvre <strong>~480 codes</strong> sur les 20 marques les
+                La base couvre <strong>~840 codes</strong> sur les 20 marques les
                 plus courantes en France (clim, PAC air-eau, chaudières gaz / fioul,
                 CET). Causes et étapes sont indicatives — le diagnostic terrain reste
                 prioritaire. Le détecteur de fuite électronique et le respect des
