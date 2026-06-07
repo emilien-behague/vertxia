@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/ui/mobile-header";
 import {
@@ -106,7 +106,30 @@ const MARQUE_PILL_LABELS: Record<CodeErreurMarque, string> = {
   "stiebel-eltron": "Stiebel",
 };
 
+// Wrapper Suspense obligatoire pour Next.js 16 — useSearchParams() ne peut
+// pas etre appele en pre-rendering sans Suspense boundary (sinon build fail
+// "useSearchParams() should be wrapped in a suspense boundary").
 export default function CodesErreurPage() {
+  return (
+    <Suspense fallback={<CodesErreurLoadingFallback />}>
+      <CodesErreurPageInner />
+    </Suspense>
+  );
+}
+
+function CodesErreurLoadingFallback() {
+  return (
+    <div className="min-h-screen">
+      <MobileHeader title="Codes erreur" backHref="/m" />
+      <div className="max-w-md mx-auto px-4 pt-3 pb-6">
+        <div className="h-9 rounded-full bg-black/[0.04] animate-pulse mb-3" />
+        <div className="h-12 rounded-2xl bg-black/[0.04] animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
+function CodesErreurPageInner() {
   // Query params : ?modele=RXYSQ4T pre-remplit le filtre modele (utile depuis
   // une fiche equipement apres scan plaque). ?marque=daikin pre-remplit la pill.
   const searchParams = useSearchParams();
