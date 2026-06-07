@@ -37,6 +37,15 @@ const VALID_MARQUES: CodeErreurMarque[] = [
   "panasonic",
   "atlantic",
   "saunier-duval",
+  "vaillant",
+  "de-dietrich",
+  "elm-leblanc",
+  "frisquet",
+  "mitsubishi-heavy",
+  "fujitsu",
+  "bosch",
+  "chaffoteaux",
+  "stiebel-eltron",
 ];
 
 const VALID_GRAVITES: CodeErreurGravite[] = ["info", "alerte", "critique"];

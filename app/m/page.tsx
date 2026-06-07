@@ -278,7 +278,7 @@ function MobileHomePage() {
           variant="cyan"
           emoji="🚨"
           label="Codes erreur"
-          sublabel="Daikin · Panasonic · Atlantic · S. Duval…"
+          sublabel="20 marques · ~480 codes vérifiés"
         />
 
         {/* Tuile XL — Paperasse officielle */}

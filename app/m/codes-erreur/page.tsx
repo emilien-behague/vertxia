@@ -33,17 +33,28 @@ type ErrorCodeStats = {
 //  4. Vue detail en accordeon : sources cliquables, gravite, systemes.
 
 const MARQUES: CodeErreurMarque[] = [
+  // Chaudieres + PAC residentielles FR (les plus courantes en intervention)
+  "vaillant",
+  "saunier-duval",
+  "atlantic",
+  "de-dietrich",
+  "elm-leblanc",
+  "frisquet",
+  "bosch",
+  "chaffoteaux",
+  "stiebel-eltron",
+  // Clim split + VRF + Sky Air
   "daikin",
   "mitsubishi",
+  "mitsubishi-heavy",
   "panasonic",
-  "atlantic",
-  "saunier-duval",
-  "carrier",
-  "trane",
+  "fujitsu",
   "lg",
   "samsung",
   "toshiba",
   "hitachi",
+  "carrier",
+  "trane",
 ];
 
 const MARQUE_COLORS: Record<CodeErreurMarque, string> = {
@@ -58,6 +69,15 @@ const MARQUE_COLORS: Record<CodeErreurMarque, string> = {
   panasonic: "bg-violet-100 text-violet-800 ring-violet-300",
   atlantic: "bg-sky-100 text-sky-800 ring-sky-300",
   "saunier-duval": "bg-orange-100 text-orange-800 ring-orange-300",
+  vaillant: "bg-teal-100 text-teal-800 ring-teal-300",
+  "de-dietrich": "bg-rose-100 text-rose-800 ring-rose-300",
+  "elm-leblanc": "bg-fuchsia-100 text-fuchsia-800 ring-fuchsia-300",
+  frisquet: "bg-yellow-100 text-yellow-800 ring-yellow-300",
+  "mitsubishi-heavy": "bg-stone-100 text-stone-800 ring-stone-300",
+  fujitsu: "bg-zinc-100 text-zinc-800 ring-zinc-300",
+  bosch: "bg-green-100 text-green-800 ring-green-300",
+  chaffoteaux: "bg-purple-100 text-purple-800 ring-purple-300",
+  "stiebel-eltron": "bg-lime-100 text-lime-800 ring-lime-300",
 };
 
 // Label courts pour les pills (la barre de filtres en haut). On evite que
@@ -74,6 +94,15 @@ const MARQUE_PILL_LABELS: Record<CodeErreurMarque, string> = {
   panasonic: "Panasonic",
   atlantic: "Atlantic",
   "saunier-duval": "S. Duval",
+  vaillant: "Vaillant",
+  "de-dietrich": "De Dietrich",
+  "elm-leblanc": "ELM Leblanc",
+  frisquet: "Frisquet",
+  "mitsubishi-heavy": "MHI",
+  fujitsu: "Fujitsu",
+  bosch: "Bosch",
+  chaffoteaux: "Chaffoteaux",
+  "stiebel-eltron": "Stiebel",
 };
 
 export default function CodesErreurPage() {
@@ -300,11 +329,11 @@ export default function CodesErreurPage() {
             <div className="rounded-2xl bg-amber-50 ring-1 ring-amber-200 px-4 py-4 text-[13px] text-amber-900 mt-4">
               <div className="font-semibold mb-1">À savoir</div>
               <p className="leading-snug">
-                La base couvre <strong>~155 codes</strong> sur les 11 marques les
-                plus courantes en France (clim, PAC air-eau, chaudières). Causes et
-                étapes sont indicatives — le diagnostic terrain reste prioritaire.
-                Le détecteur de fuite électronique et le respect des protocoles
-                QualiPAC / QualiFroid sont obligatoires.
+                La base couvre <strong>~480 codes</strong> sur les 20 marques les
+                plus courantes en France (clim, PAC air-eau, chaudières gaz / fioul,
+                CET). Causes et étapes sont indicatives — le diagnostic terrain reste
+                prioritaire. Le détecteur de fuite électronique et le respect des
+                protocoles QualiPAC / QualiFroid sont obligatoires.
               </p>
             </div>
           )}

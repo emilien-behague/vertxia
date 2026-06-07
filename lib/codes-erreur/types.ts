@@ -28,11 +28,20 @@ export type CodeErreurMarque =
   | "hitachi"
   | "panasonic"
   | "atlantic"
-  | "saunier-duval";
+  | "saunier-duval"
+  | "vaillant"
+  | "de-dietrich"
+  | "elm-leblanc"
+  | "frisquet"
+  | "mitsubishi-heavy"
+  | "fujitsu"
+  | "bosch"
+  | "chaffoteaux"
+  | "stiebel-eltron";
 
 export const CODE_ERREUR_MARQUE_LABELS: Record<CodeErreurMarque, string> = {
   daikin: "Daikin",
-  mitsubishi: "Mitsubishi Electric / Heavy",
+  mitsubishi: "Mitsubishi Electric",
   carrier: "Carrier",
   trane: "Trane",
   lg: "LG",
@@ -42,6 +51,15 @@ export const CODE_ERREUR_MARQUE_LABELS: Record<CodeErreurMarque, string> = {
   panasonic: "Panasonic",
   atlantic: "Atlantic",
   "saunier-duval": "Saunier Duval",
+  vaillant: "Vaillant",
+  "de-dietrich": "De Dietrich",
+  "elm-leblanc": "ELM Leblanc",
+  frisquet: "Frisquet",
+  "mitsubishi-heavy": "Mitsubishi Heavy Industries",
+  fujitsu: "Fujitsu / General",
+  bosch: "Bosch / Buderus",
+  chaffoteaux: "Chaffoteaux",
+  "stiebel-eltron": "Stiebel Eltron",
 };
 
 export type CodeErreurGravite = "info" | "alerte" | "critique";
