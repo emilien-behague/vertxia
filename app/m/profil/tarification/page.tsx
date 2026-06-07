@@ -68,16 +68,20 @@ function ToggleRow({
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${
+        className={`shrink-0 w-12 h-7 rounded-full transition-colors p-0.5 ${
           checked ? "bg-emerald-500" : "bg-black/15"
         }`}
         style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
         aria-pressed={checked}
         aria-label={label}
       >
+        {/* Rond positionne en flow normal (pas absolute) : le padding p-0.5 du
+            parent donne 2px de marge, le rond fait 24px et translate de 20px
+            quand actif -> reste dans [22..46] sur un bouton de 48px. Robuste
+            cross-browser (Tailwind v4 + iOS Safari). */}
         <span
-          className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${
-            checked ? "translate-x-5" : "translate-x-0.5"
+          className={`block w-6 h-6 rounded-full bg-white shadow transition-transform ${
+            checked ? "translate-x-5" : "translate-x-0"
           }`}
         />
       </button>
