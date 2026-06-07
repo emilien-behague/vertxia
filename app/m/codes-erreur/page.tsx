@@ -527,7 +527,7 @@ function MemoireCollectiveBadge({
             Jamais signalé encore
           </div>
           <div className="text-[11.5px] text-slate-600 leading-snug">
-            Aucun frigoriste Vertxia n&apos;a encore déclaré avoir rencontré ce code.
+            Aucun pro Vertxia n&apos;a encore déclaré avoir rencontré ce code.
           </div>
         </div>
       ) : (
@@ -535,7 +535,7 @@ function MemoireCollectiveBadge({
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[14px]">🌐</span>
             <span className="text-[12.5px] font-bold text-emerald-900">
-              {total} rencontre{total > 1 ? "s" : ""} terrain dans la mémoire Vertxia
+              {total} signalement{total > 1 ? "s" : ""} terrain par des pros Vertxia
             </span>
           </div>
           <div className="text-[11.5px] text-emerald-800/85 leading-snug">
@@ -569,7 +569,7 @@ function MemoireCollectiveBadge({
       {showInput && !justDeclared && (
         <div className="rounded-xl bg-white ring-1 ring-[#A16207]/40 px-3 py-3 space-y-2">
           <div className="text-[11.5px] text-black/70 leading-snug">
-            Sur quel modèle l&apos;as-tu rencontré ? (facultatif — aide les autres pros à identifier les patterns)
+            Sur quel modèle l&apos;avez-vous rencontré ? (facultatif — aide les autres pros à identifier les patterns)
           </div>
           <input
             type="text"

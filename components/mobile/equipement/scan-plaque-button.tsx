@@ -158,7 +158,7 @@ export function ScanPlaqueButton({
         // Bonus mémoire collective : badge si le modèle est connu par d'autres pros
         const collectiveSuffix =
           nombreScans >= 2
-            ? `\n📚 Modèle vérifié par ${nombreScans} frigoristes Vertxia`
+            ? `\n📚 Modèle vérifié par ${nombreScans} pros Vertxia`
             : nombreScans === 1
               ? "\n📚 Première fois que ce modèle est ajouté au catalogue"
               : "";
