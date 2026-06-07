@@ -64,10 +64,12 @@ export async function GET(req: Request) {
   const marqueParam = url.searchParams.get("marque");
   const graviteParam = url.searchParams.get("gravite");
   const codeParam = url.searchParams.get("code");
+  const modeleParam = url.searchParams.get("modele");
   const limitParam = url.searchParams.get("limit");
 
   const marque = isValidMarque(marqueParam) ? marqueParam : undefined;
   const gravite = isValidGravite(graviteParam) ? graviteParam : undefined;
+  const modele = modeleParam && modeleParam.trim().length > 0 ? modeleParam.trim().slice(0, 60) : undefined;
   const limit = limitParam ? Math.min(100, Math.max(1, parseInt(limitParam, 10) || 30)) : 30;
 
   // Cas 1 : lookup direct precis (deep-link)
@@ -80,11 +82,11 @@ export async function GET(req: Request) {
   }
 
   // Cas 2 : stats si aucun param de recherche
-  if (q.length === 0 && !marque && !gravite) {
+  if (q.length === 0 && !marque && !gravite && !modele) {
     return NextResponse.json({ stats: getCodesErreurStats() });
   }
 
   // Cas 3 : recherche
-  const hits = searchCodesErreur(q, { marque, gravite, limit });
-  return NextResponse.json({ hits, count: hits.length });
+  const hits = searchCodesErreur(q, { marque, gravite, modele, limit });
+  return NextResponse.json({ hits, count: hits.length, modele: modele ?? null });
 }

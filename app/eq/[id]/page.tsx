@@ -28,6 +28,7 @@ import {
 import { PannesConnuesCard } from "@/components/mobile/intervention/pannes-connues-card";
 import { CrossSignalCard } from "@/components/mobile/intervention/cross-signal-card";
 import { DocumenterPanneButton } from "@/components/mobile/intervention/documenter-panne-button";
+import { detectMarqueFromModele } from "@/lib/codes-erreur/detect-marque";
 
 // Page mobile premium — affichée quand un technicien scanne le QR Code collé sur
 // un équipement. Doit s'afficher SANS bug sur Safari iOS (zéro animation initial:opacity:0
@@ -960,6 +961,31 @@ export default function EquipementScannedPage({
             </div>
           </a>
         )}
+
+        {/* Bouton "Codes erreur de cet équipement" — full + confrere.
+            Deep-link vers /m/codes-erreur avec marque + modele pre-remplis depuis
+            la plaque scannee. Filtre les codes specifiques aux autres gammes. */}
+        {mode !== "public" && eq.modele && (() => {
+          const detected = detectMarqueFromModele(eq.modele);
+          const params = new URLSearchParams();
+          if (detected.marque) params.set("marque", detected.marque);
+          if (detected.modeleClean) params.set("modele", detected.modeleClean);
+          return (
+            <a
+              href={`/m/codes-erreur?${params.toString()}`}
+              className="block w-full px-5 py-3.5 rounded-2xl bg-cyan-50 ring-1 ring-cyan-200 text-cyan-900 text-[14px] font-medium mb-3 active:bg-cyan-100 transition-colors inline-flex items-center justify-center gap-2.5"
+              style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+            >
+              <span className="text-base">🚨</span>
+              Codes erreur de cet équipement
+              {detected.modeleClean && (
+                <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-white ring-1 ring-cyan-200 text-cyan-800">
+                  {detected.modeleClean.length > 18 ? detected.modeleClean.slice(0, 16) + "…" : detected.modeleClean}
+                </span>
+              )}
+            </a>
+          );
+        })()}
 
         {/* Bouton "Donner accès à un confrère" — owner uniquement.
             Génère un lien magique 7 jours, idéal pour sous-traiter une intervention. */}

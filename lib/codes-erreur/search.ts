@@ -26,6 +26,29 @@ function normalizeCode(s: string): string {
   return s.toUpperCase().replace(/\s+/g, "").trim();
 }
 
+function normalizeModele(s: string): string {
+  // Modeles constructeur : uppercase, sans espaces, sans tirets/slashes parasites.
+  // Ex: "rxysq 4t/9v-1b" → "RXYSQ4T9V1B"
+  return s.toUpperCase().replace(/[\s\-/_.]+/g, "").trim();
+}
+
+/** Match prefix bidirectionnel : un code "matche" un modele cible si AU MOINS
+ *  un de ses prefixes/famille est compatible. Si le code n'a pas de modeles[]
+ *  defini, on considere qu'il s'applique a toute la marque (= match permissif). */
+export function codeMatchesModele(
+  modelesDuCode: string[] | undefined,
+  modeleQuery: string
+): boolean {
+  const q = normalizeModele(modeleQuery);
+  if (q.length === 0) return true;
+  if (!modelesDuCode || modelesDuCode.length === 0) return true;
+  return modelesDuCode.some((m) => {
+    const mn = normalizeModele(m);
+    if (mn.length === 0) return false;
+    return mn.startsWith(q) || q.startsWith(mn);
+  });
+}
+
 function normalizeText(s: string): string {
   return s
     .toLowerCase()
@@ -69,6 +92,10 @@ function levenshteinBounded(a: string, b: string, max = 3): number {
 export type SearchOptions = {
   marque?: CodeErreurMarque;
   gravite?: CodeErreurGravite;
+  /** Reference modele constructeur. Si fourni, on garde uniquement les codes
+   *  dont `modeles[]` matche (prefix bidirectionnel) OU qui n'ont pas de
+   *  `modeles[]` defini (= codes generiques marque applicables a tout). */
+  modele?: string;
   /** Limite du nombre de hits retournes (default 30). */
   limit?: number;
 };
@@ -78,11 +105,14 @@ export function searchCodesErreur(
   query: string,
   opts: SearchOptions = {}
 ): CodeErreurSearchHit[] {
-  const { marque, gravite, limit = 30 } = opts;
+  const { marque, gravite, modele, limit = 30 } = opts;
 
   let pool = CODES_ERREUR_DATABASE;
   if (marque) pool = pool.filter((c) => c.marque === marque);
   if (gravite) pool = pool.filter((c) => c.gravite === gravite);
+  if (modele && modele.trim().length > 0) {
+    pool = pool.filter((c) => codeMatchesModele(c.modeles, modele));
+  }
 
   const trimmed = query.trim();
   if (trimmed.length === 0) {

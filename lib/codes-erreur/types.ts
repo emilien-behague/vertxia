@@ -95,6 +95,10 @@ export type CodeErreur = {
   gravite: CodeErreurGravite;
   /** Systemes concernes (ex: ["VRV", "Multi-split"]). Vide = tous. */
   systemes?: string[];
+  /** Modeles constructeur precis ou prefixes de gamme (ex: ["RXYSQ4T",
+   *  "EHVH08", "FXFQ20A"]). Vide = code applicable a toute la marque.
+   *  Matching = prefix bidirectionnel insensible casse/espaces. */
+  modeles?: string[];
   /** Sources URL publiques constructeur ou doc technique. */
   sources: string[];
 };

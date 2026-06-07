@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/ui/mobile-header";
 import {
   CODE_ERREUR_GRAVITE_LABELS,
@@ -106,8 +107,20 @@ const MARQUE_PILL_LABELS: Record<CodeErreurMarque, string> = {
 };
 
 export default function CodesErreurPage() {
+  // Query params : ?modele=RXYSQ4T pre-remplit le filtre modele (utile depuis
+  // une fiche equipement apres scan plaque). ?marque=daikin pre-remplit la pill.
+  const searchParams = useSearchParams();
+  const initialModele = searchParams.get("modele") ?? "";
+  const initialMarqueParam = searchParams.get("marque");
+  const isValidMarqueParam = (m: string | null): m is CodeErreurMarque =>
+    m !== null && (MARQUES as string[]).includes(m);
+  const initialMarque = isValidMarqueParam(initialMarqueParam)
+    ? initialMarqueParam
+    : null;
+
   const [query, setQuery] = useState("");
-  const [marqueSel, setMarqueSel] = useState<CodeErreurMarque | null>(null);
+  const [marqueSel, setMarqueSel] = useState<CodeErreurMarque | null>(initialMarque);
+  const [modeleFilter, setModeleFilter] = useState(initialModele);
   const [hits, setHits] = useState<CodeErreurSearchHit[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
@@ -117,6 +130,7 @@ export default function CodesErreurPage() {
   const declaredRef = useRef<Set<string>>(new Set());
 
   const queryDebounced = useDebounced(query, 200);
+  const modeleFilterDebounced = useDebounced(modeleFilter, 200);
 
   // Quand un code est expand : on fetch SEULEMENT les stats (lecture passive).
   // L'incrementation du compteur se fait UNIQUEMENT via le bouton explicite
@@ -188,6 +202,7 @@ export default function CodesErreurPage() {
         const params = new URLSearchParams();
         if (queryDebounced.trim()) params.set("q", queryDebounced.trim());
         if (marqueSel) params.set("marque", marqueSel);
+        if (modeleFilterDebounced.trim()) params.set("modele", modeleFilterDebounced.trim());
         params.set("limit", "50");
         const res = await fetch(`/api/codes-erreur?${params.toString()}`, {
           signal: ctrl.signal,
@@ -207,7 +222,7 @@ export default function CodesErreurPage() {
     };
     run();
     return () => ctrl.abort();
-  }, [queryDebounced, marqueSel]);
+  }, [queryDebounced, marqueSel, modeleFilterDebounced]);
 
   const isEmpty = !loading && hits.length === 0 && queryDebounced.trim().length > 0;
 
@@ -240,8 +255,17 @@ export default function CodesErreurPage() {
           ))}
         </div>
 
+        {/* Filtre modele equipement — optionnel, pre-rempli si arrive depuis fiche
+            equipement avec ?modele=XXX. Cache les codes specifiques a d'autres
+            modeles (garde les codes "generiques marque" sans modeles[]). */}
+        <ModeleFilter
+          value={modeleFilter}
+          onChange={setModeleFilter}
+          autoOpenedFromUrl={initialModele.length > 0}
+        />
+
         {/* Champ de recherche */}
-        <div className="relative mt-1">
+        <div className="relative mt-2">
           <input
             type="text"
             value={query}
@@ -373,6 +397,90 @@ function FilterPill({
   );
 }
 
+function ModeleFilter({
+  value,
+  onChange,
+  autoOpenedFromUrl,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  autoOpenedFromUrl: boolean;
+}) {
+  const [open, setOpen] = useState(autoOpenedFromUrl || value.length > 0);
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="w-full mt-1 h-9 rounded-xl bg-cyan-50/60 ring-1 ring-cyan-100 text-cyan-800 text-[12px] font-medium active:bg-cyan-50 transition-colors flex items-center justify-center gap-1.5"
+        style={{ WebkitTapHighlightColor: "transparent" }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 6h18M6 12h12M10 18h4" />
+        </svg>
+        Filtrer par modèle équipement (optionnel)
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-1 rounded-xl bg-cyan-50/60 ring-1 ring-cyan-200 px-2.5 py-2">
+      <div className="flex items-center gap-1.5 mb-1.5 px-0.5">
+        <span className="text-[11px] font-semibold text-cyan-900 uppercase tracking-wider">
+          Modèle équipement
+        </span>
+        {autoOpenedFromUrl && value.length > 0 && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-200/70 text-cyan-900 font-medium">
+            ← scan plaque
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            onChange("");
+            setOpen(false);
+          }}
+          className="ml-auto text-[11px] text-cyan-700/80 active:text-cyan-900"
+          style={{ WebkitTapHighlightColor: "transparent" }}
+        >
+          Effacer
+        </button>
+      </div>
+      <div className="relative">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Ex : RXYSQ4T, EHVH08, MSZ-EF..."
+          inputMode="text"
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+          className="w-full h-10 rounded-lg bg-white px-3 pr-9 text-[14px] ring-1 ring-cyan-200 focus:ring-2 focus:ring-cyan-400 outline-none placeholder:text-black/30 font-mono"
+        />
+        {value.length > 0 && (
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-cyan-100 active:bg-cyan-200 flex items-center justify-center text-cyan-700"
+            style={{ WebkitTapHighlightColor: "transparent" }}
+            aria-label="Effacer modèle"
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+        )}
+      </div>
+      <div className="text-[10.5px] text-cyan-900/65 mt-1.5 leading-snug px-0.5">
+        Cache les codes spécifiques aux autres modèles. Les codes génériques
+        marque restent visibles.
+      </div>
+    </div>
+  );
+}
+
 function CodeErreurCard({
   hit,
   expanded,
@@ -476,6 +584,25 @@ function CodeErreurCard({
                     {s}
                   </span>
                 ))}
+              </div>
+            </DetailSection>
+          )}
+
+          {hit.modeles && hit.modeles.length > 0 && (
+            <DetailSection title="S'applique aux modèles">
+              <div className="flex flex-wrap gap-1.5">
+                {hit.modeles.map((m) => (
+                  <span
+                    key={m}
+                    className="text-[11px] px-2 py-0.5 rounded-md bg-cyan-50 ring-1 ring-cyan-200 text-cyan-800 font-mono"
+                  >
+                    {m}
+                  </span>
+                ))}
+              </div>
+              <div className="text-[10.5px] text-black/45 mt-1.5 leading-snug">
+                Préfixes de gamme — un modèle terrain plus complet qui commence
+                par l&apos;un de ces préfixes est compatible.
               </div>
             </DetailSection>
           )}
