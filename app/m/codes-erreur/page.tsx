@@ -62,19 +62,20 @@ export default function CodesErreurPage() {
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
   // Stats memoire collective par code (cle: "marque__code")
   const [stats, setStats] = useState<Record<string, ErrorCodeStats>>({});
-  // Codes deja uploades cette session (anti-spam upsert)
-  const upsertedRef = useRef<Set<string>>(new Set());
+  // Codes deja declares "rencontre terrain" dans cette session (anti-double-click)
+  const declaredRef = useRef<Set<string>>(new Set());
 
   const queryDebounced = useDebounced(query, 200);
 
-  // Quand un code est expand : fetch les stats memoire collective + upsert
-  // pour incrementer le compteur "ce code a ete consulte sur le terrain".
+  // Quand un code est expand : on fetch SEULEMENT les stats (lecture passive).
+  // L'incrementation du compteur se fait UNIQUEMENT via le bouton explicite
+  // "J'ai rencontre ce code sur le terrain" — sinon le signal metier est
+  // pollue par les simples consultations de curiosite / formation.
   useEffect(() => {
     if (!expandedCode) return;
     const [marque, code] = expandedCode.split("__");
     if (!marque || !code) return;
 
-    // Fetch stats (toujours, meme si deja en cache pour rafraichir)
     const ctrl = new AbortController();
     (async () => {
       try {
@@ -88,20 +89,45 @@ export default function CodesErreurPage() {
       }
     })();
 
-    // Upsert une seule fois par session pour ce code
-    if (!upsertedRef.current.has(expandedCode)) {
-      upsertedRef.current.add(expandedCode);
-      fetch("/api/catalog/error-code/upsert", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ marque, code }),
-      }).catch(() => {
-        // best-effort, on n'invalide pas le ref pour eviter spam
-      });
-    }
-
     return () => ctrl.abort();
   }, [expandedCode]);
+
+  // Handler : declaration explicite "j'ai rencontre ce code sur le terrain".
+  // Optionnellement avec un modele (ex: "RXS35") pour enrichir les stats.
+  async function declarerRencontreTerrain(
+    marque: string,
+    code: string,
+    modele?: string
+  ): Promise<{ ok: boolean; newCount?: number; error?: string }> {
+    const key = `${marque}__${code}`;
+    if (declaredRef.current.has(key)) {
+      return { ok: false, error: "Déjà déclaré dans cette session" };
+    }
+    declaredRef.current.add(key);
+    try {
+      const res = await fetch("/api/catalog/error-code/upsert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ marque, code, modele: modele || undefined }),
+      });
+      if (!res.ok) {
+        declaredRef.current.delete(key);
+        return { ok: false, error: `HTTP ${res.status}` };
+      }
+      const data = await res.json();
+      // Refresh stats locale (optimistic + re-fetch reel)
+      const lookupUrl = `/api/catalog/error-code/lookup?marque=${encodeURIComponent(marque)}&code=${encodeURIComponent(code)}`;
+      const lookupRes = await fetch(lookupUrl);
+      if (lookupRes.ok) {
+        const fresh = (await lookupRes.json()) as ErrorCodeStats;
+        setStats((prev) => ({ ...prev, [key]: fresh }));
+      }
+      return { ok: true, newCount: data.nombreOccurrences };
+    } catch {
+      declaredRef.current.delete(key);
+      return { ok: false, error: "Erreur réseau" };
+    }
+  }
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -240,6 +266,10 @@ export default function CodesErreurPage() {
                 expanded={expanded}
                 onToggle={() => setExpandedCode(expanded ? null : key)}
                 stats={stats[key] ?? null}
+                onDeclareTerrain={(modele) =>
+                  declarerRencontreTerrain(hit.marque, hit.code, modele)
+                }
+                alreadyDeclared={declaredRef.current.has(key)}
               />
             );
           })}
@@ -296,11 +326,15 @@ function CodeErreurCard({
   expanded,
   onToggle,
   stats,
+  onDeclareTerrain,
+  alreadyDeclared,
 }: {
   hit: CodeErreurSearchHit;
   expanded: boolean;
   onToggle: () => void;
   stats: ErrorCodeStats | null;
+  onDeclareTerrain: (modele?: string) => Promise<{ ok: boolean; newCount?: number; error?: string }>;
+  alreadyDeclared: boolean;
 }) {
   const graviteStyle = CODE_ERREUR_GRAVITE_STYLES[hit.gravite];
 
@@ -352,8 +386,12 @@ function CodeErreurCard({
 
       {expanded && (
         <div className="px-4 pb-4 -mt-1">
-          {/* Badge memoire collective — affiche si des confreres ont vu ce code */}
-          <MemoireCollectiveBadge stats={stats} marque={hit.marque} />
+          {/* Badge memoire collective + CTA declaration rencontre terrain */}
+          <MemoireCollectiveBadge
+            stats={stats}
+            onDeclareTerrain={onDeclareTerrain}
+            alreadyDeclared={alreadyDeclared}
+          />
 
           <p className="text-[13px] text-black/70 leading-relaxed mb-3">
             {hit.description}
@@ -433,29 +471,44 @@ function DetailSection({
 
 function MemoireCollectiveBadge({
   stats,
-  marque,
+  onDeclareTerrain,
+  alreadyDeclared,
 }: {
   stats: ErrorCodeStats | null;
-  marque: CodeErreurMarque;
+  onDeclareTerrain: (modele?: string) => Promise<{ ok: boolean; newCount?: number; error?: string }>;
+  alreadyDeclared: boolean;
 }) {
+  const [showInput, setShowInput] = useState(false);
+  const [modeleInput, setModeleInput] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [justDeclared, setJustDeclared] = useState(alreadyDeclared);
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    setFeedback(null);
+    const result = await onDeclareTerrain(modeleInput.trim() || undefined);
+    setSubmitting(false);
+    if (result.ok) {
+      setJustDeclared(true);
+      setShowInput(false);
+      setModeleInput("");
+      setFeedback("✓ Déclaration enregistrée. Merci d'enrichir la mémoire collective Vertxia.");
+      setTimeout(() => setFeedback(null), 4000);
+    } else {
+      setFeedback(`❌ ${result.error || "Échec"}`);
+    }
+  }
+
   if (!stats) {
-    // Loading discret la premiere fois
     return (
       <div className="mb-3 rounded-xl bg-emerald-50/50 ring-1 ring-emerald-100 px-3 py-2 text-[12px] text-emerald-700/70">
-        Vérification dans la mémoire collective Vertxia…
+        Lecture de la mémoire collective…
       </div>
     );
   }
+
   const total = stats.totalOccurrences;
-  if (total === 0) {
-    return (
-      <div className="mb-3 rounded-xl bg-slate-50 ring-1 ring-slate-200 px-3 py-2 text-[12px] text-slate-600">
-        <span className="font-semibold">Premier signalement.</span>{" "}
-        Pas encore vu par d&apos;autres pros Vertxia. Ta consultation est désormais
-        comptée dans la mémoire collective.
-      </div>
-    );
-  }
   const lastSeenDate = stats.lastSeenAt
     ? new Date(stats.lastSeenAt).toLocaleDateString("fr-FR", {
         day: "numeric",
@@ -464,27 +517,110 @@ function MemoireCollectiveBadge({
       })
     : null;
   const topModele = stats.modeles[0]?.modele;
+
   return (
-    <div className="mb-3 rounded-xl bg-emerald-50 ring-1 ring-emerald-200 px-3 py-2.5">
-      <div className="flex items-center gap-2 mb-1">
-        <span className="text-[14px]">🌐</span>
-        <span className="text-[12.5px] font-bold text-emerald-900">
-          {total} consultation{total > 1 ? "s" : ""} dans la mémoire collective
-        </span>
-      </div>
-      <div className="text-[11.5px] text-emerald-800/85 leading-snug">
-        {topModele && (
-          <>
-            Modèle le plus fréquent :{" "}
-            <span className="font-semibold">{topModele}</span>
-            {stats.modeles[0].occurrences > 1
-              ? ` (${stats.modeles[0].occurrences}×)`
-              : ""}
-            .{" "}
-          </>
-        )}
-        {lastSeenDate && <>Dernière apparition : {lastSeenDate}.</>}
-      </div>
+    <div className="mb-3 space-y-2">
+      {/* Bloc stats — lecture passive, juste informatif */}
+      {total === 0 ? (
+        <div className="rounded-xl bg-slate-50 ring-1 ring-slate-200 px-3 py-2.5">
+          <div className="text-[12.5px] font-semibold text-slate-700 mb-0.5">
+            Jamais signalé encore
+          </div>
+          <div className="text-[11.5px] text-slate-600 leading-snug">
+            Aucun frigoriste Vertxia n&apos;a encore déclaré avoir rencontré ce code.
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-xl bg-emerald-50 ring-1 ring-emerald-200 px-3 py-2.5">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[14px]">🌐</span>
+            <span className="text-[12.5px] font-bold text-emerald-900">
+              {total} rencontre{total > 1 ? "s" : ""} terrain dans la mémoire Vertxia
+            </span>
+          </div>
+          <div className="text-[11.5px] text-emerald-800/85 leading-snug">
+            {topModele && (
+              <>
+                Modèle le plus fréquent :{" "}
+                <span className="font-semibold">{topModele}</span>
+                {stats.modeles[0].occurrences > 1
+                  ? ` (${stats.modeles[0].occurrences}×)`
+                  : ""}
+                .{" "}
+              </>
+            )}
+            {lastSeenDate && <>Dernière déclaration : {lastSeenDate}.</>}
+          </div>
+        </div>
+      )}
+
+      {/* CTA déclaration terrain — action explicite */}
+      {!justDeclared && !showInput && (
+        <button
+          type="button"
+          onClick={() => setShowInput(true)}
+          className="w-full px-3 py-2.5 rounded-xl bg-white ring-1 ring-[#A16207]/30 text-[#A16207] text-[12.5px] font-semibold active:bg-[#A16207]/5 transition-colors flex items-center justify-center gap-1.5"
+          style={{ WebkitTapHighlightColor: "transparent" }}
+        >
+          ✋ J&apos;ai rencontré ce code sur le terrain
+        </button>
+      )}
+
+      {showInput && !justDeclared && (
+        <div className="rounded-xl bg-white ring-1 ring-[#A16207]/40 px-3 py-3 space-y-2">
+          <div className="text-[11.5px] text-black/70 leading-snug">
+            Sur quel modèle l&apos;as-tu rencontré ? (facultatif — aide les autres pros à identifier les patterns)
+          </div>
+          <input
+            type="text"
+            value={modeleInput}
+            onChange={(e) => setModeleInput(e.target.value)}
+            placeholder="Ex : FTXM35M, PUHZ-ZRP125, RXS35..."
+            autoCapitalize="characters"
+            autoComplete="off"
+            spellCheck={false}
+            className="w-full h-10 rounded-lg bg-[#F5F4F0] px-3 text-[14px] ring-1 ring-black/10 focus:ring-2 focus:ring-[#A16207] outline-none placeholder:text-black/35"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setShowInput(false);
+                setModeleInput("");
+              }}
+              disabled={submitting}
+              className="flex-1 px-3 py-2 rounded-lg bg-black/[0.05] text-black/70 text-[12.5px] font-medium active:bg-black/[0.1] disabled:opacity-50"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="flex-1 px-3 py-2 rounded-lg bg-[#A16207] text-white text-[12.5px] font-semibold active:bg-[#8a5206] disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
+              style={{ WebkitTapHighlightColor: "transparent" }}
+            >
+              {submitting && (
+                <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              )}
+              Confirmer
+            </button>
+          </div>
+        </div>
+      )}
+
+      {justDeclared && (
+        <div className="rounded-xl bg-emerald-100 ring-1 ring-emerald-300 px-3 py-2 text-[11.5px] text-emerald-900">
+          ✓ Déclaration enregistrée dans la mémoire collective Vertxia.
+        </div>
+      )}
+
+      {feedback && !justDeclared && (
+        <div className="rounded-xl bg-red-50 ring-1 ring-red-200 px-3 py-2 text-[11.5px] text-red-700">
+          {feedback}
+        </div>
+      )}
     </div>
   );
 }
