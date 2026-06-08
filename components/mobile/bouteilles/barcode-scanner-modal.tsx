@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  isBarcodeDetectorSupported,
+  isScannerAvailable,
   startBarcodeScanner,
   type BarcodeFormat,
 } from "@/lib/equipement/barcode-detect";
@@ -32,7 +32,9 @@ export function BarcodeScannerModal({ open, onClose, onDetect }: Props) {
 
   useEffect(() => {
     if (!open) return;
-    setSupported(isBarcodeDetectorSupported());
+    // Le scan est possible si la camera (getUserMedia) est dispo. Le wrapper
+    // choisit automatiquement entre API native (Chrome) et ZXing (Safari).
+    setSupported(isScannerAvailable());
     setError(null);
     setActive(false);
     return () => {
@@ -177,15 +179,15 @@ export function BarcodeScannerModal({ open, onClose, onDetect }: Props) {
           </div>
         )}
 
-        {/* Pas supporte (Firefox principalement) */}
+        {/* Camera vraiment indisponible — rare (PC sans webcam, contexte HTTP non secure...) */}
         {!supported && (
           <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
-            <div className="text-[50px] mb-4">🚫</div>
+            <div className="text-[50px] mb-4">📷</div>
             <div className="text-white text-[15px] font-semibold mb-2 text-center">
-              Navigateur non supporté
+              Caméra non disponible
             </div>
             <div className="text-white/70 text-[12.5px] text-center max-w-xs leading-snug">
-              Le scan code-barres nécessite Safari (iOS 17+), Chrome ou Edge.
+              Cet appareil n&apos;a pas de caméra accessible (ou la page n&apos;est pas en HTTPS).
               Saisissez le code à la main pour le moment.
             </div>
           </div>
