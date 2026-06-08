@@ -55,9 +55,13 @@ export default function NouvelleBouteillePage() {
     }
 
     // Nouveau scan : pre-remplit tous les champs detectes
+    // Priorite numeroSerie : GS1 AI 21 (serial bouteille standard) > Claude OCR > codeBarre fallback
+    const gs1Serial = data.gs1Decoded?.serial ?? null;
     if (data.codeBarre) {
       setCodeBarre(data.codeBarre);
-      if (!numeroSerie) setNumeroSerie(data.numeroSerie || data.codeBarre);
+      if (!numeroSerie) {
+        setNumeroSerie(gs1Serial || data.numeroSerie || data.codeBarre);
+      }
     } else if (data.numeroSerie) {
       setNumeroSerie(data.numeroSerie);
     }
@@ -81,6 +85,24 @@ export default function NouvelleBouteillePage() {
       handleTypeChange(data.type);
     }
 
+    // Enrichissement GS1 : si le codeBarre est decode, on exploite les AIs
+    // pour pre-remplir des champs additionnels que Claude n'aurait pas vus.
+    if (data.gs1Decoded) {
+      const gs1 = data.gs1Decoded;
+      // Poids net GS1 (AI 3103) = charge fluide actuelle de la bouteille
+      // Si Claude n'a pas detecte de capacite/charge mais GS1 a le poids net,
+      // on l'utilise comme charge initiale (= ce que contient la bouteille a reception).
+      if (typeof gs1.poidsNetKg === "number" && gs1.poidsNetKg > 0 && !chargeInitialeKg) {
+        setChargeInitialeKg(String(gs1.poidsNetKg));
+      }
+      // Date d'embouteillage (GS1 AI 11 OU heuristique YYMMDD sur code proprietaire Linde Sentry)
+      // -> pre-remplit dateAchat comme bon proxy si pas deja modifie
+      const dateGS1 = gs1.dateProductionISO || gs1.dateProbableISO;
+      if (dateGS1) {
+        setDateAchat(dateGS1);
+      }
+    }
+
     // Message de succes recapitulatif
     const fields: string[] = [];
     if (data.codeBarre) fields.push(`code ${data.codeBarre}`);
@@ -88,6 +110,14 @@ export default function NouvelleBouteillePage() {
     if (data.fluide) fields.push(data.fluide);
     if (typeof data.capaciteMaxKg === "number" && data.capaciteMaxKg > 0) {
       fields.push(`${data.capaciteMaxKg} kg`);
+    }
+    // GS1 bonus : si parser a tire de l'info structuree du codeBarre, on l'affiche
+    if (data.gs1Decoded?.format === "gs1-standard") {
+      fields.push(`GTIN valide`);
+      if (data.gs1Decoded.lot) fields.push(`lot ${data.gs1Decoded.lot}`);
+      if (data.gs1Decoded.poidsNetKg) fields.push(`${data.gs1Decoded.poidsNetKg} kg net`);
+    } else if (data.gs1Decoded?.format === "proprietary" && data.gs1Decoded.dateProbableISO) {
+      fields.push(`embouteillage ${data.gs1Decoded.dateProbableISO}`);
     }
     if (fields.length === 0) {
       return `❌ Rien detecte sur la photo — reessaie ou saisis a la main`;

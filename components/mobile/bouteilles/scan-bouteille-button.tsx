@@ -15,6 +15,7 @@
 // (lookup en base, pre-remplit form, redirige si deja en stock, etc.).
 
 import { useRef, useState } from "react";
+import type { ParsedBarcodeResult } from "@/lib/equipement/gs1-parser";
 
 export type BouteilleVisionData = {
   codeBarre: string | null;
@@ -26,6 +27,10 @@ export type BouteilleVisionData = {
   type: "recharge" | "recuperation" | null;
   confiance: "haute" | "moyenne" | "basse";
   notes: string | null;
+  /** Si le codeBarre est un GS1 standard valide ou un code proprietaire avec
+   *  heuristique date YYMMDD reussie, contient les champs decodes. Permet de
+   *  pre-remplir dateAchat, charge actuelle, lot, etc. au-dela du retour Claude. */
+  gs1Decoded?: ParsedBarcodeResult | null;
 };
 
 type Props = {

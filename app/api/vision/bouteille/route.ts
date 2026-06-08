@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { parseGS1Barcode, type ParsedBarcodeResult } from "@/lib/equipement/gs1-parser";
 
 // Claude Vision API : extraction des infos d'une bouteille de fluide frigorigene
 // a partir d'une photo. Remplace le scan code-barres JS (ZXing/html5-qrcode) qui
@@ -10,6 +11,10 @@ import { NextResponse } from "next/server";
 //    gravee, un seul pass suffit dans 95% des cas.
 //  - Output contient codeBarre (focus principal) + tous les bonus textuels que
 //    Claude voit autour : marque, fluide, type, capacite, numero gravé.
+//  - Post-traitement parser GS1 : si le codeBarre est un GTIN-14 valide MOD10,
+//    on extrait lot/serial/date/poids automatiquement (gain 20-30% scans).
+//    Si c'est un code proprietaire (Linde Sentry, SERVITRAX), on tente une
+//    extraction heuristique date YYMMDD + serial.
 
 export const runtime = "nodejs";
 
@@ -82,6 +87,12 @@ type BouteilleVisionData = {
   type: "recharge" | "recuperation" | null;
   confiance: "haute" | "moyenne" | "basse";
   notes: string | null;
+};
+
+/** Reponse enrichie envoyee au client : data Vision Claude + parser GS1
+ *  applique sur le codeBarre detecte (si present). */
+type BouteilleVisionResponse = BouteilleVisionData & {
+  gs1Decoded: ParsedBarcodeResult | null;
 };
 
 function parseDataUrl(dataUrl: string): { mediaType: string; base64: string } | null {
@@ -198,7 +209,25 @@ export async function POST(req: Request) {
       );
     }
 
-    return NextResponse.json(bouteille, { status: 200 });
+    // Post-traitement parser GS1 : si Claude a detecte un codeBarre, on tente
+    // de le decoder selon les standards GS1. 3 cas :
+    //  - gs1-standard (GTIN-14 valide MOD10) : on extrait lot, serial, poids,
+    //    date d'expiration AUTO. C'est ~20-30% des bouteilles industrielles.
+    //  - gs1-sscc : container shipping code (rare sur bouteilles unitaires)
+    //  - proprietary : code Linde Sentry / Air Liquide SERVITRAX. On tente
+    //    une heuristique date YYMMDD pour deduire la date d'embouteillage.
+    //    Si succes -> dateProbableISO peut servir comme dateAchat fallback.
+    let gs1Decoded: ParsedBarcodeResult | null = null;
+    if (bouteille.codeBarre) {
+      try {
+        gs1Decoded = parseGS1Barcode(bouteille.codeBarre);
+      } catch (e) {
+        console.warn("[vision/bouteille] GS1 parser threw:", e);
+      }
+    }
+
+    const response: BouteilleVisionResponse = { ...bouteille, gs1Decoded };
+    return NextResponse.json(response, { status: 200 });
   } catch (err) {
     console.error("[vision/bouteille] exception:", err);
     return NextResponse.json(
