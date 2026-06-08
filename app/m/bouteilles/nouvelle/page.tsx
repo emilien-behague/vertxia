@@ -4,8 +4,9 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/mobile/ui/mobile-header";
 import { InsetListSection } from "@/components/mobile/ui/inset-list";
-import { createBouteille, createMouvement } from "@/lib/equipement/bouteille-storage";
+import { createBouteille, createMouvement, findBouteilleByCodeBarre } from "@/lib/equipement/bouteille-storage";
 import { fluideEstInflammable, type BouteilleType } from "@/lib/equipement/bouteille";
+import { BarcodeScannerModal } from "@/components/mobile/bouteilles/barcode-scanner-modal";
 
 const FLUIDES = [
   { code: "R-32", label: "R-32 (HFC)", gwp: 675 },
@@ -25,6 +26,7 @@ export default function NouvelleBouteillePage() {
   const [fluideMix, setFluideMix] = useState(false);
   const [fluideCode, setFluideCode] = useState("R-32");
   const [numeroSerie, setNumeroSerie] = useState("");
+  const [codeBarre, setCodeBarre] = useState("");
   const [tareKg, setTareKg] = useState("10.5");
   const [capaciteMaxKg, setCapaciteMaxKg] = useState("12.0");
   const [chargeInitialeKg, setChargeInitialeKg] = useState("");
@@ -34,6 +36,27 @@ export default function NouvelleBouteillePage() {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scanInfo, setScanInfo] = useState<string | null>(null);
+
+  // Callback scan code-barres : si deja connu en base -> redirect vers la fiche
+  // existante. Sinon -> pre-remplit le champ codeBarre + numero de serie (souvent
+  // identiques sur bouteilles Linde) pour gagner du temps de saisie.
+  function handleScanDetect(code: string) {
+    const existing = findBouteilleByCodeBarre(code);
+    if (existing) {
+      setScanInfo(`Bouteille deja en stock — redirection vers la fiche`);
+      // Petit delai pour montrer le message avant le redirect
+      setTimeout(() => router.push(`/m/bouteilles/${existing.id}`), 600);
+      return;
+    }
+    // Nouveau code-barres -> pre-remplit le formulaire
+    setCodeBarre(code);
+    if (!numeroSerie) setNumeroSerie(code);
+    setScanInfo(`Code-barres detecte : ${code}. Completez les infos ci-dessous.`);
+    // Fade out l'info apres 5s
+    setTimeout(() => setScanInfo(null), 5000);
+  }
 
   const selectedFluide = useMemo(
     () => FLUIDES.find((f) => f.code === fluideCode) ?? FLUIDES[0],
@@ -94,6 +117,7 @@ export default function NouvelleBouteillePage() {
         fluide: fluideMix ? null : selectedFluide,
         fluideMix,
         numeroSerie: numeroSerie.trim(),
+        codeBarre: codeBarre.trim() || undefined,
         tareKg: tare,
         capaciteMaxKg: capacite,
         chargeInitialeKg: charge,
@@ -126,6 +150,36 @@ export default function NouvelleBouteillePage() {
   return (
     <>
       <MobileHeader title="🛢️ Nouvelle bouteille" largeTitle backHref="/m/bouteilles" />
+
+      {/* CTA scan code-barres — gain de temps massif si sticker Linde/Climalife
+          sur la bouteille. Si deja en base : redirect direct vers la fiche. */}
+      <div className="px-4 pt-2 pb-1">
+        <button
+          type="button"
+          onClick={() => setScannerOpen(true)}
+          className="w-full px-5 py-4 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200 text-emerald-900 active:bg-emerald-100 transition-colors flex items-center gap-3"
+          style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
+        >
+          <span className="text-2xl">📷</span>
+          <div className="flex-1 text-left">
+            <div className="text-[14px] font-semibold leading-tight">
+              Scanner le code-barres
+            </div>
+            <div className="text-[11.5px] text-emerald-800/75 mt-0.5">
+              Sticker Linde / Climalife / Tereva — gain temps + retrouve auto si déjà en stock
+            </div>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
+      </div>
+
+      {scanInfo && (
+        <div className="mx-4 mt-2 px-4 py-2.5 rounded-xl bg-emerald-100 ring-1 ring-emerald-300 text-[12.5px] text-emerald-900 font-medium">
+          ✓ {scanInfo}
+        </div>
+      )}
 
       <InsetListSection title="Type de bouteille">
         <div className="px-2 py-2 grid grid-cols-2 gap-2">
@@ -198,7 +252,7 @@ export default function NouvelleBouteillePage() {
 
       <InsetListSection
         title="Identification"
-        footer="N° d'identification ESP transportable gravé sur la bouteille (obligatoire pour le registre)."
+        footer="N° d'identification ESP transportable gravé sur la bouteille (obligatoire pour le registre). Le code-barres est optionnel mais utile pour retrouver la bouteille au scan."
       >
         <FormRow label="N° de série">
           <input
@@ -207,6 +261,16 @@ export default function NouvelleBouteillePage() {
             onChange={(e) => setNumeroSerie(e.target.value)}
             placeholder="Ex : B112026047"
             className="input-mobile"
+            autoCapitalize="characters"
+          />
+        </FormRow>
+        <FormRow label="Code-barres (optionnel)">
+          <input
+            type="text"
+            value={codeBarre}
+            onChange={(e) => setCodeBarre(e.target.value)}
+            placeholder="Scanné ou saisi à la main"
+            className="input-mobile font-mono"
             autoCapitalize="characters"
           />
         </FormRow>
@@ -340,6 +404,12 @@ export default function NouvelleBouteillePage() {
           background-repeat: no-repeat; background-position: right 4px center; padding-right: 24px;
         }
       `}</style>
+
+      <BarcodeScannerModal
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onDetect={handleScanDetect}
+      />
     </>
   );
 }

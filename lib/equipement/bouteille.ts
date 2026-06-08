@@ -27,6 +27,9 @@ export type Bouteille = {
   fluideMix: boolean;
   /** N° d'identification ESP transportable (gravé sur la bouteille) */
   numeroSerie: string;
+  /** Code-barres scannable (sticker fournisseur, ex Linde 14 chiffres GTIN-14).
+   *  Indépendant du numeroSerie qui est gravé. Optionnel, rempli au scan. */
+  codeBarre?: string;
   /** Poids à vide en kg (tare gravée sur la bouteille) */
   tareKg: number;
   /** Capacité nominale en kg (charge max possible, ex: 10kg) */

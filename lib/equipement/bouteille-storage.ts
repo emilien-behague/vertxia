@@ -49,6 +49,17 @@ export function getBouteille(id: string): Bouteille | undefined {
   return readBouteilles().find((b) => b.id === id);
 }
 
+/** Recherche une bouteille par son code-barres scanne. Normalise (uppercase
+ *  + sans espaces) pour matcher les codes scannes vs codes saisis manuellement. */
+export function findBouteilleByCodeBarre(codeBarre: string): Bouteille | undefined {
+  const norm = codeBarre.trim().toUpperCase().replace(/\s+/g, "");
+  if (norm.length === 0) return undefined;
+  return readBouteilles().find((b) => {
+    if (!b.codeBarre) return false;
+    return b.codeBarre.trim().toUpperCase().replace(/\s+/g, "") === norm;
+  });
+}
+
 /** Crée une nouvelle bouteille — génère id + createdAt. */
 export function createBouteille(input: Omit<Bouteille, "id" | "createdAt">): Bouteille {
   const bouteille: Bouteille = {
