@@ -92,9 +92,31 @@ export default function NouvelleBouteillePage() {
     if (fields.length === 0) {
       return `❌ Rien detecte sur la photo — reessaie ou saisis a la main`;
     }
+
+    // Detection "photo trop centree" : Claude le signale dans notes quand il
+    // n'a vu que le sticker code-barres. On affiche le hint pour que l'utilisateur
+    // refasse une 2e photo plus large s'il veut les bonus champs.
+    const photoTooClose =
+      data.notes &&
+      /photo trop centr|prends une photo|montre toute la bouteille|vise plus large/i.test(data.notes);
+
     const confianceTag =
       data.confiance === "haute" ? "" : ` (confiance ${data.confiance})`;
-    return `✅ Detecte${confianceTag} : ${fields.join(" · ")}\nCompletez les champs manquants ci-dessous.`;
+    const baseMsg = `✅ Detecte${confianceTag} : ${fields.join(" · ")}`;
+
+    if (photoTooClose) {
+      return `${baseMsg}\n💡 Refais une photo qui montre TOUTE la bouteille (corps + etiquette + sticker) pour que l'IA detecte aussi le fluide, la capacite et la tare.`;
+    }
+
+    const missing: string[] = [];
+    if (!data.fluide) missing.push("fluide");
+    if (!data.capaciteMaxKg) missing.push("capacite");
+    if (!data.tareKg) missing.push("tare");
+    if (missing.length > 0) {
+      return `${baseMsg}\n💡 Manque ${missing.join(" / ")} : refais une photo avec l'etiquette principale visible, OU complete a la main ci-dessous.`;
+    }
+
+    return `${baseMsg}\nCompletez les champs manquants ci-dessous.`;
   }
 
   const selectedFluide = useMemo(

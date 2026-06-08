@@ -146,7 +146,7 @@ export function ScanBouteilleButton({
                 Scanner la bouteille (photo + IA)
               </div>
               <div className="text-[11.5px] text-emerald-800/75 mt-0.5">
-                Vise le sticker code-barres — l&apos;IA pre-remplit le formulaire
+                Vise la bouteille entiere (corps + etiquette + sticker) — l&apos;IA pre-remplit tout
               </div>
             </div>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
