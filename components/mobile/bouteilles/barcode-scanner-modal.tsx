@@ -8,15 +8,17 @@ import {
   type BarcodeFormat,
 } from "@/lib/equipement/barcode-detect";
 
-// Modal plein ecran pour scanner un code-barres avec la camera arriere.
-// Reuses le pattern de "Activer la camera" pour respecter la regle iOS
-// Safari user-gesture (cf. memory [[feedback-ios-safari-camera-user-gesture]]).
-//
+// Modal plein ecran pour scanner un code-barres via html5-qrcode.
 // Workflow :
-//  1. Ouverture modal -> ecran avec gros bouton "Activer la camera"
-//  2. Tap utilisateur -> demande permission camera -> lance scan
+//  1. Ouverture modal -> ecran "Activer la camera"
+//  2. Tap utilisateur -> demande permission camera -> html5-qrcode demarre
 //  3. Code detecte -> callback onDetect + fermeture auto
-//  4. Annuler -> stop camera + ferme modal
+//  4. Annuler -> stop scanner + ferme modal
+//
+// html5-qrcode injecte son propre <video> + <canvas> dans le div container
+// que l'on doit mettre dans le JSX (id = CONTAINER_ID).
+
+const CONTAINER_ID = "html5qrcode-bouteille-reader";
 
 type Props = {
   open: boolean;
@@ -25,8 +27,7 @@ type Props = {
 };
 
 export function BarcodeScannerModal({ open, onClose, onDetect }: Props) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const stopRef = useRef<(() => void) | null>(null);
+  const stopRef = useRef<(() => Promise<void>) | null>(null);
   const [active, setActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [supported, setSupported] = useState(true);
@@ -34,33 +35,32 @@ export function BarcodeScannerModal({ open, onClose, onDetect }: Props) {
 
   useEffect(() => {
     if (!open) return;
-    // Le scan est possible si la camera (getUserMedia) est dispo. Le wrapper
-    // choisit automatiquement entre API native (Chrome) et ZXing (Safari).
     setSupported(isScannerAvailable());
     setError(null);
     setActive(false);
+    setDebugInfo({ frames: 0, engine: "" });
     return () => {
       if (stopRef.current) {
-        stopRef.current();
+        stopRef.current().catch(() => {});
         stopRef.current = null;
       }
     };
   }, [open]);
 
   async function handleStart() {
-    if (!videoRef.current) return;
     setError(null);
     setDebugInfo({
       frames: 0,
-      engine: isBarcodeDetectorSupported() ? "native" : "ZXing",
+      engine: isBarcodeDetectorSupported() ? "native" : "html5-qrcode",
     });
     try {
       const stop = await startBarcodeScanner({
-        video: videoRef.current,
+        containerElementId: CONTAINER_ID,
         onDetect: (code, format) => {
+          stopRef.current?.().catch(() => {});
           stopRef.current = null;
           setActive(false);
-          // Vibration retour haptique (Android/Chrome — iOS Safari ignore)
+          // Vibration retour haptique (Android/Chrome - iOS Safari ignore)
           if (typeof navigator !== "undefined" && navigator.vibrate) {
             navigator.vibrate(100);
           }
@@ -72,7 +72,7 @@ export function BarcodeScannerModal({ open, onClose, onDetect }: Props) {
           setActive(false);
         },
         onProgress: (info) => {
-          setDebugInfo((prev) => ({ ...prev, frames: info.framesAnalyzed }));
+          setDebugInfo({ frames: info.framesAnalyzed, engine: info.engine });
         },
       });
       stopRef.current = stop;
@@ -83,9 +83,9 @@ export function BarcodeScannerModal({ open, onClose, onDetect }: Props) {
     }
   }
 
-  function handleClose() {
+  async function handleClose() {
     if (stopRef.current) {
-      stopRef.current();
+      await stopRef.current().catch(() => {});
       stopRef.current = null;
     }
     setActive(false);
@@ -120,20 +120,25 @@ export function BarcodeScannerModal({ open, onClose, onDetect }: Props) {
         </button>
       </div>
 
-      {/* Zone video / placeholder */}
-      <div className="flex-1 relative overflow-hidden">
-        <video
-          ref={videoRef}
-          className={`w-full h-full object-cover ${active ? "opacity-100" : "opacity-0"}`}
-          playsInline
-          muted
+      {/* Zone video container — html5-qrcode injecte son <video> dedans */}
+      <div className="flex-1 relative overflow-hidden bg-black">
+        {/* Le DIV qui sert de hote html5-qrcode. Doit etre vide au moment
+            du start() sinon la lib crash. CSS pour que le video qu'elle
+            injecte couvre le viewport. */}
+        <div
+          id={CONTAINER_ID}
+          className="absolute inset-0 w-full h-full"
+          style={{
+            // Force le video element injecte par html5-qrcode a couvrir tout
+            opacity: active ? 1 : 0,
+          }}
         />
 
-        {/* Viewfinder overlay */}
+        {/* Overlay viewfinder */}
         {active && (
           <>
             <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 aspect-[3/2] border-2 border-emerald-400/80 rounded-2xl shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]">
+              <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 aspect-[3/2] border-2 border-emerald-400/80 rounded-2xl">
                 <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-emerald-400 rounded-tl-xl" />
                 <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-emerald-400 rounded-tr-xl" />
                 <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-emerald-400 rounded-bl-xl" />
@@ -141,11 +146,9 @@ export function BarcodeScannerModal({ open, onClose, onDetect }: Props) {
               </div>
             </div>
             <div className="absolute bottom-20 left-0 right-0 text-center text-white/90 text-[13px] font-medium px-6">
-              Centrez le code-barres dans le cadre, à 10-20 cm
+              Centrez le code-barres, 10-20 cm — tapez l&apos;écran pour focus
             </div>
-            {/* Overlay debug — affiche moteur + compteur frames analysees.
-                Permet de diagnostiquer : si frames=0 apres 5s -> wiring casse,
-                si frames=50+ et toujours rien -> probleme focus/distance. */}
+            {/* Overlay debug */}
             <div className="absolute bottom-4 left-4 right-4 px-3 py-2 rounded-lg bg-black/70 ring-1 ring-white/15 text-[11px] font-mono text-white/85 flex items-center justify-between">
               <span>
                 Moteur : <span className="text-emerald-300">{debugInfo.engine}</span>
@@ -178,7 +181,7 @@ export function BarcodeScannerModal({ open, onClose, onDetect }: Props) {
           </div>
         )}
 
-        {/* Erreur (permission refusee, etc.) */}
+        {/* Erreur */}
         {error && (
           <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
             <div className="text-[50px] mb-4">⚠️</div>
@@ -199,7 +202,7 @@ export function BarcodeScannerModal({ open, onClose, onDetect }: Props) {
           </div>
         )}
 
-        {/* Camera vraiment indisponible — rare (PC sans webcam, contexte HTTP non secure...) */}
+        {/* Camera vraiment indisponible */}
         {!supported && (
           <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
             <div className="text-[50px] mb-4">📷</div>
@@ -208,11 +211,24 @@ export function BarcodeScannerModal({ open, onClose, onDetect }: Props) {
             </div>
             <div className="text-white/70 text-[12.5px] text-center max-w-xs leading-snug">
               Cet appareil n&apos;a pas de caméra accessible (ou la page n&apos;est pas en HTTPS).
-              Saisissez le code à la main pour le moment.
+              Saisissez le code à la main.
             </div>
           </div>
         )}
       </div>
+
+      {/* CSS pour forcer le video injecte par html5-qrcode a couvrir le container */}
+      <style jsx global>{`
+        #${CONTAINER_ID} video {
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: cover !important;
+        }
+        #${CONTAINER_ID} > div {
+          width: 100% !important;
+          height: 100% !important;
+        }
+      `}</style>
     </div>
   );
 }
@@ -228,8 +244,8 @@ function formatCameraError(err: Error): string {
   if (/NotReadableError|TrackStart/i.test(msg)) {
     return "Caméra utilisée par une autre application. Fermez les autres apps et réessayez.";
   }
-  if (/non supportee/i.test(msg)) {
-    return "Cette fonction nécessite un navigateur récent (Safari 17+, Chrome).";
+  if (/non disponible|introuvable/i.test(msg)) {
+    return "Le scanner ne s'est pas initialisé. Recharge la page et réessaye.";
   }
   return msg.slice(0, 200);
 }

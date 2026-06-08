@@ -1,20 +1,21 @@
-// Scanner code-barres dual : utilise l'API BarcodeDetector native si dispo
-// (Chrome Android/desktop, Edge) et fallback ZXing-js sinon (Safari iOS
-// principalement, Firefox).
+// Scanner code-barres via html5-qrcode — librairie wrapper qui choisit auto
+// le meilleur engine selon le navigateur :
+//  - Chrome Android / Edge : utilise l'API BarcodeDetector native (rapide)
+//  - Safari iOS / Firefox  : utilise son propre engine ZXing optimise
 //
-// Safari NE SUPPORTE PAS BarcodeDetector (toutes versions iOS confondues).
-// On a teste sur iPhone iOS 18 le 08/06/2026, ecran "non supporte". D'ou
-// le fallback ZXing-js obligatoire pour que ca marche en prod.
+// On a teste ZXing-js seul le 08/06/2026 : sur Safari iOS la detection
+// echouait sur les Code-128 GTIN-14 industriels (bouteilles Linde 14 chiffres)
+// meme avec TRY_HARDER. html5-qrcode resout ce probleme avec un pipeline
+// d'analyse mieux calibre pour les codes industriels.
 //
-// Formats supportes : EAN-13, EAN-8, Code-128, Code-39, UPC-A/E, ITF, QR,
-// Data Matrix. Couvre tous les codes-barres bouteilles gaz Linde, Climalife,
-// Tereva observes sur photos terrain.
+// Formats supportes : Code-128, Code-39, EAN-13, EAN-8, UPC-A/E, ITF, QR,
+// Data Matrix. Couvre tous les codes-barres bouteilles gaz observes terrain.
 
 import {
-  BrowserMultiFormatReader,
-  type IScannerControls,
-} from "@zxing/browser";
-import { BarcodeFormat as ZxingBarcodeFormat, DecodeHintType } from "@zxing/library";
+  Html5Qrcode,
+  Html5QrcodeSupportedFormats,
+  type Html5QrcodeResult,
+} from "html5-qrcode";
 
 export type BarcodeFormat =
   | "ean_13"
@@ -30,158 +31,71 @@ export type BarcodeFormat =
   | "upc_e"
   | "unknown";
 
-type NativeDetectedBarcode = {
-  rawValue: string;
-  format: BarcodeFormat;
-  boundingBox?: DOMRectReadOnly;
-};
-
-type BarcodeDetectorCtor = new (options?: { formats?: BarcodeFormat[] }) => {
-  detect(source: ImageBitmapSource | HTMLVideoElement): Promise<NativeDetectedBarcode[]>;
-};
-
-declare global {
-  interface Window {
-    BarcodeDetector?: BarcodeDetectorCtor;
-  }
-}
-
-const NATIVE_FORMATS: BarcodeFormat[] = [
-  "ean_13", "ean_8", "code_128", "code_39", "upc_a", "upc_e",
-  "itf", "qr_code", "data_matrix",
-];
-
-/** Indique si l'API BarcodeDetector native est disponible cote client.
- *  Utile pour les logs/debug ; n'est PLUS un pre-requis pour scanner
- *  (ZXing prend le relais sinon). */
+/** Indique si l'API BarcodeDetector native est disponible (info debug). */
 export function isBarcodeDetectorSupported(): boolean {
   if (typeof window === "undefined") return false;
-  return typeof window.BarcodeDetector !== "undefined";
+  return typeof (window as unknown as { BarcodeDetector?: unknown }).BarcodeDetector !== "undefined";
 }
 
-/** Le scan est toujours possible si on a getUserMedia (camera). ZXing
- *  marche partout — Safari iOS inclus. */
+/** Le scan est toujours possible si on a getUserMedia (camera). */
 export function isScannerAvailable(): boolean {
   if (typeof window === "undefined" || typeof navigator === "undefined") return false;
   return !!navigator.mediaDevices?.getUserMedia;
 }
 
 export type ScannerConfig = {
-  /** Element video sur lequel afficher le flux camera. */
-  video: HTMLVideoElement;
+  /** ID d'un DIV vide ou html5-qrcode injectera son video + canvas. */
+  containerElementId: string;
   /** Callback declenche au premier code detecte. Le scanner s'arrete apres. */
   onDetect: (code: string, format: BarcodeFormat) => void;
   /** Callback erreur (permission refusee, etc.). */
   onError?: (err: Error) => void;
-  /** Callback debug : appele a chaque frame analysee. Permet d'afficher
-   *  un compteur "X frames analysees" en UI pour diagnostiquer (camera
-   *  qui demarre mais detecte rien = mauvais focus / resolution / format). */
-  onProgress?: (info: { framesAnalyzed: number; lastErrorName?: string }) => void;
+  /** Callback debug : appele frequemment pendant l'analyse pour montrer
+   *  un compteur frames a l'utilisateur. Permet de diagnostiquer un scan
+   *  bloque (frames=0) vs un scan qui tourne sans detecter (frames=100+). */
+  onProgress?: (info: { framesAnalyzed: number; engine: string }) => void;
 };
 
-/** Demarre la camera + boucle de detection.
- *  Retourne une fonction stop() qui libere proprement la camera.
- *  Choisit automatiquement entre API native et ZXing selon le navigateur. */
-export async function startBarcodeScanner(
-  config: ScannerConfig
-): Promise<() => void> {
-  if (isBarcodeDetectorSupported()) {
-    return startNativeScanner(config);
-  }
-  return startZxingScanner(config);
-}
+const SUPPORTED_FORMATS = [
+  Html5QrcodeSupportedFormats.CODE_128,
+  Html5QrcodeSupportedFormats.CODE_39,
+  Html5QrcodeSupportedFormats.CODE_93,
+  Html5QrcodeSupportedFormats.EAN_13,
+  Html5QrcodeSupportedFormats.EAN_8,
+  Html5QrcodeSupportedFormats.UPC_A,
+  Html5QrcodeSupportedFormats.UPC_E,
+  Html5QrcodeSupportedFormats.ITF,
+  Html5QrcodeSupportedFormats.QR_CODE,
+  Html5QrcodeSupportedFormats.DATA_MATRIX,
+  Html5QrcodeSupportedFormats.CODABAR,
+];
 
-// ─── Scanner natif (Chrome / Edge) ────────────────────────────────────────────
-
-async function startNativeScanner(
-  config: ScannerConfig
-): Promise<() => void> {
-  const { video, onDetect, onError, onProgress } = config;
-  let stream: MediaStream | null = null;
-  let stopped = false;
-  let rafId: number | null = null;
-  let framesAnalyzed = 0;
-
-  function stop() {
-    stopped = true;
-    if (rafId !== null) cancelAnimationFrame(rafId);
-    if (stream) {
-      stream.getTracks().forEach((t) => t.stop());
-      stream = null;
-    }
-    if (video.srcObject) video.srcObject = null;
-  }
-
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: "environment",
-        width: { ideal: 1920, min: 640 },
-        height: { ideal: 1080, min: 480 },
-      },
-      audio: false,
-    });
-    video.srcObject = stream;
-    video.setAttribute("playsinline", "true");
-    await video.play();
-  } catch (err) {
-    onError?.(err instanceof Error ? err : new Error(String(err)));
-    stop();
-    throw err;
-  }
-
-  const detector = new window.BarcodeDetector!({ formats: NATIVE_FORMATS });
-
-  async function tick() {
-    if (stopped) return;
-    if (video.readyState >= 2) {
-      try {
-        const codes = await detector.detect(video);
-        framesAnalyzed++;
-        if (onProgress && framesAnalyzed % 5 === 0) {
-          onProgress({ framesAnalyzed });
-        }
-        if (codes.length > 0) {
-          const c = codes[0];
-          onDetect(c.rawValue, c.format);
-          stop();
-          return;
-        }
-      } catch {
-        // detect() peut throw temporairement si la video n'est pas prete
-      }
-    }
-    rafId = requestAnimationFrame(tick);
-  }
-
-  rafId = requestAnimationFrame(tick);
-  return stop;
-}
-
-// ─── Scanner ZXing (Safari iOS, Firefox, fallback universel) ──────────────────
-
-function zxingFormatToOur(formatStr: string): BarcodeFormat {
-  // ZXing retourne ex "EAN_13", "CODE_128", "QR_CODE", "DATA_MATRIX"
-  switch (formatStr) {
-    case "EAN_13": return "ean_13";
-    case "EAN_8": return "ean_8";
-    case "CODE_128": return "code_128";
-    case "CODE_39": return "code_39";
-    case "CODE_93": return "code_93";
-    case "CODABAR": return "codabar";
-    case "ITF": return "itf";
-    case "QR_CODE": return "qr_code";
-    case "DATA_MATRIX": return "data_matrix";
-    case "UPC_A": return "upc_a";
-    case "UPC_E": return "upc_e";
+function html5FormatToOurs(formatName: string | undefined): BarcodeFormat {
+  if (!formatName) return "unknown";
+  // html5-qrcode renvoie typiquement "CODE_128", "EAN_13", "QR_CODE", etc.
+  const key = formatName.toLowerCase();
+  switch (key) {
+    case "code_128": return "code_128";
+    case "code_39": return "code_39";
+    case "code_93": return "code_93";
+    case "ean_13": return "ean_13";
+    case "ean_8": return "ean_8";
+    case "upc_a": return "upc_a";
+    case "upc_e": return "upc_e";
+    case "itf": return "itf";
+    case "qr_code": return "qr_code";
+    case "data_matrix": return "data_matrix";
+    case "codabar": return "codabar";
     default: return "unknown";
   }
 }
 
-async function startZxingScanner(
+/** Demarre la camera arriere + boucle de detection.
+ *  Retourne une fonction stop() async qui libere proprement la camera. */
+export async function startBarcodeScanner(
   config: ScannerConfig
-): Promise<() => void> {
-  const { video, onDetect, onError, onProgress } = config;
+): Promise<() => Promise<void>> {
+  const { containerElementId, onDetect, onError, onProgress } = config;
 
   if (!isScannerAvailable()) {
     const err = new Error("Camera (getUserMedia) non disponible sur ce navigateur");
@@ -189,89 +103,68 @@ async function startZxingScanner(
     throw err;
   }
 
-  // Hints ZXing : TRY_HARDER + formats ciblés pour les codes-barres
-  // bouteilles gaz (Linde 14 chiffres = ITF-14 / Code-128, Tereva 6 chiffres
-  // = Code-128 / Code-39). TRY_HARDER ralentit un peu mais multiplie x2-3
-  // le taux de detection sur codes industriels sales/abimes/eclaires.
-  const hints = new Map<DecodeHintType, unknown>();
-  hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-    ZxingBarcodeFormat.CODE_128,
-    ZxingBarcodeFormat.CODE_39,
-    ZxingBarcodeFormat.EAN_13,
-    ZxingBarcodeFormat.EAN_8,
-    ZxingBarcodeFormat.ITF,
-    ZxingBarcodeFormat.UPC_A,
-    ZxingBarcodeFormat.UPC_E,
-    ZxingBarcodeFormat.QR_CODE,
-    ZxingBarcodeFormat.DATA_MATRIX,
-    ZxingBarcodeFormat.CODABAR,
-  ]);
-  hints.set(DecodeHintType.TRY_HARDER, true);
-
-  const reader = new BrowserMultiFormatReader(hints, {
-    delayBetweenScanAttempts: 100, // 10 FPS de tentatives (default 0 = max CPU, 100ms = OK mobile)
-    delayBetweenScanSuccess: 500,
-  });
-
-  let controls: IScannerControls | null = null;
-  let stopped = false;
-  let framesAnalyzed = 0;
-  let lastErrorName: string | undefined;
-
-  function stop() {
-    stopped = true;
-    if (controls) {
-      try { controls.stop(); } catch { /* ignore */ }
-      controls = null;
-    }
-    if (video.srcObject) {
-      const s = video.srcObject as MediaStream;
-      s.getTracks().forEach((t) => t.stop());
-      video.srcObject = null;
-    }
+  // Verifie que le div container existe (sinon html5-qrcode crash)
+  const container = typeof document !== "undefined"
+    ? document.getElementById(containerElementId)
+    : null;
+  if (!container) {
+    const err = new Error(`Element #${containerElementId} introuvable dans le DOM`);
+    onError?.(err);
+    throw err;
   }
 
-  try {
-    // playsinline + muted obligatoires pour iOS Safari (autoplay video)
-    video.setAttribute("playsinline", "true");
-    video.muted = true;
+  const scanner = new Html5Qrcode(containerElementId, {
+    formatsToSupport: SUPPORTED_FORMATS,
+    verbose: false,
+    useBarCodeDetectorIfSupported: true,
+  });
 
-    // Constraints haute resolution : Safari iOS retourne 640x480 si on demande
-    // rien. ZXing detecte beaucoup mieux en 1280x720+ — surtout TRY_HARDER
-    // qui est limite par la resolution input.
-    controls = await reader.decodeFromConstraints(
+  const engineName = isBarcodeDetectorSupported() ? "native" : "html5-qrcode";
+  let framesAnalyzed = 0;
+  let stopped = false;
+
+  try {
+    await scanner.start(
+      { facingMode: "environment" },
       {
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1920, min: 640 },
-          height: { ideal: 1080, min: 480 },
-        },
-        audio: false,
+        fps: 10,
+        // qrbox undefined = scanne tout le viewport (mieux pour codes-barres
+        // 1D longs comme les GTIN-14 Linde). Si on met une qrbox carree
+        // type {width:250, height:150}, ZXing peut louper les bords du code.
+        qrbox: undefined,
+        aspectRatio: 1.7777, // 16:9 standard
       },
-      video,
-      (result, error) => {
+      (decodedText: string, result: Html5QrcodeResult) => {
         if (stopped) return;
+        stopped = true;
+        const format = html5FormatToOurs(
+          result.result?.format?.formatName
+        );
+        onDetect(decodedText, format);
+      },
+      (_errorMessage: string) => {
+        // Appele tres souvent (= a chaque frame ou aucun code n'est trouve).
+        // Sert juste a montrer un compteur de frames a l'utilisateur.
         framesAnalyzed++;
-        if (error && error.name) {
-          lastErrorName = error.name;
-        }
-        // Tick progress toutes les 5 frames pour pas saturer le state React
         if (onProgress && framesAnalyzed % 5 === 0) {
-          onProgress({ framesAnalyzed, lastErrorName });
-        }
-        if (result) {
-          const text = result.getText();
-          const format = zxingFormatToOur(result.getBarcodeFormat().toString());
-          onDetect(text, format);
-          stop();
+          onProgress({ framesAnalyzed, engine: engineName });
         }
       }
     );
   } catch (err) {
     onError?.(err instanceof Error ? err : new Error(String(err)));
-    stop();
     throw err;
   }
 
-  return stop;
+  return async () => {
+    stopped = true;
+    try {
+      if (scanner.isScanning) {
+        await scanner.stop();
+      }
+      scanner.clear();
+    } catch {
+      /* ignore */
+    }
+  };
 }
