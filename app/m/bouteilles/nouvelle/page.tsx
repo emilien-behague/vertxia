@@ -6,7 +6,10 @@ import { MobileHeader } from "@/components/mobile/ui/mobile-header";
 import { InsetListSection } from "@/components/mobile/ui/inset-list";
 import { createBouteille, createMouvement, findBouteilleByCodeBarre } from "@/lib/equipement/bouteille-storage";
 import { fluideEstInflammable, type BouteilleType } from "@/lib/equipement/bouteille";
-import { BarcodeScannerModal } from "@/components/mobile/bouteilles/barcode-scanner-modal";
+import {
+  ScanBouteilleButton,
+  type BouteilleVisionData,
+} from "@/components/mobile/bouteilles/scan-bouteille-button";
 
 const FLUIDES = [
   { code: "R-32", label: "R-32 (HFC)", gwp: 675 },
@@ -36,26 +39,62 @@ export default function NouvelleBouteillePage() {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [scannerOpen, setScannerOpen] = useState(false);
-  const [scanInfo, setScanInfo] = useState<string | null>(null);
 
-  // Callback scan code-barres : si deja connu en base -> redirect vers la fiche
-  // existante. Sinon -> pre-remplit le champ codeBarre + numero de serie (souvent
-  // identiques sur bouteilles Linde) pour gagner du temps de saisie.
-  function handleScanDetect(code: string) {
-    const existing = findBouteilleByCodeBarre(code);
-    if (existing) {
-      setScanInfo(`Bouteille deja en stock — redirection vers la fiche`);
-      // Petit delai pour montrer le message avant le redirect
-      setTimeout(() => router.push(`/m/bouteilles/${existing.id}`), 600);
-      return;
+  // Callback scan IA bouteille : Claude Vision retourne codeBarre + bonus
+  // (marque, fluide, capacite, n.serie, type). Si codeBarre deja connu en base
+  // -> redirect vers la fiche. Sinon -> pre-remplit le formulaire avec TOUS
+  // les champs detectes (gain de temps massif sur le formulaire 8 champs).
+  function handleScanDetect(data: BouteilleVisionData): string | null {
+    // Lookup en base par code-barres
+    if (data.codeBarre) {
+      const existing = findBouteilleByCodeBarre(data.codeBarre);
+      if (existing) {
+        setTimeout(() => router.push(`/m/bouteilles/${existing.id}`), 600);
+        return `✅ Bouteille deja en stock — ouverture de la fiche`;
+      }
     }
-    // Nouveau code-barres -> pre-remplit le formulaire
-    setCodeBarre(code);
-    if (!numeroSerie) setNumeroSerie(code);
-    setScanInfo(`Code-barres detecte : ${code}. Completez les infos ci-dessous.`);
-    // Fade out l'info apres 5s
-    setTimeout(() => setScanInfo(null), 5000);
+
+    // Nouveau scan : pre-remplit tous les champs detectes
+    if (data.codeBarre) {
+      setCodeBarre(data.codeBarre);
+      if (!numeroSerie) setNumeroSerie(data.numeroSerie || data.codeBarre);
+    } else if (data.numeroSerie) {
+      setNumeroSerie(data.numeroSerie);
+    }
+    if (data.marque) setFournisseur(data.marque);
+    if (data.fluide && data.fluide !== "melange" && FLUIDES.some((f) => f.code === data.fluide)) {
+      handleFluideChange(data.fluide);
+    } else if (data.fluide === "melange") {
+      setFluideMix(true);
+    }
+    if (typeof data.capaciteMaxKg === "number" && data.capaciteMaxKg > 0) {
+      setCapaciteMaxKg(String(data.capaciteMaxKg));
+      // Si recharge et pas de charge initiale custom, on suppose pleine
+      if (type === "recharge" && !chargeInitialeKg) {
+        setChargeInitialeKg(String(data.capaciteMaxKg));
+      }
+    }
+    if (typeof data.tareKg === "number" && data.tareKg > 0) {
+      setTareKg(String(data.tareKg));
+    }
+    if (data.type) {
+      handleTypeChange(data.type);
+    }
+
+    // Message de succes recapitulatif
+    const fields: string[] = [];
+    if (data.codeBarre) fields.push(`code ${data.codeBarre}`);
+    if (data.marque) fields.push(data.marque);
+    if (data.fluide) fields.push(data.fluide);
+    if (typeof data.capaciteMaxKg === "number" && data.capaciteMaxKg > 0) {
+      fields.push(`${data.capaciteMaxKg} kg`);
+    }
+    if (fields.length === 0) {
+      return `❌ Rien detecte sur la photo — reessaie ou saisis a la main`;
+    }
+    const confianceTag =
+      data.confiance === "haute" ? "" : ` (confiance ${data.confiance})`;
+    return `✅ Detecte${confianceTag} : ${fields.join(" · ")}\nCompletez les champs manquants ci-dessous.`;
   }
 
   const selectedFluide = useMemo(
@@ -151,35 +190,16 @@ export default function NouvelleBouteillePage() {
     <>
       <MobileHeader title="🛢️ Nouvelle bouteille" largeTitle backHref="/m/bouteilles" />
 
-      {/* CTA scan code-barres — gain de temps massif si sticker Linde/Climalife
-          sur la bouteille. Si deja en base : redirect direct vers la fiche. */}
+      {/* CTA scan bouteille IA — photo + Claude Vision lit le code-barres ET
+          enrichit avec marque/fluide/capacite/n.serie en bonus. Si codeBarre
+          deja en base : redirect direct vers la fiche existante. */}
       <div className="px-4 pt-2 pb-1">
-        <button
-          type="button"
-          onClick={() => setScannerOpen(true)}
-          className="w-full px-5 py-4 rounded-2xl bg-emerald-50 ring-1 ring-emerald-200 text-emerald-900 active:bg-emerald-100 transition-colors flex items-center gap-3"
-          style={{ WebkitTapHighlightColor: "transparent", touchAction: "manipulation" }}
-        >
-          <span className="text-2xl">📷</span>
-          <div className="flex-1 text-left">
-            <div className="text-[14px] font-semibold leading-tight">
-              Scanner le code-barres
-            </div>
-            <div className="text-[11.5px] text-emerald-800/75 mt-0.5">
-              Sticker Linde / Climalife / Tereva — gain temps + retrouve auto si déjà en stock
-            </div>
-          </div>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m9 18 6-6-6-6" />
-          </svg>
-        </button>
+        <ScanBouteilleButton
+          onScanned={() => {}}
+          successMessageFn={handleScanDetect}
+          disabled={saving}
+        />
       </div>
-
-      {scanInfo && (
-        <div className="mx-4 mt-2 px-4 py-2.5 rounded-xl bg-emerald-100 ring-1 ring-emerald-300 text-[12.5px] text-emerald-900 font-medium">
-          ✓ {scanInfo}
-        </div>
-      )}
 
       <InsetListSection title="Type de bouteille">
         <div className="px-2 py-2 grid grid-cols-2 gap-2">
@@ -405,11 +425,6 @@ export default function NouvelleBouteillePage() {
         }
       `}</style>
 
-      <BarcodeScannerModal
-        open={scannerOpen}
-        onClose={() => setScannerOpen(false)}
-        onDetect={handleScanDetect}
-      />
     </>
   );
 }
