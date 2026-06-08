@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   isScannerAvailable,
+  isBarcodeDetectorSupported,
   startBarcodeScanner,
   type BarcodeFormat,
 } from "@/lib/equipement/barcode-detect";
@@ -29,6 +30,7 @@ export function BarcodeScannerModal({ open, onClose, onDetect }: Props) {
   const [active, setActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [supported, setSupported] = useState(true);
+  const [debugInfo, setDebugInfo] = useState({ frames: 0, engine: "" });
 
   useEffect(() => {
     if (!open) return;
@@ -48,6 +50,10 @@ export function BarcodeScannerModal({ open, onClose, onDetect }: Props) {
   async function handleStart() {
     if (!videoRef.current) return;
     setError(null);
+    setDebugInfo({
+      frames: 0,
+      engine: isBarcodeDetectorSupported() ? "native" : "ZXing",
+    });
     try {
       const stop = await startBarcodeScanner({
         video: videoRef.current,
@@ -64,6 +70,9 @@ export function BarcodeScannerModal({ open, onClose, onDetect }: Props) {
         onError: (err) => {
           setError(formatCameraError(err));
           setActive(false);
+        },
+        onProgress: (info) => {
+          setDebugInfo((prev) => ({ ...prev, frames: info.framesAnalyzed }));
         },
       });
       stopRef.current = stop;
@@ -131,8 +140,19 @@ export function BarcodeScannerModal({ open, onClose, onDetect }: Props) {
                 <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-emerald-400 rounded-br-xl" />
               </div>
             </div>
-            <div className="absolute bottom-8 left-0 right-0 text-center text-white/90 text-[13px] font-medium px-6">
-              Centrez le code-barres dans le cadre
+            <div className="absolute bottom-20 left-0 right-0 text-center text-white/90 text-[13px] font-medium px-6">
+              Centrez le code-barres dans le cadre, à 10-20 cm
+            </div>
+            {/* Overlay debug — affiche moteur + compteur frames analysees.
+                Permet de diagnostiquer : si frames=0 apres 5s -> wiring casse,
+                si frames=50+ et toujours rien -> probleme focus/distance. */}
+            <div className="absolute bottom-4 left-4 right-4 px-3 py-2 rounded-lg bg-black/70 ring-1 ring-white/15 text-[11px] font-mono text-white/85 flex items-center justify-between">
+              <span>
+                Moteur : <span className="text-emerald-300">{debugInfo.engine}</span>
+              </span>
+              <span>
+                Frames : <span className="text-emerald-300">{debugInfo.frames}</span>
+              </span>
             </div>
           </>
         )}

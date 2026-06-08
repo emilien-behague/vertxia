@@ -14,6 +14,7 @@ import {
   BrowserMultiFormatReader,
   type IScannerControls,
 } from "@zxing/browser";
+import { BarcodeFormat as ZxingBarcodeFormat, DecodeHintType } from "@zxing/library";
 
 export type BarcodeFormat =
   | "ean_13"
@@ -72,6 +73,10 @@ export type ScannerConfig = {
   onDetect: (code: string, format: BarcodeFormat) => void;
   /** Callback erreur (permission refusee, etc.). */
   onError?: (err: Error) => void;
+  /** Callback debug : appele a chaque frame analysee. Permet d'afficher
+   *  un compteur "X frames analysees" en UI pour diagnostiquer (camera
+   *  qui demarre mais detecte rien = mauvais focus / resolution / format). */
+  onProgress?: (info: { framesAnalyzed: number; lastErrorName?: string }) => void;
 };
 
 /** Demarre la camera + boucle de detection.
@@ -91,10 +96,11 @@ export async function startBarcodeScanner(
 async function startNativeScanner(
   config: ScannerConfig
 ): Promise<() => void> {
-  const { video, onDetect, onError } = config;
+  const { video, onDetect, onError, onProgress } = config;
   let stream: MediaStream | null = null;
   let stopped = false;
   let rafId: number | null = null;
+  let framesAnalyzed = 0;
 
   function stop() {
     stopped = true;
@@ -108,7 +114,11 @@ async function startNativeScanner(
 
   try {
     stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" },
+      video: {
+        facingMode: "environment",
+        width: { ideal: 1920, min: 640 },
+        height: { ideal: 1080, min: 480 },
+      },
       audio: false,
     });
     video.srcObject = stream;
@@ -127,6 +137,10 @@ async function startNativeScanner(
     if (video.readyState >= 2) {
       try {
         const codes = await detector.detect(video);
+        framesAnalyzed++;
+        if (onProgress && framesAnalyzed % 5 === 0) {
+          onProgress({ framesAnalyzed });
+        }
         if (codes.length > 0) {
           const c = codes[0];
           onDetect(c.rawValue, c.format);
@@ -167,7 +181,7 @@ function zxingFormatToOur(formatStr: string): BarcodeFormat {
 async function startZxingScanner(
   config: ScannerConfig
 ): Promise<() => void> {
-  const { video, onDetect, onError } = config;
+  const { video, onDetect, onError, onProgress } = config;
 
   if (!isScannerAvailable()) {
     const err = new Error("Camera (getUserMedia) non disponible sur ce navigateur");
@@ -175,9 +189,34 @@ async function startZxingScanner(
     throw err;
   }
 
-  const reader = new BrowserMultiFormatReader();
+  // Hints ZXing : TRY_HARDER + formats ciblés pour les codes-barres
+  // bouteilles gaz (Linde 14 chiffres = ITF-14 / Code-128, Tereva 6 chiffres
+  // = Code-128 / Code-39). TRY_HARDER ralentit un peu mais multiplie x2-3
+  // le taux de detection sur codes industriels sales/abimes/eclaires.
+  const hints = new Map<DecodeHintType, unknown>();
+  hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+    ZxingBarcodeFormat.CODE_128,
+    ZxingBarcodeFormat.CODE_39,
+    ZxingBarcodeFormat.EAN_13,
+    ZxingBarcodeFormat.EAN_8,
+    ZxingBarcodeFormat.ITF,
+    ZxingBarcodeFormat.UPC_A,
+    ZxingBarcodeFormat.UPC_E,
+    ZxingBarcodeFormat.QR_CODE,
+    ZxingBarcodeFormat.DATA_MATRIX,
+    ZxingBarcodeFormat.CODABAR,
+  ]);
+  hints.set(DecodeHintType.TRY_HARDER, true);
+
+  const reader = new BrowserMultiFormatReader(hints, {
+    delayBetweenScanAttempts: 100, // 10 FPS de tentatives (default 0 = max CPU, 100ms = OK mobile)
+    delayBetweenScanSuccess: 500,
+  });
+
   let controls: IScannerControls | null = null;
   let stopped = false;
+  let framesAnalyzed = 0;
+  let lastErrorName: string | undefined;
 
   function stop() {
     stopped = true;
@@ -197,26 +236,34 @@ async function startZxingScanner(
     video.setAttribute("playsinline", "true");
     video.muted = true;
 
+    // Constraints haute resolution : Safari iOS retourne 640x480 si on demande
+    // rien. ZXing detecte beaucoup mieux en 1280x720+ — surtout TRY_HARDER
+    // qui est limite par la resolution input.
     controls = await reader.decodeFromConstraints(
       {
-        video: { facingMode: { ideal: "environment" } },
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1920, min: 640 },
+          height: { ideal: 1080, min: 480 },
+        },
         audio: false,
       },
       video,
       (result, error) => {
         if (stopped) return;
+        framesAnalyzed++;
+        if (error && error.name) {
+          lastErrorName = error.name;
+        }
+        // Tick progress toutes les 5 frames pour pas saturer le state React
+        if (onProgress && framesAnalyzed % 5 === 0) {
+          onProgress({ framesAnalyzed, lastErrorName });
+        }
         if (result) {
           const text = result.getText();
           const format = zxingFormatToOur(result.getBarcodeFormat().toString());
           onDetect(text, format);
           stop();
-        }
-        // Les "NotFoundException" sont normales (= pas de code dans le frame)
-        // ZXing les ignore en interne ; on log uniquement les autres
-        if (error && error.name && error.name !== "NotFoundException" && error.name !== "ChecksumException" && error.name !== "FormatException") {
-          // erreur reelle (ex: video stream lost)
-          // pas onError car on veut pas casser le scan en boucle
-          // console.warn("ZXing error:", error.name, error.message);
         }
       }
     );
