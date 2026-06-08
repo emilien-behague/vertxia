@@ -89,10 +89,14 @@ type BouteilleVisionData = {
   notes: string | null;
 };
 
-/** Reponse enrichie envoyee au client : data Vision Claude + parser GS1
- *  applique sur le codeBarre detecte (si present). */
+/** Reponse enrichie envoyee au client :
+ *   - data Vision Claude
+ *   - gs1Decoded : parser GS1 applique sur codeBarre (si present)
+ *   - nombreScansPartage : nb de pros qui ont deja scanne cette bouteille
+ *     (effet reseau memoire collective). 0 = premiere fois vue dans Vertxia. */
 type BouteilleVisionResponse = BouteilleVisionData & {
   gs1Decoded: ParsedBarcodeResult | null;
+  nombreScansPartage: number;
 };
 
 function parseDataUrl(dataUrl: string): { mediaType: string; base64: string } | null {
@@ -226,7 +230,52 @@ export async function POST(req: Request) {
       }
     }
 
-    const response: BouteilleVisionResponse = { ...bouteille, gs1Decoded };
+    // Mémoire collective : si on a un codeBarre, on cherche dans le catalogue
+    // partagé. Si trouvé, on enrichit/complète les champs Claude avec les
+    // valeurs validées par d'autres pros Vertxia. Effet réseau Bluon-style.
+    let bouteilleEnriched = bouteille;
+    let nombreScansPartage = 0;
+    if (bouteille.codeBarre) {
+      try {
+        const proto = req.headers.get("x-forwarded-proto") || "https";
+        const host = req.headers.get("host");
+        const cookie = req.headers.get("cookie") || "";
+        if (host) {
+          const lookupRes = await fetch(
+            `${proto}://${host}/api/catalog/bouteille/lookup?code=${encodeURIComponent(bouteille.codeBarre)}`,
+            { method: "GET", headers: { cookie } }
+          );
+          if (lookupRes.ok) {
+            const lookup = await lookupRes.json();
+            if (lookup.found && lookup.fiche) {
+              nombreScansPartage = lookup.fiche.nombreScans || 0;
+              // Merge intelligent : Claude OCR live PRIME sur la base partagée
+              // (chaque scan peut révéler des évolutions), MAIS la base partagée
+              // COMPLÈTE les champs Claude null/manquants.
+              bouteilleEnriched = {
+                ...bouteille,
+                marque: bouteille.marque ?? lookup.fiche.marque ?? null,
+                fluide: bouteille.fluide ?? lookup.fiche.fluideCode ?? null,
+                capaciteMaxKg:
+                  bouteille.capaciteMaxKg ?? lookup.fiche.capaciteMaxKg ?? null,
+                tareKg: bouteille.tareKg ?? lookup.fiche.tareKg ?? null,
+                type: bouteille.type ?? lookup.fiche.typeBouteille ?? null,
+              };
+            }
+          }
+        }
+      } catch (e) {
+        // Lookup échoué → on continue avec les données Claude seules.
+        // Pas critique : la base partagée est un BONUS, pas obligatoire.
+        console.warn("[vision/bouteille] catalog lookup failed:", e);
+      }
+    }
+
+    const response: BouteilleVisionResponse = {
+      ...bouteilleEnriched,
+      gs1Decoded,
+      nombreScansPartage,
+    };
     return NextResponse.json(response, { status: 200 });
   } catch (err) {
     console.error("[vision/bouteille] exception:", err);

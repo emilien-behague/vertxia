@@ -134,8 +134,18 @@ export default function NouvelleBouteillePage() {
       data.confiance === "haute" ? "" : ` (confiance ${data.confiance})`;
     const baseMsg = `✅ Detecte${confianceTag} : ${fields.join(" · ")}`;
 
+    // Badge memoire collective : si la bouteille a deja ete scannee par
+    // d'autres pros Vertxia, on l'affiche pour donner confiance dans le
+    // pre-remplissage et matérialiser l'effet réseau.
+    const collectiveSuffix =
+      (data.nombreScansPartage ?? 0) >= 2
+        ? `\n📚 Bouteille verifiee par ${data.nombreScansPartage} pros Vertxia — donnees fiables`
+        : data.nombreScansPartage === 1
+          ? "\n📚 Premiere fois que cette bouteille est ajoutee au catalogue Vertxia"
+          : "";
+
     if (photoTooClose) {
-      return `${baseMsg}\n💡 Refais une photo qui montre TOUTE la bouteille (corps + etiquette + sticker) pour que l'IA detecte aussi le fluide, la capacite et la tare.`;
+      return `${baseMsg}${collectiveSuffix}\n💡 Refais une photo qui montre TOUTE la bouteille (corps + etiquette + sticker) pour que l'IA detecte aussi le fluide, la capacite et la tare.`;
     }
 
     const missing: string[] = [];
@@ -143,10 +153,10 @@ export default function NouvelleBouteillePage() {
     if (!data.capaciteMaxKg) missing.push("capacite");
     if (!data.tareKg) missing.push("tare");
     if (missing.length > 0) {
-      return `${baseMsg}\n💡 Manque ${missing.join(" / ")} : refais une photo avec l'etiquette principale visible, OU complete a la main ci-dessous.`;
+      return `${baseMsg}${collectiveSuffix}\n💡 Manque ${missing.join(" / ")} : refais une photo avec l'etiquette principale visible, OU complete a la main ci-dessous.`;
     }
 
-    return `${baseMsg}\nCompletez les champs manquants ci-dessous.`;
+    return `${baseMsg}${collectiveSuffix}\nCompletez les champs manquants ci-dessous.`;
   }
 
   const selectedFluide = useMemo(
@@ -228,6 +238,28 @@ export default function NouvelleBouteillePage() {
           quantiteKg: charge,
           methode: "declarative",
           notes: fournisseur ? `Réception depuis ${fournisseur}` : undefined,
+        });
+      }
+
+      // Mémoire collective : si on a un code-barres, enrichit le catalogue
+      // partagé Vertxia pour aider tous les autres pros à pré-remplir cette
+      // bouteille au prochain scan. Fire-and-forget : pas d'await pour ne
+      // pas bloquer la redirection. Si l'upsert échoue (offline, RLS), tant pis.
+      if (codeBarre.trim()) {
+        fetch("/api/catalog/bouteille/upsert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            codeBarre: codeBarre.trim(),
+            marque: fournisseur.trim() || null,
+            fluideCode: fluideMix ? "melange" : fluideCode,
+            capaciteMaxKg: capacite,
+            tareKg: tare,
+            typeBouteille: type,
+            dateEmbouteillageISO: dateAchat || null,
+          }),
+        }).catch((e) => {
+          console.warn("[bouteille] catalog upsert failed:", e);
         });
       }
 

@@ -474,3 +474,70 @@ create policy "error_code_select_authenticated"
   for select to authenticated using (true);
 
 -- Écritures uniquement via /api/catalog/error-code/upsert (service_role).
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- ── 12. CATALOGUE PARTAGÉ DES BOUTEILLES FLUIDE FRIGORIGÈNE ────────────────
+-- Mémoire collective des bouteilles scannées par TOUS les pros Vertxia.
+-- À chaque scan IA Vision d'une bouteille, on enrichit une fiche partagée
+-- indexée par code-barres normalisé. Le prochain pro qui scanne la même
+-- bouteille (même code-barres) bénéficie automatiquement de toutes les
+-- infos déjà saisies : marque, fluide, capacité, tare, type.
+--
+-- Pattern aligné sur shared_equipment_catalog (équipements) et
+-- shared_failure_catalog (pannes). Aucune donnée client/perso : code-barres
+-- est commercial publié par Linde/Climalife/etc., pas une donnée privée.
+--
+-- Usage :
+--   - Au scan IA : /api/catalog/bouteille/lookup retourne la fiche si vue
+--     par d'autres pros, on l'utilise pour pré-remplir AVANT même d'appeler
+--     Claude Vision (gain coût + latence + fiabilité 100%).
+--   - À la création/édition d'une bouteille : /api/catalog/bouteille/upsert
+--     enrichit la fiche partagée avec les données validées par l'artisan.
+--   - Badge UI : "📚 Bouteille scannée X fois par d'autres pros Vertxia".
+--
+-- Effet réseau Bluon-style : >50 pros et ~5000 scans = base critique
+-- (cf rapport recherche 10 agents 08/06/2026).
+-- ─────────────────────────────────────────────────────────────────────────────
+
+create table if not exists public.shared_bouteille_catalog (
+  id uuid primary key default gen_random_uuid(),
+  -- Clé naturelle : code-barres normalisé (uppercase, trim, sans espaces)
+  code_barre_key text not null,
+  -- Version affichable (casse d'origine du plus récent scan)
+  code_barre text not null,
+  -- Identifiants GS1 décodés par parser MOD10 (si applicable)
+  gtin_14 text,                       -- GTIN-14 si check digit valide
+  gs1_serial text,                    -- serial AI 21 si présent
+  date_embouteillage_iso date,        -- AI 11 (production) ou heuristique YYMMDD Linde Sentry
+  -- Données techniques agrégées (dernières valeurs validées par scan)
+  marque text,                        -- "Linde", "Climalife", "Tereva", etc.
+  fluide_code text,                   -- "R-32", "R-410A", "R-134a", "melange", etc.
+  capacite_max_kg numeric(10, 3),     -- charge nominale fluide
+  tare_kg numeric(10, 3),             -- poids à vide gravé
+  type_bouteille text,                -- "recharge" | "recuperation"
+  -- Notes optionnelles (ex: "bouteille A2L inflammable")
+  notes text,
+  -- Compteurs effet réseau
+  nombre_scans integer not null default 1,
+  confiance_score integer not null default 100,
+  first_seen_at timestamptz not null default now(),
+  last_updated_at timestamptz not null default now(),
+  -- Unique pour permettre UPSERT sur code-barres normalisé
+  constraint shared_bouteille_catalog_unique unique (code_barre_key)
+);
+
+create index if not exists idx_bouteille_catalog_code_key
+  on public.shared_bouteille_catalog(code_barre_key);
+create index if not exists idx_bouteille_catalog_gtin
+  on public.shared_bouteille_catalog(gtin_14) where gtin_14 is not null;
+create index if not exists idx_bouteille_catalog_marque_fluide
+  on public.shared_bouteille_catalog(marque, fluide_code) where marque is not null;
+
+alter table public.shared_bouteille_catalog enable row level security;
+
+-- Lecture publique pour users connectés (effet réseau).
+create policy "bouteille_catalog_select_authenticated"
+  on public.shared_bouteille_catalog
+  for select to authenticated using (true);
+
+-- Écritures uniquement via /api/catalog/bouteille/upsert (service_role).

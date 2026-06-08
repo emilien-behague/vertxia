@@ -31,6 +31,10 @@ export type BouteilleVisionData = {
    *  heuristique date YYMMDD reussie, contient les champs decodes. Permet de
    *  pre-remplir dateAchat, charge actuelle, lot, etc. au-dela du retour Claude. */
   gs1Decoded?: ParsedBarcodeResult | null;
+  /** Nombre de pros Vertxia qui ont deja scanne cette bouteille (memoire
+   *  collective). 0 = premiere fois vue. >=2 = on peut afficher un badge
+   *  de confiance ("verifie par X pros"). */
+  nombreScansPartage?: number;
 };
 
 type Props = {
