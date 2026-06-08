@@ -56,19 +56,36 @@ export type ScannerConfig = {
   onProgress?: (info: { framesAnalyzed: number; engine: string }) => void;
 };
 
+// Formats reduits AU STRICT MINIMUM pour eviter les faux positifs :
+// Code-39 / Code-93 / Codabar produisent souvent un decodage faux sur un
+// Code-128 GS1 (Linde 14 chiffres) car leurs grammaires sont laxistes.
+// Test terrain 08/06/2026 sur Linde 25031101776806 : avec Code-39 dans la
+// liste, html5-qrcode renvoyait "9#+U[FNC1]&" au lieu du vrai code.
 const SUPPORTED_FORMATS = [
   Html5QrcodeSupportedFormats.CODE_128,
-  Html5QrcodeSupportedFormats.CODE_39,
-  Html5QrcodeSupportedFormats.CODE_93,
   Html5QrcodeSupportedFormats.EAN_13,
   Html5QrcodeSupportedFormats.EAN_8,
   Html5QrcodeSupportedFormats.UPC_A,
-  Html5QrcodeSupportedFormats.UPC_E,
   Html5QrcodeSupportedFormats.ITF,
   Html5QrcodeSupportedFormats.QR_CODE,
   Html5QrcodeSupportedFormats.DATA_MATRIX,
-  Html5QrcodeSupportedFormats.CODABAR,
 ];
+
+/** Nettoie un code scanne : strip les caracteres non-printables (FNC1 GS1,
+ *  control chars Code-128) et valide une longueur minimale.
+ *  Retourne null si le code est trop suspect (= faux positif probable,
+ *  on continue de scanner). */
+function cleanAndValidateScannedCode(raw: string): string | null {
+  if (!raw || typeof raw !== "string") return null;
+  // Strip tout ce qui n'est pas ASCII printable (chars 0x20-0x7E)
+  // Code-128 GS1 injecte FNC1 (0xE8/0xF1 selon encoding) en prefixe, on l'enleve.
+  const cleaned = raw.replace(/[^\x20-\x7E]/g, "").trim();
+  if (cleaned.length < 4) return null;
+  // Heuristique : un code-barres reel a au moins 4 chars printables.
+  // Les faux positifs Code-39 sur Code-128 GS1 donnent souvent < 4 chars
+  // utiles ou des symboles "#$%&*+-." melanges. Plus restrictif si besoin.
+  return cleaned;
+}
 
 function html5FormatToOurs(formatName: string | undefined): BarcodeFormat {
   if (!formatName) return "unknown";
@@ -136,11 +153,18 @@ export async function startBarcodeScanner(
       },
       (decodedText: string, result: Html5QrcodeResult) => {
         if (stopped) return;
+        // Validation anti-faux-positif : strip non-printables + verif longueur
+        const cleaned = cleanAndValidateScannedCode(decodedText);
+        if (!cleaned) {
+          // Decodage suspect (faux positif probable), on ignore et continue
+          // a scanner sans arreter le moteur ni declencher onDetect.
+          return;
+        }
         stopped = true;
         const format = html5FormatToOurs(
           result.result?.format?.formatName
         );
-        onDetect(decodedText, format);
+        onDetect(cleaned, format);
       },
       (_errorMessage: string) => {
         // Appele tres souvent (= a chaque frame ou aucun code n'est trouve).
